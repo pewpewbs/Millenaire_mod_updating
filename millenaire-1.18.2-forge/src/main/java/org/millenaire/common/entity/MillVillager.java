@@ -2162,6 +2162,27 @@ IAStarPathedEntity {
         this.navigation.stop();
         this.pathEntity = null;
         this.nextVanillaPathAttempt = 0L;
+        // Even a formally "reachable" path can keep walking into the outside
+        // wall if the side gate never entered the chosen route. A physical stall
+        // is a separate reason to try the gate, before the teleport fallback.
+        if (isStockTransferGoal(goal) && dest != null) {
+            Path entrance = this.tryStockGateApproach(dest, Math.max(1, goal.range(this)));
+            if (entrance != null && entrance.getNodeCount() > 1) {
+                Node[] nodes = new Node[entrance.getNodeCount()];
+                for (int i = 0; i < nodes.length; i++) nodes[i] = entrance.getNode(i);
+                AS_PathEntity adapted = new AS_PathEntity(
+                        nodes, entrance.getTarget(), entrance.canReach());
+                if (this.navigation.moveTo(adapted, 0.5)) {
+                    this.pathEntity = adapted;
+                    this.nextVanillaPathAttempt = this.level.getGameTime() + 40L;
+                    this.pathFailureRecovery.reset();
+                    this.movementWatchdog.reset();
+                    MillLog.major(this, "NAV-GATE rescued stalled route: goal="
+                            + this.goalKey + " stock=" + dest);
+                    return;
+                }
+            }
+        }
         if (action == org.millenaire.common.pathing.MovementWatchdog.Action.RECOVER
                 && this.vtype != null && (!this.vtype.noTeleport
                     || this.getRecord() != null && this.getRecord().raidingVillage)) {
