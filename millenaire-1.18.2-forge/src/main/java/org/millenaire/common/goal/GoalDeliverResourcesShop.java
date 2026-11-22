@@ -71,6 +71,12 @@ extends Goal {
     }
 
     @Override
+    public boolean isWithinActionRange(MillVillager villager,
+            org.millenaire.common.utilities.Point destination) {
+        return WorkAccess.canAccessStock(villager, destination, this.range(villager));
+    }
+
+    @Override
     public boolean performAction(MillVillager villager) {
         Building shop = villager.getGoalBuildingDest();
         if (shop != null && villager.getCulture().shopNeeds.containsKey(shop.location.shop)) {
