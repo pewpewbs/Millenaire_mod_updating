@@ -84,6 +84,9 @@ implements Runnable {
         for (int i = 0; i < c.length; ++i) {
             AStarNode check = new AStarNode(x + c[i][0], y + c[i][1], z + c[i][2], parent.getG() + c[i][3], parent, this.targetNode);
             try {
+                // Clearance must be checked BEFORE improving either an open
+                // or a closed node. A blocked transition is not a cheaper path.
+                if (!AStarStatic.isViable(this.world, check, c[i][1], this.config)) continue;
                 AStarNode closed = this.closedIndex.get(AStarOpenSet.Position.of(check));
                 if (closed != null) {
                     // A better route to a previously expanded coordinate must
@@ -96,7 +99,7 @@ implements Runnable {
                     }
                     continue;
                 }
-                if (this.tryToUpdateExistingHeapNode(parent, check) || !AStarStatic.isViable(this.world, check, c[i][1], this.config)) continue;
+                if (this.tryToUpdateExistingHeapNode(parent, check)) continue;
                 this.addToBinaryHeap(check);
                 continue;
             }
