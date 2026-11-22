@@ -12,6 +12,11 @@ public final class BarrierPathRules {
             || block instanceof BlockMillWall || block instanceof IronBarsBlock;
     }
     public static boolean blocksStepAbove(BlockState state) {
-        return isBarrier(state) || state.getBlock() instanceof FenceGateBlock && !state.getValue(FenceGateBlock.OPEN);
+        // This method is also used to check a villager's HEAD position.
+        // A closed gate is an OPENABLE doorway, not an impenetrable 2-block
+        // wall: marking the air above it BLOCKED makes both vanilla A* and
+        // legacy JPS reject the very gate they are configured to use.
+        // Actual fences/walls remain non-walkable and non-steppable.
+        return isBarrier(state);
     }
 }
