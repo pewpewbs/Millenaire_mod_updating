@@ -2332,6 +2332,7 @@ IAStarPathedEntity {
         java.util.List<BlockPos> candidates = new ArrayList<>();
         BlockPos feet = this.blockPosition();
         if (this.recentlyUsedGate != null
+                && this.level.hasChunkAt(this.recentlyUsedGate)
                 && now >= this.recentlyUsedGateTick
                 && now - this.recentlyUsedGateTick < 1800L) {
             candidates.add(this.recentlyUsedGate);
@@ -2420,8 +2421,11 @@ IAStarPathedEntity {
 
             Node[] nodes = new Node[through.getNodeCount()];
             for (int i = 0; i < nodes.length; i++) nodes[i] = through.getNode(i);
+            // This only reaches the outside waypoint, NOT the actual goal.
+            // Mark it partial so checkGoals cannot complete an unrelated
+            // task simply because the NPC arrived near the gate.
             AS_PathEntity route = new AS_PathEntity(
-                    nodes, through.getTarget(), through.canReach());
+                    nodes, through.getTarget(), false);
             if (!this.navigation.moveTo(route, 0.5)) {
                 pathRejected++;
                 continue;
