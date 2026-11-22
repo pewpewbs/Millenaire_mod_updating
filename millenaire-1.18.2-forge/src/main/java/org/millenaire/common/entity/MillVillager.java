@@ -247,6 +247,7 @@ IAStarPathedEntity {
     public MillWorldData mw;
     private volatile boolean pathFailedSincelastTick = false;
     private long nextVanillaPathAttempt = 0L;
+    private long nextStockGateProbeTick = 0L;
     private final org.millenaire.common.pathing.MovementWatchdog movementWatchdog = new org.millenaire.common.pathing.MovementWatchdog();
     private long nextPathFailureDiagnostic = 0L;
     private final PathFailureRecovery pathFailureRecovery = new PathFailureRecovery();
@@ -2184,6 +2185,88 @@ IAStarPathedEntity {
             this.level, eye, Vec3.atCenterOf(dest.getBlockPos()), dest.getBlockPos());
     }
 
+    /**
+     * When the stock is behind an enclosure, the nearest access node may lie
+     * against an outside wall. Try the actual fence gate as an intermediate
+     * waypoint instead of repeatedly choosing that inaccessible node.
+     *
+     * Server-only, bounded scan of loaded blocks near the stock destination.
+     * Rate-limited to once per six seconds per villager to protect server TPS.
+     */
+    private Path tryStockGateApproach(Point dest, int range) {
+        long now = this.level.getGameTime();
+        if (now < this.nextStockGateProbeTick) return null;
+        this.nextStockGateProbeTick = now + 120L;
+        if (dest == null || this.level.isClientSide) return null;
+
+        java.util.List<BlockPos> gates = new ArrayList<>();
+        BlockPos target = dest.getBlockPos();
+        for (int dx = -10; dx <= 10; dx++) {
+            for (int dz = -10; dz <= 10; dz++) {
+                if (dx * dx + dz * dz > 100) continue;
+                for (int dy = -2; dy <= 2; dy++) {
+                    BlockPos pos = target.offset(dx, dy, dz);
+                    if (!this.level.hasChunkAt(pos)
+                            || this.position().distanceToSqr(Vec3.atCenterOf(pos)) > 400.0D) continue;
+                    BlockState state = this.level.getBlockState(pos);
+                    if (!(state.getBlock() instanceof FenceGateBlock)
+                            || state.getValue(FenceGateBlock.POWERED)) continue;
+                    gates.add(pos.immutable());
+                }
+            }
+        }
+        // A gate can be several blocks to the side of the direct line to
+        // the chest; rank by its proximity to BOTH the villager and the stock.
+        gates.sort(Comparator.comparingDouble(pos ->
+            this.position().distanceTo(Vec3.atCenterOf(pos))
+            + Vec3.atCenterOf(pos).distanceTo(Vec3.atCenterOf(target))));
+
+        for (int i = 0; i < Math.min(3, gates.size()); i++) {
+            BlockPos gate = gates.get(i);
+            org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, gate);
+            if (!this.level.getBlockState(gate).getValue(FenceGateBlock.OPEN)) continue;
+
+            // First verify that the gate itself is genuinely reachable. It
+            // must not become another inaccessible "nearest" route endpoint.
+            Path approach = this.navigation.createPath(gate, 0);
+            if (approach == null || !approach.canReach()
+                    || approach.getNodeCount() <= 0) continue;
+            Node endGate = approach.getEndNode();
+            if (endGate == null || endGate.asBlockPos().distManhattan(gate) > 1) continue;
+
+            // If opening the gate made a complete path possible, follow that.
+            Path through = this.navigation.createPath(target, Math.min(2, range - 1));
+            if (through != null && through.canReach() && through.getNodeCount() > 0) {
+                Node end = through.getEndNode();
+                if (new Point(end).horizontalDistanceTo(dest) < range
+                        && canSeeStockFromNode(end.x, end.y, end.z, dest)) {
+                    boolean passesGate = false;
+                    for (int index = 0; index < through.getNodeCount(); index++) {
+                        Node step = through.getNode(index);
+                        if (Math.abs(step.x - gate.getX()) <= 1
+                                && Math.abs(step.y - gate.getY()) <= 1
+                                && Math.abs(step.z - gate.getZ()) <= 1) {
+                            passesGate = true;
+                            break;
+                        }
+                    }
+                    if (passesGate) {
+                        MillLog.major(this, "NAV-GATE complete path: goal=" + this.goalKey
+                                + " gate=" + gate + " stock=" + target);
+                        return through;
+                    }
+                }
+            }
+
+            // A bounded first leg gets the resident to the side entrance.
+            // Once this leg finishes, the normal stock route is recalculated.
+            MillLog.major(this, "NAV-GATE waypoint: goal=" + this.goalKey
+                    + " gate=" + gate + " stock=" + target);
+            return approach;
+        }
+        return null;
+    }
+
     private boolean tryGroundRoute(Point dest) {
         long now = this.level.getGameTime();
         if (now < this.nextVanillaPathAttempt) return false;
@@ -2236,6 +2319,16 @@ IAStarPathedEntity {
                 }
             } catch (ThreadSafeUtilities.ChunkAccessException exception) {
                 // The normal pathfinder can still retry as chunks become available.
+            }
+        }
+
+        // If the stock is behind a wall, search for an actual nearby gate,
+        // including side entrances outside the direct villager-to-stock line.
+        if (stockGoal && !reached) {
+            Path gateAccess = this.tryStockGateApproach(dest, range);
+            if (gateAccess != null) {
+                fallback = gateAccess;
+                reached = true; // This may be a waypoint, not permission to transfer goods.
             }
         }
 
