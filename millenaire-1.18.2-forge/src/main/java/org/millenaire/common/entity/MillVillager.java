@@ -2324,64 +2324,95 @@ IAStarPathedEntity {
      * blocks form the physical crossing. The next regular navigation update
      * plans to the original goal from the far side.
      */
+    /**
+     * Force a stock-courtyard exit through the physical gate instead of
+     * accepting a longer rooftop path to an outside waypoint.
+     *
+     * Search to the WALKABLE block just inside the closed gate: pathfinding
+     * to the gate itself can fail because it is currently closed. The last
+     * three local nodes are appended only after all positions are validated.
+     */
     private boolean tryForcedGateCrossing(BlockPos gate, BlockPos exit,
             net.minecraft.core.Direction outDirection, Point finalTarget) {
-        if (!this.level.hasChunkAt(gate) || !this.level.hasChunkAt(exit)
-                || !this.level.hasChunkAt(gate.relative(outDirection))) return false;
+        BlockPos inside = gate.relative(outDirection.getOpposite());
+        BlockPos outside = gate.relative(outDirection);
+        String reason = null;
+        Path approach = null;
+        if (!this.level.hasChunkAt(inside) || !this.level.hasChunkAt(gate)
+                || !this.level.hasChunkAt(outside) || !this.level.hasChunkAt(exit)) {
+            reason = "unloaded";
+        } else {
+            approach = this.navigation.createPath(inside, 0);
+            if (approach == null || !approach.canReach()
+                    || approach.getNodeCount() < 1 || approach.getEndNode() == null) {
+                reason = "noInsideApproach";
+            } else if (!approach.getEndNode().asBlockPos().equals(inside)) {
+                reason = "wrongInsideEndpoint";
+            } else {
+                double direct = this.position().distanceTo(Vec3.atCenterOf(inside));
+                if (approach.getNodeCount() > Math.max(8, Math.ceil(direct * 2.5D) + 4)) {
+                    reason = "insideDetourTooLong";
+                }
+                if (reason == null) {
+                    for (int i = 0; i < approach.getNodeCount(); i++) {
+                        Node step = approach.getNode(i);
+                        if (step.y > Math.max(this.blockPosition().getY(), gate.getY()) + 1) {
+                            reason = "insideApproachOnRoof";
+                            break;
+                        }
+                    }
+                }
+                if (reason == null) {
+                    try {
+                        if (!AStarStatic.isViable(this.level, inside.getX(), inside.getY(),
+                                inside.getZ(), 0, this.getPathingConfig())
+                                || !AStarStatic.isViable(this.level, gate.getX(), gate.getY(),
+                                gate.getZ(), 0, this.getPathingConfig())
+                                || !AStarStatic.isViable(this.level, outside.getX(), outside.getY(),
+                                outside.getZ(), 0, this.getPathingConfig())
+                                || !AStarStatic.isViable(this.level, exit.getX(), exit.getY(),
+                                exit.getZ(), 0, this.getPathingConfig())) {
+                            reason = "gateOrAdjacentBlocked";
+                        }
+                    } catch (ThreadSafeUtilities.ChunkAccessException exception) {
+                        reason = "chunkAccess";
+                    }
+                }
+                if (reason == null) {
+                    Node[] pathNodes = new Node[approach.getNodeCount() + 3];
+                    for (int i = 0; i < approach.getNodeCount(); i++) {
+                        pathNodes[i] = approach.getNode(i);
+                    }
+                    pathNodes[pathNodes.length - 3] = new Node(
+                            gate.getX(), gate.getY(), gate.getZ());
+                    pathNodes[pathNodes.length - 2] = new Node(
+                            outside.getX(), outside.getY(), outside.getZ());
+                    pathNodes[pathNodes.length - 1] = new Node(
+                            exit.getX(), exit.getY(), exit.getZ());
 
-        Path approach = this.navigation.createPath(gate, 0);
-        if (approach == null || !approach.canReach()
-                || approach.getNodeCount() < 2 || approach.getEndNode() == null
-                || !approach.getEndNode().asBlockPos().equals(gate)) return false;
-
-        // Reject a "route to the gate" that itself climbs over the enclosure.
-        double distance = this.position().distanceTo(Vec3.atCenterOf(gate));
-        if (approach.getNodeCount() > Math.max(8, Math.ceil(distance * 2.5D) + 4)) return false;
-        for (int i = 0; i < approach.getNodeCount(); i++) {
-            Node step = approach.getNode(i);
-            if (step.y > Math.max(this.blockPosition().getY(), gate.getY()) + 1) return false;
-        }
-        Node beforeGate = approach.getNode(approach.getNodeCount() - 2);
-        double residentSide = outDirection.getAxis() == net.minecraft.core.Direction.Axis.X
-                ? this.getX() - (gate.getX() + 0.5D) : this.getZ() - (gate.getZ() + 0.5D);
-        int previousSide = outDirection.getAxis() == net.minecraft.core.Direction.Axis.X
-                ? beforeGate.x - gate.getX() : beforeGate.z - gate.getZ();
-        // The last approach node must be on the resident's side, not the
-        // far side reached by walking around the wall.
-        if (Math.abs(previousSide) != 1 || residentSide * previousSide <= 0.0D) return false;
-
-        BlockPos outsideOne = gate.relative(outDirection);
-        BlockPos outsideTwo = exit;
-        try {
-            if (!AStarStatic.isViable(this.level, outsideOne.getX(), outsideOne.getY(),
-                    outsideOne.getZ(), 0, this.getPathingConfig())
-                    || !AStarStatic.isViable(this.level, outsideTwo.getX(), outsideTwo.getY(),
-                    outsideTwo.getZ(), 0, this.getPathingConfig())) {
-                return false;
+                    // A waypoint must never advertise completion of the real goal.
+                    AS_PathEntity route = new AS_PathEntity(pathNodes, exit, false);
+                    if (this.navigation.moveTo(route, 0.5D)) {
+                        this.pathEntity = route;
+                        this.pathFailureRecovery.reset();
+                        this.recentlyUsedGate = gate.immutable();
+                        this.recentlyUsedGateTick = this.level.getGameTime();
+                        MillLog.major(this, "NAV-GATE EXIT forced-crossing: gate=" + gate
+                                + " inside=" + inside + " exit=" + exit
+                                + " finalTarget=" + finalTarget + " goal=" + this.goalKey
+                                + " nodes=" + pathNodes.length);
+                        return true;
+                    }
+                    reason = "moveToFailed";
+                }
             }
-        } catch (ThreadSafeUtilities.ChunkAccessException exception) {
-            return false;
         }
-
-        Node[] pathNodes = new Node[approach.getNodeCount() + 2];
-        for (int i = 0; i < approach.getNodeCount(); i++) {
-            pathNodes[i] = approach.getNode(i);
-        }
-        pathNodes[pathNodes.length - 2] = new Node(outsideOne.getX(),
-                outsideOne.getY(), outsideOne.getZ());
-        pathNodes[pathNodes.length - 1] = new Node(outsideTwo.getX(),
-                outsideTwo.getY(), outsideTwo.getZ());
-
-        AS_PathEntity route = new AS_PathEntity(pathNodes, exit, false);
-        if (!this.navigation.moveTo(route, 0.5D)) return false;
-        this.pathEntity = route;
-        this.pathFailureRecovery.reset();
-        this.recentlyUsedGate = gate.immutable();
-        this.recentlyUsedGateTick = this.level.getGameTime();
-        MillLog.major(this, "NAV-GATE EXIT forced-crossing: gate=" + gate
-                + " exit=" + exit + " finalTarget=" + finalTarget
-                + " goal=" + this.goalKey + " nodes=" + pathNodes.length);
-        return true;
+        MillLog.major(this, "NAV-GATE FORCE rejected: reason=" + reason
+                + " at=" + this.blockPosition() + " gate=" + gate
+                + " inside=" + inside + " exit=" + exit
+                + " goal=" + this.goalKey + " target=" + finalTarget
+                + " approachNodes=" + (approach == null ? 0 : approach.getNodeCount()));
+        return false;
     }
 
     /**
