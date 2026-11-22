@@ -2200,6 +2200,10 @@ IAStarPathedEntity {
         if (action == org.millenaire.common.pathing.MovementWatchdog.Action.RECOVER
                 && this.vtype != null && (!this.vtype.noTeleport
                     || this.getRecord() != null && this.getRecord().raidingVillage)) {
+            if (isStockTransferGoal(goal)) {
+                MillLog.major(this, "NAV-TELEPORT stock recovery: at=" + this.blockPosition()
+                        + " target=" + dest + " goal=" + this.goalKey);
+            }
             this.jumpToDest();
         }
     }
@@ -2439,9 +2443,10 @@ IAStarPathedEntity {
                     + " goal=" + this.goalKey + " nodes=" + through.getNodeCount());
             return true;
         }
-        if (eligible > 0) {
+        if (!candidates.isEmpty()) {
             MillLog.major(this, "NAV-GATE EXIT rejected: at=" + this.blockPosition()
                     + " target=" + dest + " goal=" + this.goalKey
+                    + " detectedGates=" + candidates.size()
                     + " eligibleGates=" + eligible + " pathRejected=" + pathRejected);
         }
         return false;
