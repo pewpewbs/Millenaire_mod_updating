@@ -11,6 +11,8 @@ import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.NodeEvaluator;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.pathfinder.PathFinder;
+import org.millenaire.common.config.MillConfigValues;
+import org.millenaire.common.utilities.MillLog;
 
 /**
  * Expand expensive-looking routes with a bounded second vanilla A* search.
@@ -98,6 +100,15 @@ public final class DetourPathFinder extends PathFinder {
         if (normal == null || !normal.canReach()) return expanded;
 
         double expandedCost = traversalCost(expanded);
-        return expandedCost + 0.5D < normalCost ? expanded : normal;
+        boolean preferExpanded = expandedCost + 0.5D < normalCost;
+        if (MillConfigValues.LogPathing >= 2
+                || MillConfigValues.LogPathing >= 1 && preferExpanded) {
+            MillLog.major(mob, "NAV-PATH quality normalCost=" + normalCost
+                    + " expandedCost=" + expandedCost
+                    + " selected=" + (preferExpanded ? "expanded" : "normal")
+                    + " target=" + (normal.getEndNode() == null
+                        ? "unknown" : normal.getEndNode().asBlockPos()));
+        }
+        return preferExpanded ? expanded : normal;
     }
 }
