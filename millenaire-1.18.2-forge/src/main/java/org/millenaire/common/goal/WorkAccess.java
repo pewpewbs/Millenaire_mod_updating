@@ -4,8 +4,21 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.millenaire.common.entity.MillVillager;
+import org.millenaire.common.utilities.Point;
 public final class WorkAccess {
     private WorkAccess() {}
+    /**
+     * A stock transfer must be performed from the actual stock position's side
+     * of the wall, not from an alternate or partial path endpoint.
+     */
+    public static boolean canAccessStock(MillVillager villager, Point proposed, double range) {
+        if (villager == null || range <= 0) return false;
+        Point actual = villager.getGoalDestPoint() != null
+                ? villager.getGoalDestPoint() : proposed;
+        return actual != null && actual.horizontalDistanceTo(villager) < range
+                && visible(villager, Vec3.atCenterOf(actual.getBlockPos()), actual.getBlockPos());
+    }
+
     public static boolean visible(MillVillager villager, Vec3 target, BlockPos allowedTarget) {
         // A waist-height ray prevents reaching across a fence or through a wall.
         Vec3 from = villager.position().add(0, 0.8, 0);
