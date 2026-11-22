@@ -33,6 +33,37 @@ import org.millenaire.common.utilities.WorldUtilities;
 @DocumentedElement.Documentation(value="Sheer sheeps present around the villager's house.")
 public class GoalShearSheep
 extends Goal {
+    // Five sheep normally produce 15 wool. Return these goods before
+    // repeatedly picking a new shearing target from a large flock.
+    public static final int WOOL_DELIVERY_BATCH = 15;
+
+    /** Only naturally collected vanilla sheep wool, regardless of colour. */
+    public static boolean isSheepWool(InvItem item) {
+        if (item == null || item.getItem() == null) return false;
+        ResourceLocation id = Registry.ITEM.getKey(item.getItem());
+        return id != null && "minecraft".equals(id.getNamespace())
+                && id.getPath().endsWith("_wool");
+    }
+
+    /** Restrict the emergency delivery priority to actual shepherd jobs. */
+    public static boolean hasShearingGoal(MillVillager villager) {
+        List<Goal> goals = villager.getGoals();
+        if (goals == null) return false;
+        for (Goal goal : goals) {
+            if (goal instanceof GoalShearSheep) return true;
+        }
+        return false;
+    }
+
+    /** Count all colours; coloured wool must not get stuck in NPC inventory. */
+    public static int woolInInventory(MillVillager villager) {
+        int count = 0;
+        for (InvItem key : villager.getInventoryKeys()) {
+            if (isSheepWool(key)) count += villager.countInv(key);
+        }
+        return count;
+    }
+
     public GoalShearSheep() {
         this.buildingLimit.put(InvItem.createInvItem(Blocks.WHITE_WOOL, 0), 1024);
         this.townhallLimit.put(InvItem.createInvItem(Blocks.WHITE_WOOL, 0), 1024);
@@ -41,7 +72,8 @@ extends Goal {
 
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
-        if (villager.getHouse() == null) return null;
+        if (villager.getHouse() == null
+                || woolInInventory(villager) >= WOOL_DELIVERY_BATCH) return null;
         Point pos = villager.getPos();
         Entity closestSheep = null;
         double sheepBestDist = Double.MAX_VALUE;
@@ -72,7 +104,8 @@ extends Goal {
 
     @Override
     public boolean isPossibleSpecific(MillVillager villager) throws Exception {
-        if (villager.getHouse() == null || !villager.getHouse().containsTags("sheeps")) {
+        if (villager.getHouse() == null || !villager.getHouse().containsTags("sheeps")
+                || woolInInventory(villager) >= WOOL_DELIVERY_BATCH) {
             return false;
         }
         List<Entity> sheep = WorldUtilities.getEntitiesWithinAABB(villager.level, Sheep.class, villager.getHouse().getPos(), 30, 10);
@@ -101,14 +134,18 @@ extends Goal {
 
     @Override
     public boolean performAction(MillVillager villager) throws Exception {
-        if (villager.level.isClientSide || villager.getHouse() == null) return true;
+        if (villager.level.isClientSide || villager.getHouse() == null
+                || woolInInventory(villager) >= WOOL_DELIVERY_BATCH) return true;
+        int carriedWool = woolInInventory(villager);
         List<Entity> sheep = WorldUtilities.getEntitiesWithinAABB(villager.level, Sheep.class, villager.getPos(), 4, 4);
         for (Entity ent : sheep) {
+            if (carriedWool >= WOOL_DELIVERY_BATCH) break;
             Sheep animal;
             if (!ent.isAlive() || (animal = (Sheep)ent).isBaby() || animal.isSheared()) continue;
             if (villager.distanceToSqr(animal) >= 4.0
                     || !WorkAccess.visible(villager, animal.getBoundingBox().getCenter(), null)) continue;
             villager.addToInv(Registry.ITEM.get(new ResourceLocation(animal.getColor().getName() + "_wool")), 3);
+            carriedWool += 3;
             ((Sheep)ent).setSheared(true);
             if (MillConfigValues.LogCattleFarmer >= 1 && villager.extraLog) {
                 MillLog.major(this, "Shearing: " + ent);
