@@ -50,7 +50,7 @@ extends GoalGeneric {
     public int actionDuration(MillVillager villager) {
         // Generic goal durations are configured in milliseconds. The previous
         // 70-140 tick tool-speed override silently ignored duration=80000 in
-        // Byzantine quarry goals, allowing full loot batches almost instantly.
+        // Byzantine quarry goals, allowing much faster loot batches than the culture configuration.
         return Math.max(1, this.duration);
     }
 
