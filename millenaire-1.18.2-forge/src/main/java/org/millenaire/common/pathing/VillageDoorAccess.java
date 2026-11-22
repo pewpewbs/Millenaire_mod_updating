@@ -26,7 +26,7 @@ import org.millenaire.common.utilities.BlockItemUtilities;
  */
 @Mod.EventBusSubscriber(modid = "millenaire")
 public final class VillageDoorAccess {
-    private static final long MIN_OPEN_TICKS = 40L;
+    private static final long MIN_OPEN_TICKS = 120L;
     private static final Map<ServerLevel, Map<BlockPos, Long>> OPENED = new WeakHashMap<>();
 
     private VillageDoorAccess() {}
