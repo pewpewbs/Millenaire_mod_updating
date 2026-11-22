@@ -51,7 +51,7 @@ public class AStarStatic {
         for (int xIter = -2; xIter <= 2; ++xIter) {
             for (int zIter = -2; zIter <= 2; ++zIter) {
                 for (int yIter = -3; yIter <= 2; ++yIter) {
-                    check = new AStarNode(posX + xIter, posY + yIter, posZ + zIter, Math.abs(xIter) + Math.abs(yIter), null);
+                    check = new AStarNode(posX + xIter, posY + yIter, posZ + zIter, Math.abs(xIter) + Math.abs(yIter) + Math.abs(zIter), null);
                     if (!AStarStatic.isViable(world, check, 1, config)) continue;
                     resultList.add(check);
                 }
