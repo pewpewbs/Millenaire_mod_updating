@@ -20,6 +20,28 @@ extends Goal {
         this.travelBookShow = false;
     }
 
+    private static boolean isDeliverable(MillVillager villager, InvItem key) {
+        for (InvItem configured : villager.getGoodsToBringBackHome()) {
+            if (configured.matches(key)) return true;
+        }
+        // Old culture files usually list white wool only. Shepherds still
+        // shear other coloured sheep, and must be able to store that wool.
+        return GoalShearSheep.hasShearingGoal(villager) && GoalShearSheep.isSheepWool(key);
+    }
+
+    private static int countDeliverableGoods(MillVillager villager) {
+        int total = 0;
+        for (InvItem key : villager.getInventoryKeys()) {
+            if (isDeliverable(villager, key)) total += villager.countInv(key);
+        }
+        return total;
+    }
+
+    private static boolean fullShearingBatch(MillVillager villager) {
+        return GoalShearSheep.hasShearingGoal(villager)
+                && GoalShearSheep.woolInInventory(villager) >= GoalShearSheep.WOOL_DELIVERY_BATCH;
+    }
+
     @Override
     public int actionDuration(MillVillager villager) {
         return 40;
@@ -34,8 +56,7 @@ extends Goal {
     public ItemStack[] getHeldItemsTravelling(MillVillager villager) {
         ArrayList<ItemStack> items = new ArrayList<ItemStack>();
         for (InvItem key : villager.getInventoryKeys()) {
-            for (InvItem key2 : villager.getGoodsToBringBackHome()) {
-                if (!key2.equals(key)) continue;
+            if (villager.countInv(key) > 0 && isDeliverable(villager, key)) {
                 items.add(org.millenaire.common.item.LegacyItemStacks.stack(key.getItem(), 1, key.meta));
             }
         }
@@ -44,24 +65,16 @@ extends Goal {
 
     @Override
     public boolean isPossibleSpecific(MillVillager villager) {
-        if (villager.getGoodsToBringBackHome().size() == 0) {
-            return false;
-        }
-        int nb = 0;
-        boolean delayOver = !villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L;
-        for (InvItem key : villager.getInventoryKeys()) {
-            if (villager.countInv(key) <= 0) continue;
-            for (InvItem key2 : villager.getGoodsToBringBackHome()) {
-                if (!key2.matches(key)) continue;
-                nb += villager.countInv(key);
-                if (delayOver) {
-                    return true;
-                }
-                if (nb <= 16) continue;
-                return true;
-            }
-        }
-        return false;
+        if (villager.getGoodsToBringBackHome().isEmpty()
+                && !GoalShearSheep.hasShearingGoal(villager)) return false;
+        int nb = countDeliverableGoods(villager);
+        if (nb <= 0) return false;
+        // Override the old 100-second cooldown once a shepherd has a full
+        // batch. Otherwise a large flock repeatedly wins the goal selection.
+        if (fullShearingBatch(villager)) return true;
+        boolean delayOver = !villager.lastGoalTime.containsKey(this)
+                || villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L;
+        return delayOver || nb > 16;
     }
 
     @Override
@@ -81,8 +94,7 @@ extends Goal {
         org.millenaire.common.utilities.Point destination = villager.getGoalDestPoint();
         if (!this.isWithinActionRange(villager, destination)) return false;
         for (InvItem key : villager.getInventoryKeys()) {
-            for (InvItem key2 : villager.getGoodsToBringBackHome()) {
-                if (!key2.matches(key)) continue;
+            if (isDeliverable(villager, key) && villager.countInv(key) > 0) {
                 villager.putInBuilding(villager.getHouse(), key.getItem(), key.meta, 256);
             }
         }
@@ -91,12 +103,11 @@ extends Goal {
 
     @Override
     public int priority(MillVillager villager) {
-        int nbGoods = 0;
-        for (InvItem key : villager.getInventoryKeys()) {
-            for (InvItem key2 : villager.getGoodsToBringBackHome()) {
-                if (!key2.matches(key)) continue;
-                nbGoods += villager.countInv(key);
-            }
+        int nbGoods = countDeliverableGoods(villager);
+        if (fullShearingBatch(villager)) {
+            // Breeding has priority 10000. Finished wool batches must take
+            // precedence even when animals remain ready for breeding/shearing.
+            return 12000 + nbGoods * 3;
         }
         return 10 + nbGoods * 3;
     }
