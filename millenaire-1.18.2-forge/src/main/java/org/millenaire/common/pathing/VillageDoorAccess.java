@@ -26,7 +26,10 @@ import org.millenaire.common.utilities.BlockItemUtilities;
  */
 @Mod.EventBusSubscriber(modid = "millenaire")
 public final class VillageDoorAccess {
-    private static final long MIN_OPEN_TICKS = 120L;
+    // A pen gate must close quickly once the last resident has cleared it:
+    // keeping it open for six seconds can let livestock escape.
+    private static final long GATE_IDLE_TICKS = 10L;
+    private static final long DOOR_IDLE_TICKS = 40L;
     private static final Map<ServerLevel, Map<BlockPos, Long>> OPENED = new WeakHashMap<>();
 
     private VillageDoorAccess() {}
@@ -89,7 +92,7 @@ public final class VillageDoorAccess {
     @SubscribeEvent
     public static void onWorldTick(TickEvent.WorldTickEvent event) {
         if (event.phase != TickEvent.Phase.END || !(event.world instanceof ServerLevel level)
-                || level.getGameTime() % 10L != 0L) return;
+                || level.getGameTime() % 5L != 0L) return;
         Map<BlockPos, Long> doors = OPENED.get(level);
         if (doors == null || doors.isEmpty()) return;
 
@@ -114,11 +117,17 @@ public final class VillageDoorAccess {
                 iterator.remove();
                 continue;
             }
-            if (level.getGameTime() - entry.getValue() < MIN_OPEN_TICKS) continue;
+            long idleTicks = gate ? GATE_IDLE_TICKS : DOOR_IDLE_TICKS;
+            if (level.getGameTime() - entry.getValue() < idleTicks) continue;
 
-            // Look farther than the old 0.7-block clearance: this protects queues
-            // and both sides of a doorway, including players following a resident.
-            if (!level.getEntitiesOfClass(LivingEntity.class, new AABB(pos).inflate(2.0, 1.0, 2.0),
+            // A resident following the route refreshes the lease while approaching.
+            // Only an entity physically occupying the portal should delay closure.
+            // In particular, livestock standing nearby must NOT keep a pen gate
+            // open indefinitely.
+            AABB portal = gate
+                    ? new AABB(pos).inflate(0.12D, 0.75D, 0.12D)
+                    : new AABB(pos).inflate(0.35D, 1.0D, 0.35D);
+            if (!level.getEntitiesOfClass(LivingEntity.class, portal,
                     LivingEntity::isAlive).isEmpty()) continue;
 
             if (wooden) {
