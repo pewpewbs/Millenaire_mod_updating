@@ -71,7 +71,8 @@ extends Goal {
 
     @Override
     public boolean isWithinActionRange(MillVillager villager, org.millenaire.common.utilities.Point destination) {
-        return destination != null && destination.distanceTo(villager) < this.range(villager);
+        return destination != null && destination.distanceTo(villager) < this.range(villager)
+                && WorkAccess.canAccessStock(villager, destination, this.range(villager));
     }
 
     @Override
