@@ -26,10 +26,10 @@ import org.millenaire.common.utilities.BlockItemUtilities;
  */
 @Mod.EventBusSubscriber(modid = "millenaire")
 public final class VillageDoorAccess {
-    // A pen gate must close quickly once the last resident has cleared it:
-    // keeping it open for six seconds can let livestock escape.
+    // Both livestock-pen doors and gates close promptly once the crossing is
+    // clear. A route follower refreshes the lease while still approaching.
     private static final long GATE_IDLE_TICKS = 10L;
-    private static final long DOOR_IDLE_TICKS = 40L;
+    private static final long DOOR_IDLE_TICKS = 10L;
     private static final Map<ServerLevel, Map<BlockPos, Long>> OPENED = new WeakHashMap<>();
 
     private VillageDoorAccess() {}
@@ -120,13 +120,10 @@ public final class VillageDoorAccess {
             long idleTicks = gate ? GATE_IDLE_TICKS : DOOR_IDLE_TICKS;
             if (level.getGameTime() - entry.getValue() < idleTicks) continue;
 
-            // A resident following the route refreshes the lease while approaching.
-            // Only an entity physically occupying the portal should delay closure.
-            // In particular, livestock standing nearby must NOT keep a pen gate
-            // open indefinitely.
-            AABB portal = gate
-                    ? new AABB(pos).inflate(0.12D, 0.75D, 0.12D)
-                    : new AABB(pos).inflate(0.35D, 1.0D, 0.35D);
+            // Only living entities physically intersecting the doorway can
+            // delay closing. Nearby livestock (or a resident already outside)
+            // must not hold an entrance open for multiple seconds.
+            AABB portal = new AABB(pos).inflate(0.12D, 0.75D, 0.12D);
             if (!level.getEntitiesOfClass(LivingEntity.class, portal,
                     LivingEntity::isAlive).isEmpty()) continue;
 
