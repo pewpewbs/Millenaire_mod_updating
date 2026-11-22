@@ -86,7 +86,14 @@ implements Runnable {
             try {
                 AStarNode closed = this.closedIndex.get(AStarOpenSet.Position.of(check));
                 if (closed != null) {
-                    closed.updateDistance(check.getG() + this.getCostNodeToNode(closed, check), parent);
+                    // A better route to a previously expanded coordinate must
+                    // be reopened; changing a closed node's parent alone never
+                    // lets the priority queue explore its improved successors.
+                    if (closed.updateDistance(check.getG(), parent)) {
+                        this.closedIndex.remove(AStarOpenSet.Position.of(closed));
+                        this.closedNodes.remove(closed);
+                        this.queue.offer(closed);
+                    }
                     continue;
                 }
                 if (this.tryToUpdateExistingHeapNode(parent, check) || !AStarStatic.isViable(this.world, check, c[i][1], this.config)) continue;
@@ -101,26 +108,25 @@ implements Runnable {
     }
 
     public ArrayList<AStarNode> getPath(AStarNode start, AStarNode end, boolean searchMode) throws ThreadSafeUtilities.ChunkAccessException {
-        this.queue.offer(start);
         this.targetNode = end;
-        AStarNode current = start;
-        while (!this.isNodeEnd(current, end)) {
-            AStarNode visited = this.queue.poll();
-            this.closedNodes.add(visited);
-            this.closedIndex.put(AStarOpenSet.Position.of(visited), visited);
-            this.getNextCandidates(current, searchMode);
-            if (this.queue.isEmpty() || this.shouldInterrupt()) {
-                return null;
+        this.queue.offer(start);
+        while (!this.queue.isEmpty() && !this.shouldInterrupt()) {
+            AStarNode current = this.queue.poll();
+            if (this.isNodeEnd(current, end)) {
+                ArrayList<AStarNode> foundPath = new ArrayList<>();
+                AStarNode cursor = current;
+                while (cursor != null) {
+                    foundPath.add(cursor);
+                    if (cursor == start) return foundPath;
+                    cursor = cursor.parent;
+                }
+                return null; // Never publish a path with a broken parent chain.
             }
-            current = this.queue.peek();
+            this.closedNodes.add(current);
+            this.closedIndex.put(AStarOpenSet.Position.of(current), current);
+            this.getNextCandidates(current, searchMode);
         }
-        ArrayList<AStarNode> foundpath = new ArrayList<AStarNode>();
-        foundpath.add(current);
-        while (current != start) {
-            foundpath.add(current.parent);
-            current = current.parent;
-        }
-        return foundpath;
+        return null;
     }
 
     public boolean isBusy() {
