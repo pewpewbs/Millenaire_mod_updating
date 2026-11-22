@@ -248,6 +248,11 @@ IAStarPathedEntity {
     private volatile boolean pathFailedSincelastTick = false;
     private long nextVanillaPathAttempt = 0L;
     private long nextStockGateProbeTick = 0L;
+    // A resident who entered a walled courtyard through a gate should prefer
+    // the same opening when leaving for a destination on the other side.
+    private BlockPos recentlyUsedGate = null;
+    private long recentlyUsedGateTick = Long.MIN_VALUE;
+    private long nextGateExitAttemptTick = 0L;
     private final org.millenaire.common.pathing.MovementWatchdog movementWatchdog = new org.millenaire.common.pathing.MovementWatchdog();
     private long nextPathFailureDiagnostic = 0L;
     private final PathFailureRecovery pathFailureRecovery = new PathFailureRecovery();
@@ -1558,8 +1563,17 @@ IAStarPathedEntity {
                 candidates.add(pos.above());
             }
             for (var pos : candidates) {
-                if (this.position().distanceToSqr(Vec3.atCenterOf(pos)) <= 8.0D)
+                double distanceSquared = this.position().distanceToSqr(Vec3.atCenterOf(pos));
+                if (distanceSquared <= 8.0D) {
                     org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, pos);
+                    // Remember a gate only when physically beside its opening,
+                    // not merely while inspecting an upcoming route node.
+                    if (distanceSquared <= 2.25D
+                            && this.level.getBlockState(pos).getBlock() instanceof FenceGateBlock) {
+                        this.recentlyUsedGate = pos.immutable();
+                        this.recentlyUsedGateTick = this.level.getGameTime();
+                    }
+                }
             }
         }
 
@@ -2294,11 +2308,90 @@ IAStarPathedEntity {
         return null;
     }
 
+
+    /**
+     * Try exiting through the gate this villager recently approached. This is
+     * independent of the current goal: a stock pickup can be followed by a
+     * completely different task outside the courtyard.
+     *
+     * Limited to one local route request per 8 seconds, with a clear side-of-
+     * gate check. Ordinary pathfinding remains available if no exit route works.
+     */
+    private boolean tryRecentGateExit(Point dest) {
+        if (dest == null || this.recentlyUsedGate == null || this.level.isClientSide) return false;
+        long now = this.level.getGameTime();
+        if (now < this.nextGateExitAttemptTick || now < this.recentlyUsedGateTick
+                || now - this.recentlyUsedGateTick > 1800L) return false;
+        BlockPos gate = this.recentlyUsedGate;
+        if (!this.level.hasChunkAt(gate)) return false;
+        BlockState state = this.level.getBlockState(gate);
+        if (!(state.getBlock() instanceof FenceGateBlock)) {
+            this.recentlyUsedGate = null;
+            return false;
+        }
+        Vec3 centre = Vec3.atCenterOf(gate);
+        double near = this.position().distanceToSqr(centre);
+        // Do not impose an old gate on unrelated distant travel, or re-route
+        // a villager who has already reached the opening.
+        if (near > 144.0D || near < 2.25D) return false;
+
+        net.minecraft.core.Direction.Axis axis = state.getValue(FenceGateBlock.FACING).getAxis();
+        double residentOffset = axis == net.minecraft.core.Direction.Axis.X
+                ? this.getX() - centre.x : this.getZ() - centre.z;
+        double targetOffset = axis == net.minecraft.core.Direction.Axis.X
+                ? dest.x - centre.x : dest.z - centre.z;
+        // Only if the current position and the target are on opposite sides.
+        if (Math.abs(residentOffset) < 0.75D || residentOffset * targetOffset >= -3.0D)
+            return false;
+
+        net.minecraft.core.Direction exitDirection = axis == net.minecraft.core.Direction.Axis.X
+                ? (targetOffset > 0 ? net.minecraft.core.Direction.EAST : net.minecraft.core.Direction.WEST)
+                : (targetOffset > 0 ? net.minecraft.core.Direction.SOUTH : net.minecraft.core.Direction.NORTH);
+        BlockPos exit = gate.relative(exitDirection, 2);
+        if (!this.level.hasChunkAt(exit)) return false;
+        this.nextGateExitAttemptTick = now + 160L;
+
+        // The normal node evaluator regards a closed wooden fence gate as a
+        // passable door, so opening it too early is unnecessary and unsafe
+        // around livestock. The path-following code opens it on approach.
+        Path through = this.navigation.createPath(exit, 0);
+        if (through == null || !through.canReach() || through.getNodeCount() <= 1)
+            return false;
+        Node end = through.getEndNode();
+        if (end == null || end.asBlockPos().distManhattan(exit) > 1)
+            return false;
+
+        boolean crossesGate = false;
+        for (int i = 0; i < through.getNodeCount(); i++) {
+            Node step = through.getNode(i);
+            if (Math.abs(step.x - gate.getX()) <= 1
+                    && Math.abs(step.y - gate.getY()) <= 1
+                    && Math.abs(step.z - gate.getZ()) <= 1) {
+                crossesGate = true;
+                break;
+            }
+        }
+        if (!crossesGate) return false;
+
+        Node[] nodes = new Node[through.getNodeCount()];
+        for (int i = 0; i < nodes.length; i++) nodes[i] = through.getNode(i);
+        AS_PathEntity route = new AS_PathEntity(nodes, through.getTarget(), through.canReach());
+        if (!this.navigation.moveTo(route, 0.5)) return false;
+        this.pathEntity = route;
+        this.pathFailureRecovery.reset();
+        MillLog.major(this, "NAV-GATE exit route: gate=" + gate
+                + " exit=" + exit + " finalTarget=" + dest + " goal=" + this.goalKey);
+        return true;
+    }
+
     private boolean tryGroundRoute(Point dest) {
         long now = this.level.getGameTime();
         if (now < this.nextVanillaPathAttempt) return false;
         this.nextVanillaPathAttempt = now + 40L;
         this.navigation.stop();
+        // This must run before the direct search: a route over stone stairs
+        // can technically be valid while ignoring an accessible courtyard gate.
+        if (this.tryRecentGateExit(dest)) return true;
         Goal goal = Goal.goals.get(this.goalKey);
         int range = goal == null ? 1 : Math.max(1, goal.range(this));
         boolean stockGoal = isStockTransferGoal(goal);
