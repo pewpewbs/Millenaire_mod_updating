@@ -4,7 +4,8 @@
 package org.millenaire.common.pathing.atomicstryker;
 
 import java.util.ArrayList;
-import java.util.PriorityQueue;
+import java.util.HashMap;
+import java.util.Map;
 import org.millenaire.common.config.MillConfigValues;
 import org.millenaire.common.pathing.atomicstryker.AStarNode;
 import org.millenaire.common.pathing.atomicstryker.AStarPathPlannerJPS;
@@ -17,24 +18,30 @@ public class AStarWorkerJPS
 extends AStarWorker {
     private static final int MAX_SKIP_DISTANCE = 25;
     private static final int[][] neighbourOffsets = new int[][]{{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
-    private final PriorityQueue<AStarNode> openQueue = new PriorityQueue();
+    private final AStarOpenSet openQueue = new AStarOpenSet();
+    private final Map<AStarOpenSet.Position, AStarNode> closedIndex = new HashMap<>();
     private AStarNode currentNode;
 
     public AStarWorkerJPS(AStarPathPlannerJPS creator) {
         super(creator);
     }
 
-    private void addOrUpdateNode(AStarNode newNode) {
-        boolean found = false;
-        for (AStarNode toUpdate : this.closedNodes) {
-            if (!newNode.equals(toUpdate)) continue;
-            toUpdate.updateDistance(newNode.getG(), newNode.parent);
-            found = true;
-            break;
+    private void addOrUpdateNode(AStarNode candidate) {
+        AStarOpenSet.Position position = AStarOpenSet.Position.of(candidate);
+        AStarNode closed = this.closedIndex.get(position);
+        if (closed != null) {
+            if (closed.updateDistance(candidate.getG(), candidate.parent)) {
+                // An improved closed node must be searched again, not just
+                // given a new parent while remaining outside the open queue.
+                this.closedIndex.remove(position);
+                this.closedNodes.remove(closed);
+                this.openQueue.offer(closed);
+            }
+            return;
         }
-        if (!found) {
-            this.openQueue.offer(newNode);
-        }
+        // The indexed heap updates both the cost and heap ordering of an
+        // already-open node. PriorityQueue.offer could leave duplicates.
+        this.openQueue.offer(candidate);
     }
 
     private ArrayList<AStarNode> backTrace(AStarNode start) throws ThreadSafeUtilities.ChunkAccessException {
@@ -153,7 +160,8 @@ extends AStarWorker {
             for (int[] offset : neighbourOffsets) {
                 int nY = this.getGroundNodeHeight(x + offset[0], y, z + offset[1]);
                 if (nY <= 0) continue;
-                r.add(new AStarNode(x + offset[0], nY, z + offset[1], nY, node));
+                r.add(new AStarNode(x + offset[0], nY, z + offset[1],
+                        node.getG() + Math.abs(offset[0]) + Math.abs(offset[1]), node));
             }
         }
         return r;
@@ -191,6 +199,7 @@ extends AStarWorker {
         while (!this.openQueue.isEmpty() && !this.shouldInterrupt()) {
             this.currentNode = this.openQueue.poll();
             this.closedNodes.add(this.currentNode);
+            this.closedIndex.put(AStarOpenSet.Position.of(this.currentNode), this.currentNode);
             if (this.isNodeEnd(this.currentNode, end) || this.identifySuccessors(this.currentNode, nbLoop)) {
                 return this.backTrace(start);
             }
@@ -206,7 +215,7 @@ extends AStarWorker {
         ArrayList<AStarNode> successors = this.findNeighbours(node);
         for (AStarNode s : successors) {
             AStarNode jumpPoint = this.jump(s.x, s.y, s.z, x, y, z);
-            if (jumpPoint == null || this.closedNodes.contains(jumpPoint)) continue;
+            if (jumpPoint == null) continue;
             this.addOrUpdateNode(jumpPoint);
         }
         if (nbLoop == 0 && this.openQueue.isEmpty() && MillConfigValues.LogChunkLoader >= 1) {
@@ -228,7 +237,8 @@ extends AStarWorker {
         if ((y = this.getGroundNodeHeight(x, py, z)) == 0) {
             return null;
         }
-        if (this.isCoordsEnd(x, y, z, this.targetNode) || dist >= 25) {
+        if (this.isCoordsEnd(x, y, z, this.targetNode)
+                || dist - this.currentNode.getG() >= MAX_SKIP_DISTANCE) {
             return new AStarNode(x, y, z, dist, this.currentNode, this.targetNode);
         }
         int nxY = dx != 0 ? this.getGroundNodeHeight(x + dx, y, z) : 0;
