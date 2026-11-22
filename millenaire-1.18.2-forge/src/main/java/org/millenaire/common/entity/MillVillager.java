@@ -56,7 +56,6 @@ package org.millenaire.common.entity;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -247,12 +246,6 @@ IAStarPathedEntity {
     public MillWorldData mw;
     private volatile boolean pathFailedSincelastTick = false;
     private long nextVanillaPathAttempt = 0L;
-    private long nextStockGateProbeTick = 0L;
-    // A resident who entered a walled courtyard through a gate should prefer
-    // the same opening when leaving for a destination on the other side.
-    private BlockPos recentlyUsedGate = null;
-    private long recentlyUsedGateTick = Long.MIN_VALUE;
-    private long nextGateExitAttemptTick = 0L;
     private final org.millenaire.common.pathing.MovementWatchdog movementWatchdog = new org.millenaire.common.pathing.MovementWatchdog();
     private long nextPathFailureDiagnostic = 0L;
     private final PathFailureRecovery pathFailureRecovery = new PathFailureRecovery();
@@ -1566,13 +1559,6 @@ IAStarPathedEntity {
                 double distanceSquared = this.position().distanceToSqr(Vec3.atCenterOf(pos));
                 if (distanceSquared <= 8.0D) {
                     org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, pos);
-                    // Remember a gate only when physically beside its opening,
-                    // not merely while inspecting an upcoming route node.
-                    if (distanceSquared <= 2.25D
-                            && this.level.getBlockState(pos).getBlock() instanceof FenceGateBlock) {
-                        this.recentlyUsedGate = pos.immutable();
-                        this.recentlyUsedGateTick = this.level.getGameTime();
-                    }
                 }
             }
         }
@@ -2176,27 +2162,6 @@ IAStarPathedEntity {
         this.navigation.stop();
         this.pathEntity = null;
         this.nextVanillaPathAttempt = 0L;
-        // Even a formally "reachable" path can keep walking into the outside
-        // wall if the side gate never entered the chosen route. A physical stall
-        // is a separate reason to try the gate, before the teleport fallback.
-        if (isStockTransferGoal(goal) && dest != null) {
-            Path entrance = this.tryStockGateApproach(dest, Math.max(1, goal.range(this)));
-            if (entrance != null && entrance.getNodeCount() > 1) {
-                Node[] nodes = new Node[entrance.getNodeCount()];
-                for (int i = 0; i < nodes.length; i++) nodes[i] = entrance.getNode(i);
-                AS_PathEntity adapted = new AS_PathEntity(
-                        nodes, entrance.getTarget(), entrance.canReach());
-                if (this.navigation.moveTo(adapted, 0.5)) {
-                    this.pathEntity = adapted;
-                    this.nextVanillaPathAttempt = this.level.getGameTime() + 40L;
-                    this.pathFailureRecovery.reset();
-                    this.movementWatchdog.reset();
-                    MillLog.major(this, "NAV-GATE rescued stalled route: goal="
-                            + this.goalKey + " stock=" + dest);
-                    return;
-                }
-            }
-        }
         if (action == org.millenaire.common.pathing.MovementWatchdog.Action.RECOVER
                 && this.vtype != null && (!this.vtype.noTeleport
                     || this.getRecord() != null && this.getRecord().raidingVillage)) {
@@ -2224,366 +2189,14 @@ IAStarPathedEntity {
             this.level, eye, Vec3.atCenterOf(dest.getBlockPos()), dest.getBlockPos());
     }
 
-    /**
-     * When the stock is behind an enclosure, the nearest access node may lie
-     * against an outside wall. Try the actual fence gate as an intermediate
-     * waypoint instead of repeatedly choosing that inaccessible node.
-     *
-     * Server-only, bounded scan of loaded blocks near the stock destination.
-     * Rate-limited to once per six seconds per villager to protect server TPS.
-     */
-    private Path tryStockGateApproach(Point dest, int range) {
-        long now = this.level.getGameTime();
-        if (now < this.nextStockGateProbeTick) return null;
-        this.nextStockGateProbeTick = now + 120L;
-        if (dest == null || this.level.isClientSide) return null;
-
-        java.util.List<BlockPos> gates = new ArrayList<>();
-        BlockPos target = dest.getBlockPos();
-        for (int dx = -10; dx <= 10; dx++) {
-            for (int dz = -10; dz <= 10; dz++) {
-                if (dx * dx + dz * dz > 100) continue;
-                for (int dy = -2; dy <= 2; dy++) {
-                    BlockPos pos = target.offset(dx, dy, dz);
-                    if (!this.level.hasChunkAt(pos)
-                            || this.position().distanceToSqr(Vec3.atCenterOf(pos)) > 400.0D) continue;
-                    BlockState state = this.level.getBlockState(pos);
-                    if (!(state.getBlock() instanceof FenceGateBlock)
-                            || state.getValue(FenceGateBlock.POWERED)) continue;
-                    gates.add(pos.immutable());
-                }
-            }
-        }
-        // A gate can be several blocks to the side of the direct line to
-        // the chest; rank by its proximity to BOTH the villager and the stock.
-        gates.sort(Comparator.comparingDouble(pos ->
-            this.position().distanceTo(Vec3.atCenterOf(pos))
-            + Vec3.atCenterOf(pos).distanceTo(Vec3.atCenterOf(target))));
-
-        for (int i = 0; i < Math.min(3, gates.size()); i++) {
-            BlockPos gate = gates.get(i);
-            double gateDistanceSquared = this.position().distanceToSqr(Vec3.atCenterOf(gate));
-            // Do not swing open a livestock gate just to plan a route from
-            // twenty blocks away. The walk evaluator already allows a closed
-            // gate as a door node; keep it closed until a resident approaches.
-            boolean nearGate = gateDistanceSquared <= 12.25D;
-            if (nearGate) {
-                org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, gate);
-            }
-
-            // First verify that the gate itself is genuinely reachable. It
-            // must not become another inaccessible "nearest" route endpoint.
-            Path approach = this.navigation.createPath(gate, 0);
-            if (approach == null || !approach.canReach()
-                    || approach.getNodeCount() <= 0) continue;
-            Node endGate = approach.getEndNode();
-            if (endGate == null || endGate.asBlockPos().distManhattan(gate) > 1) continue;
-
-            // If opening the gate made a complete path possible, follow that.
-            Path through = this.navigation.createPath(target, Math.min(2, range - 1));
-            if (through != null && through.canReach() && through.getNodeCount() > 0) {
-                Node end = through.getEndNode();
-                if (new Point(end).horizontalDistanceTo(dest) < range
-                        && canSeeStockFromNode(end.x, end.y, end.z, dest)) {
-                    boolean passesGate = false;
-                    for (int index = 0; index < through.getNodeCount(); index++) {
-                        Node step = through.getNode(index);
-                        if (Math.abs(step.x - gate.getX()) <= 1
-                                && Math.abs(step.y - gate.getY()) <= 1
-                                && Math.abs(step.z - gate.getZ()) <= 1) {
-                            passesGate = true;
-                            break;
-                        }
-                    }
-                    if (passesGate) {
-                        MillLog.major(this, "NAV-GATE complete path: goal=" + this.goalKey
-                                + " gate=" + gate + " stock=" + target);
-                        return through;
-                    }
-                }
-            }
-
-            // A bounded first leg gets the resident to the side entrance.
-            // Once this leg finishes, the normal stock route is recalculated.
-            MillLog.major(this, "NAV-GATE waypoint: goal=" + this.goalKey
-                    + " gate=" + gate + " stock=" + target);
-            return approach;
-        }
-        if (!gates.isEmpty()) {
-            MillLog.major(this, "NAV-GATE ENTRY rejected: at=" + this.blockPosition()
-                    + " stock=" + target + " goal=" + this.goalKey
-                    + " detectedGates=" + gates.size());
-        }
-        return null;
-    }
-
-    /**
-     * Build one continuous route through the actual gate block, rather than
-     * asking A* for a point behind it (which may be reached via the roof).
-     * A* finds the safe approach to the gate; the last two level, checked
-     * blocks form the physical crossing. The next regular navigation update
-     * plans to the original goal from the far side.
-     */
-    /**
-     * Force a stock-courtyard exit through the physical gate instead of
-     * accepting a longer rooftop path to an outside waypoint.
-     *
-     * Search to the WALKABLE block just inside the closed gate: pathfinding
-     * to the gate itself can fail because it is currently closed. The last
-     * three local nodes are appended only after all positions are validated.
-     */
-    private boolean tryForcedGateCrossing(BlockPos gate, BlockPos exit,
-            net.minecraft.core.Direction outDirection, Point finalTarget) {
-        BlockPos inside = gate.relative(outDirection.getOpposite());
-        BlockPos outside = gate.relative(outDirection);
-        String reason = null;
-        Path approach = null;
-        if (!this.level.hasChunkAt(inside) || !this.level.hasChunkAt(gate)
-                || !this.level.hasChunkAt(outside) || !this.level.hasChunkAt(exit)) {
-            reason = "unloaded";
-        } else {
-            approach = this.navigation.createPath(inside, 0);
-            if (approach == null || !approach.canReach()
-                    || approach.getNodeCount() < 1 || approach.getEndNode() == null) {
-                reason = "noInsideApproach";
-            } else if (!approach.getEndNode().asBlockPos().equals(inside)) {
-                reason = "wrongInsideEndpoint";
-            } else {
-                double direct = this.position().distanceTo(Vec3.atCenterOf(inside));
-                if (approach.getNodeCount() > Math.max(8, Math.ceil(direct * 2.5D) + 4)) {
-                    reason = "insideDetourTooLong";
-                }
-                if (reason == null) {
-                    for (int i = 0; i < approach.getNodeCount(); i++) {
-                        Node step = approach.getNode(i);
-                        if (step.y > Math.max(this.blockPosition().getY(), gate.getY()) + 1) {
-                            reason = "insideApproachOnRoof";
-                            break;
-                        }
-                    }
-                }
-                if (reason == null) {
-                    try {
-                        if (!AStarStatic.isViable(this.level, inside.getX(), inside.getY(),
-                                inside.getZ(), 0, this.getPathingConfig())
-                                || !AStarStatic.isViable(this.level, gate.getX(), gate.getY(),
-                                gate.getZ(), 0, this.getPathingConfig())
-                                || !AStarStatic.isViable(this.level, outside.getX(), outside.getY(),
-                                outside.getZ(), 0, this.getPathingConfig())
-                                || !AStarStatic.isViable(this.level, exit.getX(), exit.getY(),
-                                exit.getZ(), 0, this.getPathingConfig())) {
-                            reason = "gateOrAdjacentBlocked";
-                        }
-                    } catch (ThreadSafeUtilities.ChunkAccessException exception) {
-                        reason = "chunkAccess";
-                    }
-                }
-                if (reason == null) {
-                    Node[] pathNodes = new Node[approach.getNodeCount() + 3];
-                    for (int i = 0; i < approach.getNodeCount(); i++) {
-                        pathNodes[i] = approach.getNode(i);
-                    }
-                    pathNodes[pathNodes.length - 3] = new Node(
-                            gate.getX(), gate.getY(), gate.getZ());
-                    pathNodes[pathNodes.length - 2] = new Node(
-                            outside.getX(), outside.getY(), outside.getZ());
-                    pathNodes[pathNodes.length - 1] = new Node(
-                            exit.getX(), exit.getY(), exit.getZ());
-
-                    // A waypoint must never advertise completion of the real goal.
-                    AS_PathEntity route = new AS_PathEntity(pathNodes, exit, false);
-                    if (this.navigation.moveTo(route, 0.5D)) {
-                        this.pathEntity = route;
-                        this.pathFailureRecovery.reset();
-                        this.recentlyUsedGate = gate.immutable();
-                        this.recentlyUsedGateTick = this.level.getGameTime();
-                        MillLog.major(this, "NAV-GATE EXIT forced-crossing: gate=" + gate
-                                + " inside=" + inside + " exit=" + exit
-                                + " finalTarget=" + finalTarget + " goal=" + this.goalKey
-                                + " nodes=" + pathNodes.length);
-                        return true;
-                    }
-                    reason = "moveToFailed";
-                }
-            }
-        }
-        MillLog.major(this, "NAV-GATE FORCE rejected: reason=" + reason
-                + " at=" + this.blockPosition() + " gate=" + gate
-                + " inside=" + inside + " exit=" + exit
-                + " goal=" + this.goalKey + " target=" + finalTarget
-                + " approachNodes=" + (approach == null ? 0 : approach.getNodeCount()));
-        return false;
-    }
-
-    /**
-     * Route out of a courtyard through a nearby fence gate, even if the
-     * villager was teleported INTO the enclosure and never walked past it.
-     * Search only locally, no chunk loads, and at most once every 160 ticks.
-     */
-    private boolean tryRecentGateExit(Point dest) {
-        if (dest == null || this.level.isClientSide) return false;
-        long now = this.level.getGameTime();
-        if (now < this.nextGateExitAttemptTick) return false;
-        if (this.getPos().horizontalDistanceTo(dest) < 5.0D) return false;
-        this.nextGateExitAttemptTick = now + 160L;
-
-        java.util.List<BlockPos> candidates = new ArrayList<>();
-        BlockPos feet = this.blockPosition();
-        if (this.recentlyUsedGate != null
-                && this.level.hasChunkAt(this.recentlyUsedGate)
-                && now >= this.recentlyUsedGateTick
-                && now - this.recentlyUsedGateTick < 1800L) {
-            candidates.add(this.recentlyUsedGate);
-        }
-
-        // Bounded fallback for teleport-in: the previous fix looked ONLY at
-        // recently used gates, which is empty after a teleport to a stock chest.
-        for (int dx = -8; dx <= 8; dx++) {
-            for (int dz = -8; dz <= 8; dz++) {
-                if (dx * dx + dz * dz > 64) continue;
-                for (int dy = -2; dy <= 2; dy++) {
-                    BlockPos pos = feet.offset(dx, dy, dz);
-                    if (!this.level.hasChunkAt(pos)) continue;
-                    BlockState state = this.level.getBlockState(pos);
-                    if (!(state.getBlock() instanceof FenceGateBlock)
-                            || state.getValue(FenceGateBlock.POWERED)
-                            || candidates.contains(pos)) continue;
-                    candidates.add(pos.immutable());
-                }
-            }
-        }
-        // Prefer a gate physically crossed earlier, otherwise use the closest
-        // candidate to avoid introducing unnecessary detours across a village.
-        BlockPos remembered = this.recentlyUsedGate;
-        candidates.sort(Comparator.comparingDouble(pos ->
-                (remembered != null && remembered.equals(pos) ? -1000.0D : 0.0D)
-                        + this.position().distanceTo(Vec3.atCenterOf(pos))));
-
-        int eligible = 0;
-        int pathRejected = 0;
-        int noRoute = 0;
-        int wrongEndpoint = 0;
-        int bypassedOpening = 0;
-        int moveFailed = 0;
-        int unloadedExit = 0;
-        BlockPos lastEligibleGate = null;
-        int checked = 0;
-        for (BlockPos gate : candidates) {
-            if (checked >= 3) break;
-            BlockState state = this.level.getBlockState(gate);
-            if (!(state.getBlock() instanceof FenceGateBlock)) continue;
-            Vec3 centre = Vec3.atCenterOf(gate);
-            double near = this.position().distanceToSqr(centre);
-            if (near > 81.0D || near < 1.0D) continue;
-
-            net.minecraft.core.Direction.Axis axis =
-                    state.getValue(FenceGateBlock.FACING).getAxis();
-            double residentSide = axis == net.minecraft.core.Direction.Axis.X
-                    ? this.getX() - centre.x : this.getZ() - centre.z;
-            double targetSide = axis == net.minecraft.core.Direction.Axis.X
-                    ? dest.x - centre.x : dest.z - centre.z;
-            // We only need this gate if it separates the resident and target.
-            if (Math.abs(residentSide) < 0.75D
-                    || residentSide * targetSide >= -3.0D) continue;
-            eligible++;
-            checked++;
-            lastEligibleGate = gate;
-
-            net.minecraft.core.Direction exitDirection =
-                    axis == net.minecraft.core.Direction.Axis.X
-                    ? (targetSide > 0 ? net.minecraft.core.Direction.EAST
-                            : net.minecraft.core.Direction.WEST)
-                    : (targetSide > 0 ? net.minecraft.core.Direction.SOUTH
-                            : net.minecraft.core.Direction.NORTH);
-            BlockPos exit = gate.relative(exitDirection, 2);
-            if (!this.level.hasChunkAt(exit)) {
-                unloadedExit++;
-                continue;
-            }
-
-            // Keep the gate CLOSED while computing the route so livestock stay
-            // inside. The route follower will open it only near the passage.
-            Path through = this.navigation.createPath(exit, 0);
-            if (through == null || !through.canReach()
-                    || through.getNodeCount() <= 1 || through.getEndNode() == null) {
-                noRoute++;
-                pathRejected++;
-                continue;
-            }
-            if (through.getEndNode().asBlockPos().distManhattan(exit) > 1) {
-                wrongEndpoint++;
-                pathRejected++;
-                continue;
-            }
-
-            // Reaching a waypoint NEAR a gate via the wall is not equivalent
-            // to actually walking through the opening.
-            boolean crossesOpening = false;
-            for (int i = 0; i < through.getNodeCount(); i++) {
-                Node step = through.getNode(i);
-                if (step.x == gate.getX() && step.z == gate.getZ()
-                        && step.y == gate.getY()) {
-                    crossesOpening = true;
-                    break;
-                }
-            }
-            if (!crossesOpening) {
-                // A* found an outside destination but routed over the roof.
-                // Use a two-block physical crossing after a separately planned
-                // approach to the gate, instead of accepting that bypass.
-                if (this.tryForcedGateCrossing(gate, exit, exitDirection, dest)) {
-                    return true;
-                }
-                bypassedOpening++;
-                pathRejected++;
-                continue;
-            }
-
-            Node[] nodes = new Node[through.getNodeCount()];
-            for (int i = 0; i < nodes.length; i++) nodes[i] = through.getNode(i);
-            // This only reaches the outside waypoint, NOT the actual goal.
-            // Mark it partial so checkGoals cannot complete an unrelated
-            // task simply because the NPC arrived near the gate.
-            AS_PathEntity route = new AS_PathEntity(
-                    nodes, through.getTarget(), false);
-            if (!this.navigation.moveTo(route, 0.5)) {
-                moveFailed++;
-                pathRejected++;
-                continue;
-            }
-            this.pathEntity = route;
-            this.pathFailureRecovery.reset();
-            this.recentlyUsedGate = gate.immutable();
-            this.recentlyUsedGateTick = now;
-            MillLog.major(this, "NAV-GATE EXIT chosen gate=" + gate
-                    + " exit=" + exit + " finalTarget=" + dest
-                    + " goal=" + this.goalKey + " nodes=" + through.getNodeCount());
-            return true;
-        }
-        // Rejected routes are only actionable when the gate actually separates
-        // the resident from the target. Log failure categories rather than a
-        // single counter; otherwise every nearby unrelated gate floods the log.
-        if (eligible > 0) {
-            MillLog.major(this, "NAV-GATE EXIT rejected: at=" + this.blockPosition()
-                    + " target=" + dest + " goal=" + this.goalKey
-                    + " detectedGates=" + candidates.size()
-                    + " eligibleGates=" + eligible + " pathRejected=" + pathRejected
-                    + " gate=" + lastEligibleGate
-                    + " noRoute=" + noRoute + " wrongEndpoint=" + wrongEndpoint
-                    + " bypassedOpening=" + bypassedOpening
-                    + " moveFailed=" + moveFailed + " unloadedExit=" + unloadedExit);
-        }
-        return false;
-    }
+    // Movement is selected by path cost and terrain clearance; no fixed
+    // courtyard/side-gate waypoints are injected into normal navigation.
 
     private boolean tryGroundRoute(Point dest) {
         long now = this.level.getGameTime();
         if (now < this.nextVanillaPathAttempt) return false;
         this.nextVanillaPathAttempt = now + 40L;
         this.navigation.stop();
-        // This must run before the direct search: a route over stone stairs
-        // can technically be valid while ignoring an accessible courtyard gate.
-        if (this.tryRecentGateExit(dest)) return true;
         Goal goal = Goal.goals.get(this.goalKey);
         int range = goal == null ? 1 : Math.max(1, goal.range(this));
         boolean stockGoal = isStockTransferGoal(goal);
@@ -2631,16 +2244,6 @@ IAStarPathedEntity {
                 }
             } catch (ThreadSafeUtilities.ChunkAccessException exception) {
                 // The normal pathfinder can still retry as chunks become available.
-            }
-        }
-
-        // If the stock is behind a wall, search for an actual nearby gate,
-        // including side entrances outside the direct villager-to-stock line.
-        if (stockGoal && !reached) {
-            Path gateAccess = this.tryStockGateApproach(dest, range);
-            if (gateAccess != null) {
-                fallback = gateAccess;
-                reached = true; // This may be a waypoint, not permission to transfer goods.
             }
         }
 
