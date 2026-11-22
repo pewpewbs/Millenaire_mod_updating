@@ -2363,6 +2363,12 @@ IAStarPathedEntity {
 
         int eligible = 0;
         int pathRejected = 0;
+        int noRoute = 0;
+        int wrongEndpoint = 0;
+        int bypassedOpening = 0;
+        int moveFailed = 0;
+        int unloadedExit = 0;
+        BlockPos lastEligibleGate = null;
         int checked = 0;
         for (BlockPos gate : candidates) {
             if (checked >= 3) break;
@@ -2383,6 +2389,7 @@ IAStarPathedEntity {
                     || residentSide * targetSide >= -3.0D) continue;
             eligible++;
             checked++;
+            lastEligibleGate = gate;
 
             net.minecraft.core.Direction exitDirection =
                     axis == net.minecraft.core.Direction.Axis.X
@@ -2391,14 +2398,22 @@ IAStarPathedEntity {
                     : (targetSide > 0 ? net.minecraft.core.Direction.SOUTH
                             : net.minecraft.core.Direction.NORTH);
             BlockPos exit = gate.relative(exitDirection, 2);
-            if (!this.level.hasChunkAt(exit)) continue;
+            if (!this.level.hasChunkAt(exit)) {
+                unloadedExit++;
+                continue;
+            }
 
             // Keep the gate CLOSED while computing the route so livestock stay
             // inside. The route follower will open it only near the passage.
             Path through = this.navigation.createPath(exit, 0);
             if (through == null || !through.canReach()
-                    || through.getNodeCount() <= 1 || through.getEndNode() == null
-                    || through.getEndNode().asBlockPos().distManhattan(exit) > 1) {
+                    || through.getNodeCount() <= 1 || through.getEndNode() == null) {
+                noRoute++;
+                pathRejected++;
+                continue;
+            }
+            if (through.getEndNode().asBlockPos().distManhattan(exit) > 1) {
+                wrongEndpoint++;
                 pathRejected++;
                 continue;
             }
@@ -2415,6 +2430,7 @@ IAStarPathedEntity {
                 }
             }
             if (!crossesOpening) {
+                bypassedOpening++;
                 pathRejected++;
                 continue;
             }
@@ -2427,6 +2443,7 @@ IAStarPathedEntity {
             AS_PathEntity route = new AS_PathEntity(
                     nodes, through.getTarget(), false);
             if (!this.navigation.moveTo(route, 0.5)) {
+                moveFailed++;
                 pathRejected++;
                 continue;
             }
@@ -2439,11 +2456,18 @@ IAStarPathedEntity {
                     + " goal=" + this.goalKey + " nodes=" + through.getNodeCount());
             return true;
         }
-        if (!candidates.isEmpty()) {
+        // Rejected routes are only actionable when the gate actually separates
+        // the resident from the target. Log failure categories rather than a
+        // single counter; otherwise every nearby unrelated gate floods the log.
+        if (eligible > 0) {
             MillLog.major(this, "NAV-GATE EXIT rejected: at=" + this.blockPosition()
                     + " target=" + dest + " goal=" + this.goalKey
                     + " detectedGates=" + candidates.size()
-                    + " eligibleGates=" + eligible + " pathRejected=" + pathRejected);
+                    + " eligibleGates=" + eligible + " pathRejected=" + pathRejected
+                    + " gate=" + lastEligibleGate
+                    + " noRoute=" + noRoute + " wrongEndpoint=" + wrongEndpoint
+                    + " bypassedOpening=" + bypassedOpening
+                    + " moveFailed=" + moveFailed + " unloadedExit=" + unloadedExit);
         }
         return false;
     }
