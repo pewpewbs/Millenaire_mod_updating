@@ -2244,8 +2244,14 @@ IAStarPathedEntity {
 
         for (int i = 0; i < Math.min(3, gates.size()); i++) {
             BlockPos gate = gates.get(i);
-            org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, gate);
-            if (!this.level.getBlockState(gate).getValue(FenceGateBlock.OPEN)) continue;
+            double gateDistanceSquared = this.position().distanceToSqr(Vec3.atCenterOf(gate));
+            // Do not swing open a livestock gate just to plan a route from
+            // twenty blocks away. The walk evaluator already allows a closed
+            // gate as a door node; keep it closed until a resident approaches.
+            boolean nearGate = gateDistanceSquared <= 12.25D;
+            if (nearGate) {
+                org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, gate);
+            }
 
             // First verify that the gate itself is genuinely reachable. It
             // must not become another inaccessible "nearest" route endpoint.
