@@ -1542,12 +1542,14 @@ IAStarPathedEntity {
             this.doorToClose = null;
         }
 
-        // Open all door/gate nodes along the active path. A shared manager closes
-        // them only after the entire passage is clear, not after one villager leaves.
+        // Open only upcoming door/gate nodes. Including nextNodeIndex()-1
+        // repeatedly re-opened the door BEHIND a resident after they crossed
+        // it, making some homes appear to close on arrival and open on exit.
+        // The shared manager keeps a doorway open while someone occupies it.
         Path route = this.navigation.getPath();
         if (route != null && !route.isDone()) {
             java.util.Set<net.minecraft.core.BlockPos> candidates = new java.util.LinkedHashSet<>();
-            for (int i = Math.max(0, route.getNextNodeIndex() - 1);
+            for (int i = Math.max(0, route.getNextNodeIndex());
                     i < Math.min(route.getNodeCount(), route.getNextNodeIndex() + 3); i++) {
                 var node = route.getNode(i);
                 if (node == null) continue;
