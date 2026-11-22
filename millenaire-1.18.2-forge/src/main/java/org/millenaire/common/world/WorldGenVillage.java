@@ -180,6 +180,7 @@ public class WorldGenVillage {
     private boolean generateCustomVillage(Point p, Level world, VillageType villageType, Player player, Random random) throws MillLog.MillenaireException {
         long startTime = System.nanoTime();
         MillWorldData mw = Mill.getMillWorld(world);
+        if (overlapsExistingVillageTerritory(mw, p, villageType)) return false;
         BuildingLocation location = new BuildingLocation(villageType.customCentre, p, true);
         Building townHall = new Building(mw, villageType.culture, villageType, location, true, true, p);
         villageType.customCentre.registerResources(townHall, location);
@@ -190,7 +191,7 @@ public class WorldGenVillage {
         }
         townHall.buildingProjects.get((Object)BuildingProject.EnumProjects.CUSTOMBUILDINGS).add(project);
         townHall.initialiseVillage();
-        mw.registerVillageLocation(world, townHall.getPos(), townHall.getVillageQualifiedName(), townHall.villageType, townHall.culture, true, player.getName().getString());
+        mw.registerVillageLocation(world, townHall.getPos(), townHall.getVillageQualifiedName(), townHall.villageType, townHall.culture, true, player == null ? "" : player.getName().getString());
         townHall.initialiseRelations(null);
         townHall.updateWorldInfo();
         townHall.storeItemStack(ItemParchment.createParchmentForVillage(townHall.getTownHall()));
@@ -229,6 +230,8 @@ public class WorldGenVillage {
         ArrayList<BuildingLocation> plannedBuildings = new ArrayList<BuildingLocation>();
         MillWorldData mw = Mill.getMillWorld(world);
         targetPos = new Point(targetPos.x, WorldUtilities.findTopSoilBlock(world, targetPos.getiX(), targetPos.getiZ()), targetPos.z);
+        // Claim radii, not just centre-to-centre limits, must not intersect.
+        if (overlapsExistingVillageTerritory(mw, targetPos, villageType)) return false;
         for (int x = targetPos.getChunkX() - villageType.radius / 16 - 1; x <= targetPos.getChunkX() + villageType.radius / 16; ++x) {
             for (int z = targetPos.getChunkZ() - villageType.radius / 16 - 1; z <= targetPos.getChunkZ() + villageType.radius / 16; ++z) {
                 if (world.hasChunk(x, z)) continue;
@@ -251,6 +254,8 @@ public class WorldGenVillage {
             return false;
         }
         Point thPos = location.pos;
+        // The chosen town hall can move away from the candidate point during layout.
+        if (overlapsExistingVillageTerritory(mw, thPos, villageType)) return false;
         if (WorldGenVillage.isWithinSpawnRadiusProtection(world, villageType, thPos)) {
             if (Mill.proxy.isTrueServer()) {
                 if (player != null) {
@@ -570,6 +575,25 @@ public class WorldGenVillage {
             MillLog.printException("Exception when generating village:", e);
             return false;
         }
+    }
+
+    /**
+     * A village claims a circular horizontal area. This also applies to
+     * player-spawned and custom villages, which previously bypassed the
+     * standard centre-distance check. Existing worlds are never modified.
+     */
+    private static boolean overlapsExistingVillageTerritory(MillWorldData mw, Point centre, VillageType requested) {
+        if (mw == null || requested == null || requested.lonebuilding) return false;
+        int newRadius = Math.max(0, requested.radius);
+        for (Point otherCentre : mw.villagesList.pos) {
+            if (otherCentre == null) continue;
+            Building existing = mw.getBuilding(otherCentre);
+            int existingRadius = existing != null && existing.villageType != null
+                ? existing.villageType.radius : MillConfigValues.VillageRadius;
+            double minimum = (double)newRadius + Math.max(0, existingRadius);
+            if (centre.horizontalDistanceTo(otherCentre) < minimum) return true;
+        }
+        return false;
     }
 
     private boolean generateVillageAtPoint_canAttemptVillage(Level world, Player generatingPlayer, int minDistance, MillWorldData mw, Point p, long startTime) {
