@@ -48,16 +48,10 @@ extends GoalGeneric {
 
     @Override
     public int actionDuration(MillVillager villager) {
-        Block block = this.sourceBlockState.getBlock();
-        if (block == Blocks.STONE || block == Blocks.SANDSTONE) {
-            int toolEfficiency = (int)villager.getBestPickaxe().getDestroySpeed(new ItemStack((Item)villager.getBestPickaxe(), 1), Blocks.SANDSTONE.defaultBlockState());
-            return 140 - 4 * toolEfficiency;
-        }
-        if (block == Blocks.SAND || block == Blocks.CLAY || block == Blocks.GRAVEL) {
-            int toolEfficiency = (int)villager.getBestShovel().getDestroySpeed(new ItemStack((Item)villager.getBestShovel(), 1), Blocks.SAND.defaultBlockState());
-            return 140 - 4 * toolEfficiency;
-        }
-        return 70;
+        // Generic goal durations are configured in milliseconds. The previous
+        // 70-140 ms tool-speed override silently ignored duration=80000 in
+        // Byzantine quarry goals, allowing full loot batches almost instantly.
+        return Math.max(500, this.duration);
     }
 
     @Override
