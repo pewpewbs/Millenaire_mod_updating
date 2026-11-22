@@ -1527,37 +1527,55 @@ IAStarPathedEntity {
 
     private void handleDoorsAndFenceGates() {
         if (this.level.isClientSide) return;
+
+        // Convert the previous per-villager closing hint into a shared lease.
         if (this.doorToClose != null) {
-            var pos = this.doorToClose.getBlockPos();
-            if (this.position().distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos)) > 9.0
-                    && this.level.getEntitiesOfClass(LivingEntity.class,
-                        new AABB(pos).inflate(0.7, 1.0, 0.7), e -> e.isAlive()).isEmpty()) {
-                var state = this.level.getBlockState(pos);
-                if (BlockItemUtilities.isWoodenDoor(state.getBlock()) && state.getValue(DoorBlock.OPEN))
-                    ((DoorBlock)state.getBlock()).setOpen(null, this.level, state, pos, false);
-                else if (state.getBlock() instanceof FenceGateBlock)
-                    this.closeFenceGate(pos.getX(), pos.getY(), pos.getZ());
-                this.doorToClose = null;
+            org.millenaire.common.pathing.VillageDoorAccess.adoptLegacy(
+                this.level, this.doorToClose.getBlockPos());
+            this.doorToClose = null;
+        }
+
+        // Open all door/gate nodes along the active path. A shared manager closes
+        // them only after the entire passage is clear, not after one villager leaves.
+        Path route = this.navigation.getPath();
+        if (route != null && !route.isDone()) {
+            java.util.Set<net.minecraft.core.BlockPos> candidates = new java.util.LinkedHashSet<>();
+            for (int i = Math.max(0, route.getNextNodeIndex() - 1);
+                    i < Math.min(route.getNodeCount(), route.getNextNodeIndex() + 3); i++) {
+                var node = route.getNode(i);
+                if (node == null) continue;
+                var pos = node.asBlockPos();
+                candidates.add(pos);
+                candidates.add(pos.below());
+                candidates.add(pos.above());
+            }
+            for (var pos : candidates) {
+                if (this.position().distanceToSqr(Vec3.atCenterOf(pos)) <= 8.0D)
+                    org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, pos);
             }
         }
-        // Use the route actually followed by navigation, including native recomputations.
-        Path route = this.navigation.getPath();
-        if (route == null || route.isDone()) return;
-        java.util.Set<net.minecraft.core.BlockPos> candidates = new java.util.LinkedHashSet<>();
-        for (int i = Math.max(0, route.getNextNodeIndex() - 1);
-                i < Math.min(route.getNodeCount(), route.getNextNodeIndex() + 3); i++) {
-            var pos = route.getNode(i).asBlockPos();
-            candidates.add(pos); candidates.add(pos.below()); candidates.add(pos.above());
-        }
-        for (var pos : candidates) {
-            if (this.position().distanceToSqr(Vec3.atCenterOf(pos)) > 6.25) continue;
-            var state = this.level.getBlockState(pos);
-            if (BlockItemUtilities.isWoodenDoor(state.getBlock())) {
-                ((DoorBlock)state.getBlock()).setOpen(null, this.level, state, pos, true);
-                this.doorToClose = new Point(pos);
-            } else if (state.getBlock() instanceof FenceGateBlock) {
-                this.openFenceGate(pos.getX(), pos.getY(), pos.getZ());
-                this.doorToClose = new Point(pos);
+
+        // If the closed passage prevented a route from being created, allow nearby
+        // doors in the *direction of travel* to open so a retry can find the exit.
+        if (route != null && !route.isDone() || this.stopMoving || this.getPathDestPoint() == null
+                || (this.level.getGameTime() + this.getVillagerId()) % 4L != 0L) return;
+        Vec3 target = Vec3.atCenterOf(this.getPathDestPoint().getBlockPos());
+        double dx = target.x - this.getX(), dz = target.z - this.getZ();
+        double length = Math.sqrt(dx * dx + dz * dz);
+        if (length <= 2.0D) return;
+        dx /= length;
+        dz /= length;
+        var feet = this.blockPosition();
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
+                for (int y = 0; y <= 1; y++) {
+                    var pos = feet.offset(x, y, z);
+                    Vec3 middle = Vec3.atCenterOf(pos);
+                    double forward = (middle.x - this.getX()) * dx + (middle.z - this.getZ()) * dz;
+                    if (forward < 0.1D || forward > 3.0D
+                            || this.position().distanceToSqr(middle) > 8.0D) continue;
+                    org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, pos);
+                }
             }
         }
     }
