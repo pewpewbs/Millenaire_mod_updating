@@ -834,8 +834,15 @@ IAStarPathedEntity {
                     destNode = new AStarNode(dest.getiX(), dest.getiY(), dest.getiZ());
                 } else {
                     AStarNode[] possibles = AStarStatic.getAccessNodesSorted(this.level, this.doubleToInt(this.getX()), this.doubleToInt(this.getY()), this.doubleToInt(this.getZ()), this.getPathDestPoint().getiX(), this.getPathDestPoint().getiY(), this.getPathDestPoint().getiZ(), this.getPathingConfig());
-                    if (possibles.length != 0) {
-                        destNode = possibles[0];
+                    boolean stockGoal = isStockTransferGoal(Goal.goals.get(this.goalKey));
+                    for (AStarNode candidate : possibles) {
+                        // The closest geometrical node can be on the other side of a wall.
+                        // A genuine stock access node must have line of sight to the stock point.
+                        if (!stockGoal || canSeeStockFromNode(candidate.x, candidate.y,
+                                candidate.z, dest)) {
+                            destNode = candidate;
+                            break;
+                        }
                     }
                 }
                 if (destNode != null) {
@@ -2161,28 +2168,94 @@ IAStarPathedEntity {
         }
     }
 
+    private static boolean isStockTransferGoal(Goal goal) {
+        return goal instanceof org.millenaire.common.goal.GoalGetResourcesForShops
+                || goal instanceof org.millenaire.common.goal.GoalGetGoodsForHousehold
+                || goal instanceof org.millenaire.common.goal.GoalDeliverResourcesShop
+                || goal instanceof org.millenaire.common.goal.GoalDeliverGoodsHousehold
+                || goal instanceof org.millenaire.common.goal.GoalBringBackResourcesHome;
+    }
+
+    private boolean canSeeStockFromNode(int x, int y, int z, Point dest) {
+        if (dest == null) return false;
+        net.minecraft.core.BlockPos stand = new net.minecraft.core.BlockPos(x, y, z);
+        Vec3 eye = Vec3.atBottomCenterOf(stand).add(0, 0.8D, 0);
+        return org.millenaire.common.goal.WorkAccess.visible(
+            this.level, eye, Vec3.atCenterOf(dest.getBlockPos()), dest.getBlockPos());
+    }
+
     private boolean tryGroundRoute(Point dest) {
         long now = this.level.getGameTime();
-        if (now >= this.nextVanillaPathAttempt) {
-            this.nextVanillaPathAttempt = now + 40L;
-            this.navigation.stop();
-            Goal goal = Goal.goals.get(this.goalKey);
-            int range = goal == null ? 1 : Math.max(1, goal.range(this));
-            Path fallback = this.navigation.createPath(dest.getBlockPos(), Math.min(2, range - 1));
-            boolean reached = fallback != null && fallback.canReach() && fallback.getNodeCount() > 0
-                    && new Point(fallback.getEndNode()).horizontalDistanceTo(dest) < range;
-            boolean progressing = org.millenaire.common.pathing.PartialPathRecovery.canUse(fallback,
-                    this.position(), new Vec3(dest.x, dest.y, dest.z));
-            if (reached || progressing) {
-                Node[] nodes = new Node[fallback.getNodeCount()];
-                for (int i = 0; i < nodes.length; i++) nodes[i] = fallback.getNode(i);
-                AS_PathEntity adapted = new AS_PathEntity(nodes, fallback.getTarget(), fallback.canReach());
-                if (this.navigation.moveTo(adapted, 0.5)) {
-                    this.pathEntity = adapted;
-                    this.pathFailureRecovery.reset();
-                    return true;
+        if (now < this.nextVanillaPathAttempt) return false;
+        this.nextVanillaPathAttempt = now + 40L;
+        this.navigation.stop();
+        Goal goal = Goal.goals.get(this.goalKey);
+        int range = goal == null ? 1 : Math.max(1, goal.range(this));
+        boolean stockGoal = isStockTransferGoal(goal);
+        Path fallback = this.navigation.createPath(dest.getBlockPos(), Math.min(2, range - 1));
+        boolean reached = fallback != null && fallback.canReach() && fallback.getNodeCount() > 0
+                && new Point(fallback.getEndNode()).horizontalDistanceTo(dest) < range;
+        if (reached && stockGoal) {
+            Node end = fallback.getEndNode();
+            reached = canSeeStockFromNode(end.x, end.y, end.z, dest);
+        }
+
+        // A partial route that stops at the outside face of a wall is not a route
+        // to the stock. Search all visible, physically valid approach positions
+        // in one multi-target search, rather than picking the first candidate.
+        if (stockGoal && !reached) {
+            try {
+                java.util.Set<net.minecraft.core.BlockPos> access =
+                        new java.util.LinkedHashSet<>();
+                AStarNode[] candidates = AStarStatic.getAccessNodesSorted(
+                        this.level, this.blockPosition().getX(), this.blockPosition().getY(),
+                        this.blockPosition().getZ(), dest.getiX(), dest.getiY(),
+                        dest.getiZ(), this.getPathingConfig());
+                for (AStarNode candidate : candidates) {
+                    if (Math.abs(candidate.y - dest.getiY()) > 1
+                            || Math.abs(candidate.x - dest.getiX()) > 2
+                            || Math.abs(candidate.z - dest.getiZ()) > 2
+                            || !canSeeStockFromNode(candidate.x, candidate.y, candidate.z, dest)) {
+                        continue;
+                    }
+                    access.add(new net.minecraft.core.BlockPos(
+                            candidate.x, candidate.y, candidate.z));
+                    if (access.size() >= 32) break;
                 }
+                if (!access.isEmpty()) {
+                    Path alternatives = this.navigation.createPath(access, 0);
+                    if (alternatives != null && alternatives.canReach()
+                            && alternatives.getNodeCount() > 0) {
+                        Node end = alternatives.getEndNode();
+                        if (new Point(end).horizontalDistanceTo(dest) < range
+                                && canSeeStockFromNode(end.x, end.y, end.z, dest)) {
+                            fallback = alternatives;
+                            reached = true;
+                        }
+                    }
+                }
+            } catch (ThreadSafeUtilities.ChunkAccessException exception) {
+                // The normal pathfinder can still retry as chunks become available.
             }
+        }
+
+        boolean progressing = !reached
+                && org.millenaire.common.pathing.PartialPathRecovery.canUse(
+                    fallback, this.position(), new Vec3(dest.x, dest.y, dest.z));
+        if (stockGoal && fallback != null && fallback.getEndNode() != null
+                && new Point(fallback.getEndNode()).horizontalDistanceTo(dest)
+                    <= Math.max(6, range + 2)) {
+            // Never accept a short partial approach ending immediately at a wall.
+            progressing = false;
+        }
+        if (!reached && !progressing) return false;
+        Node[] nodes = new Node[fallback.getNodeCount()];
+        for (int i = 0; i < nodes.length; i++) nodes[i] = fallback.getNode(i);
+        AS_PathEntity adapted = new AS_PathEntity(nodes, fallback.getTarget(), fallback.canReach());
+        if (this.navigation.moveTo(adapted, 0.5)) {
+            this.pathEntity = adapted;
+            this.pathFailureRecovery.reset();
+            return true;
         }
         return false;
     }
