@@ -49,9 +49,9 @@ extends GoalGeneric {
     @Override
     public int actionDuration(MillVillager villager) {
         // Generic goal durations are configured in milliseconds. The previous
-        // 70-140 ms tool-speed override silently ignored duration=80000 in
+        // 70-140 tick tool-speed override silently ignored duration=80000 in
         // Byzantine quarry goals, allowing full loot batches almost instantly.
-        return Math.max(500, this.duration);
+        return Math.max(1, this.duration);
     }
 
     @Override
