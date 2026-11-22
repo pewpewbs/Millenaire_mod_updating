@@ -2309,18 +2309,14 @@ IAStarPathedEntity {
                     + " gate=" + gate + " stock=" + target);
             return approach;
         }
+        if (!gates.isEmpty()) {
+            MillLog.major(this, "NAV-GATE ENTRY rejected: at=" + this.blockPosition()
+                    + " stock=" + target + " goal=" + this.goalKey
+                    + " detectedGates=" + gates.size());
+        }
         return null;
     }
 
-
-    /**
-     * Try exiting through the gate this villager recently approached. This is
-     * independent of the current goal: a stock pickup can be followed by a
-     * completely different task outside the courtyard.
-     *
-     * Limited to one local route request per 8 seconds, with a clear side-of-
-     * gate check. Ordinary pathfinding remains available if no exit route works.
-     */
     /**
      * Route out of a courtyard through a nearby fence gate, even if the
      * villager was teleported INTO the enclosure and never walked past it.
