@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities; public class WorldUtilities { public static int getItemsFromChest(net.minecraft.world.Container inv,net.minecraft.world.item.Item item,int meta,int count){throw new UnsupportedOperationException("Not part of this fixture");} }

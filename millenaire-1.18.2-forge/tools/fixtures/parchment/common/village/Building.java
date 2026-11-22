@@ -1,0 +1,2 @@
+package org.millenaire.common.village;
+public class Building { public boolean isActive=true; public org.millenaire.common.utilities.Point getPos(){return new org.millenaire.common.utilities.Point(37,-42,99);} public String getVillageQualifiedName(){return "Village test";} }

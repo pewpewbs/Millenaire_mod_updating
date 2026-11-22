@@ -1,0 +1,2 @@
+package org.millenaire.common.village;
+public class Building { public boolean isTownhall; public Info winfo; public Type villageType; public String getVillageQualifiedName(){return "village";} public static class Info { public int mapStartX,mapStartZ,length,width; } public static class Type { public boolean lonebuilding; } }

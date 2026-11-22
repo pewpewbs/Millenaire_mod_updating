@@ -1,0 +1,5 @@
+package org.millenaire.common.utilities;import net.minecraft.world.Container;import net.minecraft.world.item.*;import net.minecraft.world.entity.player.Player;public class MillCommonUtilities {
+ public static int money=500;public static int countMoney(Container c){return money;}public static void changeMoney(Container c,int delta,Player p){money+=delta;}
+ public static int countChestItems(Container c,Item item,int meta){int n=0;for(int i=0;i<c.getContainerSize();i++)if(c.getItem(i).is(item))n+=c.getItem(i).getCount();return n;}
+ public static int putItemsInChest(Container c,Item item,int meta,int count){int left=count;for(int i=0;i<c.getContainerSize()&&left>0;i++){var s=c.getItem(i);if(s.isEmpty()){int n=Math.min(left,item.getMaxStackSize());c.setItem(i,new ItemStack(item,n));left-=n;}else if(s.is(item)){int n=Math.min(left,s.getMaxStackSize()-s.getCount());s.grow(n);left-=n;}}return count-left;}
+}

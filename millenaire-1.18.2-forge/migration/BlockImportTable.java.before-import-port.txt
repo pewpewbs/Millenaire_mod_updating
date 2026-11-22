@@ -1,0 +1,73 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.block.Block
+ *  net.minecraft.block.ITileEntityProvider
+ *  net.minecraft.block.SoundType
+ *  net.minecraft.block.material.Material
+ *  net.minecraft.block.state.IBlockState
+ *  net.minecraft.client.renderer.block.model.ModelResourceLocation
+ *  net.minecraft.entity.player.EntityPlayer
+ *  net.minecraft.item.Item
+ *  net.minecraft.tileentity.TileEntity
+ *  net.minecraft.util.EnumFacing
+ *  net.minecraft.util.EnumHand
+ *  net.minecraft.util.math.BlockPos
+ *  net.minecraft.world.World
+ *  net.minecraftforge.client.model.ModelLoader
+ *  net.minecraftforge.fml.relauncher.Side
+ *  net.minecraftforge.fml.relauncher.SideOnly
+ */
+package org.millenaire.common.block;
+
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.millenaire.common.block.MillBlocks;
+import org.millenaire.common.entity.TileEntityImportTable;
+
+public class BlockImportTable
+extends Block
+implements EntityBlock {
+    public BlockImportTable(String blockName) {
+        super(Material.WOOD);
+        this.func_149663_c("millenaire." + blockName);
+        this.setRegistryName(blockName);
+        this.func_149711_c(1.0f);
+        this.func_149647_a(MillBlocks.tabMillenaireContentCreator);
+        this.func_149672_a(SoundType.WOOD);
+    }
+
+    public BlockEntity func_149915_a(Level worldIn, int meta) {
+        return new TileEntityImportTable();
+    }
+
+    @OnlyIn(value=Dist.CLIENT)
+    public void initModel() {
+        ModelLoader.setCustomModelResourceLocation((Item)Item.byBlock((Block)this), (int)0, (ModelResourceLocation)new ModelResourceLocation(this.getRegistryName(), ""));
+    }
+
+    public boolean func_180639_a(Level world, BlockPos pos, BlockState state, Player entityplayer, InteractionHand hand, Direction facing, float hitX, float hitY, float hitZ) {
+        TileEntityImportTable importTable = (TileEntityImportTable)world.getBlockEntity(pos);
+        if (importTable == null) {
+            return false;
+        }
+        importTable.activate(entityplayer);
+        return true;
+    }
+}
+

@@ -1,0 +1,1 @@
+package org.millenaire.common.forge;public class Mill {public static final org.millenaire.common.world.MillWorldData world=new org.millenaire.common.world.MillWorldData();public static org.millenaire.common.world.MillWorldData getMillWorld(net.minecraft.world.level.Level level){return world;}}

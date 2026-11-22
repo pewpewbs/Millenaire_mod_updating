@@ -1,0 +1,1 @@
+package org.millenaire.common.goal;public class Goal {public static class GoalInformation {}}

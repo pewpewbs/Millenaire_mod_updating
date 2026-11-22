@@ -1,0 +1,2 @@
+package org.millenaire.common.ui;
+public class MillMenus { public static net.minecraft.world.inventory.MenuType<ContainerLockedChest> LOCKED_CHEST=new net.minecraft.world.inventory.MenuType<>((id,inventory)->null); }

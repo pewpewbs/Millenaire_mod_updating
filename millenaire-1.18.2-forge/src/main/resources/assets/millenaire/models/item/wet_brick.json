@@ -1,0 +1,17 @@
+{
+  "parent": "millenaire:item/wet_brick_0",
+  "overrides": [
+    {
+      "predicate": {
+        "millenaire:variant": 1
+      },
+      "model": "millenaire:item/wet_brick_1"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 2
+      },
+      "model": "millenaire:item/wet_brick_2"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+package org.millenaire.common.annotedparameters;public class ConfigAnnotations{public @interface ConfigField{AnnotedParameter.ParameterType type();String defaultValue()default "";}public @interface FieldDocumentation{String explanation();}}

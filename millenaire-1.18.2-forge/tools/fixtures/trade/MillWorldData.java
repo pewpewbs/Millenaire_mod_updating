@@ -1,0 +1,1 @@
+package org.millenaire.common.world;public class MillWorldData {public final UserProfile profile=new UserProfile();public UserProfile getProfile(net.minecraft.world.entity.player.Player p){return profile;}}

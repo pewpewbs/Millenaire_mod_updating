@@ -1,0 +1,1 @@
+package org.millenaire.common.village;public class BuildingLocation{public int minxMargin,minzMargin,maxxMargin,maxzMargin,length,width;public org.millenaire.common.utilities.Point pos=new org.millenaire.common.utilities.Point(0,0,0);public boolean isLocationSamePlace(BuildingLocation b){return this==b;}}

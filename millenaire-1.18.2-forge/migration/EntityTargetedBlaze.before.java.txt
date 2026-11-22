@@ -1,0 +1,65 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.entity.Entity
+ *  net.minecraft.entity.monster.EntityBlaze
+ *  net.minecraft.nbt.NBTTagCompound
+ *  net.minecraft.util.math.AxisAlignedBB
+ *  net.minecraft.world.World
+ */
+package org.millenaire.common.entity;
+
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.monster.Blaze;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.Level;
+import org.millenaire.common.utilities.Point;
+
+public class EntityTargetedBlaze
+extends Blaze {
+    public Point target = null;
+
+    public EntityTargetedBlaze(Level par1World) {
+        super(par1World);
+    }
+
+    protected boolean func_70692_ba() {
+        return false;
+    }
+
+    private boolean isCourseTraversable(double par1, double par3, double par5, double par7) {
+        double d4 = (this.target.x - this.getX()) / par7;
+        double d5 = (this.target.y - this.getY()) / par7;
+        double d6 = (this.target.z - this.getZ()) / par7;
+        AABB axisalignedbb = this.func_70046_E().expandTowards(0.0, 0.0, 0.0);
+        int i = 1;
+        while ((double)i < par7) {
+            axisalignedbb.move(d4, d5, d6);
+            if (!this.level.func_184144_a((Entity)this, axisalignedbb).isEmpty()) {
+                return false;
+            }
+            ++i;
+        }
+        return true;
+    }
+
+    public boolean isInWaterOrRain() {
+        return false;
+    }
+
+    public void load(CompoundTag par1nbtTagCompound) {
+        super.load(par1nbtTagCompound);
+        this.target = Point.read(par1nbtTagCompound, "targetPoint");
+    }
+
+    public CompoundTag saveWithoutId(CompoundTag par1nbtTagCompound) {
+        super.saveWithoutId(par1nbtTagCompound);
+        if (this.target != null) {
+            this.target.write(par1nbtTagCompound, "targetPoint");
+        }
+        return par1nbtTagCompound;
+    }
+}
+

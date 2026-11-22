@@ -1,0 +1,32 @@
+{
+  "replace": false,
+  "values": [
+    "millenaire:stairs_byzantine_tiles",
+    "millenaire:stairs_cookedbrick",
+    "millenaire:stairs_gray_tiles",
+    "millenaire:stairs_green_tiles",
+    "millenaire:stairs_mudbrick",
+    "millenaire:stairs_painted_brick_black",
+    "millenaire:stairs_painted_brick_blue",
+    "millenaire:stairs_painted_brick_brown",
+    "millenaire:stairs_painted_brick_cyan",
+    "millenaire:stairs_painted_brick_gray",
+    "millenaire:stairs_painted_brick_green",
+    "millenaire:stairs_painted_brick_light_blue",
+    "millenaire:stairs_painted_brick_lime",
+    "millenaire:stairs_painted_brick_magenta",
+    "millenaire:stairs_painted_brick_orange",
+    "millenaire:stairs_painted_brick_pink",
+    "millenaire:stairs_painted_brick_purple",
+    "millenaire:stairs_painted_brick_red",
+    "millenaire:stairs_painted_brick_silver",
+    "millenaire:stairs_painted_brick_white",
+    "millenaire:stairs_painted_brick_yellow",
+    "millenaire:stairs_red_tiles",
+    "millenaire:stairs_sandstone_carved",
+    "millenaire:stairs_sandstone_ochre_carved",
+    "millenaire:stairs_sandstone_red_carved",
+    "millenaire:stairs_thatch",
+    "millenaire:stairs_timberframe"
+  ]
+}

@@ -1,0 +1,2 @@
+package org.millenaire.common.network;
+public class ServerSender { public static void sendLockedChestUpdatePacket(org.millenaire.common.entity.TileEntityLockedChest chest,net.minecraft.world.entity.player.Player player){} }

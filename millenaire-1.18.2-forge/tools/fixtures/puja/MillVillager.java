@@ -1,0 +1,1 @@
+package org.millenaire.common.entity;public class MillVillager {}

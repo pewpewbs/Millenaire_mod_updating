@@ -1,0 +1,58 @@
+
+boy.greeting=anaanaga miqsurunnaqtunga / Моя мама може зашивати діри у твоїх одязі.
+boy.greeting=pinnguarumajunga / Я хочу грати.
+boy.greeting=qanuippit. / Як ти? - Добре.
+
+chef.greeting=niqłiuqtunga. inuuhiqatsiaq! / Я люблю готувати.  Їж, їж!
+chef.greeting=nirinnaqsijuq. / Час їсти.
+
+farmer.greeting=nunanniapaa, itjuujaq! / Я люблю сільське господарство, особливо картоплі!
+
+fisherman.greeting=ukiukkut iqalliariaksaq quviagijara. / Я люблю зимовий рибалка.
+
+girl.greeting=mumirunnaqtunga / Я вмію танцювати.
+girl.greeting=qanuippit. / Як ти? - Добре.
+girl.greeting=ullagunnaqtunga. / Я можу бігти.
+
+hunter.greeting=qimuksiqpakpit? / Ви подорожуєте собакою?
+hunter.greeting=ukiakkut angunasukłuni quviagijara. / Я люблю мислити восень.
+
+husband.greeting=iqqanaijariariaqaliqtunga. / Мені потрібно почати виконувати свої завдання на сьогодні.
+
+lumberman.greeting=napaaktuk aglinigaktuk sayakturuk, tanakuuruk. / Дерева ростуть настільки сильними і сильними тут дуже швидко, що за чудова країна.
+
+oldlady.greeting=amaamak irinaliut iqsijuq iglu imakkuutuq / Вона прокляла їх, щоб втекти з її доміну.
+oldlady.greeting=angu isivrivriuqpuq mamivuq! / Не дивиться їм у очі!
+oldlady.greeting=irinaliut qitirut tamanna!? / Прокляті нас оточують!?
+
+shaman.greeting=tuurngaq tutsiaqatigiinniq. / Духи дають вам благословення.
+shaman.greeting=uqariaqaqtunga tuurngaq. / Я мушу поговорити з духами.
+
+sodder.greeting=qaijariaqaqtunga miqqapik / Мені потрібно зібратись на згубки.
+
+villager.greeting=ainngai, $name! / Привіт, $name!
+villager.greeting=aqsarniit takuminaqtut. / Північне світло було дуже красивим.
+villager.greeting=ilatit qanuippat? / Як твоя сім'я?
+villager.greeting=katigatkit quvianaq. / Приємно познайомитися.
+villager.greeting=nani nunaqaqqpit? / Звідки ти?
+villager.greeting=niriqqauvit? / Ти вже їла?
+villager.greeting=sinittiaqqaugaluaqpit? / Ти добре спав?
+villager.greeting=takunasaaqpagit. / Я не бачив вас багато років.
+villager.greeting=tunngasugit / Вітаю вас.
+villager.greeting=ullaakuut. / Добрий день.
+
+wife.greeting=kaayuk sinaiyaurug, masu aniruk! / Ця грунт настільки плодородна, що рослини ростуть як божевілля!
+wife.greeting=silasiqanuippa? / Яка погода там, де ви?
+
+art_merchant.greeting=Aucune ville dans le monde n'est comparable à Constantinople. / Жоден місто в світі не може порівнятися з Константинополем!
+art_merchant.greeting=Les gens ici sont des barbares. / Люди тут варвари.
+
+oriental_merchant.greeting=Ce pays est riche, mais fallait il vraiment qu'il soit si froid? / Ця земля багата, але чи має бути так холодно?
+oriental_merchant.greeting=Etes vous allez à Cordoue? Ca, c'est une ville civilisée. / Ти був у Кордобі?  Це цивілізовано.
+
+plant_merchant.greeting=Some people say I'm a dreamer, but I'm not the only one... / 
+
+viking_merchant.greeting=Aujourd'hui je vient commercer. Demain... / Сьогодні я прийшов на торгівлю.  Завтра...
+viking_merchant.greeting=Cette terre appartient aux vikings. L'Angleterre aussi. La Sicile aussi. Vive nous! / Ця земля - земля вікінгів.  Англія - країна вікінгів.  Сіцилія - це вікінгська країна.  Ми владуємо!
+
+weapon_merchant.greeting=Vous voulez vraiment savoir comment j'ai survécu toutes ces années voyageant seul avec des marchandises précieuses? / Хочеш знати, як я пережила всі ті роки, подорожуючи одна з цінними товарами?

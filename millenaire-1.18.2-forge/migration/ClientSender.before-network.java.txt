@@ -1,0 +1,365 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  io.netty.buffer.Unpooled
+ *  net.minecraft.entity.player.EntityPlayer
+ *  net.minecraft.network.PacketBuffer
+ *  net.minecraftforge.fml.common.network.internal.FMLProxyPacket
+ */
+package org.millenaire.client.network;
+
+import io.netty.buffer.Unpooled;
+import java.io.IOException;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.fml.common.network.internal.FMLProxyPacket;
+import org.millenaire.common.config.MillConfigValues;
+import org.millenaire.common.culture.Culture;
+import org.millenaire.common.entity.MillVillager;
+import org.millenaire.common.forge.Mill;
+import org.millenaire.common.network.StreamReadWrite;
+import org.millenaire.common.ui.GuiActions;
+import org.millenaire.common.utilities.MillLog;
+import org.millenaire.common.utilities.Point;
+import org.millenaire.common.village.Building;
+import org.millenaire.common.village.BuildingProject;
+
+public class ClientSender {
+    public static void activateMillChest(Player player, Point pos) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(81);
+        StreamReadWrite.writeNullablePoint(pos, data);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void controlledBuildingsForgetBuilding(Player player, Building townHall, BuildingProject project) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(71);
+        StreamReadWrite.writeNullablePoint(townHall.getPos(), data);
+        data.writeUtf(project.key);
+        StreamReadWrite.writeNullablePoint(project.location.pos, data);
+        ClientSender.createAndSendServerPacket(data);
+        GuiActions.controlledBuildingsForgetBuilding(player, townHall, project);
+    }
+
+    public static void controlledBuildingsToggleUpgrades(Player player, Building townHall, BuildingProject project, boolean allow) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(70);
+        StreamReadWrite.writeNullablePoint(townHall.getPos(), data);
+        data.writeUtf(project.key);
+        StreamReadWrite.writeNullablePoint(project.location.pos, data);
+        data.writeBoolean(allow);
+        ClientSender.createAndSendServerPacket(data);
+        GuiActions.controlledBuildingsToggleUpgrades(player, townHall, project, allow);
+    }
+
+    public static void controlledMilitaryCancelRaid(Player player, Building th) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(92);
+        StreamReadWrite.writeNullablePoint(th.getPos(), data);
+        ClientSender.createAndSendServerPacket(data);
+        GuiActions.controlledMilitaryCancelRaid(player, th);
+    }
+
+    public static void controlledMilitaryDiplomacy(Player player, Building th, Point target, int amount) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(90);
+        StreamReadWrite.writeNullablePoint(th.getPos(), data);
+        StreamReadWrite.writeNullablePoint(target, data);
+        data.writeInt(amount);
+        ClientSender.createAndSendServerPacket(data);
+        GuiActions.controlledMilitaryDiplomacy(player, th, target, amount);
+    }
+
+    public static void controlledMilitaryPlanRaid(Player player, Building th, Point target) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(91);
+        StreamReadWrite.writeNullablePoint(th.getPos(), data);
+        StreamReadWrite.writeNullablePoint(target, data);
+        ClientSender.createAndSendServerPacket(data);
+        GuiActions.controlledMilitaryPlanRaid(player, th, th.mw.getBuilding(target));
+    }
+
+    private static void createAndSendServerPacket(FriendlyByteBuf bytes) {
+        ClientSender.sendPacketToServer(bytes);
+    }
+
+    public static void devCommand(int devcommand) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(206);
+        data.writeInt(devcommand);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void displayVillageList(boolean loneBuildings) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(201);
+        data.writeBoolean(loneBuildings);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static FriendlyByteBuf getPacketBuffer() {
+        return new FriendlyByteBuf(Unpooled.buffer());
+    }
+
+    public static void hireExtend(Player player, MillVillager villager) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(31);
+        data.writeLong(villager.getVillagerId());
+        ClientSender.createAndSendServerPacket(data);
+        GuiActions.hireExtend(player, villager);
+    }
+
+    public static void hireHire(Player player, MillVillager villager) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(30);
+        data.writeLong(villager.getVillagerId());
+        ClientSender.createAndSendServerPacket(data);
+        GuiActions.hireHire(player, villager);
+    }
+
+    public static void hireRelease(Player player, MillVillager villager) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(32);
+        data.writeLong(villager.getVillagerId());
+        ClientSender.createAndSendServerPacket(data);
+        GuiActions.hireRelease(player, villager);
+    }
+
+    public static void hireToggleStance(Player player, boolean stance) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(33);
+        data.writeBoolean(stance);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void importTableCreateNewBuilding(Point tablePos, int length, int width, int startLevel, boolean clearGround) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(102);
+        StreamReadWrite.writeNullablePoint(tablePos, data);
+        data.writeInt(length);
+        data.writeInt(width);
+        data.writeInt(startLevel);
+        data.writeBoolean(clearGround);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void importTableImportBuildingPlan(Player player, Point tablePos, String source, String buildingKey, boolean importAll, int variation, int level, int orientation, boolean importMockBlocks) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(100);
+        StreamReadWrite.writeNullablePoint(tablePos, data);
+        StreamReadWrite.writeNullableString(source, data);
+        StreamReadWrite.writeNullableString(buildingKey, data);
+        data.writeBoolean(importAll);
+        data.writeInt(variation);
+        data.writeInt(level);
+        data.writeInt(orientation);
+        data.writeBoolean(importMockBlocks);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void importTableUpdateSettings(Point tablePos, int upgradeLevel, int orientation, int startingLevel, boolean exportSnow, boolean importMockBlocks, boolean autoconvertToPreserveGround, boolean exportRegularChests) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(101);
+        StreamReadWrite.writeNullablePoint(tablePos, data);
+        data.writeInt(upgradeLevel);
+        data.writeInt(orientation);
+        data.writeInt(startingLevel);
+        data.writeBoolean(exportSnow);
+        data.writeBoolean(importMockBlocks);
+        data.writeBoolean(autoconvertToPreserveGround);
+        data.writeBoolean(exportRegularChests);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void negationWand(Player player, Building townHall) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(40);
+        StreamReadWrite.writeNullablePoint(townHall.getPos(), data);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void newBuilding(Player player, Building townHall, Point pos, String planKey) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(50);
+        StreamReadWrite.writeNullablePoint(townHall.getPos(), data);
+        StreamReadWrite.writeNullablePoint(pos, data);
+        data.writeUtf(planKey);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void newCustomBuilding(Player player, Building townHall, Point pos, String planKey) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(51);
+        StreamReadWrite.writeNullablePoint(townHall.getPos(), data);
+        StreamReadWrite.writeNullablePoint(pos, data);
+        data.writeUtf(planKey);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void newVillageCreation(Player player, Point pos, String cultureKey, String villageTypeKey) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(20);
+        data.writeUtf(cultureKey);
+        data.writeUtf(villageTypeKey);
+        StreamReadWrite.writeNullablePoint(pos, data);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void playerToggleDonation(Player player, boolean donation) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(61);
+        data.writeBoolean(donation);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void pujasChangeEnchantment(Player player, Building temple, int enchantmentId) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(60);
+        StreamReadWrite.writeNullablePoint(temple.getPos(), data);
+        data.writeShort(enchantmentId);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void questCompleteStep(Player player, MillVillager villager) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(10);
+        data.writeLong(villager.getVillagerId());
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void questRefuse(Player player, MillVillager villager) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(11);
+        data.writeLong(villager.getVillagerId());
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void requestMapInfo(Building townHall) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(203);
+        StreamReadWrite.writeNullablePoint(townHall.getPos(), data);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void sendAvailableContent() {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        try {
+            data.writeInt(205);
+            data.writeUtf(MillConfigValues.effective_language);
+            data.writeUtf(MillConfigValues.fallback_language);
+            data.writeShort(Culture.ListCultures.size());
+            for (Culture culture : Culture.ListCultures) {
+                culture.writeCultureAvailableContentPacket(data);
+            }
+        }
+        catch (IOException e) {
+            MillLog.printException("Error in displayVillageList", e);
+        }
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void sendPacketToServer(FriendlyByteBuf packetBuffer) {
+        FMLProxyPacket proxyPacket = new FMLProxyPacket(packetBuffer, "millenaire");
+        Mill.millChannel.sendToServer(proxyPacket);
+    }
+
+    public static void sendVersionInfo() {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(202);
+        data.writeUtf("8.1.2");
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void updateCustomBuilding(Player player, Building building) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(52);
+        StreamReadWrite.writeNullablePoint(building.getPos(), data);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void villageChiefPerformBuilding(Player player, MillVillager chief, String planKey) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(1);
+        data.writeLong(chief.getVillagerId());
+        data.writeUtf(planKey);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void villageChiefPerformCrop(Player player, MillVillager chief, String value) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(2);
+        data.writeLong(chief.getVillagerId());
+        data.writeUtf(value);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void villageChiefPerformCultureControl(Player player, MillVillager chief) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(3);
+        data.writeLong(chief.getVillagerId());
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void villageChiefPerformDiplomacy(Player player, MillVillager chief, Point village, boolean praise) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(4);
+        data.writeLong(chief.getVillagerId());
+        StreamReadWrite.writeNullablePoint(village, data);
+        data.writeBoolean(praise);
+        ClientSender.createAndSendServerPacket(data);
+        GuiActions.villageChiefPerformDiplomacy(player, chief, village, praise);
+    }
+
+    public static void villageChiefPerformHuntingDrop(Player player, MillVillager chief, String value) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(6);
+        data.writeLong(chief.getVillagerId());
+        data.writeUtf(value);
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void villageChiefPerformVillageScroll(Player player, MillVillager chief) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(200);
+        data.writeInt(5);
+        data.writeLong(chief.getVillagerId());
+        ClientSender.createAndSendServerPacket(data);
+    }
+
+    public static void villagerInteractSpecial(Player player, MillVillager villager) {
+        FriendlyByteBuf data = ClientSender.getPacketBuffer();
+        data.writeInt(204);
+        data.writeLong(villager.getVillagerId());
+        ClientSender.createAndSendServerPacket(data);
+    }
+}
+

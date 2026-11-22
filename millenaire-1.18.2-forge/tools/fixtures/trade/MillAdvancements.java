@@ -1,0 +1,1 @@
+package org.millenaire.common.advancements;public class MillAdvancements {public static final MillAdvancements MP_NEIGHBOURTRADE=new MillAdvancements();public void grant(net.minecraft.world.entity.player.Player p){}}

@@ -1,0 +1,1 @@
+package org.millenaire.common.item;import net.minecraft.world.item.*;public class InvItem {public final Item item;public final int meta=0;public InvItem(Item i){item=i;}public Item getItem(){return item;}}

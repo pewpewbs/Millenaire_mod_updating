@@ -1,0 +1,98 @@
+--- before/entity/MillVillager.java
++++ after/entity/MillVillager.java
+@@ -663,7 +663,8 @@
+         boolean continuingGoal = true;
+         if (this.getPathDestPoint() != null) {
+             target = this.getPathDestPoint();
+-            if (this.pathEntity != null && this.pathEntity.getNodeCount() > 0) {
++            // Construction reach is measured to the block, not an alternate access node.
++            if (goal != Goal.construction && this.pathEntity != null && this.pathEntity.getNodeCount() > 0) {
+                 target = new Point(this.pathEntity.getEndNode());
+             }
+         }
+@@ -778,7 +779,7 @@
+             }
+             try {
+                 Goal goal;
+-                if (this.goalKey != null && Goal.goals.containsKey(this.goalKey) && (double)(goal = Goal.goals.get(this.goalKey)).range(this) >= this.getPos().horizontalDistanceTo(this.getPathDestPoint())) {
++                if (this.goalKey != null && Goal.goals.containsKey(this.goalKey) && (double)(goal = Goal.goals.get(this.goalKey)).range(this) > this.getPos().horizontalDistanceTo(this.getPathDestPoint())) {
+                     return null;
+                 }
+                 if (this.pathPlannerJPS.isBusy()) {
+@@ -2030,7 +2031,8 @@
+                 if (this.getPathDestPoint() != null && !this.stopMoving) {
+                     this.updatePathIfNeeded(this.getPathDestPoint());
+                 }
+-                if (this.stopMoving || this.pathPlannerJPS.isBusy()) {
++                // Keep following a usable route while its replacement is calculated.
++                if (this.stopMoving) {
+                     this.navigation.stop();
+                     this.pathEntity = null;
+                 }
+--- before/pathing/atomicstryker/AStarWorker.java
++++ after/pathing/atomicstryker/AStarWorker.java
+@@ -22,14 +22,14 @@
+     private final long SEARCH_TIME_LIMIT = 150L;
+     public AStarPathPlannerJPS boss;
+     AStarConfig config;
+-    public boolean isRunning = false;
++    public volatile boolean isRunning = false;
+     public final ArrayList<AStarNode> closedNodes;
+     private AStarNode startNode;
+     protected AStarNode targetNode;
+     protected Level world;
+     private long timeLimit;
+     private final PriorityQueue<AStarNode> queue;
+-    private boolean isBusy = false;
++    private volatile boolean isBusy = false;
+ 
+     public AStarWorker() {
+         this.boss = null;
+@@ -136,26 +136,30 @@
+ 
+     @Override
+     public void run() {
++        this.isRunning = true;
+         this.isBusy = true;
+         this.timeLimit = System.currentTimeMillis() + 150L;
+-        ArrayList<AStarNode> result = null;
+         try {
+-            result = this.getPath(this.startNode, this.targetNode, this.config.allowDropping);
+-        }
+-        catch (ThreadSafeUtilities.ChunkAccessException e) {
+-            MillLog.error(this, "Chunk access violation while calculating a path for " + this.boss);
+-            this.boss.onNoPathAvailable();
+-        }
+-        catch (Throwable e) {
+-            MillLog.printException("Exception while calculating a path:", e);
+-            this.boss.onNoPathAvailable();
+-        }
+-        if (result == null) {
+-            this.boss.onNoPathAvailable();
+-        } else {
+-            this.boss.onFoundPath(result);
+-        }
+-        this.isBusy = false;
++            ArrayList<AStarNode> result = null;
++            try {
++                result = this.getPath(this.startNode, this.targetNode, this.config.allowDropping);
++            }
++            catch (ThreadSafeUtilities.ChunkAccessException e) {
++                MillLog.error(this, "Chunk access violation while calculating a path for " + this.boss);
++            }
++            catch (Throwable e) {
++                MillLog.printException("Exception while calculating a path:", e);
++            }
++            // A failed search must notify the planner exactly once, including exceptions.
++            if (result == null) {
++                this.boss.onNoPathAvailable();
++            } else {
++                this.boss.onFoundPath(result);
++            }
++        } finally {
++            this.isBusy = false;
++            this.isRunning = false;
++        }
+     }
+ 
+     public ArrayList<AStarNode> runSync() {

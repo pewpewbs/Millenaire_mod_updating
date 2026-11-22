@@ -1,0 +1,110 @@
+
+culture.byzantines=Греки (Візантійці)
+culture.fullname=Візантійці
+village.controlled=Кероване поселення
+village.customcontrolled=Власне кероване поселення
+
+village.tradingvillage=Торговельне поселення
+village.militaryvillage=Військове поселення
+village.religiousvillage=Православне поселення
+
+villager.architect_byzantine=Архітектор
+villager.baron_byzantine=Барон
+villager.boy_byzantine=Хлопчик
+villager.fisherman_byzantine=Фішер
+villager.girl_byzantine=Дівчинка
+villager.lumberman_byzantine=Лісоруб
+villager.merchant_byzantine=Купець
+villager.miner_byzantine=Шахтар
+villager.lady_byzantine=Пані
+villager.shepherd_byzantine=Вівчар
+
+villager.silkfarmer_byzantine=Шовківник
+villager.toolsmith_byzantine=Коваль
+villager.smith_byzantine=Коваль
+villager.teenagerFemale=Юнак
+villager.teenagerMale=Юнак
+
+villager.shepherd_female_byzantine=Вівчарка
+villager.silkfarmer_byzantine=Ткач шовку
+villager.silkfarmerwife_byzantine=Ткач шовку
+villager.smith_byzantine=Коваль
+villager.soldier_byzantine=Воїн
+villager.teenagerfemale=Юнак
+villager.teenagermale=Юнак
+
+villager.wife_byzantine=Дружина
+villager.merchant_art=Художницький торговець
+villager.merchant_food=Торговець їжею
+villager.merchant_materials=Торговець каменем
+villager.smuggler_silk=Торговець шовком
+
+villager.artisanwife_byzantine=Ремісниця
+villager.seamster_byzantine=Кравець
+villager.seamstress_byzantine=Кравчиня
+villager.smelter_byzantine=Плавильник
+villager.pastor_byzantine=Пастор
+villager.worker_byzantine=Робітник
+villager.guard_byzantine=Вартовий
+villager.host_byzantine=Господар
+villager.hostesse_byzantine=Господиня
+villager.baroness_byzantine=Баронеса
+villager.mason_byzantine=Муляр
+
+villager.centurio_byzantine=Центуріон
+villager.soldier_byzantine=Воїн
+villager.special_byzanzine=Боскократор
+villager.oldshepherd_byzantine=Одиний пастир
+villager.armysmith_byzantine=Військовий коваль
+
+villager.farmiller_byzantine=Фермер
+villager.farmiller_wife_byzantine=Фермер
+
+villager.monk_byzantine=Чернець
+villager.metropolit_byzantine=Митрополит
+
+villager.playersoldier_byzantine=Воїн
+
+villager.special_byzantine=Боскократор
+
+
+shop.THemporikos=Центральний магазин
+shop.mason=Передові матеріали
+shop.toolsmith=Інструменти
+shop.dressmaker=Текстиль і ікони
+shop.centralworkshop=Основні матеріали
+shop.taverna=Продукти харчування та напої
+shop.olivepress=Оливкові продукти
+shop.specialshop=Боскократор викликає
+shop.thstratiotike=Центральний магазин
+shop.thorthodoxo=Центральний магазин
+shop.armyforge=Зброя і броня
+
+villager.merchant_armour=Торговець зброєю
+villager.merchant_textiles=Торговець тканинами
+villager.merchant_relics=Торговець реліквіями
+villager.merchant_dyes=Торговець барвниками
+
+villager.keeperbirch_byzantine=Вартовий
+villager.keeperoak_byzantine=Вартовий
+villager.keeperpine_byzantine=Вартовий
+villager.keepertropical_byzantine=Вартовий
+villager.keeper_byzantine=Доглядач маяка
+villager.loneshepherd_byzantine=Вівчар
+villager.loneshepherdf_byzantine=Вівчарка
+
+villager.loneabbot_byzantine=Абат
+villager.lonemonk_byzantine=Расофор
+
+shop.bakery=Пекарня
+shop.clothing=Одяг
+shop.fishery=Риба
+shop.forge=Інструменти
+shop.lonesheep=Вунь
+shop.lonetower=Їжа
+shop.sheepfarm=Агнецька, шкіра і фета
+shop.tavernbyz=Вино
+shop.townhall=Центральний магазин
+shop.alchemyworkshop=Алхімічні продукти
+shop.lonemonastery=Монастырські товари
+

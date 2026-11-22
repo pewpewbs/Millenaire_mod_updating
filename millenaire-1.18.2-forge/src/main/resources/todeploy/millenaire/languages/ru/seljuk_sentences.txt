@@ -1,0 +1,135 @@
+//villager.BeSeller=Coming, coming!
+//villager.DeliverResourcesShop=
+
+turk_boy.greeting=Büyüyünce çok güçlü olacağım! / Я буду такой сильной, когда вырасту!
+
+villager.BringBackResourcesHome=Sonunda rahatlama vakti. / Наконец-то пора расслабиться.
+villager.CollectCrop=Hasat vakti. / Пришло время собирать.
+villager.PlantSeeds=Şimdi bu tohumları ekeceğim. / Я сейчас посажу эти семена.
+
+turk_soldier.greeting=Ben buranın muhafızıyım,bir şey olursa bana söyle. / Я охранник этого места.  Скажите мне, если что-то случится.
+
+guildmaster.greeting=Her türlü güzel üründen satarım. / Я продаю всевозможных ремесленников.
+
+turk_soldier.greeting=$name, zamanında Sultanımızın şövalyesiydim. / Однажды я был рыцарем нашего султана . $name.
+turk_soldier.greeting=Sadece Allah'tan korkarım. / Я боюсь только Аллаха.
+turk_soldier.greeting=Anadolu artık bizim yurdumuzdur. / Анатолия теперь наш дом.
+turk_soldier.patrol=Kanuna hizmet ederim. / Я служу закону.
+turk_soldier.patrol=Güçsüzün kılıcıyım. / Я меч слабых.
+
+turk_richwoman.Bu çok zor bir iş. / Это очень тяжелая работа.
+turk_richwoman.greeting=Sarayima hoş geldiniz./ Добро пожаловать в мой дворец.
+turk_richwoman.greeting=Eski evim bu kadar güzel değildi. / Мой старый дом был не так хорош.
+
+turk_lumberman.BringBackResourcesHome=Bu odunlar çok işe yarayacak. / Эти леса пригодятся.
+turk_lumberman.ChopTrees=Allahım bana güç ver. / Дай мне власть, Аллах.
+turk_lumberman.GatherGoods=Bu fidan işime yarayabilir. / Может, мне понадобится этот сажент.
+turk_lumberman.PlantSaplings=Bu fidanı ekmeliyim. / Я должен посадить эту саженцу.
+
+turk_miner.Cooking=Pişirme vakti. / Пришло время готовить.
+turk_miner.Mining=Demirci bunları sevecek. / Это понравится кузнецу.
+turk_miner.Mining=Herkes madenci olamaz. / Не каждый может стать шахтером.
+
+orderguard.patrol=Sadece Allah'tan korkarım! / Я боюсь только Аллаха!
+orderguard.calltoarms=Burayı terket! / Убирайтесь отсюда!
+orderguard.patrol=Buraları korumak bizim işimiz / Это наш долг защищать эти места.
+orderguard.calltoarms=Toplanın kardeşler! / Собирайте братьев!
+orderguard.greetings=İyi günler dilerim. / Приятный день.
+orderguard.greetings=Seni gördüğüme sevindim. / Рад тебя видеть.
+
+merchant.KeepStall=Her türlü lüks şeyi satarım! / Я продаю всевозможные роскоши!
+merchant.greeting=Anadolu çok verimli! / Анатолия такая богатая!
+merchant.greeting=Gel ve ürünlerime bak. / Подойди и проверь мои продукты.
+
+merchant.KeepStall=Birinin ihtiyacı olabilecek her türlü bitki bende var. / У меня есть все травы, которые понадобятся.
+merchant.greeting=Bitkileri seven herkesi severim. / Мне нравятся все, кто любит травы.
+
+turk_imam.gopray.chosen=Allah her yaptığımızı görür. / Аллах видит все, что мы делаем.
+turk_imam.greeting=Allah yardımcın olsun. / Пусть Аллах поможет тебе.
+
+turk_armourysmith.MakeSeljukTools=Kendimizi korumak için bunlara ihtiyacımız var. / Нам это нужно, чтобы защитить себя.
+turk_armourysmith.MakeSeljukWeapons=Allah'ın izniyliyle bu zırh askerlerimizi koruyacak. / С волей Аллаха эта броня защитит наших солдат.
+
+
+villager.BecomeAdult=Devletime hizmet etme vakti ! / Пришло время служить своей стране!
+
+villager.GoPlay=Oyun oynamayı severim. / Я люблю играть.
+
+
+villager.brewpotions=Simyacı olmayı seviyorum. / Мне нравится быть алхимиком.
+
+villager.calltoarms=Silahlanın! Allah bizimle beraber! / На оружие!  Аллах с нами!
+villager.calltoarms=Silahlanın askerler silahlanın!/ На оружие, солдаты, на оружие!
+villager.calltoarms=Боже мой!
+villager.calltoarms=Allah'ım bize güç ver! / Дай нам Аллах силы!
+
+villager.childeatapple=Neden bütün elmalar kırmızı? / Почему все яблоки красные?
+
+villager.childobserveagriculture=Çiftçiler bizim devletimiz için önemlidir! / Фермеры важны для нашей страны!
+villager.childobserveconstruction=Erkekler neden kadınlara yardım etmiyor? / Почему мужчины не помогают женщинам?
+villager.childobserveproducefood=Karnım çok acıktı! / Я так голодна!
+villager.childobservesmithing=O demir çok sıcak olmalı! / Этот желез, должно быть, так горячий!
+
+villager.godrinkayran=Lütfen bana bir içecek verir misin? / Можешь, пожалуйста, дать мне выпить?
+villager.godrinkayran=Ayran buralardaki en güzel içecek. / Айран - лучший напиток в районе.
+
+villager.gopray.chosen=İbadet etme vakti. / Пришло время молиться.
+villager.gopray=Allahım bana yardım et / Аллах поможет мне.
+
+villager.gorest=Yoruldum. / Я устал.
+villager.gorest=Uyumayı hak ettim. / Я заслуживаю сна.
+villager.gorest=Bugün güzel bir gündü. / Сегодня был хороший день.
+villager.gorest=Uyumam gerekiyor. / Мне нужно спать.
+
+villager.greeting=Anadoluya hoş geldin! / Добро пожаловать в Анатолию!
+villager.greeting=Hayırlı günler dilerim. / Приятный день.
+villager.greeting=Selamünaleyküm, $name! / Мир вам! $name!
+villager.greeting= Seni tekrar görmek güzel/ Рад тебя снова видеть.
+villager.greeting= Seni daha önce gördüm mü? / Я тебя видел раньше?
+
+villager.MakeWallcarpetLarge=Bunlar duvara çok yakışacak! / Они будут выглядеть так хорошо на стенах!
+villager.MakeWallcarpetSmall=Bunlar duvara çok yakışacak! / Они будут выглядеть так хорошо на стенах!
+villager.MakeWallcarpetMedium=Bunlar duvara çok yakışacak! / Они будут выглядеть так хорошо на стенах!
+
+villager.inspectconstruction=İnsanlarımız her zaman çalışkandır! / Наши люди всегда трудолюбивы!
+
+villager.makeglassbottles=Bu şişe çok işimize yarayacak. / Эта бутылка будет нам очень полезна.
+
+
+turk_merchant_weapon.KeepStall=Her türlü silahı satarım. / Я продаю все виды оружия.
+turk_merchant_weapon.greeting=Buraların en iyi tüccarının dükkanına hoş geldin./ Добро пожаловать в магазин лучших торговцев.
+
+turk_peasantwife.DeliverGoodsHousehold=Aileme yardım etmek benim de görevim. / Также мой долг помогать моей семье.
+
+turk_peasantwife.GetHouseTHResources=Kocam eve malzemelerle dönüyor. / Мой муж возвращается домой с ресурсами.
+turk_peasantwife.GetResourcesForBuild=Bir şeyler inşa etmek için malzeme alma vakti. / Пришло время собрать ресурсы для строительства!
+
+turk_cook.MakeLokum=Lokumlarımız çok lezzetlidir. / Наши наслаждения так вкусны.
+turk_cook.MakePideBeef=Pidelerimiz çok lezzetlidir. / Наш Пид так вкусный.
+turk_cook.MakePideMutton=Pidelerimiz çok lezzetlidir. / Наш Пид так вкусный.
+
+turk_cowfarmer.MakeYogurt=Yemekle beraber çok güzel olur. / Это будет хорошо вместе с едой.
+
+turk_cook.MakeAyran=Erkeklerimizi serin tutmak için ayran yapmalıyım. / Я должен приготовить Айран, чтобы наши люди были освежены.
+
+villager.construction=Allahım bana yardım et. / Помоги мне, Аллах.
+villager.construction=Kadınlar da bu devlet için önemli! / Женщины тоже важны для этой страны!
+villager.construction=Erkekler ve kadınlar birbirlerine yardım etmeli. / Мужчины и женщины должны помогать друг другу.
+
+turk_peasantwife.getGoodsHousehold=Niye her şeye beni yolluyorlar?/ Почему они отправляют меня ко всему?
+
+turk_merchant_wool.KeepStall=Bütün yünler burada! / Все шерсти здесь!
+turk_merchant_wool.greeting=Anadolunun hayvanlar için harika!/ Анатолия отлично подходит для животных!
+
+ghaznavid_merchant.KeepStall=Gel ve benimle ticaret yap / Пойди и поменяйся со мной.
+ghaznavid_merchant.KeepStall=Benimle ticaret yaparsan pişman olmazsın. / Ты не пожалеешь об этом, если поменяешься со мной.
+ghaznavid_merchant.greeting=Çok uzak diyarlardan Müslüman kardeşlerimle ticarete geldim. / Я приехал из очень дальних стран для торговли с моими мусульманскими братьями.
+ghaznavid_merchant.greeting=Hepimiz kardeşiz./ Мы все братья.
+
+
+
+
+
+
+
+

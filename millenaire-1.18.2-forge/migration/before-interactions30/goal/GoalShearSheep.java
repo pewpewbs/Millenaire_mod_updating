@@ -1,0 +1,122 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.entity.Entity
+ *  net.minecraft.entity.passive.EntitySheep
+ *  net.minecraft.init.Blocks
+ *  net.minecraft.init.Items
+ *  net.minecraft.item.Item
+ *  net.minecraft.util.EnumHand
+ */
+package org.millenaire.common.goal;
+
+import java.util.List;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.InteractionHand;
+import org.millenaire.common.config.DocumentedElement;
+import org.millenaire.common.config.MillConfigValues;
+import org.millenaire.common.entity.MillVillager;
+import org.millenaire.common.goal.Goal;
+import org.millenaire.common.item.InvItem;
+import org.millenaire.common.pathing.atomicstryker.AStarConfig;
+import org.millenaire.common.utilities.MillLog;
+import org.millenaire.common.utilities.Point;
+import org.millenaire.common.utilities.WorldUtilities;
+
+@DocumentedElement.Documentation(value="Sheer sheeps present around the villager's house.")
+public class GoalShearSheep
+extends Goal {
+    public GoalShearSheep() {
+        this.buildingLimit.put(InvItem.createInvItem(Blocks.WHITE_WOOL, 0), 1024);
+        this.townhallLimit.put(InvItem.createInvItem(Blocks.WHITE_WOOL, 0), 1024);
+        this.icon = InvItem.createInvItem((Item)Items.SHEARS);
+    }
+
+    @Override
+    public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
+        if (villager.getHouse() == null) return null;
+        Point pos = villager.getPos();
+        Entity closestSheep = null;
+        double sheepBestDist = Double.MAX_VALUE;
+        List<Entity> sheep = WorldUtilities.getEntitiesWithinAABB(villager.level, Sheep.class, villager.getHouse().getPos(), 30, 10);
+        for (Entity ent : sheep) {
+            if (!ent.isAlive() || ((Sheep)ent).isSheared() || ((Sheep)ent).isBaby() || closestSheep != null && !(pos.distanceTo(ent) < sheepBestDist)) continue;
+            closestSheep = ent;
+            sheepBestDist = pos.distanceTo(ent);
+        }
+        if (closestSheep != null) {
+            return this.packDest(null, villager.getHouse(), closestSheep);
+        }
+        return null;
+    }
+
+    @Override
+    public AStarConfig getPathingConfig(MillVillager villager) {
+        if (!villager.canVillagerClearLeaves()) {
+            return JPS_CONFIG_WIDE_NO_LEAVES;
+        }
+        return JPS_CONFIG_WIDE;
+    }
+
+    @Override
+    public boolean isFightingGoal() {
+        return true;
+    }
+
+    @Override
+    public boolean isPossibleSpecific(MillVillager villager) throws Exception {
+        if (villager.getHouse() == null || !villager.getHouse().containsTags("sheeps")) {
+            return false;
+        }
+        List<Entity> sheep = WorldUtilities.getEntitiesWithinAABB(villager.level, Sheep.class, villager.getHouse().getPos(), 30, 10);
+        if (sheep == null) {
+            return false;
+        }
+        for (Entity ent : sheep) {
+            Sheep asheep = (Sheep)ent;
+            if (asheep.isBaby() || !asheep.isAlive() || ((Sheep)ent).isSheared()) continue;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean lookAtGoal() {
+        return true;
+    }
+
+    @Override
+    public boolean performAction(MillVillager villager) throws Exception {
+        if (villager.level.isClientSide || villager.getHouse() == null) return true;
+        List<Entity> sheep = WorldUtilities.getEntitiesWithinAABB(villager.level, Sheep.class, villager.getPos(), 4, 4);
+        for (Entity ent : sheep) {
+            Sheep animal;
+            if (!ent.isAlive() || (animal = (Sheep)ent).isBaby() || animal.isSheared()) continue;
+            villager.addToInv(Registry.ITEM.get(new ResourceLocation(animal.getColor().getName() + "_wool")), 3);
+            ((Sheep)ent).setSheared(true);
+            if (MillConfigValues.LogCattleFarmer >= 1 && villager.extraLog) {
+                MillLog.major(this, "Shearing: " + ent);
+            }
+            villager.swing(InteractionHand.MAIN_HAND);
+        }
+        return true;
+    }
+
+    @Override
+    public int priority(MillVillager villager) throws Exception {
+        return 50;
+    }
+
+    @Override
+    public int range(MillVillager villager) {
+        return 5;
+    }
+}
+

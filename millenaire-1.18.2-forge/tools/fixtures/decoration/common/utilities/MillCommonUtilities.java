@@ -1,0 +1,2 @@
+package org.millenaire.common.utilities;
+public class MillCommonUtilities { public interface WeightedChoice { int getChoiceWeight(net.minecraft.world.entity.player.Player player); } public static <T extends WeightedChoice> T getWeightedChoice(java.util.List<T> list,net.minecraft.world.entity.player.Player player){throw new UnsupportedOperationException("Placement not tested");} }

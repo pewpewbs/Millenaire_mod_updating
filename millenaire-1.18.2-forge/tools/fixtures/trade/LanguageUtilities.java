@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class LanguageUtilities {public static String string(String a,String...b){return a;}}

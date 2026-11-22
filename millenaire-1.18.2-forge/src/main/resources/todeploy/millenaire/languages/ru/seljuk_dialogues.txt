@@ -1,0 +1,234 @@
+//* Dialogue lines start with a code like "v2;30;" which specify who is speaking and when the line shows up. Please copy it exactly in your translations.
+//* First half of the line (till the /) is in the villagers' language and must be kept as-is, second part should be translated
+
+newchat;key:nights,tag:notraining,v1:adult,v2:adult,weigth:10
+v1;0;Geceleri hep değişik şeyler görüyorum. / Я всегда вижу ночные вещи.
+v2;30;Gündüzün şerri gecenin hayrından iyidir demişler. / Они сказали, что зло дня лучше, чем добро ночи.
+v1;60;Haklısın $targetfirstname. / Вы правы. $targetfirstname.
+
+
+newchat;key:fatherandson,rel:child,v1:child,v2:vtype:turk_miner,weigth:10
+v1;0;Baba bana kazdığın en güzel cevheri söyler misin? / Пап, скажи мне, какую лучшую руду ты выкопал?
+v2;30;Bir düşüneyim.. Sanırım bir elmastı. / Позвольте подумать ..  Думаю, это был бриллиант.
+v1;60;Tekrar bulursan bana da bir tane verir misin baba? / Если ты найдешь его еще раз, ты можешь дать мне один, папа?
+v1;90;Bulursam neden olmasın! $targetfirstname. / Почему нет? $targetfirstname.
+
+
+newchat;key:iamam1,tag:notraining,v1:vtype:turk_imam,weigth:10
+v1;0;Allah yaptığımız her şeyi görür,$targetfirstname. / Аллах видит все, что мы делаем. $targetfirstname.
+v2;30;Öyledir hocam. / Да, это правда, моя кукла.
+
+
+newchat;key:kids1,tag:notraining,v1:child,weigth:10
+v1;0; Babam sürekli suçsuz hayvanları kesiyor! / Мой отец постоянно режет невинных животных!
+v2;30; Fakat o et bize lazım olmasa baban bunu yapmaz. / Но если это мясо нам не нужно, твой отец не сделает этого.
+ 
+ 
+newchat;key:talk1,v1:adult,v2:vtype:turk_localmerchant,weigth:10
+v1;0;Peki $targetfirstname, işler nasıl? / Так как работа? $targetfirstname?
+v2;30;Her şey aynı değişen bir şey yok. / Всё равно ничего не изменилось.
+v1;60;Peki gezilerin hoşuna gidiyor mu? / Так вам нравится путешествовать?
+v2;90;Evet fakat ayaklarım da ağrıyor. / Да, но ноги тоже болят.
+v1;120;Senda haklısın $targetfirstname. / Вы правы. $targetfirstname.
+v2;150;Haklıyım tabii ya! / Конечно, я прав!
+
+
+newchat;key:talk2,v1:adult,v2:adult,weigth:10
+v1;0;Allah çalışanı sever. / Воистину, Аллах любит искренних рабов.
+v2;30;Bende çalışmaktan çok memnunum! / Поэтому я очень рада, что усердно трудилась!
+
+
+newchat;key:talk3,v2:adult,v1:vtype:turk_fisherman,rel:spouse,weigth:10
+v1;0;Balıkçılık sabır işidir bilir misin karıcığım? / Рыбалка - это вопрос терпения, понимаешь, моя дорогая?
+v2;30;Sadece balık tutma konusunda sabırlısın zaten! / Ты просто терпелив на рыбалку!
+
+
+newchat;key:whoisthis,v2:adult,v1:adult,weigth:10
+v1;0;Bu da kim böyle? / - Кто это?
+v2;30;Adını bilmiyorum fakat bu diyarlara yabancı birisi. / Я не знаю его имени, но он чужой в этих землях.
+v1;60;İçinde kötülük olmayan herkes bu diyarlara hoş gelmiştir. / Любой, у кого нет зла в нем, приятно этим странам.
+v2;90;Doğru söylüyorsun. / Ты прав.
+
+
+newchat;key:kitchentalk,v2:adult,v1:adult,building:kitchen,weigth:10
+v1;0;Ayran kadar güzel bir içecek gördün mü kardeşim?  / Вы когда-нибудь видели напиток такой же хорошего, как брат Айран?
+v2;30;Hayir daha görmedim. / Нет, я еще не видел.
+v2;60;Nerden aldın? Bende istiyorum. / Где ты его взял?  Я тоже хочу.
+v1;90;Yakında onu satan bir mutfak var. / Рядом есть кухня, продает ее.
+v2;120;Tamam çok sağol. / Спасибо большое.
+v2;150;Başka ne var biliyor musun? / Что еще они там продают?
+v1;180;Balıktan pide ye kadar her şeyi düşünebilirsin. / Вы можете думать обо всём, от рыбы до педы.
+v2;210;Iyimiş hemen gitmeliyim. / Я должен идти прямо сейчас.
+
+
+newchat;key:religion,v2:adult,v1:adult,building:mosque,weigth:10
+v1;0;Namaz kılma vakti. / Пришло время молиться.
+v2;30;Hadi ozaman vakiti geçirmiyelim. / Давай не опаздывать.
+
+
+newchat;key:religion2,v2:adult,v1:adult,notbuilding:mosque,weigth:10
+v1;0;Namaz kılma vakti. / Пришло время молиться.
+v2;30;Hadi ozaman vakiti geçirmiyelim. / Давай не опаздывать.
+v1;60;Güzel bir Camiimiz olsa ne güzel olurdu demi $targetfirstname. / Как было бы приятно , если бы у нас была прекрасная мечеть .
+v2;90;Aynen Öyle kardeşim. / Точно, брат.
+
+
+newchat;key:ayran,v2:adult,v1:adult,building:kitchen,weigth:10
+v1;0;Biraz ayran içmeliyim. / Я должен выпить немного айрана.
+v2;30;İnşallah bugün han fazla dolu değildir. / Надеюсь, гостиница сегодня не полна.
+v1;60;Evet İnşallah, dün gibi olmasın. / Да, надеюсь, это не будет как вчера.
+v2;90;Aynen, ve ayran içersem yorgunluğum da geçer. / Точно, и если я выпью айран, моя усталость пройдет.
+v1;120;Doğru söylüyorsun. / Ты прав.
+
+
+
+newchat;key:buyingwallcarpet,v2:vtype:turk_weaver,v1:adult,building:weaver,weigth:10
+v1;0;Merhaba. Bir halı almak isiyorum. / Здравствуйте.  Я хочу купить ковер.
+v2;30;Tabi. Nasıl bir şey olsun? / - Конечно. - Нет.  Как ты хочешь, чтобы она выглядела?
+v1;60;Bilmiyorum. Bugün eşimin doğum günü olduğu için bir hediye almak istedim. Siz ne tavsiye edersiniz? / Я не знаю.  Я хотела купить подарок, потому что сегодня день рождения моего друга.  Что бы вы порекомендовали?
+v2;90;Kırmızı halı ya ne dersiniz? / А как насчет красного ковра?
+v1;120;Tamam, harika bir fikir. / Хорошо, отличная идея.
+v2;150;Kaç tane istersiniz? / Сколько вы хотите?
+v1;180;Bir olsun. İyi bir paketleme yapabilir misiniz? / Только один.  Ты можешь сделать хорошую упаковку?
+v2;210;Tabi efendim. Kendiniz mi vereceksiniz, biz mi götürelim? / Конечно, сэр.  Ты сам отдашь или мы возьмем?
+v1;240;Kendim vereceğim. Teşekkür ederim. / Я сам отдам.  - Спасибо. - Спасибо.
+
+
+newchat;key:couple1,v2:adult,v1:adult,rel:spouse,weigth:10
+v1;0;Hayirlı günler. / Удачного дня.
+v1;30;iyi uyudun mu? / Вы хорошо спали?
+v2;60;Iyidi çok şükür. / Да, это было хорошо.
+v1;90;kahvaltıda ne yersin / Что бы ты хотел на завтрак?
+v2;120;Bilmiyorum sence? / Я не знаю , а ты ?
+v1;150;Bende bilmiyorum. / Я не знаю.
+
+
+newchat;key:talk4,v2:adult,v1:adult,weigth:10
+v1;0;Günün nasıl geçti? / Как прошел твой день?
+v2;30;Kötü, çok yoğundu. / Это было довольно занято.
+v2;60;Yoruldum yani. / Так что я устал.
+v1;90;Ayran içer misin? / Хочешь пить айран?
+v2;120;Evet iyi olur aslında. / Было бы хорошо, да.
+
+
+newchat;key:talk5,v2:adult,v1:adult,notrel:spouse,weigth:10
+v1;0;Merhaba $targetfirstname / Здравствуйте . $targetfirstname.
+v1;30;Bugün nasılsın? / Как ты сегодня?
+v2;60;Sağol iyiyim / Спасибо, я в порядке.
+v1;90;Ailen nasıl, iyi mi? / Как твоя семья, как дела?
+v2;120;Evet onlar da iyiler / Спасибо, они тоже в порядке.
+v1;150;Havalar da ne sıcak değil mi? / Погода довольно жаркая, не так ли?
+v2;180;Evet gerçekten çok sıcak / Да, очень жарко.
+v1;210;Ailene selam söyle / Приветствуй свою семью.
+v2;240;Sağol sen de söyle / Спасибо, ты тоже приветствуешь свою семью.
+v1;270;Hoşçakal. / До свидания.
+
+
+newchat;key:talk6,v2:adult,v1:adult,notrel:spouse,weigth:10
+v1;0;Ne zaman taşındın? / Когда вы переехали?
+v2;30;Geçtiğimiz hafta. / Только в прошлый уикенд.
+v1;60;Evin satıldığını bile bilmiyordum. / Я даже не знал, что дом продан.
+v2;90;Bu evi çok seviyorum, bu yüzden taşınmak zorundaydım. / Я абсолютно люблю этот дом, поэтому пришлось переехать.
+v1;120;Anlıyorum, çünkü bu ev sıradışı. / Я понимаю, потому что дом необычный.
+v2;150;Ne zamandan beri evinde yaşıyorsun? / Сколько лет ты живёшь в своем доме?
+v1;180;Ben uzun süredir burada yaşıyorum. / Я здесь живу уже давно.
+v2;210;Umarım uzun süre komşu olarak kalırız. / Я надеюсь, что мы останемся соседями еще немного.
+v1;240;Ben de. / - Я тоже.
+
+
+newchat;key:talk7,v2:adult,v1:adult,notrel:spouse,weigth:10
+v1;0;Dün niye görmedim seni? / Почему ты вчера не был здесь?
+v2;30;Kendimi iyi hissetmiyordum. / Я не очень хорошо себя чувствовала.
+v1;60;Neyin vardı? / Что с тобой было не так?
+v2;90;Midem çok fenaydı. / У меня был желудок.
+v1;120;şimdi daha iyi hissediyor musun? / Ты чувствуешь себя лучше?
+v2;150;Hala çok iyi hissetmiyorum. / Я еще не чувствую себя очень хорошо.
+v1;180;Kendini daha iyi hissetmek için bir şeyler yapmak ister misin? / Хочешь чего-нибудь, чтобы тебе стало лучше?
+v2;210;Hayır,teşekkür ederim. Zaten birkaç tane ilaç aldım. / Нет, спасибо.  Я уже принял лекарства.
+v1;240;Umarım iyileşirsin. / Я надеюсь, ты чувствуешь себя лучше.
+v2;270;Teşekkür ederim. / - Спасибо. - Спасибо.
+
+
+newchat;key:talk8,v2:female,v1:female,notrel:spouse,weigth:6
+v1;0;Haberleri duydun mu? / Вы слышали новости?
+v2;30;Hiçbir şey duymadım. / Я ничего не слышал.
+v1;60;Komşumun geçen hafta bebeği oldu. / Моя соседка родила ребенка на прошлой неделе.
+v2;90;Hiçkimse bana söylemedi. / Никто мне не сказал.
+v1;120;Senin duyduğunu zannediyordum. / Я думал, ты слышал.
+v2;150;Bana hiçbir şey söylenmedi. / Мне ничего не сказали.
+v1;180;çok tatlı bir bebek, maşallah. / Она милая малышка.
+v2;210;Wow, ne heyecan verici. / Ух ты, как это волнует.
+v1;240;Değil mi, komşumu ve bebeğini görmeye kesinlikle gitmelisin. / Я знаю, тебе действительно стоит пойти и увидеть ее и ребенка.
+v2;270;Tabi ki, gideceğim. / Конечно, я буду.
+v1;300;Sadece ne olduğunu bilmeni istedim. / Я просто хотела сообщить тебе, что случилось.
+v2;330;Buna müteşekkirim. / Я ценю это.
+
+
+newchat;key:talk9,v2:female,v1:male,notrel:spouse,weigth:6
+v1;0;Benimle birzaman tarlaya gelir misin? / Хочешь пойти со мной на поле?
+v1;30;Ne zaman gitmek istersin? / Когда ты хочешь уйти?
+v1;60;Önümüzdeki Cuma günü ne dersin? / Как насчет следующей пятницы?
+v1;90;Üzgünüm, gelemem. O gün bir arkadaşımla akşam yemeği için buluşacağım. / Прости, я не могу.  Я ужинаю с другом.
+v1;120;Ya gelecek Salı? / Как насчет следующего вторника?
+v1;150;Salı günleri akşam camii dersine gidiyorum. / Я хожу на занятия в мечети во вторник.
+v1;180;Oh, belki başka zamana gideriz? / Может, в другой раз?
+v1;210;Evet, ben sena haber ederim. / Да, я тебе скажу.
+
+
+
+newchat;key:newhamam,v2:adult,v1:adult,building:hamambath,weigth:10
+v1;0;Selam $targetfirstname. / Здравствуйте . $targetfirstname.
+v2;30;Selam! / Эй! Эй!
+v1;60;Yeni hamamı gördünmü? / Ты видел новый хамам?
+v2;90;Hayır daha görmedim. / Нет, нет.
+v1;120;Tez görmememiz gerekiyor! / Мы должны быстро посетить его!
+v2;150;Hayırdır $targetfirstname. / Ладно, это хорошая новость.
+v1;180;Hayır Hayır, temizlik imandandir. / Да, да, это так, ты знаешь, чистота - это от религии.
+v2;210;Peki ozaman bir gidib bakalim. / Ладно, давайте посмотрим.
+v2;240;Bir Saate olurmu sence. / А как насчет часа?
+v1;270;Ya olmaz, şimdi gidelim. / Нет, давай.
+v2;300;Tamam tamam, bu ne telaş arkadaş. / Ладно, зачем так торопиться, друг мой.
+v2;330;Nerden gidiyoruz? / Куда нам идти?
+v1;360;Asılda biraz bekleyebiliriz. / Вообще-то, мы можем подождать.
+v2;390;Of, herzaman ayni şeyler $targetfirstname. / Это всегда то же самое с тобой. $targetfirstname.
+
+
+newchat;key:newmosque,v2:adult,v1:adult,building:smallmosque,weigth:10
+v1;0;Bu cami kadar güzel bir bina gördün mü kardeşim? / Ты когда-нибудь видел такое красивое здание, как эта мечеть, брат?
+v2;30;Hayir daha görmedim. / Нет, я еще не видел.
+v2;60;Nesaman yapildi? Güzelmiş. / Когда это было сделано?  Очень мило.
+v1;90;çok oldu be ya. / Давно не было.
+v2;120;Allah Allah. / Окей, хорошо.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

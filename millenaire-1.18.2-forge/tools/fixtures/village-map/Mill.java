@@ -1,0 +1,1 @@
+package org.millenaire.common.forge;public class Mill{public static final Proxy proxy=new Proxy();public static class Proxy{public java.util.List<Runnable> queued=new java.util.ArrayList<>();public void executeWorldTask(net.minecraft.world.level.Level world,Runnable action){queued.add(action);}}}

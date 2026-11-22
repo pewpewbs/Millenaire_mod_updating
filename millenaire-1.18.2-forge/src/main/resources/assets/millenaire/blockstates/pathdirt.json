@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "stable=false": {
+      "model": "millenaire:block/pathdirt"
+    },
+    "stable=true": {
+      "model": "millenaire:block/pathdirt"
+    }
+  }
+}

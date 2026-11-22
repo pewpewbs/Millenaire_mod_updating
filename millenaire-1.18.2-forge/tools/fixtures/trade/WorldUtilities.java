@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class WorldUtilities {public static int getItemsFromChest(net.minecraft.world.Container c,net.minecraft.world.item.Item item,int meta,int count){int left=count;for(int i=0;i<c.getContainerSize()&&left>0;i++){var s=c.getItem(i);if(s.is(item)){int n=Math.min(left,s.getCount());s.shrink(n);left-=n;}}return count-left;}}

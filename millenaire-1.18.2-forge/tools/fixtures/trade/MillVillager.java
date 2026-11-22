@@ -1,0 +1,4 @@
+package org.millenaire.common.entity;public class MillVillager extends net.minecraft.world.entity.monster.Zombie {
+ public org.millenaire.common.village.Building house;public org.millenaire.common.world.MillWorldData mw=new org.millenaire.common.world.MillWorldData();public java.util.Map<org.millenaire.common.item.TradeGood,Integer> merchantSells=new java.util.LinkedHashMap<>();
+ public MillVillager(){super(net.minecraft.world.entity.EntityType.ZOMBIE,null);}public org.millenaire.common.village.Building getHouse(){return house;}public org.millenaire.common.culture.Culture getCulture(){return house.culture;}public long getVillagerId(){return 1;}
+}

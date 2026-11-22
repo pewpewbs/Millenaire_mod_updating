@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class BlockItemUtilities {public static boolean isFence(net.minecraft.world.level.block.Block b){return false;}public static boolean isWoodenDoor(net.minecraft.world.level.block.Block b){return false;}public static boolean isFenceGate(net.minecraft.world.level.block.Block b){return false;}}

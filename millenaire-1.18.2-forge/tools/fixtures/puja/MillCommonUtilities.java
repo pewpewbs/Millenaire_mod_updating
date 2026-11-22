@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;import org.millenaire.common.item.MillItems;public class MillCommonUtilities {public static int countMoney(net.minecraft.world.Container inv){int n=0;for(int i=0;i<inv.getContainerSize();i++){var s=inv.getItem(i);n+=s.getCount()*(s.is(MillItems.DENIER)?1:s.is(MillItems.DENIER_ARGENT)?64:s.is(MillItems.DENIER_OR)?4096:0);}return n;}}

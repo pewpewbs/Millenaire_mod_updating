@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class MillLog {public static void minor(Object owner,String message){}}

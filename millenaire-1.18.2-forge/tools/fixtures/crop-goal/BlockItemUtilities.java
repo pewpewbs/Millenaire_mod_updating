@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class BlockItemUtilities{public static boolean isBlockDecorativePlant(net.minecraft.world.level.block.Block b){return b instanceof net.minecraft.world.level.block.BushBlock && !(b instanceof net.minecraft.world.level.block.CropBlock);}}

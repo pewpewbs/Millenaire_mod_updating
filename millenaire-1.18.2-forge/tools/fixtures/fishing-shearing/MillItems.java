@@ -1,0 +1,1 @@
+package org.millenaire.common.item;public class MillItems{public static final net.minecraft.world.item.Item RICE=net.minecraft.world.item.Items.WHEAT,MAIZE=RICE;}

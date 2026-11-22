@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;import java.util.*;import net.minecraft.world.entity.*;public class WorldUtilities{public static List<Entity> animals=new ArrayList<>();public static List<Entity> getEntitiesWithinAABB(net.minecraft.world.level.Level w,Class c,Point p,int h,int v){return animals.stream().filter(c::isInstance).toList();}}

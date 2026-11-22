@@ -1,0 +1,1 @@
+package org.millenaire.common.item;public record InvItem(net.minecraft.world.item.Item item){public net.minecraft.world.item.ItemStack getItemStack(){return new net.minecraft.world.item.ItemStack(item);}}

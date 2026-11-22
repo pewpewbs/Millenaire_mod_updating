@@ -1,0 +1,160 @@
+
+# ============================================================
+# Millenaire 1.18.2 / Forge 40.3.0 / Java 17
+# Place in: Millenaire_mod_updating/.gitignore
+# ============================================================
+
+# Gradle / ForgeGradle caches
+**/.gradle/
+**/.gradle-user-home/
+**/.kotlin/
+
+# Generated build outputs
+**/build/
+**/out/
+**/target/
+**/bin/
+*.class
+*.hprof
+hs_err_pid*
+replay_pid*
+
+# Minecraft / Forge runtime
+**/run/
+**/runs/
+**/logs/
+**/crash-reports/
+**/saves/
+**/screenshots/
+**/shaderpacks/
+
+options.txt
+optionsof.txt
+usercache.json
+usernamecache.json
+servers.dat
+servers.dat_old
+session.lock
+
+# IntelliJ / VS Code / Eclipse
+**/.idea/
+**/.vscode/
+**/.settings/
+**/.metadata/
+**/.history/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.factorypath
+
+# ============================================================
+# Local Millenaire development tools
+# ============================================================
+
+# Exclude local Java 17 installations
+/.millenaire-tools/jdk-*/
+
+# Exclude downloaded Java archives
+/.millenaire-tools/OpenJDK*.zip
+
+# Exclude decompiler log
+/.millenaire-tools/vineflower.log
+
+# Keep for now:
+# .millenaire-tools/mappings/
+# .millenaire-tools/vineflower-output/
+# .millenaire-tools/forge-1.18.2-40.3.0-mdk.zip
+# .millenaire-tools/vineflower-1.11.1.jar
+
+# ============================================================
+# Migration backup archives
+# ============================================================
+
+before-*.zip
+*.backup.zip
+*.backup.7z
+*.backup.rar
+*_backup.zip
+*_backup.7z
+*_backup.rar
+
+# ============================================================
+# Logs and temporary files
+# ============================================================
+
+*.log
+*.log.*
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+*.backup
+*.orig
+*.rej
+*.part
+*.crdownload
+
+# ============================================================
+# Local configurations and secrets
+# ============================================================
+
+.env
+.env.*
+!.env.example
+
+local.properties
+gradle-local.properties
+
+*.keystore
+*.jks
+*.pem
+*.p12
+*.pfx
+
+credentials.json
+secrets.json
+
+# ============================================================
+# Operating system files
+# ============================================================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+Thumbs.db
+Thumbs.db:encryptable
+desktop.ini
+ehthumbs.db
+
+$RECYCLE.BIN/
+
+# ============================================================
+# Keep source code and resources in Git
+# ============================================================
+
+# Do not ignore:
+# millenaire-1.18.2-forge/src/
+# millenaire-1.18.2-forge/migration/
+# src/main/resources/assets/
+# src/main/resources/todeploy/
+# gradle/wrapper/
+# gradlew
+# gradlew.bat
+# build.gradle
+# settings.gradle
+# gradle.properties
+
+# Do not globally ignore *.jar or *.zip.
+# Some may be required project dependencies.
+
+
+# ==================================================
+# Generated Vineflower decompilation output
+# ==================================================
+
+/.millenaire-tools/vineflower-output/

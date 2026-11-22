@@ -1,0 +1,2 @@
+package org.millenaire.common.utilities;
+public class Point { public net.minecraft.core.BlockPos getBlockPos(){return net.minecraft.core.BlockPos.ZERO;} public Point getNorth(){return this;} public Point getSouth(){return this;} public Point getEast(){return this;} public Point getWest(){return this;} }

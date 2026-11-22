@@ -1,0 +1,1 @@
+package org.millenaire.common.goal;public class Goal{public static class GoalInformation{public org.millenaire.common.utilities.Point point;public GoalInformation(org.millenaire.common.utilities.Point p){point=p;}public org.millenaire.common.utilities.Point getDest(){return point;}}}

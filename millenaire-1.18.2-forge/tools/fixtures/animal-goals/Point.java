@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class Point{public double distanceTo(net.minecraft.world.entity.Entity e){return 1;}}

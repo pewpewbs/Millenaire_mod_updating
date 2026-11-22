@@ -1,0 +1,78 @@
+//villager.CookBrick=A'-la yam k'a'am tunich. / This is strong stone.
+//villager.DryBrick=To'on k'ab'eet tunich ti b'et ki- otoch. / We need stone to make our homes. 
+//villager.GatherBrick=Ichil kuch ti yaab tunich. / I'm carrying too much stone. 
+
+female.BecomeAdult=Ichil k'a't ha ichki. / Я хочу мужа.
+male.BecomeAdult=Ichil k'a't ti tz'ak-b' ha ah tz'on. / Я хочу быть охотником.
+
+mayan_shaman.gopray.chosen=U- orasion tal teech / Молитвы защитят тебя.
+mayan_shaman.greeting=Ts'aakik tal teech. / Духи защищают тебя.
+
+villager.BecomeAdult=La la la la. / 
+
+villager.BringBackResourcesHome=Ichil chuy ti yaab se'es ti kuch. / Мне нужно нести слишком много древесины.
+
+villager.ChopTrees=Ya'ul pak. / Время рубки деревьев.
+
+villager.ConstructionStepByStep=Ichil k'ab'eet ichil k'a'am et-meyah. / Мне нужен сильный коллега.
+villager.ConstructionStepByStep=Meyah meyah meyah. / Работа, работа, работа.
+
+villager.DeliverGoodsHousold=Ti yaab han-ha ti kuch. / Слишком много еды.
+
+villager.GatherGoods=Ichil chuk u- se'es sut otoch. / Я возьму дерево домой.
+
+villager.GetGoodsHousold=Ichil k'ab'eet he'-la a-d'a'ax-tak k'am- otoch/ Мне нужно забрать эти вещи домой.
+
+villager.GetHouseResources=Ichil chik nah yam ichil utz nah. / Чистый дом - хороший дом.
+
+villager.GetResourcesForBuild=Yaab' ti- yaab' tunich. / Слишком много камня.
+
+villager.GoPlay=Ichil kolom uk chun su'uk. / Я буду играть в траве.
+
+villager.childobserveagriculture=Интересно, а что будет, если кукурузные семена сильно нагреть?
+villager.childobserveconstruction=Интересно, почему мы не можешь построить что-нибудь без камня?
+villager.childobservesmithing=Здесь все используют обсидиановые инструменты, но должно быть что-то получше!
+villager.childobserveproducefood=Почему взрослым достаётся вся какауха? Это нечестно!
+
+villager.childeatcacaobeans=Бобы немного горькие. Интересно, если полить молоком, станет лучше?
+
+
+villager.HarvestMaize=Ki' k'aaxal ki' hoch. / Хороший дождь, хороший урожай.
+
+villager.HarvestTurmeric=A'-la yooch hoch si muk' ti han-ha. / Этот урожай специй дает силы еде.
+
+villager.MakeTools=Man in-wah a'-b'a'ax. / Купи мои вещи.
+
+villager.MakeWeapons=U- k'ab wa'yeh nik k'a'am. / Руки здесь сильные.
+
+villager.PlantMaize=K'aaxal tuuxtik gnat ichil k'a'am hoch. / Дождь дает нам сильный урожай.
+
+villager.PlantSaplings=Ichil tz'ap tulakal he'-la -che'. / Я посадил все эти деревья.
+
+villager.PlantTurmeric=Yooch men u- han-ha. / Спис готовит еду.
+
+villager.ScultMayan=P'e k'in ichil k'am ti b'om. / Однажды я хочу рисовать.
+
+villager.SlaughterChicken=Ah kax si gnat b'ak'. / Курицы дают нам мясо.
+
+villager.calltoarms=Kin-s-ab u- k'as hun. / В этот день все мое!
+villager.calltoarms=Ti k'ab! / Убей плохого человека!
+villager.calltoarms=U- k'in yam in-ti'a'al! / К оружию!
+
+villager.gopray.chosen=Ichil t'an u- orasion. / Возношу молитву.
+villager.gopray=Pixan an gnat. / Духи, пошлите нам сильный урожай.
+villager.gopray=Pixan taka gnat ichil k'a'am hoch. / Духи, помогите нам.
+
+villager.gorest=He'lel bisik na. / Пришло время отдыха.
+villager.gorest=Ichil chuy ti wenel beora. / Теперь надо поспать.
+villager.gorest=Yaaawn. / *зевает*
+
+villager.greeting=Ba'ax tumben? / Что нового?
+villager.greeting=Biix men u- pixan ts'aakik teech? / Небо сегодня выглядит горячим.
+villager.greeting=Biix yam teech pamilya? / О чем думают твои духи?
+villager.greeting=Ola, $name-ji! / Привет, $name- Джи!
+villager.greeting=Pixan tuuxtik gnat k'aaxal. / Как твоя семья?
+villager.greeting=Tu'ux yam teech lu'um? / Духи посылают нам дождь.
+villager.greeting=U- ka'an yam k'iinal behla'e'. / Где твоя земля?
+
+villager.makeRasgulla=In-wah mo'nol pall yam k'oh. / Мой маленький ребенок болен.

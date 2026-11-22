@@ -1,0 +1,39 @@
+{
+  "mapping": {
+    "Blocks.field_150436_aH": "Blocks.SUGAR_CANE",
+    "Items.field_151120_aE": "Items.SUGAR_CANE",
+    "Blocks.field_150472_an": "Blocks.OAK_SIGN",
+    "Blocks.field_150444_as": "Blocks.OAK_WALL_SIGN",
+    "Items.field_151155_ap": "Items.OAK_SIGN",
+    "Blocks.field_150449_bY": "Blocks.NETHER_QUARTZ_ORE",
+    "Blocks.field_150327_N": "Blocks.DANDELION",
+    "Items.field_151107_aW": "Items.REPEATER",
+    "Items.field_151105_aU": "Items.CAKE",
+    "Blocks.field_150336_V": "Blocks.BRICKS",
+    "Blocks.field_150428_aP": "Blocks.JACK_O_LANTERN",
+    "Blocks.field_150446_ar": "Blocks.COBBLESTONE_STAIRS",
+    "Blocks.field_150330_I": "Blocks.DEAD_BUSH"
+  },
+  "files": {
+    "src\\main\\java\\org\\millenaire\\client\\MillClientUtilities.java": 1,
+    "src\\main\\java\\org\\millenaire\\client\\book\\BookManagerTravelBook.java": 6,
+    "src\\main\\java\\org\\millenaire\\client\\gui\\text\\GuiImportTable.java": 2,
+    "src\\main\\java\\org\\millenaire\\common\\buildingplan\\BuildingBlock.java": 2,
+    "src\\main\\java\\org\\millenaire\\common\\buildingplan\\BuildingCustomPlan.java": 4,
+    "src\\main\\java\\org\\millenaire\\common\\buildingplan\\BuildingDevUtilities.java": 2,
+    "src\\main\\java\\org\\millenaire\\common\\buildingplan\\BuildingImportExport.java": 7,
+    "src\\main\\java\\org\\millenaire\\common\\buildingplan\\BuildingPlan.java": 5,
+    "src\\main\\java\\org\\millenaire\\common\\entity\\TileEntityImportTable.java": 1,
+    "src\\main\\java\\org\\millenaire\\common\\goal\\GoalIndianHarvestSugarCane.java": 7,
+    "src\\main\\java\\org\\millenaire\\common\\goal\\GoalIndianPlantSugarCane.java": 3,
+    "src\\main\\java\\org\\millenaire\\common\\item\\InvItem.java": 1,
+    "src\\main\\java\\org\\millenaire\\common\\item\\ItemNegationWand.java": 1,
+    "src\\main\\java\\org\\millenaire\\common\\ui\\GuiActions.java": 3,
+    "src\\main\\java\\org\\millenaire\\common\\ui\\PujaSacrifice.java": 1,
+    "src\\main\\java\\org\\millenaire\\common\\utilities\\BlockItemUtilities.java": 2,
+    "src\\main\\java\\org\\millenaire\\common\\village\\Building.java": 1,
+    "src\\main\\java\\org\\millenaire\\common\\village\\BuildingResManager.java": 3,
+    "src\\main\\java\\org\\millenaire\\common\\goal\\generic\\GoalGenericPlantCrop.java": 1,
+    "src\\main\\java\\org\\millenaire\\common\\village\\buildingmanagers\\ResManager.java": 3
+  }
+}

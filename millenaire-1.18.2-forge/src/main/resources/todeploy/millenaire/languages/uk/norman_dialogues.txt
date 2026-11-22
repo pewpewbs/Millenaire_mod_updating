@@ -1,0 +1,364 @@
+//*  Dialogue lines start with a code like "v2;30;" which specify who is speaking and when the line shows up. Please copy it exactly in your translations.
+//*  First half of the line (till the /) is in the villagers' language and must be kept as-is, second part should be translated
+//* 
+
+
+
+newchat;key:rain,tag:notraining,weigth:10
+v1;0;Je sens qu'il va pleuvoir. / Я відчуваю, що йде дощ.
+v2;30;Il pleut toujours en Normandie. / У Нормандії завжди дощував...
+
+newchat;key:beautifulvillage,weigth:10
+v1;0;Il est beau notre village, tu ne trouve pas? / Наша деревня прекрасна, чи не думаєте?
+v2;30;Magnifique! Et on y travaille dur! / Прекрасно!  І ми наполегливо працюємо над цим!
+
+newchat;key:sunset,weigth:10
+v1;0;Le soleil se lève où, déjà? J'oublie toujours. / Де сонце знову виходить?  Я постійно забуваю.
+v2;30;Au nord, bien sûr! / На північ, де ще?
+
+newchat;key:harvest,weigth:10
+v1;0;Tu penses que la récolte sera bonne cette année? / Думаєте, урожай цього року буде хорошим?
+v2;30;Qui sait, avec le temps qu'il a fait. / Хто знає, з погодою, яку ми мали.
+v1;60;Il n'y a plus de saisons. / Сезон тут не має сенсу.
+
+newchat;key:indianfood,weigth:5
+v1;0;Tu as entendu parler des Indiens? / Ви чули про тих індіанців?
+v2;30;Il paraît qu'ils sont très bizarres. / Люди кажуть, що вони дуже дивні.
+v1;60;J'ai même entendu dire que leur nourriture brûle! / Очевидно, їхня їжа спалює!
+v2;100;Comme du calva? / Як Кальва?
+v1;120;Non, pire! / Ні, гірше!
+
+newchat;key:byzantines,v1:adult,v2:adult,weigth:5
+v1;0;Ces byzantins m'énervent! / Ці візантийці заважають мені на нерви!
+v2;30;Oui, tu as vu comme ils nous prennent de haut? / Ви бачили, як вони виходять високими і потужними?
+v1;60;Tout ça parce qu'ils prétendent être romains. / Все це тому, що вони стверджують, що вони римляни.
+v2;100;Quelle blague. Des romains dégénérés, alors. / Що за жарт.  Отже, вироджені римляни.
+v1;130;On devrait organiser un raid chez eux. / Ми повинні організувати рейд на них!
+v2;160;On est vikings après tout! / Ми вікінги!
+
+newchat;key:storm,weigth:10
+v1;0;Il y a eu un orage terrible hier. / Вчора була жахлива буря.
+v2;30;Oui, j'ai cru que le toit allait s'envoler. / Я ж думала, що дах зруйнується.
+v1;60;Il faudrait les renforcer tous. / Ми повинні зміцнити їх усіх.
+
+newchat;key:visitors,weigth:10
+v1;0;Ce qui manque ici, c'est des visiteurs. / Що нам тут не вистачає - це відвідувачі.
+v2;30;Il y a bien $name... / Ну, є $name...
+v1;60;Oui, mais il est un peu bizarre, non? / Але він трохи дивний, так?
+v2;100;C'est vrai qu'on ne sait jamais trop ce qu'il va faire. / Це правда, що ми ніколи не знаємо, що він збирається.
+
+newchat;key:christmas,weigth:10
+v1;0;C'est quand Noël, déjà? / Коли прийдуть Різдво?
+v2;30;Je ne sais pas trop... Les saisons ne changent pas ici. / Я не знаю...  Тут сезони не змінюються.
+v1;80;Quel monde bizarre quand même. / Який дивний світ.
+v2;110;Parfois on dirait presque la Normandie... / Іноді це майже виглядає як Нормандія...
+v2;140;et puis on se rappele que tout est différent. / І тоді ми бачимо, що все по-іншому.
+
+newchat;key:william,v2:adult,weigth:10
+v1;0;Tu as déjà vu le Duc Guillaume, toi? / Ви коли-небудь бачили герцога Вільяма?
+v2;30;Non, jamais. Et qui sait où il est maintenant? / Ні, ніколи.  І хто знає, де він зараз?
+v1;60;S'il était là, nous aurions déjà conquis ce nouveau monde! / Якби він був тут, ми б вже завоювали цей новий світ!
+v2;100;Vive le Duc Guillaume! / Живи герцог Вільям!
+
+newchat;key:floatingearth,v2:adult,weigth:10
+v1;0;Tu as remarqué, ici la terre flotte si on creuse en-dessous. / Чи помітили ви, що Земля плаває, якщо ми копаємо під нею?
+v2;40;Oui, et alors? / Так, і так?
+v1;60;En Normandie, elle tombait... / У Нормандії вона падала...
+v2;90;En Normandie, Dieu voulait qu'elle tombe. Ici, il veut qu'elle flotte. / У Нормандії Бог хотів, щоб вона упала.  Ось, він хоче, щоб вона плавала.
+v2;150;Pourquoi critiques-tu Dieu? / Чому ти критикуєш Бога?
+
+newchat;key:likingrain,tag:raining,weigth:10
+v1;0;J'aime bien la pluie. / Мені подобається дощ.
+v2;30;C'est une bonne chose pour un normand! / Це добре для Нормана!
+
+newchat;key:boudintripes,weigth:10
+v1;0;Tu préfères quoi toi, le boudin ou les tripes? / Що ти віддаєш перевагу, будин чи трип?
+v2;40;Le boudin, les tripes c'est trop lourd. / Будин.  Трипи занадто важкі!
+v1;80;Trop lourd? Et tu te dis normand? / Занадто важкий?  А ти називаєш себе Норманном?
+
+newchat;key:horses,v1:child,v2:adult,weigth:10
+v1;0;Ca manque d'animaux, ce pays. / У цій країні немає тварин.
+v2;30;Il y a des vaches, des moutons et des cochons. / Є корови, овець і свиней.
+v2;60;Que faudrait-il de plus? / Що ще потрібно?
+v1;60;Des chevaux? Et des poneys! / Коні?  І поні!
+v2;90;Parce que tu veux un poney, maintenant? / Тому що ти хочеш поні?
+
+newchat;key:tripes,v1:adult,v2:adult,v1:male,v2:female
+v1;0;Les tripes, ça c'est un plat d'homme. / Трипс, це чоловіче посуду.
+v2;30;Préparé par les femmes... / Підготували жінки...
+v1;60;Mais avec des vaches abattues par des hommes! / З коровами, заколяними людьми!
+v2;100;Et nourries par des femmes... / І годуються жінками...
+
+newchat;key:countingcows,weigth:10
+v1;0;Ca manque de distraction par ici. / Тут мало що робити.
+v2;30;C'est bien, c'est calme. / Це добре, мирно.
+v1;60;Et ennuyeux... / І нудно...
+v2;75;Tu n'as qu'à compter les vaches pour te distraire. / Чому ти не розраховуєш корів?
+v1;110;Déjà fait hier. Et les poulets aussi. / Я вже вчора.  І кури, теж.
+
+newchat;key:paris,v1:adult,v2:adult,weigth:2
+v1;0;Quel coin paumé ici, quand même. J'aimerai voir autre chose un jour... / Що за ізольоване місце.  Я б хотів побачити щось інше колись...
+v2;30;Les autres villages sont tous pareils. / Інші села однакові.
+v1;60;Pas un village! Un bourg. Ou même une ville! / Ні в селі!  Місто.  І навіть місто!
+v2;90;Quoi, comme Rouen? Tu es fou, c'est à des jours d'ici. / Як що, Руан?  Ти божевільний, через кілька днів.
+v1;120;Rouen... ou même... Pourquoi pas Paris? / Руан... або, можливо...  Чому не Париж?
+v1;150;Tu te rend compte, on dit qu'il y aurait 25 000 personnes là-bas! / Ви можете собі уявити, люди кажуть, що там живе 25 000 людей!
+v2;180;Tu divague, mon pauvre. 25 000 personnes au même endroit? Et où on les mettrait? / Ти божевільний. 25 тисяч людей в одному місці?  Де вони йдуть?
+
+newchat;key:calva,v1:adult,v2:adult,v1:male,v2:male,weigth:10
+v1;0;Par ce temps, un petit calva s'impose! / У такій погоді, кальва - обов'язковий!
+v2;30;Par tous les temps! / У будь-яку погоду!
+v1;50;A la Normandie et son climat à calva! / Привітання за Нормандію і її спокійну погоду!
+v2;70;Santé! / Будьмо!
+
+newchat;key:boyvillagechief,v1:child,v1:male,v2:adult,weigth:5
+v1;0;Quand je serais grand, je serais le chef du village! / Коли я виросту, я буду головою села!
+v2;30;Il va falloir que tu mange beaucoup de soupe avant d'en arriver là. / Вам знадобиться багато супу, перш ніж добереться до нього.
+v1;60;Et je te ferais punir! / І я накажу тебе!
+v2;70;C'est ça. En attendant, va travailler ou tu vas prendre une claque. / Так, так, так.  І поки що, зайди на роботу, інакше це тебе удару.
+
+newchat;key:kids1,v1:child,v2:child,weigth:10
+v1;0;Mon papa est bien plus fort que le tien. / Мій батько набагато сильніший, ніж ваш.
+v2;30;N'importe quoi. Mon papa est le plus fort du village. / Неправда.  Мій батько - найсильніший у селі.
+v1;60;Tu rêves. Mon père met le tien par terre en deux minutes. / Сніться.  Мій батько може перемогти твого за дві хвилини.
+v2;70;Et la Terre est ronde! / І Земля круглая!
+
+newchat;key:kids2,v1:child,v1:male,v2:child,v2:female,weigth:10
+v1;0;Les filles, ça ne sert à rien. / Дівчата безпотрібні.
+
+newchat;key:kids3,v2:child,v2:male,v1:child,v1:female,weigth:10
+v1;0;T'es peut être un garçon, mais je te fait pleurer quand je veux. / Ти може бути хлопчиком, але я можу змусити тебе плакати, коли захочу.
+v2;30;Même pas vrai! Même pas vrai! / Це неправда!  Це неправда!
+
+newchat;key:enderman,v1:adult,v2:child,weigth:10
+v1;0;Sois sage, ou l'homme des limbes t'emportera cette nuit! / Будь добрим, або Ендерман тебе впіймає сьогодні ввечері!
+v2;40;Pfff, j'ai passé l'âge de croire à ces bêtises. / Пффф, я занадто стар, щоб повірити в цю неправду.
+
+newchat;key:badflirt,v1:adult,v2:adult,v1:nospouse,v2:nospouse,v1:male,v2:female,notrel:sibling,v1:notvtype:monk-priest-abbot,weigth:20
+v1;0;Alors beauté, qu'est ce que tu fais ce soir? / Так, красиво, що ти робиш сьогодні ввечері?
+v2;40;$targetfirstname, je t'ai déjà dit non! / $targetfirstnameЯ вже казав вам - ні!
+v1;60;Quel caractère! / Який характер!
+v2;80;Quel nigaud! / Що за ідіотичность!
+
+newchat;key:badflirt2,v1:vtype:guard-lumberman,v2:adult,v1:hasspouse,v2:female,notrel:sibling,notrel:parent,notrel:child,weigth:20
+v2;0;$targetfirstname, quels beaux muscles! / $targetfirstname, які прекрасні м'язи!
+v1;30;Tais-toi, malheureuse! Si ma femme t'endend... / Ти тишій, дурнико!  Якщо нас почує моя дружина...
+v2;60;Et bien quoi, bel homme? / А що тоді, гарний?
+v1;90;Tu sais bien comme elle est jalouse! / Ви знаєте, як вона заздріє!
+v2;120;Et? Elle te fait peur? / А що ж?  Ти боїшся її?
+v1;140;Peur? Elle? Quelle blague! / Боїться?  Від неї?  Ти жартуєш!
+v2;160;А! А!
+
+newchat;key:frerejacques,v1:child,v2:child,weigth:10
+v1;0;Frère Jacques, frère Jacques / Брат Джон, Брат Джон
+v2;30;Dormez-vous? Dormez-vous? / Ти спиш, ти спиш?
+v1;60;Sonnez les matines! Sonnez les matines! / Зверніть ранкові дзвінки!  Зверніть ранкові дзвінки!
+v2;100;Дінг, дінг, дінг.  Дін, дін, дін!
+
+newchat;key:alouette,v1:child,v2:child,weigth:10
+v1;0;Alouette, gentille alouette, / Маленький свердловий, прекрасний маленький свердловий,
+v2;0;Alouette, gentille alouette, / Маленький свердловий, прекрасний маленький свердловий,
+v1;30;Alouette, je te plumerai. / Маленький, я тебе відкопаю пер'я.
+v2;30;Alouette, je te plumerai. / Маленький, я тебе відкопаю пер'я.
+v1;60;Je te plumerai la tête. / Я вирву тебе пер'яди з голови.
+v2;60;Je te plumerai la tête. / Я вирву тебе пер'яди з голови.
+v1;90;Et la tête! Et la tête! / Зніміть голову!
+v2;90;Et la tête! Et la tête! / Зніміть голову!
+v1;120;Pauvre alouette quand même... / Бідний небідний, хоча...
+v2;160;Pourquoi? C'est drôle! / Чому?  Це весело!
+
+newchat;key:loupyesttu,v1:child,v2:child,weigth:10
+v1;0;Promenons-nous dans les bois, / Давайте прогуляємося в лісі.
+v2;0;Promenons-nous dans les bois, / Давайте прогуляємося в лісі.
+v1;30;Tant que le loup n'y est pas. / Доки вовк не буде.
+v2;30;Tant que le loup n'y est pas. / Доки вовк не буде.
+v1;60;Si le loup y était / Якби був там вовк
+v2;60;Si le loup y était / Якби був там вовк
+v1;90;Il nous mangerait, / Він з'їв нас,
+v2;90;Il nous mangerait, / Він з'їв нас,
+v1;120;Mais comme il n'y est pas, / Але оскільки його немає,
+v2;120;Mais comme il n'y est pas, / Але оскільки його немає,
+v1;150;Il nous mangera pas. / Він нас не буде їсти.
+v2;150;Il nous mangera pas... / Він нас не буде їсти...
+v2;180;Euh, tu es sûr? / Ви впевнені?
+v1;200;Lâche! / Збогиня!
+
+newchat;key:dagobert,v1:child,v2:child,weigth:10
+v1;0;Le bon roi Dagobert / Хороший король Дагоберт
+v1;30;A mis sa culotte à l'envers / У нього були гамочки.
+v1;60;Le grand saint Éloi / Великий святий Елой
+v1;90;Lui dit : Ô mon roi ! / Я сказав йому: О , мій король !
+v1;120;Votre Majesté / Ваша Величність
+v1;150;Est mal culottée. / Він дуже дихає.
+v2;180;Mal culottée? Ca veut dire quoi? / Зло дихає?  Що це означає?
+v1;220;Qu'il a pas de culotte! / Що у нього немає штанів!
+v2;250;N'importe quoi, c'est le roi! / Безглуздь, він король!
+v1;280;Ben il a pas de culotte le roi! / У короля немає штанів!
+v2;310;Même toi t'as une culotte, idiot! / Навіть у тебе є, ідіот!
+
+newchat;key:confession,v1:vtype:abbot-priest,v2:male,v2:notvtype:abbot-priest,weigth:10
+v1;0;Mon fils, il y a longtemps que tu ne t'es pas confessé. / Син мій, ти останній раз зізнався давно.
+v2;40;Mais mon Père, je n'ai pas péché! / Але, батько, я не грішив!
+v1;70;Tout le monde pèche dans ce bas monde. / У цьому зруйнованому світі всі грішать.
+v2;110;Même vous, mon père? / Навіть ти, батько?
+v1;130;Ne sois pas insolent! Tu feras dix Pater Noster en pénitence! / Достатньо небрежності!  Ти зробиш десять "Патер Ностер" за покаяння!
+
+newchat;key:confession2,v1:vtype:abbot-monk-priest,v2:female,v2:adult,weigth:10
+v1;0;Ma fille, il y a longtemps que tu ne t'es pas confessée. / Моя дочка, ти останній раз зізналася давно.
+v2;30;C'est vrai mon père, et j'ai péché! / Це правда, батько, і я грішив!
+v1;60;Si c'est un péché de chair, nous en parlerons ailleurs. / Якщо це був гріх плоти, то ми обговорюватимемо це в іншому місці.
+v2;100;Merci, mon père. / Дякую, батько.
+v1;120;En attendant, dix Pater Noster. Ca servira toujours! / Між тим, десять "Патер Ностер".  Завжди корисно!
+
+newchat;key:carpenter,v1:vtype:carpenter,weigth:10
+v1;0;J'ai encore amélioré ma technique. / Я знову покращив свої навички.
+v1;30;Avant d'assembler les colombages, je commence par... / Перед тим як скласти рами, я починаю з...
+v2;70;C'est fascinant. / Зачаруючий.
+v1;90;Tu trouves? / Ти дійсно так думаєш?
+v2;110;Non. / - Ні, ні, ні.
+
+newchat;key:cattlefarmer,v1:vtype:cattlefarmermale-cattlefarmerfemale,v2:notvtype:cattlefarmermale-cattlefarmerfemale,weigth:10
+v1;0;J'adore préparer des tripes. D'abord, saigner la vache... / Я люблю готувати трипи.  По-перше, викривить корову...
+v1;40;Puis extraire les boyaux... / Тоді зійміть кишки...
+v2;60;Arrête, tu me dégoutes! / Перестань, ти мене огидаєш!
+v1;80;Mais tu adores les tripes! / Але ти любиш трипи!
+v2;110;Et je ne veux pas savoir comment elles sont faites. / І я не хочу знати, як вони зроблені.
+
+newchat;key:farmer,v1:vtype:farmer,v2:notvtype:farmer,weigth:10
+v1;0;Aucun doute, fermier c'est le métier le plus important. / Без сумніву, сільське господарство є найважливішою роботою.
+v1;40;Sans moi, pas de pain! / Без мене немає хліба!
+v2;60;Je préfère les tripes, de toute façon. / Мені все одно більше подобаються трипси.
+
+newchat;key:guildmaster,v1:vtype:guildmaster,weigth:10
+v1;0;Quand j'étais jeune, j'étais un apprenti très prometteur. / Коли я був молодим, я був дуже перспективним навчеником.
+v1;40;Guillaume Vif-Argent lui-même s'intéressait à moi! / Гільям Віф-Аргент сам цікавився мною!
+v1;80;Et maintenant je suis coincé ici. / І зараз я тут застряг.
+v1;110;A m'occuper d'abrutis. / Охоронювати ідіотів.
+v2;130;Hein, quoi? / - Що?
+v1;150;*soupir* / *вигляд*
+
+newchat;key:knight,v1:vtype:knight,weigth:10
+v1;0;Regarde mon château! Une vraie forteresse! / Подивіться на мій замок!  Справжня фортеця!
+v2;30;Vous êtes si puissant, seigneur! / Ти сильний, Господи!
+v1;60;Quand le Duc Guillaume reviendra, il me fera sûrement Comte! / Коли вільгельм повернеться, він обов'язково зробить мене графом!
+v2;100;Vive le Compte $targetfirstname! / Поздрав графу $targetfirstname!
+v1;130;Vive moi! / Поспіхай за мене!
+
+newchat;key:lady,v1:vtype:lady,v2:notvtype:knight,weigth:10
+v1;0;Ma beauté est célèbre dans ces contrés. / Моя краса легендарна в цих країнах.
+v2;30;Vous êtes superbe, ma Dame! / Ви прекрасні, моя леді!
+v1;60;Et pourtant j'ai épousé un petit chevalier de rien du tout... / І все ж я вийшла заміж за мелкого, безцінного рыцаря...
+v2;100;Mais sa Seigneurie deviendra certainement comte un jour! / Але його лордство одночасно стане графом!
+v1;130;Ce nigaud? Ah! Et pourquoi pas Pape, tant qu'à faire? / Цей ідіот?  І чому не Поуп, поки ти це робиш?
+v2;160;Pourquoi pas, ma Dame! Euh... Je voulais dire... / Чому б не, моя леді!  У-у...  Я маю на увазі...
+
+newchat;key:lumberman,v1:vtype:lumberman,weigth:10
+v1;0;Pommes pommes pommes! / Яблука, яблука, яблука!
+v1;30;Pommes, pommes... pommes! / Яблука, яблука... яблука!
+v2;60;Plutôt cidre cidre cidre dans ton cas, non? / Ви впевнені, що це не сидром, сидром, сидром?
+
+newchat;key:merchant,v1:vtype:merchant,weigth:10
+v1;0;Quel village minable. / Яка маленька селя.
+v2;30;Eh étranger, attention à ce que tu dis! / Гаразд, чужі, будь обережний з мовом!
+v1;70;Et quels habitants charmants! / І які чарівні люди!
+
+newchat;key:miner,v1:vtype:merchant,weigth:10
+v1;0;J'ai composé une petite chanson, tu veux l'écouter? / Я придумав маленьку пісню, ти хочеш послухати її?
+v2;40;Vas-y! / Давайте почуємо!
+v1;50;Високо, високо, високо, високо...
+v2;70;Ca commence bien... / Перспективний початок...
+v1;90;Je rentre du boulot! / Додому з роботи я йду!
+v2;110;Et moi j'ai beaucoup à faire. / І я маю багато роботи.
+
+newchat;key:monk,v1:vtype:monk,v2:child,weigth:10
+v2;0;Frère Jacques, frère Jacques! / Брат Джон, брат Джон!
+v1;30;Très drôle, mon enfant. / Дуже смішно, дитяче.
+v2;60;Dormez-vous? Dormez-vous? / Ти спиш, ти спиш?
+v1;90;Ca va, ça va, je connais la chanson. / Достатньо, я знаю пісню.
+
+newchat;key:pigherd,v1:vtype:pigherd-pigherdf,v2:notvtype:pigherd-pigherdf,weigth:10
+v1;0;Tout est bon dans le cochon! / У свині все добре!
+v2;30;Ils font beaucoup de bruit quand tu les égorges, quand même. / Але вони все ще дуже шумують, коли їх заколяють.
+v1;70;Plus le cochon braille, meilleure est la viande! / Чим сильніше свинья викрикає, тим краще м'ясо!
+
+newchat;key:priest,v1:vtype:priest,weigth:10
+v1;0;Je veille sur la santé spirituelle des villageois. / Я служу духовному здоров'ю села.
+v2;30;Et il y a du travail! / І є служіння!
+
+newchat;key:priest2,v1:vtype:priest,weigth:10
+v1;0;Notre village craint Dieu. / Наша деревня боїться Бога.
+v2;30;Et son représentant, Père $targetlastname. / І його вікарем, батько $targetlastname.
+
+newchat;key:seneschal,v1:vtype:seneschal,weigth:10
+v1;0;Je suis très estimé à la cour du Roi le Duc Guillaume. / Мене високо цінують у дворі короля князя Вільяма.
+v2;40;Le Roi le Duc? / Король, герцог?
+v1;60;Sa Majesté Guillaume le Conquérant, Duc de Normandie et Roi d'Angleterre, ignare! / Його Величність Вільгельм Завоювач, герцог Нормандії і король Англії, глуп!
+v2;100;C'est où l'Angleterre? / Де Англія?
+v1;120;De l'autre côté de la mer. Quelle ignorance! / На іншій стороні моря.  Яка невідомость!
+v2;140;De quelle mer, Seigneur? / З якого моря, мілорд?
+v1;160;Quelle insolence! Il suffit! / Що за безрозумність!  Достатньо!
+
+newchat;key:shepherd,v1:vtype:shepherd-shepherdf,v2:notvtype:shepherd-shepherdf,weigth:10
+v1;0;Etre berger est un métier très noble. / Бути пастухом - це благородно.
+v2;30;Noble? Berger? / Благородний?  Шепард?
+v1;50;N'avons nous pas été choisis par Dieu pour recevoir la Bonne Nouvelle? / Хіба Бог не обрав нас, щоб почути добру новину?
+v2;90;Ah, oui. Pendant que vous vous occupiez des agneaux nouveau-nés - en Décembre. / А, так.  Коли ти піклувався про новонароджених ягнятків - у грудні.
+v1;130;Et alors? Peut être qu'à Bethléem il n'y a pas de saisons. Comme ici! / І що ж?  Можливо, в Бетлеємі немає сезонів.  Як тут!
+
+newchat;key:smith,v1:vtype:smith,weigth:10
+v1;0;La vrai force des normands, c'est leurs outils et leurs armes. / Справжня сила норманців полягає в озброєннях і інструментах.
+v2;40;Et donc leurs forgerons? / І тому в їхніх шмітах?
+v1;60;Voilà! / Так і є!
+
+newchat;key:wife,v1:vtype:wife,v2:male,v2:adult,weigth:10
+v1;0;Pourquoi est-ce toujours les femmes qui construisent? / Чому жінки завжди будують?
+v2;40;Si ça te gène, je m'occupe du prochain bâtiment. / Якщо це вас турбує, я позбуюся про наступне.
+v1;80;Vraiment? Tu es adorable! Alors, pour les rideaux, n'oublie pas de... / Справді!  Це так мило!  Отже, щодо завісок, не забудьте...
+v2;120;En fait non, je vais te laisser faire. / Насправді ні, я думаю, я дозволю тобі це зробити.
+
+newchat;key:alchemyworkshop,villager:alchemistapprentice,v1:notvtype:alchemistapprentice-guildmaster,v2:notvtype:alchemistapprentice-guildmaster,v1:adult,v2:adult,weigth:10
+v1;0;Je suis passé devant l'atelier de l'alchimiste hier. / Вчора я прогулявся перед майстерні алхіміка.
+v1;40;Il y avait une odeur d'œuf pourris horrible! / Там запахло гниючими яйцями!
+v2;80;Il paraît qu'il essaye de fabriquer la pierre philosophale! / Кажуть, він намагається створити камень філософа!
+v1;120;Moi j'ai entendu qu'il veut résusciter les morts. / Я чула, що він хоче воскресити мертвих.
+v2;160;Et moi qu'il va fabriquer un monstre avec des cadavres! / І я, що він створить монстр з частин тіла!
+v1;200;Quelle horreur! / Як жахливо!
+v2;220;C'était un garçon si charmant pourtant... / І він був таким сладким хлопчиком...
+
+newchat;key:archives,building:archives,weigth:10
+v1;0;Tu as visité les nouvelles archives? / Ви відвідали нові архіви?
+v1;30;On y voit ce que tout le monde fait! / Ви бачите, що роблять всі!
+v2;60;Ah, vraiment... et euh... / О, дійсно... і, ех...
+v1;90;Oui, j'ai vu ton panneau. / Так, я бачив вашу панель.
+v1;120;Tu devrais avoir honte. / Ти повинен соромитися себе.
+
+newchat;key:bakery,building:bakery,weigth:10
+v1;0;J'adore l'odeur de pain qui sort de la boulangerie. / Мені подобається запах свіжого хліба, що виходить з пекарни.
+v2;40;Il ne nous manque plus que quelqu'un sachant faire des croissants. / Тепер нам потрібен тільки той, хто вміє робити кроасанти.
+
+newchat;key:church,building:church,weigth:10
+v1;0;Notre église est vraiment superbe. / Наша церква справді прекрасна!
+v2;30;Elle montre que nous sommes un village pieux. / Це показує, що ми благочесна деревня.
+v1;60;Et elle est plus grande que celle du village voisin! / І він більший, ніж в сусідній селі!
+
+newchat;key:inn,building:inn,v1:notvtype:merchant,v2:notvtype:merchant,weigth:10
+v1;0;Maintenant que nous avons une auberge, nous allons pouvoir commercer! / Тепер, коли у нас є готель, ми можемо обмінятись!
+v2;40;Autrement dit, les marchands de passage vont se servir dans nos resources. / Іншими словами, прохідні торговці допоможуть собі на наших ресурсах.
+v1;80;Tu as toujours été cynique. / Ти завжди був цинічним.
+
+newchat;key:market,building:market,v1:notvtype:merchant,v2:notvtype:merchant,weigth:10
+v1;0;J'adore le marché! Tellement de marchandises superbes! / Я люблю ринок!  Такі прекрасні товари!
+v2;40;On se sent moins isolé maintenant. / Ми відчуваємо себе менш ізольованими, тепер, коли це там.
+v2;80;Mais pas plus riches... / Але не багатніше...
+
+newchat;key:tavern,building:tavern,v1:adult,v2:adult,weigth:10
+v1;0;La taverne est certainement la meilleure chose qu'on ait construite. / Таверна, безумовно, найкраща річ, яку ми побудували в селі.
+v2;40;Personne ici ne dira le contraire! / Ніхто тут цього не спроваджуватиме!
+
+newchat;key:fort,building:tavern,v1:adult,v2:adult,weigth:10
+v1;0;Hahaha! Nous sommes imparables. Nos navires impressionnants et honorables chevaliers sont le fléau du monde!. / Хаха!  Ми не зупиняємося.  Наші вражаючі кораблі і чесні рыцарі - це біда світу!
+v2;40;Et quels sont nos ennemis? Un groupe de tricksters romains et amoureux de la pierre Maya / І хто наші вороги?  Група римських мошенників і любителів камінь майя?
+v1;80;Ne pas oublier les fous des neiges qui n'ont même pas le concept de l'argent! / Не забувайте про снігових дурів, які навіть не мають поняття грошей!
+v2;120;Hahaha! La vie normande est la meilleure du monde! Merveilleux cidre, meilleurs outils. Ah, c'est notre âge d'or! / Хаха!  Норманське життя - найкраще в світі!  Чудової сідра, найкращі інструменти.  А, це наш золотий вік.
+v1;160;Et nous arrivons à le partager! / І ми ділимся цим!
+v2;200;Hahaha! / Хаха!

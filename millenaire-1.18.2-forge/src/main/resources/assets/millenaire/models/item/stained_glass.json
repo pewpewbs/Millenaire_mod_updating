@@ -1,0 +1,29 @@
+{
+  "parent": "millenaire:item/stained_glass_white",
+  "overrides": [
+    {
+      "predicate": {
+        "millenaire:variant": 1
+      },
+      "model": "millenaire:item/stained_glass_yellow"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 2
+      },
+      "model": "millenaire:item/stained_glass_yellow_red"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 3
+      },
+      "model": "millenaire:item/stained_glass_red_blue"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 4
+      },
+      "model": "millenaire:item/stained_glass_green_blue"
+    }
+  ]
+}

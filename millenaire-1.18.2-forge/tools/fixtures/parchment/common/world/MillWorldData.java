@@ -1,0 +1,2 @@
+package org.millenaire.common.world;
+public class MillWorldData { public org.millenaire.common.village.Building building; public org.millenaire.common.village.Building getBuilding(org.millenaire.common.utilities.Point pos){return building;} }

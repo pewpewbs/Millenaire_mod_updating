@@ -1,0 +1,137 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.block.Block
+ *  net.minecraft.block.BlockDoublePlant$EnumBlockHalf
+ *  net.minecraft.block.properties.IProperty
+ *  net.minecraft.block.properties.PropertyEnum
+ *  net.minecraft.block.state.BlockStateContainer
+ *  net.minecraft.block.state.IBlockState
+ *  net.minecraft.entity.EntityLivingBase
+ *  net.minecraft.init.Blocks
+ *  net.minecraft.item.ItemStack
+ *  net.minecraft.util.ResourceLocation
+ *  net.minecraft.util.math.AxisAlignedBB
+ *  net.minecraft.util.math.BlockPos
+ *  net.minecraft.world.IBlockAccess
+ *  net.minecraft.world.World
+ *  net.minecraftforge.common.ForgeHooks
+ */
+package org.millenaire.common.block;
+
+import java.util.Random;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.DoublePlantBlock;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.common.ForgeHooks;
+import org.millenaire.common.block.BlockMillCrops;
+
+public class BlockGrapeVine
+extends BlockMillCrops implements org.millenaire.common.block.LegacyVariantBlock {
+    public static final EnumProperty<net.minecraft.world.level.block.state.properties.DoubleBlockHalf> HALF = EnumProperty.create((String)"half", net.minecraft.world.level.block.state.properties.DoubleBlockHalf.class);
+
+    public BlockGrapeVine(String cropName, boolean requireIrrigation, boolean slowGrowth, ResourceLocation seed) {
+        super(cropName, requireIrrigation, slowGrowth, seed);
+        this.registerDefaultState(this.stateDefinition.any().setValue(HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER));
+    }
+
+    @Override
+    public boolean func_180671_f(Level worldIn, BlockPos pos, BlockState state) {
+        if (state.getValue(HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER) {
+            return worldIn.getBlockState(pos.below()).getBlock() == this && worldIn.getBlockState(pos.below()).getValue(HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER && super.func_180671_f(worldIn, pos.below(), worldIn.getBlockState(pos.below()));
+        }
+        return worldIn.getBlockState(pos.above()).getBlock() == this && worldIn.getBlockState(pos.above()).getValue(HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER && super.func_180671_f(worldIn, pos, state);
+    }
+
+    public boolean func_176196_c(Level worldIn, BlockPos pos) {
+        return super.func_176196_c(worldIn, pos) && worldIn.isEmptyBlock(pos.above());
+    }
+
+    protected void func_176475_e(Level worldIn, BlockPos pos, BlockState state) {
+        if (!this.func_180671_f(worldIn, pos, state)) {
+            BlockGrapeVine lowerBlock;
+            boolean upper = state.getValue(HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER;
+            BlockPos upperPos = upper ? pos : pos.above();
+            BlockPos lowerPos = upper ? pos.below() : pos;
+            BlockGrapeVine upperBlock = upper ? this : worldIn.getBlockState(upperPos).getBlock();
+            BlockGrapeVine blockGrapeVine = lowerBlock = upper ? worldIn.getBlockState(lowerPos).getBlock() : this;
+            if (upperBlock == this) {
+                worldIn.setBlock(upperPos, Blocks.AIR.defaultBlockState(), 2);
+            }
+            if (lowerBlock == this) {
+                worldIn.setBlock(lowerPos, Blocks.AIR.defaultBlockState(), 3);
+            }
+        }
+    }
+
+    @Override
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
+        builder.add(AGE, HALF);
+    }
+
+    @Override
+    public AABB func_185496_a(BlockState state, BlockGetter source, BlockPos pos) {
+        return field_185505_j;
+    }
+
+    @Override
+    public int func_176201_c(BlockState state) {
+        int i = this.getAge(state);
+        return i |= state.getValue(HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER ? 8 : 0;
+    }
+
+    @Override
+    public BlockState func_176203_a(int meta) {
+        return this.withAge(meta & 7).setValue(HALF, ((meta & 8) > 0 ? net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER : net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER));
+    }
+
+    @Override
+    public void func_176474_b(Level worldIn, Random rand, BlockPos pos, BlockState state) {
+        int j;
+        int i = this.getAge(state) + this.getBonemealAgeIncrease(worldIn);
+        if (i > (j = this.getMaxAge())) {
+            i = j;
+        }
+        if (state.getValue(HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER) {
+            worldIn.setBlock(pos.below(), this.withAge(i), 2);
+            worldIn.setBlock(pos, this.withAge(i).setValue(HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER), 2);
+        } else {
+            worldIn.setBlock(pos, this.withAge(i), 2);
+            worldIn.setBlock(pos.above(), this.withAge(i).setValue(HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER), 2);
+        }
+    }
+
+    public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+        worldIn.setBlock(pos.above(), this.defaultBlockState().setValue(HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER), 2);
+    }
+
+    @Override
+    public void func_180650_b(Level worldIn, BlockPos pos, BlockState state, Random rand) {
+        float growthChance;
+        int i;
+        this.func_176475_e(worldIn, pos, state);
+        if (state.getValue(HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER) {
+            return;
+        }
+        if (worldIn.func_175671_l(pos.above()) >= 9 && (i = this.getAge(state)) < this.getMaxAge() && (growthChance = BlockGrapeVine.getGrowthChance(this, worldIn, pos)) > 0.0f && ForgeHooks.onCropsGrowPre((Level)worldIn, (BlockPos)pos, (BlockState)state, (rand.nextInt((int)(25.0f / growthChance)) == 0 ? 1 : 0) != 0)) {
+            worldIn.setBlock(pos, this.withAge(i + 1), 2);
+            worldIn.setBlock(pos.above(), this.withAge(i + 1).setValue(HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER), 2);
+            ForgeHooks.onCropsGrowPost((Level)worldIn, (BlockPos)pos, (BlockState)state, (BlockState)worldIn.getBlockState(pos));
+        }
+    }
+}
+

@@ -1,0 +1,59 @@
+{
+  "parent": "millenaire:item/decorblock_0",
+  "overrides": [
+    {
+      "predicate": {
+        "millenaire:variant": 1
+      },
+      "model": "millenaire:item/decorblock_1"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 2
+      },
+      "model": "millenaire:item/decorblock_2"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 3
+      },
+      "model": "millenaire:item/decorblock_3"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 4
+      },
+      "model": "millenaire:item/decorblock_4"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 5
+      },
+      "model": "millenaire:item/decorblock_5"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 6
+      },
+      "model": "millenaire:item/decorblock_6"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 7
+      },
+      "model": "millenaire:item/decorblock_7"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 8
+      },
+      "model": "millenaire:item/decorblock_8"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 9
+      },
+      "model": "millenaire:item/decorblock_9"
+    }
+  ]
+}

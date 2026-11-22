@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smelting",
+  "ingredient": {
+    "item": "millenaire:wolfmeat_raw"
+  },
+  "result": "millenaire:wolfmeat_cooked",
+  "experience": 1.0,
+  "cookingtime": 200
+}

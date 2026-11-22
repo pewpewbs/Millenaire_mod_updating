@@ -1,0 +1,89 @@
+female.BecomeAdult=Mainey socha tha kisi rajkumar sey shaadi hogi... / Я мечтал о женитьбе на принце..
+
+female.gorest=Main ab aaraam karane jaoonga. / Пора бы мне и отдохнуть.
+female.gorest=Main thak gayi hoon. / С самого утра работала.
+female.gorest=Subah sey kaam kar rahi hoon. / Так устала.
+
+indian_armysmith.MakeWeapons=Hathiyaar bananey mein, upkaran bananey sey zyaada maan hai. / Изготовление оружия намного престижнее, чем изготовление инструментов!
+
+indian_lumberman.BringBackResourcesHome=Itna saara lakri ghar ley jaaney mein mushkil hooga. / Трудно будет нести столько дерева домой.
+indian_lumberman.ChopTrees=Yeh lakri kaat-tey kaat-tey meri zindagi beet jayegi. / Кажется, я всю жизнь буду рубить эти деревья.
+indian_lumberman.GatherGoods=Ab saari lakriyan ikaththa karta hoon. / Я собираю весь лес.
+indian_lumberman.PlantSaplings=Jitna zyaada ped lagaoonga, utna hi aagey jaakey aaram raheyga. / Чем больше я посажу деревьев, тем легче будет жить дальше.
+
+indian_pandit.gopray.chosen=Main mandir ki dekh bhaal nahin karoonga toh kaun karega? / Если я не позабочусь о храме, то кто же?
+indian_pandit.greeting=Jeetey raho. / Долгой жизни.
+
+indian_peasant.CookBrick= Dekho, aag mein kaisi badhiyan pakti hai yeh intein. / Посмотри, как хорошо эти кирпичи готовятся в огне.
+
+indian_peasant.DryBrick=Ghar bananey key liye kitney inth chahiyey? / Сколько кирпичей нужно, чтобы построить дом?
+
+indian_peasant.GatherBrick=Aaj suraj teez hai, inth jaldi sookh rahaien hain. / Солнце сильное, сегодня они быстро высыхают.
+
+indian_peasant.GetResourcesForBuild=Hmmm, ek tan ka inth  chahiye, dau tan paththar .. / Посмотрим, одна тонна кирпичей, две тонны камня...
+
+indian_peasant.SlaughterChicken=Bahut kha liya ghas-phoos. / У меня хватит вегетарианского карри!
+indian_peasant.SlaughterChicken=Main murgiyon se napharat karata hoon ve zor se aur khae jaane ke alaava any kisee bhee any uddeshy kee seva nahin karate hain. / Я ненавижу курицы.  Они громкие и служат только еде.
+
+indian_peasant.construction=Hindu vastu-kala desh videsh mein mashoor hai. / Наша архитектура известна миру.
+indian_peasant.construction=Iskey baad, main lal kila banaoonga. / Ничто не сравнится с нашей великолепной архитектурой.
+
+indian_peasantwife.DeliverGoodsHousehold=Uffh, itna sara khana akeley kaisey leh jaoongi. / Как я буду носить всю эту еду один?
+indian_peasantwife.GetGoodsHousehold=Inkey liye chahey jitna bhi khana lao, kam padta hai. / Неважно, сколько ты получаешь за эту семью, этого никогда не хватит!
+indian_peasantwife.GetHouseTHResources=Sab kuch toh thakur ko dey dena padta hai. / Все всегда заканчивается в доме хозяина.
+indian_peasantwife.makeRasgulla= Bacchon koh rasgulla bahut pasand hai. / Дети любят ругательства.
+
+indian_sculptor.Scult=Murtikala ched aur gaanth ki kala hai. / Скульптура - это искусство дыры и кусочки.
+indian_smith.MakeTools=Sabhi merey banaye huye upkaran istamal kartey hain, phir bhi mujhey neecha samachtey hain. / Все используют мои инструменты, и все смотрят на меня свысока.
+
+male.BecomeAdult=Main badey hokar yodhdha ban-na chahta tha. / Я хотел стать великим воином, когда был моложе...
+
+male.gorest=Main ab aaraam karane jaoonga. / Теперь надо пойти отдохнуть.
+male.gorest=Main thak gaya hoon. / Я работал с самого утра.
+male.gorest=Subah sey kaam kar raha hoon. / Как я устал.
+
+merchant_adivasi.KeepStall= Sab kuch mere parivar dwara kheti ki gayi hai. / Все выращивается моей семьей, глубоко в джунглях.
+merchant_adivasi.greeting=Main van se a raha hoon / Я наконец-таки выбрался из леса
+
+merchant_oriental.KeepStall=Dekho yeh phaarsa ka gaurav! / Посмотрите на богатство Персии!
+merchant_oriental.greeting=Salam alaikum, bhai! / Мир тебе, брат!
+
+merchant_villagewoman.KeepStall=Ghara ka bana khana, bhukhe yaatriyon ke lie! / Домашняя еда для голодных путешественников!
+merchant_villagewoman.greeting=Ek akeelii mahila ke lie safar karna mushkil hai / Путешествия очень тяжелы для одинокой женщины.
+
+villager.BecomeAdult=Khel kud bahut ho gaya, ab kaam par chalo. / Достаточно играть, пора работать.
+
+villager.GoPlay=Mujjhey mitti sey khelna accha lagta hai. / Я люблю играть в грязи.
+
+villager.childobserveagriculture=Phasalon ko ropan karana har din bahut ubaoo lagata hai. Mujhe saahas ka jeevan chaahie! / Высаживать семена днями напролёт так скучно. Я хочу жизнь, полную приключений!
+villager.childobserveconstruction=Nirmaan mere lie bahut adhik kaam kee tarah dikhata hai. / Строительство выглядит слишком тяжелым для меня.
+villager.childobservesmithing=Kitne mazbut hathiyaar! / Такие сильные руки!
+villager.childobserveproducefood=Meri Ma sabase achchhe rasagulle banaati hai. / моя мама делает лучшую Расгуллу
+
+villager.childeatsugarcane=Ma kahati hain ki yah daanton ko nukasaan pahunchaata hai, lekin yah bahut achchha hai! / Мама говорит, что это повреждает зубы, но оно такое вкусное!
+
+villager.HarvestRice=Adbhut baarish ke mausam kee vajah se, ab hamaare paas ek majaboot phasal hai.. / Благодаря прекрасному сезону дождей у нас сейчас сильный урожай.
+
+villager.HarvestTurmeric=Haldi ki kheti kartey kartey merey haath peeley ho gayein hain. / Этот урожай куркумы делает мои руки желтыми.
+
+villager.PlantRice=Is saal barish achchi hui toh phasal accha hoga. / Если будет сильный дождь, урожай в этом году будет хорошим.
+
+villager.PlantTurmeric=Haldi toh sabhi ko chahiyein. / В конце концов, всем нужна куркума.
+
+villager.calltoarms=Dushmano ki haar. / Победа будет нашей.
+villager.calltoarms=Jeet hamari hoogi. / Смерть врагам!
+villager.calltoarms=Sab apney apney hathiyar utha lo! / Все к оружию!
+
+villager.gopray.chosen=Mandir jaaney ka samay ho gaya. / Пора вновь посетить храм.
+villager.gopray=Bhagwan, bas aap hi ka sahara hai. / Господи, пусть этот сезон принесет хороший урожай.
+villager.gopray=Hey Bhagwan, is baar phasal achhi ho. / Боже, уповаю на Тебя только.
+
+villager.greeting=Aaj bahut garmi hai. / Сегодня очень жарко.
+villager.greeting=Ghar par sa theek hain? / Сегодня очень жарко.
+villager.greeting=Kya haal hai? / Как дела твои?
+villager.greeting=Kya khabar hai, $name-ji!? / Что нового? $name- Джи!
+villager.greeting=Kya tum se kale pani se pare ho? / Всё ли хорошо дома?
+villager.greeting=Namaste, $name-ji! / Поздравляю вас. $name- Джи!
+villager.greeting=Yeh barish kyun nahin ho rahiee hai? / Вы из-за океана?
+
+villager.inspectconstruction=Mujhe lagata hai ki hamaare raajamistree aise achchhe kaam karate hain. / Мне нравится, когда наши строители проводят такие прекрасные работы.

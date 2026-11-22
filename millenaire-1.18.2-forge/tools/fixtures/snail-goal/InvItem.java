@@ -1,0 +1,1 @@
+package org.millenaire.common.item;public record InvItem(net.minecraft.world.item.Item item,int meta){public static InvItem createInvItem(net.minecraft.world.item.Item b,int m){return new InvItem(b,m);}}

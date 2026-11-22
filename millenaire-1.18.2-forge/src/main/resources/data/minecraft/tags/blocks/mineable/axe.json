@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "millenaire:fire_pit",
+    "millenaire:import_table",
+    "millenaire:locked_chest",
+    "millenaire:paper_wall",
+    "millenaire:silk_worm",
+    "millenaire:sod",
+    "millenaire:stairs_thatch",
+    "millenaire:stairs_timberframe",
+    "millenaire:wood_deco",
+    "millenaire:wooden_bars",
+    "millenaire:wooden_bars_dark",
+    "millenaire:wooden_bars_indian"
+  ]
+}

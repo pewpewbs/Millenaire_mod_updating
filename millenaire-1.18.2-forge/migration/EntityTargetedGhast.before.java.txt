@@ -1,0 +1,54 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.entity.Entity
+ *  net.minecraft.entity.monster.EntityGhast
+ *  net.minecraft.nbt.NBTTagCompound
+ *  net.minecraft.world.World
+ */
+package org.millenaire.common.entity;
+
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.monster.Ghast;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
+import org.millenaire.common.utilities.Point;
+
+public class EntityTargetedGhast
+extends Ghast {
+    public Point target = null;
+
+    public EntityTargetedGhast(Level par1World) {
+        super(par1World);
+    }
+
+    protected boolean func_70692_ba() {
+        return false;
+    }
+
+    public void tick() {
+        if (this.target != null) {
+            if (this.target.distanceTo((Entity)this) > 20.0) {
+                this.getMoveControl().setWantedPosition(this.target.x, this.target.y, this.target.z, (double)this.getSpeed());
+            } else if (this.target.distanceTo((Entity)this) < 10.0) {
+                this.getMoveControl().setWantedPosition(this.target.x + (double)((this.random.nextFloat() * 2.0f - 1.0f) * 16.0f), this.target.y + (double)((this.random.nextFloat() * 2.0f - 1.0f) * 16.0f), this.target.z + (double)((this.random.nextFloat() * 2.0f - 1.0f) * 16.0f), (double)this.getSpeed());
+            }
+        }
+        super.tick();
+    }
+
+    public void load(CompoundTag par1nbtTagCompound) {
+        super.load(par1nbtTagCompound);
+        this.target = Point.read(par1nbtTagCompound, "targetPoint");
+    }
+
+    public CompoundTag saveWithoutId(CompoundTag par1nbtTagCompound) {
+        super.saveWithoutId(par1nbtTagCompound);
+        if (this.target != null) {
+            this.target.write(par1nbtTagCompound, "targetPoint");
+        }
+        return par1nbtTagCompound;
+    }
+}
+

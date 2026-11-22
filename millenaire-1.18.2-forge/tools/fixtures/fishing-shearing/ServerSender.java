@@ -1,0 +1,1 @@
+package org.millenaire.common.network;public class ServerSender{public static void sendAnimalBreeding(net.minecraft.world.entity.animal.Animal a){}}

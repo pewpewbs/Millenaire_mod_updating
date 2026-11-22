@@ -1,0 +1,170 @@
+[
+  {
+    "legacy_metadata": 0,
+    "name": "byzantine",
+    "hash": "byz",
+    "item": "bannerpattern"
+  },
+  {
+    "legacy_metadata": 1,
+    "name": "byzantine_1",
+    "hash": "by1",
+    "item": "bannerpattern_1"
+  },
+  {
+    "legacy_metadata": 2,
+    "name": "byzantine_2",
+    "hash": "by2",
+    "item": "bannerpattern_2"
+  },
+  {
+    "legacy_metadata": 3,
+    "name": "seljuk",
+    "hash": "sjk",
+    "item": "bannerpattern_3"
+  },
+  {
+    "legacy_metadata": 4,
+    "name": "mayan",
+    "hash": "may",
+    "item": "bannerpattern_4"
+  },
+  {
+    "legacy_metadata": 5,
+    "name": "inuit",
+    "hash": "inu",
+    "item": "bannerpattern_5"
+  },
+  {
+    "legacy_metadata": 6,
+    "name": "indian",
+    "hash": "ind",
+    "item": "bannerpattern_6"
+  },
+  {
+    "legacy_metadata": 7,
+    "name": "indian_1",
+    "hash": "in1",
+    "item": "bannerpattern_7"
+  },
+  {
+    "legacy_metadata": 8,
+    "name": "indian_2",
+    "hash": "in2",
+    "item": "bannerpattern_8"
+  },
+  {
+    "legacy_metadata": 9,
+    "name": "indian_3",
+    "hash": "in3",
+    "item": "bannerpattern_9"
+  },
+  {
+    "legacy_metadata": 10,
+    "name": "indian_4",
+    "hash": "in4",
+    "item": "bannerpattern_10"
+  },
+  {
+    "legacy_metadata": 11,
+    "name": "indian_5",
+    "hash": "in5",
+    "item": "bannerpattern_11"
+  },
+  {
+    "legacy_metadata": 12,
+    "name": "norman",
+    "hash": "nor",
+    "item": "bannerpattern_12"
+  },
+  {
+    "legacy_metadata": 13,
+    "name": "mayan_1",
+    "hash": "ma1",
+    "item": "bannerpattern_13"
+  },
+  {
+    "legacy_metadata": 14,
+    "name": "mayan_2",
+    "hash": "ma2",
+    "item": "bannerpattern_14"
+  },
+  {
+    "legacy_metadata": 15,
+    "name": "mayan_3",
+    "hash": "ma3",
+    "item": "bannerpattern_15"
+  },
+  {
+    "legacy_metadata": 16,
+    "name": "mayan_4",
+    "hash": "ma4",
+    "item": "bannerpattern_16"
+  },
+  {
+    "legacy_metadata": 17,
+    "name": "inuit_1",
+    "hash": "iu1",
+    "item": "bannerpattern_17"
+  },
+  {
+    "legacy_metadata": 18,
+    "name": "inuit_2",
+    "hash": "iu2",
+    "item": "bannerpattern_18"
+  },
+  {
+    "legacy_metadata": 19,
+    "name": "inuit_3",
+    "hash": "iu3",
+    "item": "bannerpattern_19"
+  },
+  {
+    "legacy_metadata": 20,
+    "name": "inuit_4",
+    "hash": "iu4",
+    "item": "bannerpattern_20"
+  },
+  {
+    "legacy_metadata": 21,
+    "name": "japanese",
+    "hash": "jap",
+    "item": "bannerpattern_21"
+  },
+  {
+    "legacy_metadata": 22,
+    "name": "japanese_agr",
+    "hash": "jaa",
+    "item": "bannerpattern_22"
+  },
+  {
+    "legacy_metadata": 23,
+    "name": "japanese_mil",
+    "hash": "jam",
+    "item": "bannerpattern_23"
+  },
+  {
+    "legacy_metadata": 24,
+    "name": "japanese_rel",
+    "hash": "jar",
+    "item": "bannerpattern_24"
+  },
+  {
+    "legacy_metadata": 25,
+    "name": "japanese_tra",
+    "hash": "jat",
+    "item": "bannerpattern_25"
+  },
+  {
+    "legacy_metadata": 26,
+    "name": "seljuk_rel",
+    "hash": "sjkr",
+    "item": "bannerpattern_26"
+  },
+  {
+    "legacy_metadata": 27,
+    "name": "seljuk_mil",
+    "hash": "sjkm",
+    "item": "bannerpattern_27"
+  }
+]

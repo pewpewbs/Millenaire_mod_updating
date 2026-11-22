@@ -1,0 +1,2 @@
+package org.millenaire.common.culture;
+public class VillagerType { public org.millenaire.common.culture.Culture culture=new org.millenaire.common.culture.Culture(); public String key="key",name="name"; public boolean lonebuilding; public org.millenaire.common.buildingplan.BuildingPlanSet centreBuilding; public String getName(){return name;} public String getNameNative(){return name;} public String getNameNativeAndTranslated(){return name;} public net.minecraft.world.item.ItemStack getIcon(){return net.minecraft.world.item.ItemStack.EMPTY;} }

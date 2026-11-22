@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class MillLog{public static void error(Object o,String s){throw new AssertionError(s);}}

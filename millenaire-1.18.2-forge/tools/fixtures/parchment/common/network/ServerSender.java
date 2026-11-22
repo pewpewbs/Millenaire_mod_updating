@@ -1,0 +1,2 @@
+package org.millenaire.common.network;
+public class ServerSender { public static void sendTranslatedSentence(net.minecraft.world.entity.player.Player player,char colour,String key,String... args){} public static void displayVillageBookGUI(net.minecraft.world.entity.player.Player player,org.millenaire.common.utilities.Point pos){} }

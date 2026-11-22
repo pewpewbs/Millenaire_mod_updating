@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class ThreadSafeUtilities{public static class ChunkAccessException extends Exception{}}

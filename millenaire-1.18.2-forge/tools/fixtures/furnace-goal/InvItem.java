@@ -1,0 +1,1 @@
+package org.millenaire.common.item;public class InvItem{public static InvItem createInvItem(net.minecraft.world.level.block.Block b){return new InvItem();}}

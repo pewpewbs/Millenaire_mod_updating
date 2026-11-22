@@ -1,0 +1,1 @@
+package org.millenaire.common.world;public class UserProfile {public boolean donationActivated;public void unlockTradeGoods(org.millenaire.common.culture.Culture c,java.util.List<org.millenaire.common.item.TradeGood> g){}public void adjustLanguage(String culture,int count){}}

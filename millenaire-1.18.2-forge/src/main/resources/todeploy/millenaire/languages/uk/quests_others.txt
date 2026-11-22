@@ -1,0 +1,338 @@
+//normanbasic:
+
+guardwife_0_label=Вечеря для чоловіка
+guardwife_0_description=Мій чоловік $guard_villagername$ Спілка голодуває, а я забував упакувати їжу для нього!  Може би ви, будь ласка, принесете йому цей будин?
+guardwife_0_description_success=Спасибі тобі, добрий чоловіче!
+guardwife_0_description_refuse=Ти і не виглядав тим, хто може співчувати.
+guardwife_1_label=Голодний!
+guardwife_1_description=Моя дружина знову забула про мою харчі! Ех, жінки!
+guardwife_1_description_success=Це було дуже мило з твоєї сторони.
+guardwife_1_description_refuse=Ніколи не довіряй пройдисвітам.
+guardwife_1_description_timeup=Ти не доставляла їжу на час.  Селяни $guard_villagename$ не забуду.
+guardwife_1_listing=Дайте його обід $guard_villagername$ в селі $guard_villagename$.
+
+lumbermancider_0_label=І хто прагне!
+lumbermancider_0_description=Рубка лісу дуже важка робота ... От якби хтось приніс мені пляшечку сидру!
+lumbermancider_0_description_success=О, це було так вчасно! Спасибі тобі величезне, добра людина!
+lumbermancider_0_description_refuse=Не розраховуй на мене наступного разу, коли тобі потрібен дерево!
+
+lonelumbermancalva_0_label=Потрібен алкоголь!
+lonelumbermancalva_0_description=Так страшно холодно в цьому огидному лісі, а я навіть немогу знайди яблук, щоб зробити Кальву! Скоро я буду вбивати за пляшку!
+lonelumbermancalva_0_description_success=Неймовірно! Припустимо по стаканчику, щоб відсвяткувати!
+lonelumbermancalva_0_description_refuse=Один відвідувач на рік, і той не поділитися пляшкою.
+
+loneminerfood_0_label=Мені потрібна справжня їжа
+loneminerfood_0_description=Уже місяці пройшли, коли я їв справжню, пристойну їжу. Так набридло застрягти тут в шахті і є цей червствий хліб!
+loneminerfood_0_description_success=Ось це я розумію, пристойна нормандська їжа!
+loneminerfood_0_description_refuse=Шкода, буду продовжувати їсти хліб.
+
+knightstonedelivery_0_label=Потрібен камінь
+knightstonedelivery_0_description=$nameМені потрібен ще один камінь для оборони $startvillager_villagename$! $miner_villagername$, який працює в околицях холмах $miner_distance$ до $miner_direction$, обіцяв мені велику партию, але ніколи нічого не посилав.  Ви перевірите, що він робить?
+knightstonedelivery_0_description_success=Добра подорож!
+knightstonedelivery_0_description_refuse=Гаразд, тоді я пошлю когось із моїх людей.
+knightstonedelivery_1_label=Збір каменю
+knightstonedelivery_1_description=А так, каміння для $startvillager_villagename$! Я збирався їх відправити.  Я сподіваюся, у вас є простір, є чотири повні степи.
+knightstonedelivery_1_description_success=Тоді я повернуся до майнингу.
+knightstonedelivery_1_description_refuse=Чому всі приходять щоб сказати це ...
+knightstonedelivery_1_description_timeup=Ви не знайшли $miner_villagername$ З часом.
+knightstonedelivery_1_listing=Іди до шахтера. $miner_villagername$, хто живе $startvillager_miner_distanceshort$ до $startvillager_miner_direction$ від $startvillager_villagename$, для запиту про $startvillager_villagername$Каміння.
+knightstonedelivery_2_label=Доставка камінь
+knightstonedelivery_2_description=Ти приніс камінь? Відмінно! Твоя допомога нормандської корона не буде забута.
+knightstonedelivery_2_description_success=Мої благодраності вам.
+knightstonedelivery_2_description_refuse=Зради!  Буди щасливий, що ти вже не помер.
+knightstonedelivery_2_description_timeup=Ви не повернули камені до $startvillager_villagername$ З часом.
+knightstonedelivery_2_listing=Поверніться до $startvillager_villagename$ з кам'ями для $startvillager_villagername$.
+
+abbotbooksdelivery_0_label=Письмо для відправки
+abbotbooksdelivery_0_description=Мій син $name, це приємно бачити вас.  Я дуже потребую цінних книг для своїх досліджень, зберігаються в віддаленому монастирі $loneabbot_villagename$. Чи не будете ласкаві до старого чоловіка і попросите їх у мого старого друга Абота $loneabbot_villagername$? Я напишу вам ознайомиться.  Ви знайдете його монастир навколо $loneabbot_distance$ до $loneabbot_direction$.
+abbotbooksdelivery_0_description_success=Нехай Господь береже тебе в твоїх подорожах.
+abbotbooksdelivery_0_description_refuse=Молоді люди так червсти до заклику про допомогу.
+abbotbooksdelivery_1_label=Ліст доставки
+abbotbooksdelivery_1_description=Письмо від мого старого друга батька $startvillager_villagername$? Чудово!  Звичайно, я можу позбавити його цих книг.  Передай йому мої найкращі побажання, син мій.
+abbotbooksdelivery_1_description_success=Безпечної дороги тобі, сину мій.
+abbotbooksdelivery_1_description_refuse=Господь знайде інший шлях в такому випадку.
+abbotbooksdelivery_1_description_timeup=Ви не передали листа $loneabbot_villagername$ З часом.
+abbotbooksdelivery_1_listing=Передайте лист від $startvillager_villagername$ Аботу $loneabbot_villagername$. Його аббатство $startvillager_loneabbot_distanceshort$ до $startvillager_loneabbot_direction$ від $startvillager_villagename$.
+abbotbooksdelivery_2_label=Доставка книг
+abbotbooksdelivery_2_description=Мої книги! Ти був швидкий, син мій! Ти отримаєш справжнє винагороду в іншому світі, але будь ласка, прийми це невелику винагороду зараз.
+abbotbooksdelivery_2_description_success=Миру тобі, сину мій.
+abbotbooksdelivery_2_description_refuse=Навіщо ти виконав весь цей шлях, щоб сказати мені це, сину мій? Я в подиві!
+abbotbooksdelivery_2_description_timeup=Ви не повернули книги до $startvillager_villagername$ З часом.
+abbotbooksdelivery_2_listing=Доставка книг з $loneabbot_villagename$ Аботу $startvillager_villagername$ від $startvillager_villagername$.
+
+//hindibasic:
+
+rajadiamondsword_0_label=Конфіденційна місія
+rajadiamondsword_0_description=Намасте, $name. Ви виявили себе другом $startvillager_villagename$, і мені потрібен хтось надійний для спеціальної місії.  Генеральний $general_villagername$ Він виявив себе лояльним і компетентним солдатом, і настав час нагородити його.  Чи не винесете йому цей безцінний діамантовий меч у його фортеці $general_villagename$, $general_distance$ до $general_direction$ Звідси?
+rajadiamondsword_0_description_success=Захищай це меч ціною свого життя!
+rajadiamondsword_0_description_refuse=Ми цього не забудемо.
+rajadiamondsword_1_label=Додайте меч.
+rajadiamondsword_1_description=Навіщо ти прибув сюди, чужинець?
+rajadiamondsword_1_description_success=Його Високість $startvillager_villagername$ Почести мене!  Він великий правитель.  Ти маєш мої подяки, і його.
+rajadiamondsword_1_description_refuse=Безчесний злодій!
+rajadiamondsword_1_description_timeup=Ви не здали меч $general_villagername$ З часом.  Раджа і він злилися на тебе.
+rajadiamondsword_1_listing=Додайте діамантовий меч $general_villagername$ у своїй форті $general_villagename$.
+
+adivasifarmdelivery_0_label=Потрібна доставка
+adivasifarmdelivery_0_description=У нас є лише рис і куркума, які ми вирощуємо самі тут, це важке життя...  Ви допоможете нам бідним людям?  Фермер у селі $peasant_villagername$ Він готовий обміняти нашу продукцію на м'ясо і рагулу.  Якби ви могли взяти ці товари до його села $peasant_villagename$, ми будемо дуже вдячні.  Він тут. $peasant_distance$ до $peasant_direction$ Звідси.
+adivasifarmdelivery_0_description_success=Шакра, друже мій
+adivasifarmdelivery_0_description_refuse=Ніхто не допоможе бідному люду ...
+adivasifarmdelivery_1_label=Доставка продуктів
+adivasifarmdelivery_1_description=А, ти звідки? $startvillager_villagername$? Так, у мене для нього є товари.  Я піду за ними.
+adivasifarmdelivery_1_description_success=Пам'ятайте: ферма $startvillager_distanceshort$ до $startvillager_direction$.
+adivasifarmdelivery_1_description_refuse=Шкода. Удача відвернулася від них.
+adivasifarmdelivery_1_description_timeup=Ви не доставляли товару до $peasant_villagername$ З часом.
+adivasifarmdelivery_1_listing=Іди до $peasant_villagename$ доставляти товари з ферми Адіваси до $peasant_villagername$.
+adivasifarmdelivery_2_label=Доставка товарів
+adivasifarmdelivery_2_description=Шукрия, $name! Такі товари вітають!  Я сподіваюся. $peasant_villagername$ добре вас прийняли?
+adivasifarmdelivery_2_description_success=Нехай богиня благословить вас.
+adivasifarmdelivery_2_description_refuse=Крадіжка у бідних людей - безславне діяння.
+adivasifarmdelivery_2_description_timeup=Ви не повернули товари до $startvillager_villagername$ вчасно.
+adivasifarmdelivery_2_listing=Доставка товару з $peasant_villagename$ до $startvillager_villagername$ферму, $peasant_startvillager_direction$ до $peasant_startvillager_distance$ від $peasant_villagename$.
+
+traderdiamonds_0_label=Доставка ювелірних виробів
+traderdiamonds_0_description=Намасте, $name. Я чув, що ви надійний і друг нас індіанців, і я маю цінну передачу зробити.  Красива Рані $rani_villagername$ від $rani_villagename$ Замовив у мене безцінні каміння для нових ювелірних виробів.  Чи ви дасте їх до її палацу?  Це... $rani_distance$ до $rani_direction$ Звідси.  Ви можете зберегти два кам'ята як винагороду.
+traderdiamonds_0_description_success=Тільки не показуй нікому ці діаманти!
+traderdiamonds_0_description_refuse=Занадто небезпечно для тебе, так розуміти?
+traderdiamonds_1_label=Доставка діамантів
+traderdiamonds_1_description=Нарешті.  Я стала нетерпеливою. $startvillager_villagername$ не хотів би бачити, як я злився.
+traderdiamonds_1_description_success=Піду і приміряю їх!
+traderdiamonds_1_description_refuse=Ти закінчиш розчавленим одним з слонів раджі!
+traderdiamonds_1_description_timeup=Ти не доставляв діаманти Рані. $rani_villagername$ З часом.  Ваша позиція серед індійських селищ значно знижена.
+traderdiamonds_1_listing=Доставка діамантів від трейдера $startvillager_villagername$ до Рані $rani_villagername$ від $rani_villagename$.
+
+//mystery basic:
+
+normanrasgullas_0_label=Хворий дитина
+normanrasgullas_0_description=Мій син $child_villagername$ останнім часом стало бледно.  Він стверджує, що не може з'їсти ще одну губку будин або трипе!  Чи маєш ти що-небудь запропонувати?  Ти виглядаєш добре подороженим.
+normanrasgullas_0_description_success=Ця солодкість чудова! Якби не дитина, сама б з'їла.
+normanrasgullas_0_description_refuse=Спробую Кальву. Сподіваюся, це спрацює.
+
+mayanlumbermanaxe_0_label=Недовольний лісоробник
+mayanlumbermanaxe_0_description=Цей сокиру даремний. Чому ремісники майя не здатні зробити по-справжньому хороший сокиру? Я був би набагато більш продуктивний з гідним інструментом!
+mayanlumbermanaxe_0_description_success=В це сокирі відчувається магія! Вона зроблена Богом?
+mayanlumbermanaxe_0_description_refuse=Тоді повернуся до роботи.
+
+losttapestry_0_label=Згублені гобелі
+losttapestry_0_description=Привіт. $name! Я знайшов гобелен на полях.  Ви можете знайти, кому це належить?
+losttapestry_0_description_success=Дякую. $name!
+losttapestry_0_description_refuse=Ви жахливий! Я поскаржуся на тебе своїй мамі!
+losttapestry_1_label=Відсутність тепистури
+losttapestry_1_description=Я втратила гобелен! Ніхто його не бачив?
+losttapestry_1_description_success=Дякуємо що знайшли його.
+losttapestry_1_description_refuse=Ви що то ховаєте, я точно це знаю.
+losttapestry_1_listing=Знайдіть, кому належить гобест.
+
+spiders_0_label=Втрачений чоловік
+spiders_0_description=Мій друг на ім'я $miner_villagername$ як правило, відвідує мене в той же час кожен день.  Странно, що він не був сьогодні - насправді він запізнився кілька годин.  Признаюся, я трохи занепокоєна. $name. $miner_villagername$ проводить багато часу біля шахти, і я впевнений, що ви знаєте, наскільки небезпечно це там.  Але якщо ви йдете таким шляхом, чи будете стежити за ним?
+spiders_0_description_success=Спасибі тобі, друже мій!
+spiders_0_description_refuse=Я сподіваюся що він коли-небудь повернеться.
+spiders_1_label=Я так радий що ти відшукав мене.
+spiders_1_description=Уххх...  Павук дуже сильно укусив мене, коли я досліджував печеру дуже близько сюди.  Я впевнений, що мене серйозно отруїли, ти маєш мені допомогти.  Будь ласка, скажіть моїй дружині $wife_villagername$. Вона зможе мені допомогти.
+spiders_1_description_success=Поспішайте...  Я так головокружений...
+spiders_1_description_refuse=Ти не можеш просто залишити мене тут!  Ухх.
+spiders_1_listing=Знайдіть $miner_villagername$ біля шахти.
+spiders_2_label=Виготовляю антидот.
+spiders_2_description=Не можна втрачати час, треба рятувати муженька! Мені відомо протиотруту, яке повинно допомогти. Звичайно, воно вимагає деяких інгредієнтів, перш ніж я зможу його приготувати. Мені потрібні два коричневих гриба, два червоних гриба і чорнильний мішок кальмара.
+spiders_2_description_success=Швидкість з вами. $name.
+spiders_2_description_refuse=Прекрасно, ось тепер шукати все це самій! Бідний мій чоловік.
+spiders_2_listing=Запитайте $wife_villagername$ За антидотом.
+spiders_3_label=$miner_villagername$" Антидот "
+spiders_3_description=Доставте протиотруту для $miner_villagername$ до $miner_villagername$, доки не сплив час.
+spiders_3_description_success=О, я знав, що $wife_villagername$ зможе мені допомогти! <$miner_villagername$ випиває протиотруту.> Я постійно потрапляю в халепи, а $wife_villagername$ завжди знаходить спосіб мене врятувати.
+spiders_3_description_refuse=Ти хочеш моєї смерті?
+spiders_3_description_timeup=Ви не доставили протиотруту для $miner_villagername$ до $miner_villagername$ вчасно.
+spiders_3_listing=Віднесіть протиотруту для $miner_villagername$ до $miner_villagername$.
+
+findtheegg_0_label=Знайдіть яйця.
+findtheegg_0_description=Тут так багато курей розплодилося!. Щоб їх плоди не так багато, ми повинні зібрати їх яйця ... Допоможеш?
+findtheegg_0_description_success=Дуже добре. $name. Я відправлю цю яйцеклітину додому, де я сподіваюся, що вона скоро вилуплюється!  Будь ласка, сприйміть це як символ моєї вдячності.
+findtheegg_0_description_refuse=Приходь, коли у тебе буде побільше яєць!
+
+feathercrafter_0_label=Більше пір'я
+feathercrafter_0_description=Моя дружина робить подушки для нас, бідняків. Але для того щоб їх зробити потрібно багато пір'я. Чи немає у тебе пір'я, щоб поділитися зі мною?
+feathercrafter_0_description_success=Дуже добре. $name. Я дам це своїй дружині.  Ви маєте мої подяку.
+feathercrafter_0_description_refuse=Повернуся до роботи тоді.
+
+watersample_0_label=Дивні донесення
+watersample_0_description=До моєї дружини дійшли чутки від сусідів ніби вода в колодязі робить наших дітей нездоровими. Візьми це відро і принеси мені на пробу води.
+watersample_0_description_success=Поквапся ... поки не захворіли інші діти.
+watersample_0_description_refuse=Мушу тебе попередити, що невиконання моїх прохань загрожує.
+watersample_1_label=Вибірки води
+watersample_1_description=Ти приніс пробу води?
+watersample_1_description_success=Дякую тобі! Це мені допоможе знайти джерело наших проблем.
+watersample_1_description_refuse=Я повинен вас попередити, наступного разу, коли вам потрібна допомога, це буде коштувати вам, $name!
+watersample_1_description_timeup=Ти не приніс $startvillager_villagername$Візьміть йому зразки води.
+watersample_1_listing=$startvillager_villagername$ на $startvillager_villagename$ Він хоче, щоб ви принесли йому збірку води.
+
+lordssword_0_label=Зламаний меч
+lordssword_0_description=Мій чоловік $knight_villagername$ Знову зламав свій меч!  Ви можете, будь ласка, дати йому цей новий меч?
+lordssword_0_description_success=Спасибі тобі, добрий чоловіче!
+lordssword_0_description_refuse=Ти не виглядаєш здатним допомагати.
+lordssword_1_label=Згублений меч
+lordssword_1_description=Моя дружина $startvillager_villagename$ у нього меч для мене.  Ти приніс його?
+lordssword_1_description_success=Дякую вам, ви врятували мені день.
+lordssword_1_description_refuse=Ну і як же я буду допомагати вам воювати, якщо я не отримаю меч?
+lordssword_1_description_timeup=Ви не доставили меч на час $knight_villagername$. Селяни ніколи не забудуть.
+lordssword_1_listing=$startvillager_villagername$ на $startvillager_villagename$ Він хоче, щоб ви принесли йому свій новий меч.
+
+sweettrader_0_label=Дзень народження двоєродного брата
+sweettrader_0_description=Мій маленький кузен $girl_villagername$ Сьогодні її день народження.  Ви можете принести їй цей торт, будь ласка?
+sweettrader_0_description_success=Дякуємо вам за вашу допомогу.
+sweettrader_0_description_refuse=А ти не такий хороший, як мені здалося!
+sweettrader_1_label=[Доставка торту]
+sweettrader_1_description=Ніхто навіть і не пам'ятає про мій день народження ...
+sweettrader_1_description_success=Дякую!  Дякую!  Дякую!
+sweettrader_1_description_refuse=Нікому я не подобаюся.
+sweettrader_1_listing=Додайте торт $girl_villagername$ на $startvillager_villagename$ на її день народження.
+
+fishingfrenzy_0_label=Божевільна рибалка
+fishingfrenzy_0_description=Привіт! Мене звати $startvillager_villagername$. Риболовля — нелегка справа, і я не впевнений, що сьогодні наловлю достатньо риби. Можеш мені допомогти?
+fishingfrenzy_0_description_success=Дякуємо вам, чотирьох свіжих рибин буде достатньо. Віднесіть їх потім моїй дружині, вона з вами розплатиться.
+fishingfrenzy_0_description_refuse=Я розумію, всі ми зайняті тією чи іншою справою.
+fishingfrenzy_1_label=Божевільна рибалка
+fishingfrenzy_1_description=А ти, мабуть, подорожувач. $startvillager_villagername$ розповів мені про це.  Ти злав рибу?
+fishingfrenzy_1_description_success=Прекрасно, ця риба відмінно виглядає. Все наше поселення дуже вдячно тобі.
+fishingfrenzy_1_description_refuse=Не вмієш рибалити, так? Ну ладно, може ти вмієш робити що-небудь інше.
+fishingfrenzy_1_description_timeup=Ви не змогли виловити рибу на час.  Селяни $startvillager_villagename$ Я помітив твою ганьбу.
+fishingfrenzy_1_listing=Зловить чотири риби і приведіть їх до $wife_villagername$
+
+poems_0_label=Написати вірші
+poems_0_description=Ви можете мені допомогти? $name?<ret>Мені не вистачає друзів і сім'ї в столиці.  Ми завжди любимо писати вірші і листа один одному.  Я сподіваюся на день, коли ми зможемо знову писати один одному.  Коли цей день прийде, я хочу бути готовим. <ret>Ти можеш зібрати для мене трохи?
+Мені знадобиться десять паперів і дві чорні, жовті і червоні фарби.
+poems_0_description_success=Арігату Гозамасу!  Дуже дякую! <ret>Ви почесні, що допомагаєте мені таким чином.  Ось моя вдячна винагорода.
+poems_0_description_refuse=Я напишу вірш про егоїзм людей.
+
+startingtrader_0_label=Апікуючий трейдер
+startingtrader_0_description=Привітання!  Ви торговця?  Шукаєте хорошу угоду? <ret>Важко заробляти на життя, будучи торговцем.  Купіть дешево і продайте високо.  Хаха! <ret>І все ж фермер отримує більше поваги, ніж я.  Але у мене є нові плани на торгівлю з іншими селами, що займаються розкішними товарами!  Мені просто не вистачає початкового запасу. <ret><ret>Мені потрібні два діаманти і вісім золотих штук.  Ви можете продати мені це?
+startingtrader_0_description_success=Добре, дуже добре...  Це буде добре для моїх планів.  Думо арігату!  Дуже дякую!
+startingtrader_0_description_refuse=Ви не маєте таланту на торгівлю!
+
+architectwife_0_label=Обід для чоловіка
+architectwife_0_description=Мій чоловік $architect_villagername$ Архітектор голодуває, а я забувала приготувати йому їжу!  Ви можете, будь ласка, привезти йому цю рибу?
+architectwife_0_description_success=Дякуємо, добра людина!
+architectwife_0_description_refuse=Ви дійсно погана людина!
+architectwife_1_label=Голодний!
+architectwife_1_description=Моя дружина знову забула покласти мені їжу! Ах, жінки!
+architectwife_1_description_success=Це було дуже мило з твоєї сторони.
+architectwife_1_description_refuse=Більше не буду довіряти чужинцям.
+architectwife_1_description_timeup=Ти не доставляла їжу на час.  Селяни $architect_villagename$ не забуду.
+architectwife_1_listing=Дайте $architect_villagername$ в селі $architect_villagename$ його обід.
+
+lumbermanwine_0_label=Я жадаю!
+lumbermanwine_0_description=Рубати дрова дуже важка робота ... От би хтось приніс мені пляшечку вина!
+lumbermanwine_0_description_success=Ах, як же мені її не вистачало! Спасибі тобі, добрий чоловіче!
+lumbermanwine_0_description_refuse=Не розраховуй на мене наступного разу, коли тобі потрібен дерево!
+
+thehunt_0_label=Полювання
+thehunt_0_description=Привіт, ти!  Наші мисливці хочуть піти на полювання, щоб поповнити запаси, але у нас мало матеріалів, чи можете нам допомогти?
+thehunt_0_description_success=Дякую, за наш полювання нам не вистачає 4 луків і 8 шкірів, чи можеш нам їх привезти?
+thehunt_0_description_refuse=Я думаю, нам доведеться без них.
+thehunt_1_label=Поверніться з пляном
+thehunt_1_description=Як був полювання?
+thehunt_1_description_success=А! А!  Чудово!  Ми дуже вдячні, що ви вирішили нам допомогти.  Наші мисливці зможуть принести назад угоду!
+thehunt_1_description_refuse=Це розчаруюче, але я думаю, що з часом ти зможеш покращити себе.
+thehunt_1_description_timeup=Ви не змогли своєчасно допомогти громаді.  Селяни $startvillager_villagename$ Я помітив твою ганьбу.
+thehunt_1_listing=Дайте $startvillager_villagername$ 4 луки і 8 шкірів, щоб вони могли почати Полювання.
+
+enderhunt_0_label=Люди тінь
+enderhunt_0_description=Храброго воїна, ми помітили незвычайна високу кількість тих, кого ми вважаємо тінними людьми, які правомочно прокляті Седною.  Вони, звичайно, дуже сильні і важко захиститися від них, але ми бачили, як вони скидають ці дивні сфери, коли ми їх переможемо.
+enderhunt_0_description_success=Чудово!  Зверніться прямо, ми розраховуємо на тебе.  Ми чули, як місцеві жителі цього світу називали їх "Ендерменами". Приведіть мені 6 своїх орбітів, щоб ми могли далі їх вивчити.
+enderhunt_0_description_refuse=Ти збираєшся залишити нас тут, щоб самостоятельно виправитися?!  Ми обов'язково помремо!
+enderhunt_1_label=Поверніться з пляном
+enderhunt_1_description=Ви розселили кілька з них?
+enderhunt_1_description_success=Це дуже незвичайні властивості для вивчення, мені може знадобитися більше цих орбів пізніше.
+enderhunt_1_description_refuse=Це не достатньо орбітів, але я думаю, що ти хоча б спробував.
+enderhunt_1_description_timeup=Ви не вбили достатньо людей-Тінь на час.  Наша село $startvillager_villagename$ Він засмучений нашою поразкою перед ними.
+enderhunt_1_listing=Убийте достатньо Ендерменів, щоб отримати 6 Ендер Перл і повернути їх до $startvillager_villagername$.
+
+enderhunt0_0_label=Люди тінь
+enderhunt0_0_description=Храброго воїна, ми помітили незвычайна високу кількість тих, кого ми вважаємо тінними людьми, які правомочно прокляті Седною.  Вони, звичайно, дуже сильні і важко захиститися від них, але ми бачили, як вони скидають ці дивні сфери, коли ми їх переможемо.
+enderhunt0_0_description_success=Чудово!  Зверніться прямо, ми розраховуємо на тебе.  Ми чули, як місцеві жителі цього світу називали їх "Ендерменами". Приведіть мені 6 своїх орбітів, щоб ми могли далі їх вивчити.
+enderhunt0_0_description_refuse=Ти збираєшся залишити нас тут, щоб самостоятельно виправитися?!  Ми обов'язково помремо!
+enderhunt0_1_label=Поверніться з пляном
+enderhunt0_1_description=Ви розселили кілька з них?
+enderhunt0_1_description_success=Це дуже незвичайні властивості для вивчення, мені може знадобитися більше цих орбів пізніше.
+enderhunt0_1_description_refuse=Це не достатньо орбітів, але я думаю, що ти хоча б спробував.
+enderhunt0_1_description_timeup=Ви не вбили достатньо людей-Тінь на час.  Наша село $startvillager_villagename$ Він засмучений нашою поразкою перед ними.
+enderhunt0_1_listing=Убийте достатньо Ендерменів, щоб отримати 6 Ендер Перл і повернути їх до $startvillager_villagername$.
+
+bonefetch_0_label=Доведіть
+bonefetch_0_description=Я грав з плечею кролика, але мама забрала його від мене!  Ти можеш поговорити з нею і повернути її?
+bonefetch_0_description_success=Дякую!
+bonefetch_0_description_refuse=Ти великий злодей!
+bonefetch_1_label=Розмовляй з матір'ю
+bonefetch_1_description=Вона хоче грати з черепом?  Я взяв його, бо нам потрібен на вечерю.  Іди і скажи їй, що вона не отримає його назад.
+bonefetch_1_description_success=Вона зрозуміє.
+bonefetch_1_description_refuse=Я не розумію, чому ти не допоможеш?
+bonefetch_2_label=Поговоріть з дівчиною
+bonefetch_2_description=Уооо!  Вона не поверне її назад!?  Ну, знайди мені нову іграшку!
+bonefetch_2_description_success=Можливо, кістки?
+bonefetch_2_description_refuse=Уооо!!!!!
+bonefetch_3_label=Дай їй кістки
+bonefetch_3_description=Яйй!  Більше іграшок!
+bonefetch_3_description_success=Ти найкращий!  Кости так веселі!
+bonefetch_3_description_refuse=Ти великий злодей!
+bonefetch_3_description_timeup=Ти не дав дівчині двох кісток, що обіцяв.  Селяни $startvillager_villagername$ трохи розчаровані в тебе.
+bonefetch_3_listing=Дайте $startvillager_villagername$ 2 скелетні кістки.
+
+potatofarm_0_label=Масове сільського господарство
+potatofarm_0_description=Привіт, друг, ти чув про цю незвичайну річ, яка називається фермерством?  Ця земля настільки благословена, що земля дає їжу лише з малої праці!  Спробуй сам, як я чув, картопку.
+potatofarm_0_description_success=Це чудово, ви не будете розчаровані, що це робить так багато їжі!  Принеси мені лише 8 тих картопляв, які ти вирощуєш, але я хочу спробувати зробити з них жарення!
+potatofarm_0_description_refuse=Це добре, я думаю, сільське господарство просто занадто важко для вас зрозуміти.
+potatofarm_1_label=Поверніться з пляном
+potatofarm_1_description=Моє рот напоюється думкою про картопляний страв. У тебе був успіх у цій... сільському господарстві?
+potatofarm_1_description_success=- Здатне!  Це достатньо, щоб зробити достатньо, щоб ви теж могли трохи!
+potatofarm_1_description_refuse=О, ні, цього не достатньо.  Вам потрібно, щоб я пояснив сільське господарство?
+potatofarm_1_description_timeup=Сезон змінився і я впевнений, що це погане для сільськогосподарства.  Може, спробуйте ще раз.
+potatofarm_1_listing=Зробити 8 картопля і дати їх $startvillager_villagername$ Для смачного страуну.
+
+//Seljuk Basic: 
+ayranpidesoldier_0_label=Войськовий обід
+ayranpidesoldier_0_description=Нарешті прийшов час на перерву на обід, але я забув принести свій обід зі мною...  Може би, будь ласка, принесете мені підо і айран?
+ayranpidesoldier_0_description_success=Дякую вам.  Я можу повернутися до роботи і закінчити свій ранковий патруль.
+ayranpidesoldier_0_description_refuse=Це все в порядку.  Я повинен бути сильним і витримати цей голод.
+
+cottonweaver_0_label=Візьми хлопка
+cottonweaver_0_description=Привіт. $name, Ви чули про катастрофу з хлопком?  Екстремна жара викликала спалювання цьогорічної врожаї хлопка.  Нам дуже потрібен хлопок, щоб готуватися до наступної зими...
+cottonweaver_0_description_success=Це дуже мило з твоєї сторони.  Ми будемо добре використовувати цей хлопок.
+cottonweaver_0_description_refuse=Що ми зробимо...  Наші діти не мають достатньо одягу на зиму...
+
+helvachild_0_label=Сладкі цукерки
+helvachild_0_description=Я пам'ятаю, що з'їла цукерки з фістахів і пшениці, але я не пам'ятаю, як це називається.  Чи це було хава...?  Ні, Хела?  Ні, Лале...
+helvachild_0_description_success=Тепер я пам'ятаю!  Це називається гельва.  Наступного разу ви самі спробуйте.  Я не можу дочекатися, щоб з'їсти це...
+helvachild_0_description_refuse=О, як я жалюся встигнути з'їсти трохи сладостей прямо зараз...
+
+imambook_0_label=Книга імама
+imambook_0_description=Ти знаєш мого чоловіка, імама?  Він забував взяти цю книгу з собою, коли виїхав з дому сьогодні вранці.  Ви можете, будь ласка, доставити його йому?
+imambook_0_description_success=Дякую, ця книга дуже важлива для імама, щоб він робив свою роботу правильно.
+imambook_0_description_refuse=Я сам принесу йому книгу...
+imambook_1_label=Книга імама
+imambook_1_description_success=Дякую, тепер я можу продовжити свої дослідження.
+
+irontoolsmith_0_label=Залізник
+irontoolsmith_0_description=Я найкращий залізний ковчег, якого ви знайдете.  На жаль, мені закінчується залізо.  Якщо ви принесете мені вісім залізничних нігтів, я зможу показати вам мої справжні навички...
+irontoolsmith_0_description_success=Гаразд, а тепер чекайте, поки я не закінчу це залізо.  Це буде справжнє шедевр...
+irontoolsmith_0_description_refuse=Що б там ні було, тоді я піду знайду своє железо.
+
+
+lightbluedyeweaver_0_label=Яскраво-синій фарб
+lightbluedyeweaver_0_description=Привіт. $nameЯ шукав весь базар, але не знайшов жодного.  Ви можете знайти 16 штук світло-синього фарбу для мене, будь ласка?  Мені потрібна для створення кольорової вовки...
+lightbluedyeweaver_0_description_success=Так, це все!  Я можу зробити красиві килими з них.
+lightbluedyeweaver_0_description_refuse=Здається, ти теж не знайшов жодного фарбу.  Це жахливо...
+
+loneminerayran_0_label=Потрібна перерва
+loneminerayran_0_description=Ви знаєте, що б було дуже освежаючим пити зараз?  Холодна склянка айрана.  Можеш принести мені цей напій, будь ласка?
+loneminerayran_0_description_success=А, ось що мені дійсно потрібно випити зараз.  Дякую. $name. Ти хороша людина...
+loneminerayran_0_description_refuse=Все, що я просив, це склянка айрана.  Я хотів би випити це прямо зараз...
+
+mudbrickminer_0_label=Під сонцем
+mudbrickminer_0_description=У мене сьогодні багато роботи, але немає часу дивитися, як сухають ті грязьні кирпички.  Чи можеш зібрати для мене кілька сухих грязних кирпіч, поки я закінчу свою іншу роботу?
+mudbrickminer_0_description_success=Чудово, ми можемо використовувати ці цвілі для наступного будівництва.
+mudbrickminer_0_description_refuse=Я думаю, дивитися, як суха грязь, занадто нудно для тебе...
+
+ornamentedstonecrafter_0_label=Оформлені грязьні кістки
+ornamentedstonecrafter_0_description=Наш лідер попросив мене принести йому красиві окрашені глини, але я повністю вирвався з цих...  Ви можете знайти іншого камен'яря і принести мені більше цих окрасованих грязьних блоків?
+ornamentedstonecrafter_0_description_success=Дякую. $name, цей добрий поступок не буде забутий мій друг.
+ornamentedstonecrafter_0_description_refuse=Це не добре, але як я зможу знайти більше таких окрасованих грязьних кіл...
+

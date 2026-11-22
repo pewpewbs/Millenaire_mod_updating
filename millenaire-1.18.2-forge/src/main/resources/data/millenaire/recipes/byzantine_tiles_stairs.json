@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "#  ",
+    "## ",
+    "###"
+  ],
+  "key": {
+    "#": {
+      "item": "millenaire:byzantine_tiles"
+    }
+  },
+  "result": {
+    "item": "millenaire:stairs_byzantine_tiles",
+    "count": 4
+  }
+}

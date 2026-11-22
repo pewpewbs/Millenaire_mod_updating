@@ -1,0 +1,60 @@
+female.BecomeAdult=Watashi wa ituka hahaoya ni naritai desu. / Я хочу быть матерью когда-нибудь.
+
+male.BecomeAdult=Watashi wa sensi ni naritai desu. / Я хочу быть воином.
+
+villager.BecomeAdult=Seityou suru jikan. / Пора взрослеть.
+
+villager.BringBackResourcesHome=Cho cho cho... / Работа, работа, работа...
+
+villager.ChopTrees=Watashi wa nanbonka no ki wo bassai suru tsumori da. / Я собираюсь вырубить несколько деревьев.
+
+villager.ConstructionStepByStep=Watashi no chichi wa kentiku no houhou ni tuite watashi ni oshieta. / Мой отец научил меня строить.
+villager.ConstructionStepByStep=Watashi wa kami ga watashi no kenchiku wo kiniiru koto wo negatte imasu. / Надеюсь, ками понравится моему зданию.
+
+villager.DeliverGoodsHousold=Watashi wa mise kara syokuryou wo eta. / У меня есть еда с рынка.
+
+villager.GatherGoods=Watashi wa ikutuka no souchi ga hituyou da. / Мне нужны запасы.
+
+villager.GetGoodsHousold=Watashi wa ie ni korera no mono ga hituyou desu. / Это то, что мне нужно дома.
+
+villager.GetHouseResources=Watashi wa ie kara nanika totte konakereba ikenai. / Мне нужно что-то забрать из дома.
+
+villager.GetResourcesForBuild=Watashi wa motto takusan no zairyou ga hituyou desu. / Мне нужно больше материалов.
+
+villager.GoPlay=watashi wa asobitai desu. / Я хочу поиграть.
+
+villager.childobserveagriculture=Watashinohaha wa,-mai sakumotsu o saibai suru koto wa jūyōdesuga, sore wa watashi no tame ni totemo taikutsuda to iimasu... / Моя мама говорит, что выращивание риса важно, но мне это кажется таким скучным ...
+villager.childobserveconstruction=Tabun watashi ga ōkiku naru to, watashi wa tō o taterudeshou. Kin kara! / Может быть, когда я буду больше, я буду строить пагоды. Из золота!
+villager.childobservesmithing=Watashitachi no buki ya yoroi wa mottomo utsukushī monodesu! / Наше оружие и доспехи классно выглядят!
+villager.childobserveproducefood=Naze koko ni subete ga kome de tsukura renakereba naranai nodesu ka? Watashi wa kome ni tsukarete iru! / Почему все здесь делается с рисом? Я устал от риса!
+villager.childobserveproducealcohol=Zenkai watashi wa sake o tameshite mimashita. / Я заболел в прошлый раз, когда попробовал сакэ.
+
+villager.childeatapple=Kono sekai wa mahōdesu! Ringo wa subete no ki ni sodatsu! / Этот мир просто волшебный! Яблоки растут на каждом дереве!
+
+villager.MakeTools=Watashi wa naganen no aida saikoukyu no dougu wo koumyou ni tukutte iru. / Я уже много лет создаю лучшие инструменты.
+
+villager.MakeWeapons=Saikoukyu no buki no himitu wa sisyou kara watashi ni uketugareta. / Секреты лучших вооружений были переданы мне от моего хозяина.
+
+villager.PlantSaplings=Watashi wa korera no naegi wo ueru tumori desu. / Я посажу эти саженцы.
+
+villager.SlaughterChicken=Anata wa dareka no tame ni subarashii shokuji wo tukuru darou. / Ты будешь приготовить кому-то вкусную еду.
+
+villager.calltoarms=Karera wa watashitachi wo kougeki suru hi wo koukai suru darou! / К защите поселения!
+villager.calltoarms=Kuki wo mote! / Они будут сожалеть о дне, в котором нас атаковали!
+villager.calltoarms=Mura wo mamore! / К оружию!
+
+villager.gopray.chosen=Kokoro wo otitukasete kudasai. / Успокой свой разум.
+villager.gopray=Kami wa watashitachi wo aku kara osukui ni naru. / Я буду молиться Богине Ука-но митама-но ками за удачный урожай.
+villager.gopray=Watashi wa housaku no tame ni megami Uga-no-Mintama ni inori masu. / Ками защищает нас от зла.
+
+villager.gorest=A-, mou neru jikan da / Как же мне необходим отдых.
+villager.gorest=Watashi niwa kyu-kei ga hituyou desu. / Да, вот мое время сна.
+villager.gorest=Watashi wa totemo tukarete imasu./ Я очень устал.
+
+villager.greeting=Gokigenyou. / Как дела?
+villager.greeting=Hajimemashite / Эй.
+villager.greeting=Kawatta koto aru? / Что нового?
+villager.greeting=Konnichiwa, $name-san! / Добрый день. $name-Сан!
+villager.greeting=Ogenki desuka, $name-san  / Как дела? $name- Сэн?
+villager.greeting=Oi. / Добро пожаловать.
+villager.greeting=Yokoso. / Как дела?

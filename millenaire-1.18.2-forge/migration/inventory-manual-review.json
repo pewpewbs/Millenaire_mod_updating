@@ -1,0 +1,17 @@
+[
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\client\\gui\\GuiFirePit.java",
+    "old": "        this.field_146289_q.func_78276_b(this.player.inventory.getDisplayName().func_150260_c(), 8, this.imageHeight - 96 + 2, 0x404040);",
+    "new": "        this.field_146289_q.func_78276_b(this.player.getInventory().getDisplayName().func_150260_c(), 8, this.imageHeight - 96 + 2, 0x404040);"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\item\\ItemUlu.java",
+    "old": "            if (chosenPlankType != null || MillCommonUtilities.countChestItems((Container)player.inventory, Blocks.field_150344_f.defaultBlockState().func_177226_a((Property)BlockPlanks.field_176383_a, (Comparable)plankType)) <= 0) continue;",
+    "new": "            if (chosenPlankType != null || MillCommonUtilities.countChestItems((Container)player.getInventory(), Blocks.field_150344_f.defaultBlockState().func_177226_a((Property)BlockPlanks.field_176383_a, (Comparable)plankType)) <= 0) continue;"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\item\\ItemUlu.java",
+    "old": "            WorldUtilities.getItemsFromChest((Container)player.inventory, Blocks.field_150344_f.defaultBlockState().func_177226_a((Property)BlockPlanks.field_176383_a, (Comparable)chosenPlankType), 1);",
+    "new": "            WorldUtilities.getItemsFromChest((Container)player.getInventory(), Blocks.field_150344_f.defaultBlockState().func_177226_a((Property)BlockPlanks.field_176383_a, (Comparable)chosenPlankType), 1);"
+  }
+]

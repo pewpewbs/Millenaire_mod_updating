@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class Point{public double x,y,z;public Point(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public int getiX(){return (int)x;}public int getiY(){return (int)y;}public int getiZ(){return (int)z;}}

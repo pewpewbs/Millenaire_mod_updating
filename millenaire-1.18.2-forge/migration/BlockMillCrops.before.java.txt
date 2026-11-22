@@ -1,0 +1,207 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  javax.annotation.Nullable
+ *  net.minecraft.block.Block
+ *  net.minecraft.block.BlockBush
+ *  net.minecraft.block.IGrowable
+ *  net.minecraft.block.SoundType
+ *  net.minecraft.block.properties.IProperty
+ *  net.minecraft.block.properties.PropertyInteger
+ *  net.minecraft.block.state.BlockStateContainer
+ *  net.minecraft.block.state.IBlockState
+ *  net.minecraft.entity.player.EntityPlayer
+ *  net.minecraft.init.Blocks
+ *  net.minecraft.item.Item
+ *  net.minecraft.item.ItemStack
+ *  net.minecraft.tileentity.TileEntity
+ *  net.minecraft.util.EnumFacing
+ *  net.minecraft.util.NonNullList
+ *  net.minecraft.util.ResourceLocation
+ *  net.minecraft.util.math.AxisAlignedBB
+ *  net.minecraft.util.math.BlockPos
+ *  net.minecraft.util.math.MathHelper
+ *  net.minecraft.world.IBlockAccess
+ *  net.minecraft.world.World
+ *  net.minecraftforge.common.ForgeHooks
+ *  net.minecraftforge.common.IPlantable
+ */
+package org.millenaire.common.block;
+
+import java.util.Random;
+import javax.annotation.Nullable;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BushBlock;
+import net.minecraft.world.level.block.BonemealableBlock;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.common.IPlantable;
+import org.millenaire.common.utilities.BlockItemUtilities;
+import org.millenaire.common.utilities.Point;
+import org.millenaire.common.utilities.WorldUtilities;
+
+public class BlockMillCrops
+extends BushBlock
+implements BonemealableBlock, org.millenaire.common.block.LegacyVariantBlock {
+    public static final IntegerProperty AGE = IntegerProperty.create((String)"age", (int)0, (int)7);
+    private static final AABB[] CROPS_AABB = new AABB[]{new AABB(0.0, 0.0, 0.0, 1.0, 0.125, 1.0), new AABB(0.0, 0.0, 0.0, 1.0, 0.25, 1.0), new AABB(0.0, 0.0, 0.0, 1.0, 0.375, 1.0), new AABB(0.0, 0.0, 0.0, 1.0, 0.5, 1.0), new AABB(0.0, 0.0, 0.0, 1.0, 0.625, 1.0), new AABB(0.0, 0.0, 0.0, 1.0, 0.75, 1.0), new AABB(0.0, 0.0, 0.0, 1.0, 0.875, 1.0), new AABB(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)};
+    private final boolean requireIrrigation;
+    private final boolean slowGrowth;
+    private final ResourceLocation seed;
+
+    protected static float getGrowthChance(BlockMillCrops blockIn, Level worldIn, BlockPos pos) {
+        int irrigation = WorldUtilities.getBlockMeta(worldIn, new Point(pos).getBelow());
+        if (blockIn.requireIrrigation && irrigation == 0) {
+            return 0.0f;
+        }
+        return !blockIn.slowGrowth ? 8.0f : 4.0f;
+    }
+
+    public BlockMillCrops(String cropName, boolean requireIrrigation, boolean slowGrowth, ResourceLocation seed) {
+        this.requireIrrigation = requireIrrigation;
+        this.slowGrowth = slowGrowth;
+        this.func_149675_a(true);
+        this.func_149647_a(null);
+        this.func_149711_c(0.0f);
+        this.func_149672_a(SoundType.GRASS);
+        this.seed = seed;
+        this.func_149663_c("millenaire." + cropName);
+        this.setRegistryName(cropName);
+        this.registerDefaultState(this.stateDefinition.any().setValue(AGE, Integer.valueOf(0)));
+    }
+
+    public boolean func_180671_f(Level worldIn, BlockPos pos, BlockState state) {
+        BlockState soil = worldIn.getBlockState(pos.below());
+        return (worldIn.func_175699_k(pos) >= 8 || worldIn.func_175678_i(pos)) && soil.getBlock().canSustainPlant(soil, (BlockGetter)worldIn, pos.below(), Direction.UP, (IPlantable)this);
+    }
+
+    public boolean isValidBonemealTarget(Level worldIn, BlockPos pos, BlockState state, boolean isClient) {
+        return !this.isMaxAge(state);
+    }
+
+    protected boolean func_185514_i(BlockState state) {
+        return state.getBlock() == Blocks.FARMLAND;
+    }
+
+    public boolean isBonemealSuccess(Level worldIn, Random rand, BlockPos pos, BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
+        builder.add(AGE);
+    }
+
+    protected int getAge(BlockState state) {
+        return (Integer)state.getValue(this.getAgeProperty());
+    }
+
+    protected IntegerProperty getAgeProperty() {
+        return AGE;
+    }
+
+    protected int getBonemealAgeIncrease(Level worldIn) {
+        return Mth.nextInt((Random)worldIn.random, (int)2, (int)5);
+    }
+
+    public AABB func_185496_a(BlockState state, BlockGetter source, BlockPos pos) {
+        return CROPS_AABB[(Integer)state.getValue(this.getAgeProperty())];
+    }
+
+    public void getDrops(NonNullList<ItemStack> drops, BlockGetter world, BlockPos pos, BlockState state, int fortune) {
+        Random rand;
+        super.getDrops(drops, world, pos, state, 0);
+        int age = this.getAge(state);
+        Random random = rand = world instanceof Level ? ((Level)world).random : new Random();
+        if (age >= this.getMaxAge()) {
+            for (int i = 0; i < 3 + fortune; ++i) {
+                if (rand.nextInt(2 * this.getMaxAge()) > age) continue;
+                drops.add((Object)org.millenaire.common.item.LegacyItemStacks.stack(this.getSeed(), 1, 0));
+            }
+        }
+    }
+
+    public ItemStack getCloneItemStack(Level worldIn, BlockPos pos, BlockState state) {
+        return new ItemStack(this.getSeed());
+    }
+
+    public Item func_180660_a(BlockState state, Random rand, int fortune) {
+        return Item.func_111206_d((String)this.seed.toString());
+    }
+
+    public int getMaxAge() {
+        return 7;
+    }
+
+    public int func_176201_c(BlockState state) {
+        return this.getAge(state);
+    }
+
+    protected Item getSeed() {
+        return Item.func_111206_d((String)this.seed.toString());
+    }
+
+    public BlockState func_176203_a(int meta) {
+        return this.withAge(meta);
+    }
+
+    public void grow(Level worldIn, BlockPos pos, BlockState state) {
+        int j;
+        int i = this.getAge(state) + this.getBonemealAgeIncrease(worldIn);
+        if (i > (j = this.getMaxAge())) {
+            i = j;
+        }
+        worldIn.setBlock(pos, this.withAge(i), 2);
+    }
+
+    public void func_176474_b(Level worldIn, Random rand, BlockPos pos, BlockState state) {
+        this.grow(worldIn, pos, state);
+    }
+
+    public void playerDestroy(Level worldIn, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity te, ItemStack stack) {
+        super.playerDestroy(worldIn, player, pos, state, te, stack);
+        BlockItemUtilities.checkForHarvestTheft(player, pos);
+    }
+
+    public boolean isMaxAge(BlockState state) {
+        return (Integer)state.getValue(this.getAgeProperty()) >= this.getMaxAge();
+    }
+
+    public int func_149745_a(Random par1Random) {
+        return 1;
+    }
+
+    public void func_180650_b(Level worldIn, BlockPos pos, BlockState state, Random rand) {
+        float growthChance;
+        int i;
+        super.func_180650_b(worldIn, pos, state, rand);
+        if (worldIn.func_175671_l(pos.above()) >= 9 && (i = this.getAge(state)) < this.getMaxAge() && (growthChance = BlockMillCrops.getGrowthChance(this, worldIn, pos)) > 0.0f && ForgeHooks.onCropsGrowPre((Level)worldIn, (BlockPos)pos, (BlockState)state, (rand.nextInt((int)(25.0f / growthChance)) == 0 ? 1 : 0) != 0)) {
+            worldIn.setBlock(pos, this.withAge(i + 1), 2);
+            ForgeHooks.onCropsGrowPost((Level)worldIn, (BlockPos)pos, (BlockState)state, (BlockState)worldIn.getBlockState(pos));
+        }
+    }
+
+    public BlockState withAge(int age) {
+        return this.defaultBlockState().setValue(this.getAgeProperty(), Integer.valueOf(age));
+    }
+}
+

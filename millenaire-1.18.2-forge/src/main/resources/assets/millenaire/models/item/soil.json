@@ -1,0 +1,71 @@
+{
+  "parent": "millenaire:item/soil_0",
+  "overrides": [
+    {
+      "predicate": {
+        "millenaire:variant": 1
+      },
+      "model": "millenaire:item/soil_1"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 2
+      },
+      "model": "millenaire:item/soil_2"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 3
+      },
+      "model": "millenaire:item/soil_3"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 4
+      },
+      "model": "millenaire:item/soil_4"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 5
+      },
+      "model": "millenaire:item/soil_5"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 6
+      },
+      "model": "millenaire:item/soil_6"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 7
+      },
+      "model": "millenaire:item/soil_7"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 8
+      },
+      "model": "millenaire:item/soil_8"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 9
+      },
+      "model": "millenaire:item/soil_9"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 10
+      },
+      "model": "millenaire:item/soil_10"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 11
+      },
+      "model": "millenaire:item/soil_11"
+    }
+  ]
+}

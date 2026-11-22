@@ -1,0 +1,46 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.client.renderer.block.model.ModelResourceLocation
+ *  net.minecraft.item.Item
+ *  net.minecraft.item.ItemBow
+ *  net.minecraftforge.client.model.ModelLoader
+ *  net.minecraftforge.fml.relauncher.Side
+ *  net.minecraftforge.fml.relauncher.SideOnly
+ */
+package org.millenaire.common.item;
+
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.BowItem;
+import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.millenaire.common.block.MillBlocks;
+
+public class ItemMillenaireBow
+extends BowItem {
+    public float speedFactor = 1.0f;
+    public float damageBonus = 0.0f;
+    private final int enchantability;
+
+    public ItemMillenaireBow(String itemName, float speedFactor, float damageBonus, int enchantability) {
+        this.speedFactor = speedFactor;
+        this.damageBonus = damageBonus;
+        this.enchantability = enchantability;
+        this.func_77655_b("millenaire." + itemName);
+        this.setRegistryName(itemName);
+        this.func_77637_a(MillBlocks.tabMillenaire);
+    }
+
+    public int getEnchantmentValue() {
+        return this.enchantability;
+    }
+
+    @OnlyIn(value=Dist.CLIENT)
+    public void initModel() {
+        ModelLoader.setCustomModelResourceLocation((Item)this, (int)0, (ModelResourceLocation)new ModelResourceLocation(this.getRegistryName(), "inventory"));
+    }
+}
+

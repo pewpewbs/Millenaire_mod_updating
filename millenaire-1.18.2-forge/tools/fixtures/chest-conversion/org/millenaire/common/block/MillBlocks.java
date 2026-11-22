@@ -1,0 +1,1 @@
+package org.millenaire.common.block; public class MillBlocks {public static final BlockLockedChest LOCKED_CHEST=new BlockLockedChest();}

@@ -1,0 +1,108 @@
+
+//refresh
+kastron_a0=Кастрон
+kastron_a_archives_a0=Архив поселения
+kastron_a_inn_a0=Постоялый двор
+kastron_a_leftmarket_a0=Рынок
+kastron_a_leftmarket_a1=Левая часть рынка
+kastron_a_rightmarket_a0=Рынок
+kastron_a_rightmarket_a1=Правая часть рынка
+
+acaciagrove_a0=Акациевая роща
+acaciagrovesmall_A0=Малая акациевая роща
+architect_a0=Мастерская архитектора
+dressmaker_a0=Портной
+fishfarm_a0=Хижина рыбака
+fishfarm_a3=Рыбное хозяйство
+mason_a0=Каменщик
+mine_a0=Шахта
+pinegrove_a0=Еловая роща
+pinegrovesmall_a0=Малая еловая роща
+sandpit_a0=Песчаный карьер
+sheepfarm_a0=Овечий загон
+silkfarm_a0=Шёлковая ферма
+smelter_a0=Плавильня
+toolsmith_a0=Кузница
+woodcutter_a0=Хижина дровосека
+presbytery_a0=Дом священника
+presbytery_a_classroom_A0=Школа
+chapel_a0=Часовня
+workerhouse_a0=Хижина рабочего
+workshop_a0=Мастерская
+watchtower_a0=Сторожевая башня
+taverna_a0=Таверна
+vineyard_a0=Виноградник
+pergola_a0=Пергола
+garden_a0=Сад
+shrine_a0=Святилище
+cross_a0=Крест
+olivetree_a0=Оливковое дерево
+olivepress_a0=Маслобойня
+inn_a0=Постоялый двор
+archives_a0=Архив
+market_a0=Рынок
+market_a4=Торговый зал
+fortress_a0=Крепость
+fortress_a_barracks_a0=Казармы
+fortress_a_armyforge_a0=Военная кузница
+church_a0=Церковь
+church_a_warehouse_a0=Склад
+church_a_school_a0=Школа
+church_a_sanctuary_a0=Святилище
+church_a_chamber1_a0=Покои
+church_a_chamber2_a0=Покои
+carrotfield_a0=Морковное поле
+wheatfield_a0=Пшеничное поле
+windmill_a0=Ветряная мельница
+windmill_b0=Ветряная мельница
+farm_a0=Ферма
+
+
+playerhut_a0=Малый дом
+playerhouse_a0=Большой дом
+villaurbana_a0=Вилла Урбана
+playersmallplot_a0=Малый участок
+playerlargeplot_a0=Большой участок
+playerhugeplot_a0=Огромный участок
+gifthut_a0=Подарочный дом
+
+borderpost_a0=Пограничный пост
+borderpost_corner_a0=Пограничный пост (угол)
+borderpost_gate_a0=Пограничный пост (Проходной)
+
+playerfortress_a0=Крепость
+playerfortress_a_barracks_a0=Казармы
+playerfortress_a_armyforge_a0=Военная кузница
+
+oldsheepfarm_a0=Уединённая овчарня
+oldsheepfarm_A_special_A0=Сюрприз уединённой овчарни
+lonesheepfarm_a0=Уединённая овчарня
+lonesheepfarm_b0=Уединённая овчарня
+
+lonemonastery_a0=Одинокий монастырь
+lonemonastery_b0=Одинокий монастырь
+lonemonastery_side_A0=Боковое крыло уединённого монастыря
+lonemonastery_apse_A0=Апсида уединённого монастыря
+lonemonastery_dorms_A0=Спальни уединённого монастыря
+lonemonastery_dome_A0=Купол уединённого монастыря
+lonemonastery_field_A0=Поле одинокого монастыря
+lonemonastery_side_B0=Боковое крыло уединённого монастыря
+lonemonastery_apse_B0=Апсида уединённого монастыря
+lonemonastery_dorms_B0=Спальни уединённого монастыря
+lonemonastery_dome_B0=Купол уединённого монастыря
+lonemonastery_field_B0=Поле одинокого монастыря
+
+ancienttheatrebyzantine_A0=Древний театр
+ancienttemplebyzantine_a0=Древний храм
+
+temple_a0=Древний храм
+theatre_a0=Древний театр
+sheepranch_a0=Уединённая овчарня
+pharos_a0=Маяк
+lonepinegrove_a0=Крошечная еловая роща
+
+oaktower_A0=Сторожевая башня
+birchtower_A0=Сторожевая башня
+pinetower_A0=Сторожевая башня
+jungletower_A0=Сторожевая башня
+lighthouse_a0=Маяк

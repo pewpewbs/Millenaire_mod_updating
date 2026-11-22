@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class MillCommonUtilities{public static int lastBound;public static int randomInt(int n){lastBound=n;return 0;}}

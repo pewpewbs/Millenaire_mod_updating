@@ -1,0 +1,1 @@
+package org.millenaire.common.config; public class MillConfigValues { public static boolean DEV; public static int randomUid; public static java.util.Set<String> advancementsCreative=new java.util.HashSet<>(),advancementsSurvival=new java.util.HashSet<>(); public static void writeConfigFile(){} }

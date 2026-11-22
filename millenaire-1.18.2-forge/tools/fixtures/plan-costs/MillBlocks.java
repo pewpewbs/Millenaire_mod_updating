@@ -1,0 +1,1 @@
+package org.millenaire.common.block;import net.minecraft.world.level.block.*;public class MillBlocks{public static final Block BYZANTINE_TILES_SLAB=Blocks.BRICK_SLAB,GRAY_TILES_SLAB=Blocks.STONE_SLAB,GREEN_TILES_SLAB=Blocks.MOSSY_STONE_BRICK_SLAB,RED_TILES_SLAB=Blocks.RED_SANDSTONE_SLAB,BYZANTINE_TILES=Blocks.BRICKS,GRAY_TILES=Blocks.STONE;}

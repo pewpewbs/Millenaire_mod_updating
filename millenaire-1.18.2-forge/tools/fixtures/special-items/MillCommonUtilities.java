@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities; public class MillCommonUtilities { public static int putItemsInChest(net.minecraft.world.Container inv,net.minecraft.world.item.Item item,int count){throw new UnsupportedOperationException("Not part of this fixture");} }

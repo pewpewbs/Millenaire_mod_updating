@@ -1,0 +1,927 @@
+Locked Chest	Замкнена скриня	Запертый сундук
+Chest	Скриня	Сундук
+Village Archives	Архів поселення	Архив поселения
+Archives	Архів	Архив
+Inn	Заїжджий двір	Постоялый двор
+Market	Ринок	Рынок
+Left Market	Ліва частина ринку	Левая часть рынка
+Right Market	Права частина ринку	Правая часть рынка
+Acacia Grove	Акацієвий гай	Акациевая роща
+Small Acacia Grove	Малий акацієвий гай	Малая акациевая роща
+Spruce Grove	Ялиновий гай	Еловая роща
+Small Spruce Grove	Малий ялиновий гай	Малая еловая роща
+Architect’s Studio	Майстерня архітектора	Мастерская архитектора
+Architect's Studio	Майстерня архітектора	Мастерская архитектора
+Dressmaker	Кравець	Портной
+Fisherman’s Hut	Хатина рибалки	Хижина рыбака
+Fisherman's Hut	Хатина рибалки	Хижина рыбака
+Fishfarm	Рибне господарство	Рыбное хозяйство
+Mason	Муляр	Каменщик
+Mine	Шахта	Шахта
+Miner	Шахтар	Шахтёр
+Sandpit	Піщаний кар’єр	Песчаный карьер
+Sheep Run	Овечий загін	Овечий загон
+Silkfarm	Шовкова ферма	Шёлковая ферма
+Smeltery	Плавильня	Плавильня
+Smithy	Кузня	Кузница
+Woodcutter’s Hut	Хатина лісоруба	Хижина дровосека
+Woodcutter's Hut	Хатина лісоруба	Хижина дровосека
+Presbytery	Будинок священника	Дом священника
+School	Школа	Школа
+Chapel	Каплиця	Часовня
+Worker’s Hut	Хатина робітника	Хижина рабочего
+Workshop	Майстерня	Мастерская
+Watchtower	Вартова вежа	Сторожевая башня
+Tavern	Таверна	Таверна
+Vineyard	Виноградник	Виноградник
+Pergola	Пергола	Пергола
+Garden	Сад	Сад
+Shrine	Святилище	Святилище
+Cross	Хрест	Крест
+Olive Tree	Оливкове дерево	Оливковое дерево
+Oil Press	Олійниця	Маслобойня
+Market Hall	Торговий зал	Торговый зал
+Fortress	Фортеця	Крепость
+Barracks	Казарми	Казармы
+Armyforge	Військова кузня	Военная кузница
+Church	Церква	Церковь
+Warehouse	Склад	Склад
+Sanctuary	Святилище	Святилище
+Chamber	Покої	Покои
+Carrot Field	Морквяне поле	Морковное поле
+Wheat Field	Пшеничне поле	Пшеничное поле
+Windmill	Вітряк	Ветряная мельница
+Farm	Ферма	Ферма
+Small House	Малий будинок	Малый дом
+Large House	Великий будинок	Большой дом
+Small Plot	Мала ділянка	Малый участок
+Large Plot	Велика ділянка	Большой участок
+Huge Plot	Величезна ділянка	Огромный участок
+Abbey	Абатство	Аббатство
+Monk Cell	Келія ченця	Келья монаха
+Altar	Вівтар	Алтарь
+Abbey Tower	Вежа абатства	Башня аббатства
+Alchemy Workshop	Алхімічна майстерня	Алхимическая мастерская
+Armory	Зброярня	Оружейная
+Armoury	Зброярня	Оружейная
+Bakery	Пекарня	Пекарня
+Carpenter's House	Будинок теслі	Дом плотника
+Cattle Farm	Коров’яча ферма	Коровья ферма
+Fort	Форт	Форт
+Palace	Палац	Дворец
+Temple	Храм	Храм
+Town Hall	Ратуша	Ратуша
+Townhall	Ратуша	Ратуша
+Village	Поселення	Поселение
+Village leader	Очільник поселення	Глава поселения
+Village Leader	Очільник поселення	Глава поселения
+Chief	Вождь	Вождь
+Building plans	Плани будівель	Планы построек
+Construction	Будівництво	Строительство
+Constructions	Будівництво	Строительство
+Resources	Ресурси	Ресурсы
+Projects	Проєкти	Проекты
+Population	Населення	Население
+Reputation	Репутація	Репутация
+Trade	Торгівля	Торговля
+Trading	Торгівля	Торговля
+Farmer	Фермер	Фермер
+Fisherman	Рибалка	Рыбак
+Woodcutter	Лісоруб	Дровосек
+Carpenter	Тесля	Плотник
+Blacksmith	Коваль	Кузнец
+Smith	Коваль	Кузнец
+Builder	Будівельник	Строитель
+Architect	Архітектор	Архитектор
+Merchant	Купець	Купец
+Trader	Торговець	Торговец
+Guard	Вартовий	Стражник
+Soldier	Воїн	Воин
+Knight	Лицар	Рыцарь
+Monk	Чернець	Монах
+Nun	Черниця	Монахиня
+Priest	Священник	Священник
+Boy	Хлопчик	Мальчик
+Girl	Дівчинка	Девочка
+Child	Дитина	Ребёнок
+Children	Діти	Дети
+Wife	Дружина	Жена
+Husband	Чоловік	Муж
+Woman	Жінка	Женщина
+Man	Чоловік	Мужчина
+Denier	Деньє	Денье
+Denier Or	Золотий деньє	Золотой денье
+Denier Argent	Срібний деньє	Серебряный денье
+Calva	Кальвадос	Кальвадос
+Tripes	Тушковані тельбухи	Тушёная требуха
+Boudin Noir	Кров’янка	Кровяная колбаса
+Dirt Wall	Земляна стіна	Земляная стена
+Oak door	Дубові двері	Дубовая дверь
+Oak Door	Дубові двері	Дубовая дверь
+Norman Pickaxe	Норманське кайло	Норманнская кирка
+Norman Axe	Норманська сокира	Норманнский топор
+Norman Shovel	Норманська лопата	Норманнская лопата
+Norman Hoe	Норманська мотика	Норманнская мотыга
+Norman Sword	Норманський меч	Норманнский меч
+Norman Helmet	Норманський шолом	Норманнский шлем
+Norman Chestplate	Норманський нагрудник	Норманнский нагрудник
+Norman Leggings	Норманські наголінники	Норманнские поножи
+Norman Boots	Норманські чоботи	Норманнские ботинки
+Wand of Summoning	Жезл виклику	Жезл призыва
+Summoning Wand	Жезл виклику	Жезл призыва
+Negation Wand	Жезл знищення	Жезл уничтожения
+Village Scroll	Сувій поселення	Свиток поселения
+Travel Book	Книга мандрівника	Книга путешественника
+Help	Довідка	Справка
+Cancel	Скасувати	Отмена
+Done	Готово	Готово
+Back	Назад	Назад
+Next	Далі	Далее
+Previous	Назад	Назад
+Yes	Так	Да
+No	Ні	Нет
+On	Увімкнено	Включено
+Off	Вимкнено	Выключено
+Enabled	Увімкнено	Включено
+Disabled	Вимкнено	Выключено
+Buy	Купити	Купить
+Sell	Продати	Продать
+Building	Будівля	Постройка
+Buildings	Будівлі	Постройки
+Food	Їжа	Еда
+Tools	Інструменти	Инструменты
+Weapons	Зброя	Оружие
+Armour	Обладунки	Броня
+Armor	Обладунки	Броня
+
+Black Painted Brick	Чорна фарбована цегла	Чёрный окрашенный кирпич
+Black Decorated Brick	Чорна декоративна цегла	Чёрный декоративный кирпич
+Black Painted Stairs	Чорні фарбовані сходи	Чёрные окрашенные ступени
+Black Painted Slab	Чорна фарбована плита	Чёрная окрашенная плита
+Black Painted Wall	Чорна фарбована стіна	Чёрная окрашенная стена
+Black Byzantine Charge	Чорний візантійський орел	Чёрный византийский орёл
+Black Seljuk Charge	Чорний сельджуцький орел	Чёрный сельджукский орёл
+Black Maya Charge	Чорне обличчя мая	Чёрное лицо майя
+Black Inuit Charge	Чорний інуїтський інуксук	Чёрный инуитский инуксук
+Black Norman Lions Charge	Чорні норманські леви	Чёрные норманнские львы
+Black Dexter Meander	Чорний правий меандр	Чёрный правый меандр
+Black Sinister Meander	Чорний лівий меандр	Чёрный левый меандр
+Black Indian Sun Charge	Чорне індійське сонце	Чёрное индийское солнце
+Black Indian Scimitar Charge	Чорний індійський ятаган	Чёрный индийский ятаган
+Black Indian Elephant Charge	Чорний індійський слон	Чёрный индийский слон
+Black Indian Conch Charge	Чорна індійська мушля	Чёрная индийская раковина
+Black Indian Cow Charge	Чорна індійська корова	Чёрная индийская корова
+Black Indian Lotus Charge	Чорний індійський лотос	Чёрный индийский лотос
+Black Maya Lines Charge	Чорні лінії мая	Чёрные линии майя
+Black Maya Hex Charge	Чорний шестикутник мая	Чёрный шестиугольник майя
+Black Maya Heads Charge	Чорні голови мая	Чёрные головы майя
+Black Maya Spaceship Charge	Чорний космічний корабель мая	Чёрный космический корабль майя
+Black Inuit Curve Charge	Чорна інуїтська дуга	Чёрная инуитская дуга
+Black Inuit Lines Charge	Чорні інуїтські лінії	Чёрные инуитские линии
+Black Inuit Mermaid Charge	Чорна інуїтська русалка	Чёрная инуитская русалка
+Black Inuit Rectangle Charge	Чорний інуїтський прямокутник	Чёрный инуитский прямоугольник
+Black Japanese Sun Charge	Чорне японське сонце	Чёрное японское солнце
+Black Japanese Agricultural Ideogram	Чорна японська землеробська ідеограма	Чёрная японская земледельческая идеограмма
+Black Japanese Military Ideogram	Чорна японська військова ідеограма	Чёрная японская военная идеограмма
+Black Japanese Religious Ideogram	Чорна японська релігійна ідеограма	Чёрная японская религиозная идеограмма
+Black Japanese Trade Ideogram	Чорна японська торгова ідеограма	Чёрная японская торговая идеограмма
+Black Tiles	Чорна черепиця	Чёрная черепица
+Black Tile Slab	Чорна черепична плита	Чёрная черепичная плита
+Black Tiles Stairs	Чорні черепичні сходи	Чёрные черепичные ступени
+Black Stained Glass Windows	Чорні вітражні вікна	Чёрные витражные окна
+Black Concrete Brick	Чорна бетонна цегла	Чёрный бетонный кирпич
+Black Chiseled Concrete	Чорний різьблений бетон	Чёрный резной бетон
+Black ō-yoroi boots	Чорні чоботи о-йорой	Чёрные ботинки о-ёрой
+Black ō-yoroi leggings	Чорні наголінники о-йорой	Чёрные поножи о-ёрой
+Black ō-yoroi helmet	Чорний шолом о-йорой	Чёрный шлем о-ёрой
+Black ō-yoroi chestplate	Чорний нагрудник о-йорой	Чёрный нагрудник о-ёрой
+Blue Painted Brick	Синя фарбована цегла	Синий окрашенный кирпич
+Blue Decorated Brick	Синя декоративна цегла	Синий декоративный кирпич
+Blue Painted Stairs	Сині фарбовані сходи	Синие окрашенные ступени
+Blue Painted Slab	Синя фарбована плита	Синяя окрашенная плита
+Blue Painted Wall	Синя фарбована стіна	Синяя окрашенная стена
+Blue Byzantine Charge	Синій візантійський орел	Синий византийский орёл
+Blue Seljuk Charge	Синій сельджуцький орел	Синий сельджукский орёл
+Blue Maya Charge	Синє обличчя мая	Синее лицо майя
+Blue Inuit Charge	Синій інуїтський інуксук	Синий инуитский инуксук
+Blue Norman Lions Charge	Сині норманські леви	Синие норманнские львы
+Blue Dexter Meander	Синій правий меандр	Синий правый меандр
+Blue Sinister Meander	Синій лівий меандр	Синий левый меандр
+Blue Indian Sun Charge	Синє індійське сонце	Синее индийское солнце
+Blue Indian Scimitar Charge	Синій індійський ятаган	Синий индийский ятаган
+Blue Indian Elephant Charge	Синій індійський слон	Синий индийский слон
+Blue Indian Conch Charge	Синя індійська мушля	Синяя индийская раковина
+Blue Indian Cow Charge	Синя індійська корова	Синяя индийская корова
+Blue Indian Lotus Charge	Синій індійський лотос	Синий индийский лотос
+Blue Maya Lines Charge	Сині лінії мая	Синие линии майя
+Blue Maya Hex Charge	Синій шестикутник мая	Синий шестиугольник майя
+Blue Maya Heads Charge	Сині голови мая	Синие головы майя
+Blue Maya Spaceship Charge	Синій космічний корабель мая	Синий космический корабль майя
+Blue Inuit Curve Charge	Синя інуїтська дуга	Синяя инуитская дуга
+Blue Inuit Lines Charge	Сині інуїтські лінії	Синие инуитские линии
+Blue Inuit Mermaid Charge	Синя інуїтська русалка	Синяя инуитская русалка
+Blue Inuit Rectangle Charge	Синій інуїтський прямокутник	Синий инуитский прямоугольник
+Blue Japanese Sun Charge	Синє японське сонце	Синее японское солнце
+Blue Japanese Agricultural Ideogram	Синя японська землеробська ідеограма	Синяя японская земледельческая идеограмма
+Blue Japanese Military Ideogram	Синя японська військова ідеограма	Синяя японская военная идеограмма
+Blue Japanese Religious Ideogram	Синя японська релігійна ідеограма	Синяя японская религиозная идеограмма
+Blue Japanese Trade Ideogram	Синя японська торгова ідеограма	Синяя японская торговая идеограмма
+Blue Tiles	Синя черепиця	Синяя черепица
+Blue Tile Slab	Синя черепична плита	Синяя черепичная плита
+Blue Tiles Stairs	Сині черепичні сходи	Синие черепичные ступени
+Blue Stained Glass Windows	Сині вітражні вікна	Синие витражные окна
+Blue Concrete Brick	Синя бетонна цегла	Синий бетонный кирпич
+Blue Chiseled Concrete	Синій різьблений бетон	Синий резной бетон
+Blue ō-yoroi boots	Сині чоботи о-йорой	Синие ботинки о-ёрой
+Blue ō-yoroi leggings	Сині наголінники о-йорой	Синие поножи о-ёрой
+Blue ō-yoroi helmet	Синій шолом о-йорой	Синий шлем о-ёрой
+Blue ō-yoroi chestplate	Синій нагрудник о-йорой	Синий нагрудник о-ёрой
+Brown Painted Brick	Коричнева фарбована цегла	Коричневый окрашенный кирпич
+Brown Decorated Brick	Коричнева декоративна цегла	Коричневый декоративный кирпич
+Brown Painted Stairs	Коричневі фарбовані сходи	Коричневые окрашенные ступени
+Brown Painted Slab	Коричнева фарбована плита	Коричневая окрашенная плита
+Brown Painted Wall	Коричнева фарбована стіна	Коричневая окрашенная стена
+Brown Byzantine Charge	Коричневий візантійський орел	Коричневый византийский орёл
+Brown Seljuk Charge	Коричневий сельджуцький орел	Коричневый сельджукский орёл
+Brown Maya Charge	Коричневе обличчя мая	Коричневое лицо майя
+Brown Inuit Charge	Коричневий інуїтський інуксук	Коричневый инуитский инуксук
+Brown Norman Lions Charge	Коричневі норманські леви	Коричневые норманнские львы
+Brown Dexter Meander	Коричневий правий меандр	Коричневый правый меандр
+Brown Sinister Meander	Коричневий лівий меандр	Коричневый левый меандр
+Brown Indian Sun Charge	Коричневе індійське сонце	Коричневое индийское солнце
+Brown Indian Scimitar Charge	Коричневий індійський ятаган	Коричневый индийский ятаган
+Brown Indian Elephant Charge	Коричневий індійський слон	Коричневый индийский слон
+Brown Indian Conch Charge	Коричнева індійська мушля	Коричневая индийская раковина
+Brown Indian Cow Charge	Коричнева індійська корова	Коричневая индийская корова
+Brown Indian Lotus Charge	Коричневий індійський лотос	Коричневый индийский лотос
+Brown Maya Lines Charge	Коричневі лінії мая	Коричневые линии майя
+Brown Maya Hex Charge	Коричневий шестикутник мая	Коричневый шестиугольник майя
+Brown Maya Heads Charge	Коричневі голови мая	Коричневые головы майя
+Brown Maya Spaceship Charge	Коричневий космічний корабель мая	Коричневый космический корабль майя
+Brown Inuit Curve Charge	Коричнева інуїтська дуга	Коричневая инуитская дуга
+Brown Inuit Lines Charge	Коричневі інуїтські лінії	Коричневые инуитские линии
+Brown Inuit Mermaid Charge	Коричнева інуїтська русалка	Коричневая инуитская русалка
+Brown Inuit Rectangle Charge	Коричневий інуїтський прямокутник	Коричневый инуитский прямоугольник
+Brown Japanese Sun Charge	Коричневе японське сонце	Коричневое японское солнце
+Brown Japanese Agricultural Ideogram	Коричнева японська землеробська ідеограма	Коричневая японская земледельческая идеограмма
+Brown Japanese Military Ideogram	Коричнева японська військова ідеограма	Коричневая японская военная идеограмма
+Brown Japanese Religious Ideogram	Коричнева японська релігійна ідеограма	Коричневая японская религиозная идеограмма
+Brown Japanese Trade Ideogram	Коричнева японська торгова ідеограма	Коричневая японская торговая идеограмма
+Brown Tiles	Коричнева черепиця	Коричневая черепица
+Brown Tile Slab	Коричнева черепична плита	Коричневая черепичная плита
+Brown Tiles Stairs	Коричневі черепичні сходи	Коричневые черепичные ступени
+Brown Stained Glass Windows	Коричневі вітражні вікна	Коричневые витражные окна
+Brown Concrete Brick	Коричнева бетонна цегла	Коричневый бетонный кирпич
+Brown Chiseled Concrete	Коричневий різьблений бетон	Коричневый резной бетон
+Brown ō-yoroi boots	Коричневі чоботи о-йорой	Коричневые ботинки о-ёрой
+Brown ō-yoroi leggings	Коричневі наголінники о-йорой	Коричневые поножи о-ёрой
+Brown ō-yoroi helmet	Коричневий шолом о-йорой	Коричневый шлем о-ёрой
+Brown ō-yoroi chestplate	Коричневий нагрудник о-йорой	Коричневый нагрудник о-ёрой
+Cyan Painted Brick	Бірюзова фарбована цегла	Бирюзовый окрашенный кирпич
+Cyan Decorated Brick	Бірюзова декоративна цегла	Бирюзовый декоративный кирпич
+Cyan Painted Stairs	Бірюзові фарбовані сходи	Бирюзовые окрашенные ступени
+Cyan Painted Slab	Бірюзова фарбована плита	Бирюзовая окрашенная плита
+Cyan Painted Wall	Бірюзова фарбована стіна	Бирюзовая окрашенная стена
+Cyan Byzantine Charge	Бірюзовий візантійський орел	Бирюзовый византийский орёл
+Cyan Seljuk Charge	Бірюзовий сельджуцький орел	Бирюзовый сельджукский орёл
+Cyan Maya Charge	Бірюзове обличчя мая	Бирюзовое лицо майя
+Cyan Inuit Charge	Бірюзовий інуїтський інуксук	Бирюзовый инуитский инуксук
+Cyan Norman Lions Charge	Бірюзові норманські леви	Бирюзовые норманнские львы
+Cyan Dexter Meander	Бірюзовий правий меандр	Бирюзовый правый меандр
+Cyan Sinister Meander	Бірюзовий лівий меандр	Бирюзовый левый меандр
+Cyan Indian Sun Charge	Бірюзове індійське сонце	Бирюзовое индийское солнце
+Cyan Indian Scimitar Charge	Бірюзовий індійський ятаган	Бирюзовый индийский ятаган
+Cyan Indian Elephant Charge	Бірюзовий індійський слон	Бирюзовый индийский слон
+Cyan Indian Conch Charge	Бірюзова індійська мушля	Бирюзовая индийская раковина
+Cyan Indian Cow Charge	Бірюзова індійська корова	Бирюзовая индийская корова
+Cyan Indian Lotus Charge	Бірюзовий індійський лотос	Бирюзовый индийский лотос
+Cyan Maya Lines Charge	Бірюзові лінії мая	Бирюзовые линии майя
+Cyan Maya Hex Charge	Бірюзовий шестикутник мая	Бирюзовый шестиугольник майя
+Cyan Maya Heads Charge	Бірюзові голови мая	Бирюзовые головы майя
+Cyan Maya Spaceship Charge	Бірюзовий космічний корабель мая	Бирюзовый космический корабль майя
+Cyan Inuit Curve Charge	Бірюзова інуїтська дуга	Бирюзовая инуитская дуга
+Cyan Inuit Lines Charge	Бірюзові інуїтські лінії	Бирюзовые инуитские линии
+Cyan Inuit Mermaid Charge	Бірюзова інуїтська русалка	Бирюзовая инуитская русалка
+Cyan Inuit Rectangle Charge	Бірюзовий інуїтський прямокутник	Бирюзовый инуитский прямоугольник
+Cyan Japanese Sun Charge	Бірюзове японське сонце	Бирюзовое японское солнце
+Cyan Japanese Agricultural Ideogram	Бірюзова японська землеробська ідеограма	Бирюзовая японская земледельческая идеограмма
+Cyan Japanese Military Ideogram	Бірюзова японська військова ідеограма	Бирюзовая японская военная идеограмма
+Cyan Japanese Religious Ideogram	Бірюзова японська релігійна ідеограма	Бирюзовая японская религиозная идеограмма
+Cyan Japanese Trade Ideogram	Бірюзова японська торгова ідеограма	Бирюзовая японская торговая идеограмма
+Cyan Tiles	Бірюзова черепиця	Бирюзовая черепица
+Cyan Tile Slab	Бірюзова черепична плита	Бирюзовая черепичная плита
+Cyan Tiles Stairs	Бірюзові черепичні сходи	Бирюзовые черепичные ступени
+Cyan Stained Glass Windows	Бірюзові вітражні вікна	Бирюзовые витражные окна
+Cyan Concrete Brick	Бірюзова бетонна цегла	Бирюзовый бетонный кирпич
+Cyan Chiseled Concrete	Бірюзовий різьблений бетон	Бирюзовый резной бетон
+Cyan ō-yoroi boots	Бірюзові чоботи о-йорой	Бирюзовые ботинки о-ёрой
+Cyan ō-yoroi leggings	Бірюзові наголінники о-йорой	Бирюзовые поножи о-ёрой
+Cyan ō-yoroi helmet	Бірюзовий шолом о-йорой	Бирюзовый шлем о-ёрой
+Cyan ō-yoroi chestplate	Бірюзовий нагрудник о-йорой	Бирюзовый нагрудник о-ёрой
+Gray Painted Brick	Сіра фарбована цегла	Серый окрашенный кирпич
+Gray Decorated Brick	Сіра декоративна цегла	Серый декоративный кирпич
+Gray Painted Stairs	Сірі фарбовані сходи	Серые окрашенные ступени
+Gray Painted Slab	Сіра фарбована плита	Серая окрашенная плита
+Gray Painted Wall	Сіра фарбована стіна	Серая окрашенная стена
+Gray Byzantine Charge	Сірий візантійський орел	Серый византийский орёл
+Gray Seljuk Charge	Сірий сельджуцький орел	Серый сельджукский орёл
+Gray Maya Charge	Сіре обличчя мая	Серое лицо майя
+Gray Inuit Charge	Сірий інуїтський інуксук	Серый инуитский инуксук
+Gray Norman Lions Charge	Сірі норманські леви	Серые норманнские львы
+Gray Dexter Meander	Сірий правий меандр	Серый правый меандр
+Gray Sinister Meander	Сірий лівий меандр	Серый левый меандр
+Gray Indian Sun Charge	Сіре індійське сонце	Серое индийское солнце
+Gray Indian Scimitar Charge	Сірий індійський ятаган	Серый индийский ятаган
+Gray Indian Elephant Charge	Сірий індійський слон	Серый индийский слон
+Gray Indian Conch Charge	Сіра індійська мушля	Серая индийская раковина
+Gray Indian Cow Charge	Сіра індійська корова	Серая индийская корова
+Gray Indian Lotus Charge	Сірий індійський лотос	Серый индийский лотос
+Gray Maya Lines Charge	Сірі лінії мая	Серые линии майя
+Gray Maya Hex Charge	Сірий шестикутник мая	Серый шестиугольник майя
+Gray Maya Heads Charge	Сірі голови мая	Серые головы майя
+Gray Maya Spaceship Charge	Сірий космічний корабель мая	Серый космический корабль майя
+Gray Inuit Curve Charge	Сіра інуїтська дуга	Серая инуитская дуга
+Gray Inuit Lines Charge	Сірі інуїтські лінії	Серые инуитские линии
+Gray Inuit Mermaid Charge	Сіра інуїтська русалка	Серая инуитская русалка
+Gray Inuit Rectangle Charge	Сірий інуїтський прямокутник	Серый инуитский прямоугольник
+Gray Japanese Sun Charge	Сіре японське сонце	Серое японское солнце
+Gray Japanese Agricultural Ideogram	Сіра японська землеробська ідеограма	Серая японская земледельческая идеограмма
+Gray Japanese Military Ideogram	Сіра японська військова ідеограма	Серая японская военная идеограмма
+Gray Japanese Religious Ideogram	Сіра японська релігійна ідеограма	Серая японская религиозная идеограмма
+Gray Japanese Trade Ideogram	Сіра японська торгова ідеограма	Серая японская торговая идеограмма
+Gray Tiles	Сіра черепиця	Серая черепица
+Gray Tile Slab	Сіра черепична плита	Серая черепичная плита
+Gray Tiles Stairs	Сірі черепичні сходи	Серые черепичные ступени
+Gray Stained Glass Windows	Сірі вітражні вікна	Серые витражные окна
+Gray Concrete Brick	Сіра бетонна цегла	Серый бетонный кирпич
+Gray Chiseled Concrete	Сірий різьблений бетон	Серый резной бетон
+Gray ō-yoroi boots	Сірі чоботи о-йорой	Серые ботинки о-ёрой
+Gray ō-yoroi leggings	Сірі наголінники о-йорой	Серые поножи о-ёрой
+Gray ō-yoroi helmet	Сірий шолом о-йорой	Серый шлем о-ёрой
+Gray ō-yoroi chestplate	Сірий нагрудник о-йорой	Серый нагрудник о-ёрой
+Green Painted Brick	Зелена фарбована цегла	Зелёный окрашенный кирпич
+Green Decorated Brick	Зелена декоративна цегла	Зелёный декоративный кирпич
+Green Painted Stairs	Зелені фарбовані сходи	Зелёные окрашенные ступени
+Green Painted Slab	Зелена фарбована плита	Зелёная окрашенная плита
+Green Painted Wall	Зелена фарбована стіна	Зелёная окрашенная стена
+Green Byzantine Charge	Зелений візантійський орел	Зелёный византийский орёл
+Green Seljuk Charge	Зелений сельджуцький орел	Зелёный сельджукский орёл
+Green Maya Charge	Зелене обличчя мая	Зелёное лицо майя
+Green Inuit Charge	Зелений інуїтський інуксук	Зелёный инуитский инуксук
+Green Norman Lions Charge	Зелені норманські леви	Зелёные норманнские львы
+Green Dexter Meander	Зелений правий меандр	Зелёный правый меандр
+Green Sinister Meander	Зелений лівий меандр	Зелёный левый меандр
+Green Indian Sun Charge	Зелене індійське сонце	Зелёное индийское солнце
+Green Indian Scimitar Charge	Зелений індійський ятаган	Зелёный индийский ятаган
+Green Indian Elephant Charge	Зелений індійський слон	Зелёный индийский слон
+Green Indian Conch Charge	Зелена індійська мушля	Зелёная индийская раковина
+Green Indian Cow Charge	Зелена індійська корова	Зелёная индийская корова
+Green Indian Lotus Charge	Зелений індійський лотос	Зелёный индийский лотос
+Green Maya Lines Charge	Зелені лінії мая	Зелёные линии майя
+Green Maya Hex Charge	Зелений шестикутник мая	Зелёный шестиугольник майя
+Green Maya Heads Charge	Зелені голови мая	Зелёные головы майя
+Green Maya Spaceship Charge	Зелений космічний корабель мая	Зелёный космический корабль майя
+Green Inuit Curve Charge	Зелена інуїтська дуга	Зелёная инуитская дуга
+Green Inuit Lines Charge	Зелені інуїтські лінії	Зелёные инуитские линии
+Green Inuit Mermaid Charge	Зелена інуїтська русалка	Зелёная инуитская русалка
+Green Inuit Rectangle Charge	Зелений інуїтський прямокутник	Зелёный инуитский прямоугольник
+Green Japanese Sun Charge	Зелене японське сонце	Зелёное японское солнце
+Green Japanese Agricultural Ideogram	Зелена японська землеробська ідеограма	Зелёная японская земледельческая идеограмма
+Green Japanese Military Ideogram	Зелена японська військова ідеограма	Зелёная японская военная идеограмма
+Green Japanese Religious Ideogram	Зелена японська релігійна ідеограма	Зелёная японская религиозная идеограмма
+Green Japanese Trade Ideogram	Зелена японська торгова ідеограма	Зелёная японская торговая идеограмма
+Green Tiles	Зелена черепиця	Зелёная черепица
+Green Tile Slab	Зелена черепична плита	Зелёная черепичная плита
+Green Tiles Stairs	Зелені черепичні сходи	Зелёные черепичные ступени
+Green Stained Glass Windows	Зелені вітражні вікна	Зелёные витражные окна
+Green Concrete Brick	Зелена бетонна цегла	Зелёный бетонный кирпич
+Green Chiseled Concrete	Зелений різьблений бетон	Зелёный резной бетон
+Green ō-yoroi boots	Зелені чоботи о-йорой	Зелёные ботинки о-ёрой
+Green ō-yoroi leggings	Зелені наголінники о-йорой	Зелёные поножи о-ёрой
+Green ō-yoroi helmet	Зелений шолом о-йорой	Зелёный шлем о-ёрой
+Green ō-yoroi chestplate	Зелений нагрудник о-йорой	Зелёный нагрудник о-ёрой
+Light Blue Painted Brick	Блакитна фарбована цегла	Голубой окрашенный кирпич
+Light Blue Decorated Brick	Блакитна декоративна цегла	Голубой декоративный кирпич
+Light Blue Painted Stairs	Блакитні фарбовані сходи	Голубые окрашенные ступени
+Light Blue Painted Slab	Блакитна фарбована плита	Голубая окрашенная плита
+Light Blue Painted Wall	Блакитна фарбована стіна	Голубая окрашенная стена
+Light Blue Byzantine Charge	Блакитний візантійський орел	Голубой византийский орёл
+Light Blue Seljuk Charge	Блакитний сельджуцький орел	Голубой сельджукский орёл
+Light Blue Maya Charge	Блакитне обличчя мая	Голубое лицо майя
+Light Blue Inuit Charge	Блакитний інуїтський інуксук	Голубой инуитский инуксук
+Light Blue Norman Lions Charge	Блакитні норманські леви	Голубые норманнские львы
+Light Blue Dexter Meander	Блакитний правий меандр	Голубой правый меандр
+Light Blue Sinister Meander	Блакитний лівий меандр	Голубой левый меандр
+Light Blue Indian Sun Charge	Блакитне індійське сонце	Голубое индийское солнце
+Light Blue Indian Scimitar Charge	Блакитний індійський ятаган	Голубой индийский ятаган
+Light Blue Indian Elephant Charge	Блакитний індійський слон	Голубой индийский слон
+Light Blue Indian Conch Charge	Блакитна індійська мушля	Голубая индийская раковина
+Light Blue Indian Cow Charge	Блакитна індійська корова	Голубая индийская корова
+Light Blue Indian Lotus Charge	Блакитний індійський лотос	Голубой индийский лотос
+Light Blue Maya Lines Charge	Блакитні лінії мая	Голубые линии майя
+Light Blue Maya Hex Charge	Блакитний шестикутник мая	Голубой шестиугольник майя
+Light Blue Maya Heads Charge	Блакитні голови мая	Голубые головы майя
+Light Blue Maya Spaceship Charge	Блакитний космічний корабель мая	Голубой космический корабль майя
+Light Blue Inuit Curve Charge	Блакитна інуїтська дуга	Голубая инуитская дуга
+Light Blue Inuit Lines Charge	Блакитні інуїтські лінії	Голубые инуитские линии
+Light Blue Inuit Mermaid Charge	Блакитна інуїтська русалка	Голубая инуитская русалка
+Light Blue Inuit Rectangle Charge	Блакитний інуїтський прямокутник	Голубой инуитский прямоугольник
+Light Blue Japanese Sun Charge	Блакитне японське сонце	Голубое японское солнце
+Light Blue Japanese Agricultural Ideogram	Блакитна японська землеробська ідеограма	Голубая японская земледельческая идеограмма
+Light Blue Japanese Military Ideogram	Блакитна японська військова ідеограма	Голубая японская военная идеограмма
+Light Blue Japanese Religious Ideogram	Блакитна японська релігійна ідеограма	Голубая японская религиозная идеограмма
+Light Blue Japanese Trade Ideogram	Блакитна японська торгова ідеограма	Голубая японская торговая идеограмма
+Light Blue Tiles	Блакитна черепиця	Голубая черепица
+Light Blue Tile Slab	Блакитна черепична плита	Голубая черепичная плита
+Light Blue Tiles Stairs	Блакитні черепичні сходи	Голубые черепичные ступени
+Light Blue Stained Glass Windows	Блакитні вітражні вікна	Голубые витражные окна
+Light Blue Concrete Brick	Блакитна бетонна цегла	Голубой бетонный кирпич
+Light Blue Chiseled Concrete	Блакитний різьблений бетон	Голубой резной бетон
+Light Blue ō-yoroi boots	Блакитні чоботи о-йорой	Голубые ботинки о-ёрой
+Light Blue ō-yoroi leggings	Блакитні наголінники о-йорой	Голубые поножи о-ёрой
+Light Blue ō-yoroi helmet	Блакитний шолом о-йорой	Голубой шлем о-ёрой
+Light Blue ō-yoroi chestplate	Блакитний нагрудник о-йорой	Голубой нагрудник о-ёрой
+Light Gray Painted Brick	Світло-сіра фарбована цегла	Светло-серый окрашенный кирпич
+Light Gray Decorated Brick	Світло-сіра декоративна цегла	Светло-серый декоративный кирпич
+Light Gray Painted Stairs	Світло-сірі фарбовані сходи	Светло-серые окрашенные ступени
+Light Gray Painted Slab	Світло-сіра фарбована плита	Светло-серая окрашенная плита
+Light Gray Painted Wall	Світло-сіра фарбована стіна	Светло-серая окрашенная стена
+Light Gray Byzantine Charge	Світло-сірий візантійський орел	Светло-серый византийский орёл
+Light Gray Seljuk Charge	Світло-сірий сельджуцький орел	Светло-серый сельджукский орёл
+Light Gray Maya Charge	Світло-сіре обличчя мая	Светло-серое лицо майя
+Light Gray Inuit Charge	Світло-сірий інуїтський інуксук	Светло-серый инуитский инуксук
+Light Gray Norman Lions Charge	Світло-сірі норманські леви	Светло-серые норманнские львы
+Light Gray Dexter Meander	Світло-сірий правий меандр	Светло-серый правый меандр
+Light Gray Sinister Meander	Світло-сірий лівий меандр	Светло-серый левый меандр
+Light Gray Indian Sun Charge	Світло-сіре індійське сонце	Светло-серое индийское солнце
+Light Gray Indian Scimitar Charge	Світло-сірий індійський ятаган	Светло-серый индийский ятаган
+Light Gray Indian Elephant Charge	Світло-сірий індійський слон	Светло-серый индийский слон
+Light Gray Indian Conch Charge	Світло-сіра індійська мушля	Светло-серая индийская раковина
+Light Gray Indian Cow Charge	Світло-сіра індійська корова	Светло-серая индийская корова
+Light Gray Indian Lotus Charge	Світло-сірий індійський лотос	Светло-серый индийский лотос
+Light Gray Maya Lines Charge	Світло-сірі лінії мая	Светло-серые линии майя
+Light Gray Maya Hex Charge	Світло-сірий шестикутник мая	Светло-серый шестиугольник майя
+Light Gray Maya Heads Charge	Світло-сірі голови мая	Светло-серые головы майя
+Light Gray Maya Spaceship Charge	Світло-сірий космічний корабель мая	Светло-серый космический корабль майя
+Light Gray Inuit Curve Charge	Світло-сіра інуїтська дуга	Светло-серая инуитская дуга
+Light Gray Inuit Lines Charge	Світло-сірі інуїтські лінії	Светло-серые инуитские линии
+Light Gray Inuit Mermaid Charge	Світло-сіра інуїтська русалка	Светло-серая инуитская русалка
+Light Gray Inuit Rectangle Charge	Світло-сірий інуїтський прямокутник	Светло-серый инуитский прямоугольник
+Light Gray Japanese Sun Charge	Світло-сіре японське сонце	Светло-серое японское солнце
+Light Gray Japanese Agricultural Ideogram	Світло-сіра японська землеробська ідеограма	Светло-серая японская земледельческая идеограмма
+Light Gray Japanese Military Ideogram	Світло-сіра японська військова ідеограма	Светло-серая японская военная идеограмма
+Light Gray Japanese Religious Ideogram	Світло-сіра японська релігійна ідеограма	Светло-серая японская религиозная идеограмма
+Light Gray Japanese Trade Ideogram	Світло-сіра японська торгова ідеограма	Светло-серая японская торговая идеограмма
+Light Gray Tiles	Світло-сіра черепиця	Светло-серая черепица
+Light Gray Tile Slab	Світло-сіра черепична плита	Светло-серая черепичная плита
+Light Gray Tiles Stairs	Світло-сірі черепичні сходи	Светло-серые черепичные ступени
+Light Gray Stained Glass Windows	Світло-сірі вітражні вікна	Светло-серые витражные окна
+Light Gray Concrete Brick	Світло-сіра бетонна цегла	Светло-серый бетонный кирпич
+Light Gray Chiseled Concrete	Світло-сірий різьблений бетон	Светло-серый резной бетон
+Light Gray ō-yoroi boots	Світло-сірі чоботи о-йорой	Светло-серые ботинки о-ёрой
+Light Gray ō-yoroi leggings	Світло-сірі наголінники о-йорой	Светло-серые поножи о-ёрой
+Light Gray ō-yoroi helmet	Світло-сірий шолом о-йорой	Светло-серый шлем о-ёрой
+Light Gray ō-yoroi chestplate	Світло-сірий нагрудник о-йорой	Светло-серый нагрудник о-ёрой
+Lime Painted Brick	Лаймова фарбована цегла	Лаймовый окрашенный кирпич
+Lime Decorated Brick	Лаймова декоративна цегла	Лаймовый декоративный кирпич
+Lime Painted Stairs	Лаймові фарбовані сходи	Лаймовые окрашенные ступени
+Lime Painted Slab	Лаймова фарбована плита	Лаймовая окрашенная плита
+Lime Painted Wall	Лаймова фарбована стіна	Лаймовая окрашенная стена
+Lime Byzantine Charge	Лаймовий візантійський орел	Лаймовый византийский орёл
+Lime Seljuk Charge	Лаймовий сельджуцький орел	Лаймовый сельджукский орёл
+Lime Maya Charge	Лаймове обличчя мая	Лаймовое лицо майя
+Lime Inuit Charge	Лаймовий інуїтський інуксук	Лаймовый инуитский инуксук
+Lime Norman Lions Charge	Лаймові норманські леви	Лаймовые норманнские львы
+Lime Dexter Meander	Лаймовий правий меандр	Лаймовый правый меандр
+Lime Sinister Meander	Лаймовий лівий меандр	Лаймовый левый меандр
+Lime Indian Sun Charge	Лаймове індійське сонце	Лаймовое индийское солнце
+Lime Indian Scimitar Charge	Лаймовий індійський ятаган	Лаймовый индийский ятаган
+Lime Indian Elephant Charge	Лаймовий індійський слон	Лаймовый индийский слон
+Lime Indian Conch Charge	Лаймова індійська мушля	Лаймовая индийская раковина
+Lime Indian Cow Charge	Лаймова індійська корова	Лаймовая индийская корова
+Lime Indian Lotus Charge	Лаймовий індійський лотос	Лаймовый индийский лотос
+Lime Maya Lines Charge	Лаймові лінії мая	Лаймовые линии майя
+Lime Maya Hex Charge	Лаймовий шестикутник мая	Лаймовый шестиугольник майя
+Lime Maya Heads Charge	Лаймові голови мая	Лаймовые головы майя
+Lime Maya Spaceship Charge	Лаймовий космічний корабель мая	Лаймовый космический корабль майя
+Lime Inuit Curve Charge	Лаймова інуїтська дуга	Лаймовая инуитская дуга
+Lime Inuit Lines Charge	Лаймові інуїтські лінії	Лаймовые инуитские линии
+Lime Inuit Mermaid Charge	Лаймова інуїтська русалка	Лаймовая инуитская русалка
+Lime Inuit Rectangle Charge	Лаймовий інуїтський прямокутник	Лаймовый инуитский прямоугольник
+Lime Japanese Sun Charge	Лаймове японське сонце	Лаймовое японское солнце
+Lime Japanese Agricultural Ideogram	Лаймова японська землеробська ідеограма	Лаймовая японская земледельческая идеограмма
+Lime Japanese Military Ideogram	Лаймова японська військова ідеограма	Лаймовая японская военная идеограмма
+Lime Japanese Religious Ideogram	Лаймова японська релігійна ідеограма	Лаймовая японская религиозная идеограмма
+Lime Japanese Trade Ideogram	Лаймова японська торгова ідеограма	Лаймовая японская торговая идеограмма
+Lime Tiles	Лаймова черепиця	Лаймовая черепица
+Lime Tile Slab	Лаймова черепична плита	Лаймовая черепичная плита
+Lime Tiles Stairs	Лаймові черепичні сходи	Лаймовые черепичные ступени
+Lime Stained Glass Windows	Лаймові вітражні вікна	Лаймовые витражные окна
+Lime Concrete Brick	Лаймова бетонна цегла	Лаймовый бетонный кирпич
+Lime Chiseled Concrete	Лаймовий різьблений бетон	Лаймовый резной бетон
+Lime ō-yoroi boots	Лаймові чоботи о-йорой	Лаймовые ботинки о-ёрой
+Lime ō-yoroi leggings	Лаймові наголінники о-йорой	Лаймовые поножи о-ёрой
+Lime ō-yoroi helmet	Лаймовий шолом о-йорой	Лаймовый шлем о-ёрой
+Lime ō-yoroi chestplate	Лаймовий нагрудник о-йорой	Лаймовый нагрудник о-ёрой
+Magenta Painted Brick	Пурпурова фарбована цегла	Пурпурный окрашенный кирпич
+Magenta Decorated Brick	Пурпурова декоративна цегла	Пурпурный декоративный кирпич
+Magenta Painted Stairs	Пурпурові фарбовані сходи	Пурпурные окрашенные ступени
+Magenta Painted Slab	Пурпурова фарбована плита	Пурпурная окрашенная плита
+Magenta Painted Wall	Пурпурова фарбована стіна	Пурпурная окрашенная стена
+Magenta Byzantine Charge	Пурпуровий візантійський орел	Пурпурный византийский орёл
+Magenta Seljuk Charge	Пурпуровий сельджуцький орел	Пурпурный сельджукский орёл
+Magenta Maya Charge	Пурпурове обличчя мая	Пурпурное лицо майя
+Magenta Inuit Charge	Пурпуровий інуїтський інуксук	Пурпурный инуитский инуксук
+Magenta Norman Lions Charge	Пурпурові норманські леви	Пурпурные норманнские львы
+Magenta Dexter Meander	Пурпуровий правий меандр	Пурпурный правый меандр
+Magenta Sinister Meander	Пурпуровий лівий меандр	Пурпурный левый меандр
+Magenta Indian Sun Charge	Пурпурове індійське сонце	Пурпурное индийское солнце
+Magenta Indian Scimitar Charge	Пурпуровий індійський ятаган	Пурпурный индийский ятаган
+Magenta Indian Elephant Charge	Пурпуровий індійський слон	Пурпурный индийский слон
+Magenta Indian Conch Charge	Пурпурова індійська мушля	Пурпурная индийская раковина
+Magenta Indian Cow Charge	Пурпурова індійська корова	Пурпурная индийская корова
+Magenta Indian Lotus Charge	Пурпуровий індійський лотос	Пурпурный индийский лотос
+Magenta Maya Lines Charge	Пурпурові лінії мая	Пурпурные линии майя
+Magenta Maya Hex Charge	Пурпуровий шестикутник мая	Пурпурный шестиугольник майя
+Magenta Maya Heads Charge	Пурпурові голови мая	Пурпурные головы майя
+Magenta Maya Spaceship Charge	Пурпуровий космічний корабель мая	Пурпурный космический корабль майя
+Magenta Inuit Curve Charge	Пурпурова інуїтська дуга	Пурпурная инуитская дуга
+Magenta Inuit Lines Charge	Пурпурові інуїтські лінії	Пурпурные инуитские линии
+Magenta Inuit Mermaid Charge	Пурпурова інуїтська русалка	Пурпурная инуитская русалка
+Magenta Inuit Rectangle Charge	Пурпуровий інуїтський прямокутник	Пурпурный инуитский прямоугольник
+Magenta Japanese Sun Charge	Пурпурове японське сонце	Пурпурное японское солнце
+Magenta Japanese Agricultural Ideogram	Пурпурова японська землеробська ідеограма	Пурпурная японская земледельческая идеограмма
+Magenta Japanese Military Ideogram	Пурпурова японська військова ідеограма	Пурпурная японская военная идеограмма
+Magenta Japanese Religious Ideogram	Пурпурова японська релігійна ідеограма	Пурпурная японская религиозная идеограмма
+Magenta Japanese Trade Ideogram	Пурпурова японська торгова ідеограма	Пурпурная японская торговая идеограмма
+Magenta Tiles	Пурпурова черепиця	Пурпурная черепица
+Magenta Tile Slab	Пурпурова черепична плита	Пурпурная черепичная плита
+Magenta Tiles Stairs	Пурпурові черепичні сходи	Пурпурные черепичные ступени
+Magenta Stained Glass Windows	Пурпурові вітражні вікна	Пурпурные витражные окна
+Magenta Concrete Brick	Пурпурова бетонна цегла	Пурпурный бетонный кирпич
+Magenta Chiseled Concrete	Пурпуровий різьблений бетон	Пурпурный резной бетон
+Magenta ō-yoroi boots	Пурпурові чоботи о-йорой	Пурпурные ботинки о-ёрой
+Magenta ō-yoroi leggings	Пурпурові наголінники о-йорой	Пурпурные поножи о-ёрой
+Magenta ō-yoroi helmet	Пурпуровий шолом о-йорой	Пурпурный шлем о-ёрой
+Magenta ō-yoroi chestplate	Пурпуровий нагрудник о-йорой	Пурпурный нагрудник о-ёрой
+Orange Painted Brick	Помаранчева фарбована цегла	Оранжевый окрашенный кирпич
+Orange Decorated Brick	Помаранчева декоративна цегла	Оранжевый декоративный кирпич
+Orange Painted Stairs	Помаранчеві фарбовані сходи	Оранжевые окрашенные ступени
+Orange Painted Slab	Помаранчева фарбована плита	Оранжевая окрашенная плита
+Orange Painted Wall	Помаранчева фарбована стіна	Оранжевая окрашенная стена
+Orange Byzantine Charge	Помаранчевий візантійський орел	Оранжевый византийский орёл
+Orange Seljuk Charge	Помаранчевий сельджуцький орел	Оранжевый сельджукский орёл
+Orange Maya Charge	Помаранчеве обличчя мая	Оранжевое лицо майя
+Orange Inuit Charge	Помаранчевий інуїтський інуксук	Оранжевый инуитский инуксук
+Orange Norman Lions Charge	Помаранчеві норманські леви	Оранжевые норманнские львы
+Orange Dexter Meander	Помаранчевий правий меандр	Оранжевый правый меандр
+Orange Sinister Meander	Помаранчевий лівий меандр	Оранжевый левый меандр
+Orange Indian Sun Charge	Помаранчеве індійське сонце	Оранжевое индийское солнце
+Orange Indian Scimitar Charge	Помаранчевий індійський ятаган	Оранжевый индийский ятаган
+Orange Indian Elephant Charge	Помаранчевий індійський слон	Оранжевый индийский слон
+Orange Indian Conch Charge	Помаранчева індійська мушля	Оранжевая индийская раковина
+Orange Indian Cow Charge	Помаранчева індійська корова	Оранжевая индийская корова
+Orange Indian Lotus Charge	Помаранчевий індійський лотос	Оранжевый индийский лотос
+Orange Maya Lines Charge	Помаранчеві лінії мая	Оранжевые линии майя
+Orange Maya Hex Charge	Помаранчевий шестикутник мая	Оранжевый шестиугольник майя
+Orange Maya Heads Charge	Помаранчеві голови мая	Оранжевые головы майя
+Orange Maya Spaceship Charge	Помаранчевий космічний корабель мая	Оранжевый космический корабль майя
+Orange Inuit Curve Charge	Помаранчева інуїтська дуга	Оранжевая инуитская дуга
+Orange Inuit Lines Charge	Помаранчеві інуїтські лінії	Оранжевые инуитские линии
+Orange Inuit Mermaid Charge	Помаранчева інуїтська русалка	Оранжевая инуитская русалка
+Orange Inuit Rectangle Charge	Помаранчевий інуїтський прямокутник	Оранжевый инуитский прямоугольник
+Orange Japanese Sun Charge	Помаранчеве японське сонце	Оранжевое японское солнце
+Orange Japanese Agricultural Ideogram	Помаранчева японська землеробська ідеограма	Оранжевая японская земледельческая идеограмма
+Orange Japanese Military Ideogram	Помаранчева японська військова ідеограма	Оранжевая японская военная идеограмма
+Orange Japanese Religious Ideogram	Помаранчева японська релігійна ідеограма	Оранжевая японская религиозная идеограмма
+Orange Japanese Trade Ideogram	Помаранчева японська торгова ідеограма	Оранжевая японская торговая идеограмма
+Orange Tiles	Помаранчева черепиця	Оранжевая черепица
+Orange Tile Slab	Помаранчева черепична плита	Оранжевая черепичная плита
+Orange Tiles Stairs	Помаранчеві черепичні сходи	Оранжевые черепичные ступени
+Orange Stained Glass Windows	Помаранчеві вітражні вікна	Оранжевые витражные окна
+Orange Concrete Brick	Помаранчева бетонна цегла	Оранжевый бетонный кирпич
+Orange Chiseled Concrete	Помаранчевий різьблений бетон	Оранжевый резной бетон
+Orange ō-yoroi boots	Помаранчеві чоботи о-йорой	Оранжевые ботинки о-ёрой
+Orange ō-yoroi leggings	Помаранчеві наголінники о-йорой	Оранжевые поножи о-ёрой
+Orange ō-yoroi helmet	Помаранчевий шолом о-йорой	Оранжевый шлем о-ёрой
+Orange ō-yoroi chestplate	Помаранчевий нагрудник о-йорой	Оранжевый нагрудник о-ёрой
+Pink Painted Brick	Рожева фарбована цегла	Розовый окрашенный кирпич
+Pink Decorated Brick	Рожева декоративна цегла	Розовый декоративный кирпич
+Pink Painted Stairs	Рожеві фарбовані сходи	Розовые окрашенные ступени
+Pink Painted Slab	Рожева фарбована плита	Розовая окрашенная плита
+Pink Painted Wall	Рожева фарбована стіна	Розовая окрашенная стена
+Pink Byzantine Charge	Рожевий візантійський орел	Розовый византийский орёл
+Pink Seljuk Charge	Рожевий сельджуцький орел	Розовый сельджукский орёл
+Pink Maya Charge	Рожеве обличчя мая	Розовое лицо майя
+Pink Inuit Charge	Рожевий інуїтський інуксук	Розовый инуитский инуксук
+Pink Norman Lions Charge	Рожеві норманські леви	Розовые норманнские львы
+Pink Dexter Meander	Рожевий правий меандр	Розовый правый меандр
+Pink Sinister Meander	Рожевий лівий меандр	Розовый левый меандр
+Pink Indian Sun Charge	Рожеве індійське сонце	Розовое индийское солнце
+Pink Indian Scimitar Charge	Рожевий індійський ятаган	Розовый индийский ятаган
+Pink Indian Elephant Charge	Рожевий індійський слон	Розовый индийский слон
+Pink Indian Conch Charge	Рожева індійська мушля	Розовая индийская раковина
+Pink Indian Cow Charge	Рожева індійська корова	Розовая индийская корова
+Pink Indian Lotus Charge	Рожевий індійський лотос	Розовый индийский лотос
+Pink Maya Lines Charge	Рожеві лінії мая	Розовые линии майя
+Pink Maya Hex Charge	Рожевий шестикутник мая	Розовый шестиугольник майя
+Pink Maya Heads Charge	Рожеві голови мая	Розовые головы майя
+Pink Maya Spaceship Charge	Рожевий космічний корабель мая	Розовый космический корабль майя
+Pink Inuit Curve Charge	Рожева інуїтська дуга	Розовая инуитская дуга
+Pink Inuit Lines Charge	Рожеві інуїтські лінії	Розовые инуитские линии
+Pink Inuit Mermaid Charge	Рожева інуїтська русалка	Розовая инуитская русалка
+Pink Inuit Rectangle Charge	Рожевий інуїтський прямокутник	Розовый инуитский прямоугольник
+Pink Japanese Sun Charge	Рожеве японське сонце	Розовое японское солнце
+Pink Japanese Agricultural Ideogram	Рожева японська землеробська ідеограма	Розовая японская земледельческая идеограмма
+Pink Japanese Military Ideogram	Рожева японська військова ідеограма	Розовая японская военная идеограмма
+Pink Japanese Religious Ideogram	Рожева японська релігійна ідеограма	Розовая японская религиозная идеограмма
+Pink Japanese Trade Ideogram	Рожева японська торгова ідеограма	Розовая японская торговая идеограмма
+Pink Tiles	Рожева черепиця	Розовая черепица
+Pink Tile Slab	Рожева черепична плита	Розовая черепичная плита
+Pink Tiles Stairs	Рожеві черепичні сходи	Розовые черепичные ступени
+Pink Stained Glass Windows	Рожеві вітражні вікна	Розовые витражные окна
+Pink Concrete Brick	Рожева бетонна цегла	Розовый бетонный кирпич
+Pink Chiseled Concrete	Рожевий різьблений бетон	Розовый резной бетон
+Pink ō-yoroi boots	Рожеві чоботи о-йорой	Розовые ботинки о-ёрой
+Pink ō-yoroi leggings	Рожеві наголінники о-йорой	Розовые поножи о-ёрой
+Pink ō-yoroi helmet	Рожевий шолом о-йорой	Розовый шлем о-ёрой
+Pink ō-yoroi chestplate	Рожевий нагрудник о-йорой	Розовый нагрудник о-ёрой
+Purple Painted Brick	Фіолетова фарбована цегла	Фиолетовый окрашенный кирпич
+Purple Decorated Brick	Фіолетова декоративна цегла	Фиолетовый декоративный кирпич
+Purple Painted Stairs	Фіолетові фарбовані сходи	Фиолетовые окрашенные ступени
+Purple Painted Slab	Фіолетова фарбована плита	Фиолетовая окрашенная плита
+Purple Painted Wall	Фіолетова фарбована стіна	Фиолетовая окрашенная стена
+Purple Byzantine Charge	Фіолетовий візантійський орел	Фиолетовый византийский орёл
+Purple Seljuk Charge	Фіолетовий сельджуцький орел	Фиолетовый сельджукский орёл
+Purple Maya Charge	Фіолетове обличчя мая	Фиолетовое лицо майя
+Purple Inuit Charge	Фіолетовий інуїтський інуксук	Фиолетовый инуитский инуксук
+Purple Norman Lions Charge	Фіолетові норманські леви	Фиолетовые норманнские львы
+Purple Dexter Meander	Фіолетовий правий меандр	Фиолетовый правый меандр
+Purple Sinister Meander	Фіолетовий лівий меандр	Фиолетовый левый меандр
+Purple Indian Sun Charge	Фіолетове індійське сонце	Фиолетовое индийское солнце
+Purple Indian Scimitar Charge	Фіолетовий індійський ятаган	Фиолетовый индийский ятаган
+Purple Indian Elephant Charge	Фіолетовий індійський слон	Фиолетовый индийский слон
+Purple Indian Conch Charge	Фіолетова індійська мушля	Фиолетовая индийская раковина
+Purple Indian Cow Charge	Фіолетова індійська корова	Фиолетовая индийская корова
+Purple Indian Lotus Charge	Фіолетовий індійський лотос	Фиолетовый индийский лотос
+Purple Maya Lines Charge	Фіолетові лінії мая	Фиолетовые линии майя
+Purple Maya Hex Charge	Фіолетовий шестикутник мая	Фиолетовый шестиугольник майя
+Purple Maya Heads Charge	Фіолетові голови мая	Фиолетовые головы майя
+Purple Maya Spaceship Charge	Фіолетовий космічний корабель мая	Фиолетовый космический корабль майя
+Purple Inuit Curve Charge	Фіолетова інуїтська дуга	Фиолетовая инуитская дуга
+Purple Inuit Lines Charge	Фіолетові інуїтські лінії	Фиолетовые инуитские линии
+Purple Inuit Mermaid Charge	Фіолетова інуїтська русалка	Фиолетовая инуитская русалка
+Purple Inuit Rectangle Charge	Фіолетовий інуїтський прямокутник	Фиолетовый инуитский прямоугольник
+Purple Japanese Sun Charge	Фіолетове японське сонце	Фиолетовое японское солнце
+Purple Japanese Agricultural Ideogram	Фіолетова японська землеробська ідеограма	Фиолетовая японская земледельческая идеограмма
+Purple Japanese Military Ideogram	Фіолетова японська військова ідеограма	Фиолетовая японская военная идеограмма
+Purple Japanese Religious Ideogram	Фіолетова японська релігійна ідеограма	Фиолетовая японская религиозная идеограмма
+Purple Japanese Trade Ideogram	Фіолетова японська торгова ідеограма	Фиолетовая японская торговая идеограмма
+Purple Tiles	Фіолетова черепиця	Фиолетовая черепица
+Purple Tile Slab	Фіолетова черепична плита	Фиолетовая черепичная плита
+Purple Tiles Stairs	Фіолетові черепичні сходи	Фиолетовые черепичные ступени
+Purple Stained Glass Windows	Фіолетові вітражні вікна	Фиолетовые витражные окна
+Purple Concrete Brick	Фіолетова бетонна цегла	Фиолетовый бетонный кирпич
+Purple Chiseled Concrete	Фіолетовий різьблений бетон	Фиолетовый резной бетон
+Purple ō-yoroi boots	Фіолетові чоботи о-йорой	Фиолетовые ботинки о-ёрой
+Purple ō-yoroi leggings	Фіолетові наголінники о-йорой	Фиолетовые поножи о-ёрой
+Purple ō-yoroi helmet	Фіолетовий шолом о-йорой	Фиолетовый шлем о-ёрой
+Purple ō-yoroi chestplate	Фіолетовий нагрудник о-йорой	Фиолетовый нагрудник о-ёрой
+Red Painted Brick	Червона фарбована цегла	Красный окрашенный кирпич
+Red Decorated Brick	Червона декоративна цегла	Красный декоративный кирпич
+Red Painted Stairs	Червоні фарбовані сходи	Красные окрашенные ступени
+Red Painted Slab	Червона фарбована плита	Красная окрашенная плита
+Red Painted Wall	Червона фарбована стіна	Красная окрашенная стена
+Red Byzantine Charge	Червоний візантійський орел	Красный византийский орёл
+Red Seljuk Charge	Червоний сельджуцький орел	Красный сельджукский орёл
+Red Maya Charge	Червоне обличчя мая	Красное лицо майя
+Red Inuit Charge	Червоний інуїтський інуксук	Красный инуитский инуксук
+Red Norman Lions Charge	Червоні норманські леви	Красные норманнские львы
+Red Dexter Meander	Червоний правий меандр	Красный правый меандр
+Red Sinister Meander	Червоний лівий меандр	Красный левый меандр
+Red Indian Sun Charge	Червоне індійське сонце	Красное индийское солнце
+Red Indian Scimitar Charge	Червоний індійський ятаган	Красный индийский ятаган
+Red Indian Elephant Charge	Червоний індійський слон	Красный индийский слон
+Red Indian Conch Charge	Червона індійська мушля	Красная индийская раковина
+Red Indian Cow Charge	Червона індійська корова	Красная индийская корова
+Red Indian Lotus Charge	Червоний індійський лотос	Красный индийский лотос
+Red Maya Lines Charge	Червоні лінії мая	Красные линии майя
+Red Maya Hex Charge	Червоний шестикутник мая	Красный шестиугольник майя
+Red Maya Heads Charge	Червоні голови мая	Красные головы майя
+Red Maya Spaceship Charge	Червоний космічний корабель мая	Красный космический корабль майя
+Red Inuit Curve Charge	Червона інуїтська дуга	Красная инуитская дуга
+Red Inuit Lines Charge	Червоні інуїтські лінії	Красные инуитские линии
+Red Inuit Mermaid Charge	Червона інуїтська русалка	Красная инуитская русалка
+Red Inuit Rectangle Charge	Червоний інуїтський прямокутник	Красный инуитский прямоугольник
+Red Japanese Sun Charge	Червоне японське сонце	Красное японское солнце
+Red Japanese Agricultural Ideogram	Червона японська землеробська ідеограма	Красная японская земледельческая идеограмма
+Red Japanese Military Ideogram	Червона японська військова ідеограма	Красная японская военная идеограмма
+Red Japanese Religious Ideogram	Червона японська релігійна ідеограма	Красная японская религиозная идеограмма
+Red Japanese Trade Ideogram	Червона японська торгова ідеограма	Красная японская торговая идеограмма
+Red Tiles	Червона черепиця	Красная черепица
+Red Tile Slab	Червона черепична плита	Красная черепичная плита
+Red Tiles Stairs	Червоні черепичні сходи	Красные черепичные ступени
+Red Stained Glass Windows	Червоні вітражні вікна	Красные витражные окна
+Red Concrete Brick	Червона бетонна цегла	Красный бетонный кирпич
+Red Chiseled Concrete	Червоний різьблений бетон	Красный резной бетон
+Red ō-yoroi boots	Червоні чоботи о-йорой	Красные ботинки о-ёрой
+Red ō-yoroi leggings	Червоні наголінники о-йорой	Красные поножи о-ёрой
+Red ō-yoroi helmet	Червоний шолом о-йорой	Красный шлем о-ёрой
+Red ō-yoroi chestplate	Червоний нагрудник о-йорой	Красный нагрудник о-ёрой
+Silver Painted Brick	Світло-сіра фарбована цегла	Светло-серый окрашенный кирпич
+Silver Decorated Brick	Світло-сіра декоративна цегла	Светло-серый декоративный кирпич
+Silver Painted Stairs	Світло-сірі фарбовані сходи	Светло-серые окрашенные ступени
+Silver Painted Slab	Світло-сіра фарбована плита	Светло-серая окрашенная плита
+Silver Painted Wall	Світло-сіра фарбована стіна	Светло-серая окрашенная стена
+Silver Byzantine Charge	Світло-сірий візантійський орел	Светло-серый византийский орёл
+Silver Seljuk Charge	Світло-сірий сельджуцький орел	Светло-серый сельджукский орёл
+Silver Maya Charge	Світло-сіре обличчя мая	Светло-серое лицо майя
+Silver Inuit Charge	Світло-сірий інуїтський інуксук	Светло-серый инуитский инуксук
+Silver Norman Lions Charge	Світло-сірі норманські леви	Светло-серые норманнские львы
+Silver Dexter Meander	Світло-сірий правий меандр	Светло-серый правый меандр
+Silver Sinister Meander	Світло-сірий лівий меандр	Светло-серый левый меандр
+Silver Indian Sun Charge	Світло-сіре індійське сонце	Светло-серое индийское солнце
+Silver Indian Scimitar Charge	Світло-сірий індійський ятаган	Светло-серый индийский ятаган
+Silver Indian Elephant Charge	Світло-сірий індійський слон	Светло-серый индийский слон
+Silver Indian Conch Charge	Світло-сіра індійська мушля	Светло-серая индийская раковина
+Silver Indian Cow Charge	Світло-сіра індійська корова	Светло-серая индийская корова
+Silver Indian Lotus Charge	Світло-сірий індійський лотос	Светло-серый индийский лотос
+Silver Maya Lines Charge	Світло-сірі лінії мая	Светло-серые линии майя
+Silver Maya Hex Charge	Світло-сірий шестикутник мая	Светло-серый шестиугольник майя
+Silver Maya Heads Charge	Світло-сірі голови мая	Светло-серые головы майя
+Silver Maya Spaceship Charge	Світло-сірий космічний корабель мая	Светло-серый космический корабль майя
+Silver Inuit Curve Charge	Світло-сіра інуїтська дуга	Светло-серая инуитская дуга
+Silver Inuit Lines Charge	Світло-сірі інуїтські лінії	Светло-серые инуитские линии
+Silver Inuit Mermaid Charge	Світло-сіра інуїтська русалка	Светло-серая инуитская русалка
+Silver Inuit Rectangle Charge	Світло-сірий інуїтський прямокутник	Светло-серый инуитский прямоугольник
+Silver Japanese Sun Charge	Світло-сіре японське сонце	Светло-серое японское солнце
+Silver Japanese Agricultural Ideogram	Світло-сіра японська землеробська ідеограма	Светло-серая японская земледельческая идеограмма
+Silver Japanese Military Ideogram	Світло-сіра японська військова ідеограма	Светло-серая японская военная идеограмма
+Silver Japanese Religious Ideogram	Світло-сіра японська релігійна ідеограма	Светло-серая японская религиозная идеограмма
+Silver Japanese Trade Ideogram	Світло-сіра японська торгова ідеограма	Светло-серая японская торговая идеограмма
+Silver Tiles	Світло-сіра черепиця	Светло-серая черепица
+Silver Tile Slab	Світло-сіра черепична плита	Светло-серая черепичная плита
+Silver Tiles Stairs	Світло-сірі черепичні сходи	Светло-серые черепичные ступени
+Silver Stained Glass Windows	Світло-сірі вітражні вікна	Светло-серые витражные окна
+Silver Concrete Brick	Світло-сіра бетонна цегла	Светло-серый бетонный кирпич
+Silver Chiseled Concrete	Світло-сірий різьблений бетон	Светло-серый резной бетон
+Silver ō-yoroi boots	Світло-сірі чоботи о-йорой	Светло-серые ботинки о-ёрой
+Silver ō-yoroi leggings	Світло-сірі наголінники о-йорой	Светло-серые поножи о-ёрой
+Silver ō-yoroi helmet	Світло-сірий шолом о-йорой	Светло-серый шлем о-ёрой
+Silver ō-yoroi chestplate	Світло-сірий нагрудник о-йорой	Светло-серый нагрудник о-ёрой
+White Painted Brick	Біла фарбована цегла	Белый окрашенный кирпич
+White Decorated Brick	Біла декоративна цегла	Белый декоративный кирпич
+White Painted Stairs	Білі фарбовані сходи	Белые окрашенные ступени
+White Painted Slab	Біла фарбована плита	Белая окрашенная плита
+White Painted Wall	Біла фарбована стіна	Белая окрашенная стена
+White Byzantine Charge	Білий візантійський орел	Белый византийский орёл
+White Seljuk Charge	Білий сельджуцький орел	Белый сельджукский орёл
+White Maya Charge	Біле обличчя мая	Белое лицо майя
+White Inuit Charge	Білий інуїтський інуксук	Белый инуитский инуксук
+White Norman Lions Charge	Білі норманські леви	Белые норманнские львы
+White Dexter Meander	Білий правий меандр	Белый правый меандр
+White Sinister Meander	Білий лівий меандр	Белый левый меандр
+White Indian Sun Charge	Біле індійське сонце	Белое индийское солнце
+White Indian Scimitar Charge	Білий індійський ятаган	Белый индийский ятаган
+White Indian Elephant Charge	Білий індійський слон	Белый индийский слон
+White Indian Conch Charge	Біла індійська мушля	Белая индийская раковина
+White Indian Cow Charge	Біла індійська корова	Белая индийская корова
+White Indian Lotus Charge	Білий індійський лотос	Белый индийский лотос
+White Maya Lines Charge	Білі лінії мая	Белые линии майя
+White Maya Hex Charge	Білий шестикутник мая	Белый шестиугольник майя
+White Maya Heads Charge	Білі голови мая	Белые головы майя
+White Maya Spaceship Charge	Білий космічний корабель мая	Белый космический корабль майя
+White Inuit Curve Charge	Біла інуїтська дуга	Белая инуитская дуга
+White Inuit Lines Charge	Білі інуїтські лінії	Белые инуитские линии
+White Inuit Mermaid Charge	Біла інуїтська русалка	Белая инуитская русалка
+White Inuit Rectangle Charge	Білий інуїтський прямокутник	Белый инуитский прямоугольник
+White Japanese Sun Charge	Біле японське сонце	Белое японское солнце
+White Japanese Agricultural Ideogram	Біла японська землеробська ідеограма	Белая японская земледельческая идеограмма
+White Japanese Military Ideogram	Біла японська військова ідеограма	Белая японская военная идеограмма
+White Japanese Religious Ideogram	Біла японська релігійна ідеограма	Белая японская религиозная идеограмма
+White Japanese Trade Ideogram	Біла японська торгова ідеограма	Белая японская торговая идеограмма
+White Tiles	Біла черепиця	Белая черепица
+White Tile Slab	Біла черепична плита	Белая черепичная плита
+White Tiles Stairs	Білі черепичні сходи	Белые черепичные ступени
+White Stained Glass Windows	Білі вітражні вікна	Белые витражные окна
+White Concrete Brick	Біла бетонна цегла	Белый бетонный кирпич
+White Chiseled Concrete	Білий різьблений бетон	Белый резной бетон
+White ō-yoroi boots	Білі чоботи о-йорой	Белые ботинки о-ёрой
+White ō-yoroi leggings	Білі наголінники о-йорой	Белые поножи о-ёрой
+White ō-yoroi helmet	Білий шолом о-йорой	Белый шлем о-ёрой
+White ō-yoroi chestplate	Білий нагрудник о-йорой	Белый нагрудник о-ёрой
+Yellow Painted Brick	Жовта фарбована цегла	Жёлтый окрашенный кирпич
+Yellow Decorated Brick	Жовта декоративна цегла	Жёлтый декоративный кирпич
+Yellow Painted Stairs	Жовті фарбовані сходи	Жёлтые окрашенные ступени
+Yellow Painted Slab	Жовта фарбована плита	Жёлтая окрашенная плита
+Yellow Painted Wall	Жовта фарбована стіна	Жёлтая окрашенная стена
+Yellow Byzantine Charge	Жовтий візантійський орел	Жёлтый византийский орёл
+Yellow Seljuk Charge	Жовтий сельджуцький орел	Жёлтый сельджукский орёл
+Yellow Maya Charge	Жовте обличчя мая	Жёлтое лицо майя
+Yellow Inuit Charge	Жовтий інуїтський інуксук	Жёлтый инуитский инуксук
+Yellow Norman Lions Charge	Жовті норманські леви	Жёлтые норманнские львы
+Yellow Dexter Meander	Жовтий правий меандр	Жёлтый правый меандр
+Yellow Sinister Meander	Жовтий лівий меандр	Жёлтый левый меандр
+Yellow Indian Sun Charge	Жовте індійське сонце	Жёлтое индийское солнце
+Yellow Indian Scimitar Charge	Жовтий індійський ятаган	Жёлтый индийский ятаган
+Yellow Indian Elephant Charge	Жовтий індійський слон	Жёлтый индийский слон
+Yellow Indian Conch Charge	Жовта індійська мушля	Жёлтая индийская раковина
+Yellow Indian Cow Charge	Жовта індійська корова	Жёлтая индийская корова
+Yellow Indian Lotus Charge	Жовтий індійський лотос	Жёлтый индийский лотос
+Yellow Maya Lines Charge	Жовті лінії мая	Жёлтые линии майя
+Yellow Maya Hex Charge	Жовтий шестикутник мая	Жёлтый шестиугольник майя
+Yellow Maya Heads Charge	Жовті голови мая	Жёлтые головы майя
+Yellow Maya Spaceship Charge	Жовтий космічний корабель мая	Жёлтый космический корабль майя
+Yellow Inuit Curve Charge	Жовта інуїтська дуга	Жёлтая инуитская дуга
+Yellow Inuit Lines Charge	Жовті інуїтські лінії	Жёлтые инуитские линии
+Yellow Inuit Mermaid Charge	Жовта інуїтська русалка	Жёлтая инуитская русалка
+Yellow Inuit Rectangle Charge	Жовтий інуїтський прямокутник	Жёлтый инуитский прямоугольник
+Yellow Japanese Sun Charge	Жовте японське сонце	Жёлтое японское солнце
+Yellow Japanese Agricultural Ideogram	Жовта японська землеробська ідеограма	Жёлтая японская земледельческая идеограмма
+Yellow Japanese Military Ideogram	Жовта японська військова ідеограма	Жёлтая японская военная идеограмма
+Yellow Japanese Religious Ideogram	Жовта японська релігійна ідеограма	Жёлтая японская религиозная идеограмма
+Yellow Japanese Trade Ideogram	Жовта японська торгова ідеограма	Жёлтая японская торговая идеограмма
+Yellow Tiles	Жовта черепиця	Жёлтая черепица
+Yellow Tile Slab	Жовта черепична плита	Жёлтая черепичная плита
+Yellow Tiles Stairs	Жовті черепичні сходи	Жёлтые черепичные ступени
+Yellow Stained Glass Windows	Жовті вітражні вікна	Жёлтые витражные окна
+Yellow Concrete Brick	Жовта бетонна цегла	Жёлтый бетонный кирпич
+Yellow Chiseled Concrete	Жовтий різьблений бетон	Жёлтый резной бетон
+Yellow ō-yoroi boots	Жовті чоботи о-йорой	Жёлтые ботинки о-ёрой
+Yellow ō-yoroi leggings	Жовті наголінники о-йорой	Жёлтые поножи о-ёрой
+Yellow ō-yoroi helmet	Жовтий шолом о-йорой	Жёлтый шлем о-ёрой
+Yellow ō-yoroi chestplate	Жовтий нагрудник о-йорой	Жёлтый нагрудник о-ёрой
+Rice	Рис	Рис
+Turmeric	Куркума	Куркума
+Vegetarian Curry	Овочеве карі	Овощное карри
+Murgh Curry	Куряче карі	Куриное карри
+Brick Mould	Форма для цегли	Форма для кирпича
+Rasgulla	Расгула	Расгулла
+Plain Timber Frame	Простий фахверк	Простой фахверк
+Cross Timber Frame	Хрестовий фахверк	Крестовой фахверк
+Wet Brick	Сира цегла	Сырой кирпич
+Mud Brick	Саманна цегла	Саманный кирпич
+Hindu Statue	Індуїстська статуя	Индуистская статуя
+Cider Apple	Сидрове яблуко	Сидровое яблоко
+Olives	Оливки	Оливки
+Olive Oil	Оливкова олія	Оливковое масло
+Cider	Сидр	Сидр
+Wand of Negation	Жезл знищення	Жезл уничтожения
+Unknown Powder	Невідомий порошок	Неизвестный порошок
+Alchemist's Explosive	Вибухівка алхіміка	Взрывчатка алхимика
+Wah	Ва	Ва
+Balché	Бальче	Бальче
+Sikil Pah	Сікіль-пак	Сикиль-пак
+Masa	Маса	Маса
+Maize	Кукурудза	Кукуруза
+Gold Ornament	Золота прикраса	Золотое украшение
+Maya Carving	Різьблення мая	Резьба майя
+Obsidian Mace	Обсидіанова булава	Обсидиановая булава
+Obsidian Pickaxe	Обсидіанове кайло	Обсидиановая кирка
+Obsidian Axe	Обсидіанова сокира	Обсидиановый топор
+Obsidian Shovel	Обсидіанова лопата	Обсидиановая лопата
+Obsidian Hoe	Обсидіанова мотика	Обсидиановая мотыга
+Obsidian Flake	Обсидіановий уламок	Обсидиановый осколок
+Cacauhaa	Какауа	Какауа
+Paper Wall	Паперова стіна	Бумажная стена
+Udon	Удон	Удон
+Thatch	Солом’яна покрівля	Соломенная кровля
+Book of the Sadhu	Книга садху	Книга садху
+Tachi	Таті	Тати
+Yumi Bow	Лук юмі	Лук юми
+Sake	Саке	Саке
+Ikayaki	Ікаякі	Икаяки
+Grapes	Виноград	Виноград
+Vines	Виноградна лоза	Виноградная лоза
+Malvasia Wine	Вино мальвазія	Вино мальвазия
+Silk	Шовк	Шёлк
+Feta	Фета	Фета
+Wine	Вино	Вино
+Souvlaki	Сувлакі	Сувлаки
+Deniers Pouch	Гаманець для деньє	Кошель для денье
+Maya Crown	Корона мая	Корона майя
+Raw Bear Meat	Сира ведмежатина	Сырая медвежатина
+Bear Steak	Ведмежий стейк	Медвежий стейк
+Raw Wolf Meat	Сира вовчатина	Сырая волчатина
+Wolf Steak	Вовчий стейк	Волчий стейк
+Straw Bed	Солом’яне ліжко	Соломенная кровать
+Charpoy Bed	Ліжко чарпой	Кровать чарпой
+Futon	Футон	Футон
+Pitiksi Bow	Лук пітіксі	Лук питикси
+Ulu	Улу	Улу
+Kakivak	Каківак	Какивак
+Treated Hide	Вичинена шкура	Выделанная шкура
+Fire Pit	Вогнище	Кострище
+Import Table	Стіл імпорту	Стол импорта
+Cherries	Вишні	Вишни
+Cherry Blossom	Вишневий цвіт	Вишнёвый цвет
+Yogurt	Йогурт	Йогурт
+Ayran	Айран	Айран
+Pide	Піде	Пиде
+Lokum	Лукум	Лукум
+Helva	Халва	Халва
+Pistachios	Фісташки	Фисташки
+Cotton	Бавовна	Хлопок
+Norman Broadsword	Норманський палаш	Норманнский палаш
+Main Chest	Головна скриня	Главный сундук
+Millenaire - For Content Creators	Millenaire — для авторів вмісту	Millenaire — для авторов контента

@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class MillCommonUtilities{public static boolean bonus;public static boolean chanceOn(int n){if(n!=4)throw new AssertionError("Bone chance denominator");return bonus;}public static int randomInt(int bound){return 0;}}

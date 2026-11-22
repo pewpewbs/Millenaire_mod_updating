@@ -1,0 +1,1 @@
+package org.millenaire.common.config;public class MillConfigValues{public static int LogWorldInfo=0;public static java.util.List<net.minecraft.world.level.block.Block> forbiddenBlocks=java.util.List.of();}

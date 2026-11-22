@@ -1,0 +1,59 @@
+culture.mayan=Майя
+culture.fullname=Мая
+
+village.agriculture=сільськогосподарське село
+village.mayan_controlled=контрольована село
+village.mayan_customcontrolled=контрольована на замовлення село
+village.military=військове село
+village.religious=релігійна село
+
+villager.mayan_armysmith=Військовий коваль
+villager.mayan_boy=Хлопчик
+villager.mayan_chickenfarmer=Курячий фермер
+villager.mayan_chieftain=Вождь
+villager.mayan_cocoafarmer=Фермер какао
+villager.mayan_crafter=Ремісник
+villager.mayan_farmer=Сборщик маїсу
+villager.mayan_girl=Дівчинка
+villager.mayan_king=Король
+villager.mayan_leader=Лідер
+villager.mayan_lumberman=Лісоруб
+villager.mayan_merchant=Купець
+villager.mayan_miner=Шахтар
+villager.mayan_obsidiancrafter=Ремісник по обсидіаном
+villager.mayan_peasant=Селянин
+villager.mayan_peasantwife=Селянка
+villager.mayan_richwoman=Королева
+villager.mayan_sculptor=Різьбяр
+villager.mayan_shaman=Шаман
+villager.mayan_shamanwife=Дружина шамана
+villager.mayan_teenagerFemale=Юнак
+villager.mayan_teenagerMale=Юнак
+villager.mayan_warrior=Воїн
+
+villager.lonemayanfarmer=Одинокий фермер
+villager.lonemayanpeasantwife=Дружина фермера
+villager.lonemayanshaman=Шаман
+villager.lonemayanshamanwife=Дружина шамана
+villager.mayanbanditboy=Хлопчик-бандіт
+villager.mayanbanditwarrior=Войник-бандіт
+villager.mayanfemalebandit=Дівчинка-бандіт
+villager.merchant_mayanfarmer=Торговець маїсом
+villager.merchant_mayanhunter=Хантер Трейдер
+villager.merchant_mayanshaman=Шаманський трейдер
+
+villager.questfallenking=Падавчий цар
+villager.questkingelitewarrior=Елітний воїн
+villager.questkinglieutnant=Лейтенант
+villager.questkingscout=Розвідник
+villager.questkingwarrior=Воїн
+villager.questshaman=Шаман
+
+shop.lonemayanfarm=Продукти сільського господарства
+shop.mayanarmyforge=Зброя і броня
+shop.mayancocoa=Какао і какауха
+shop.mayancrafter=Інструменти
+shop.mayanobsidiancrafter=Вироби з обсидіану
+shop.mayansculptor=Купівля камінь і золота
+shop.mayansheepchickenfarm=Курячі продукти
+shop.mayantownhall=Центральний магазин

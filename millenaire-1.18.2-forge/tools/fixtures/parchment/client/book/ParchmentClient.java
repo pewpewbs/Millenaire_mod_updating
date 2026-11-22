@@ -1,0 +1,2 @@
+package org.millenaire.client.book;
+public class ParchmentClient { public static void open(net.minecraft.world.entity.player.Player player,int[] ids){throw new UnsupportedOperationException("Screen not tested here");} }

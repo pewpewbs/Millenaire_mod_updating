@@ -1,0 +1,1 @@
+package org.millenaire.common.ui;public class MillMenus {public static net.minecraft.world.inventory.MenuType<ContainerTrade> TRADE=null;}

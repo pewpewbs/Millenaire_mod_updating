@@ -1,0 +1,1 @@
+package org.millenaire.common.item;public class LegacyItemStacks{public static int metadata(net.minecraft.world.item.ItemStack s){return 0;}public static net.minecraft.world.item.ItemStack stack(net.minecraft.world.level.ItemLike i,int n,int m){return new net.minecraft.world.item.ItemStack(i,n);}}

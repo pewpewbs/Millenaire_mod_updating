@@ -1,0 +1,1 @@
+package org.millenaire.common.config;public class DocumentedElement{public @interface Documentation{String value();}}

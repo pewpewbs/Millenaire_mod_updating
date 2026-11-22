@@ -1,0 +1,394 @@
+[
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 52,
+    "message": "package net.minecraft.world.gen.structure does not exist",
+    "symbol": "",
+    "detail": "import net.minecraft.world.gen.structure.MapGenVillage;\n                                        ^\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 54,
+    "message": "cannot find symbol",
+    "symbol": "class FMLCommonHandler",
+    "detail": "import net.minecraftforge.fml.common.FMLCommonHandler;\n                                    ^\n  symbol:   class FMLCommonHandler\n  location: package net.minecraftforge.fml.common\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 55,
+    "message": "cannot find symbol",
+    "symbol": "class IWorldGenerator",
+    "detail": "import net.minecraftforge.fml.common.IWorldGenerator;\n                                    ^\n  symbol:   class IWorldGenerator\n  location: package net.minecraftforge.fml.common\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 59,
+    "message": "cannot find symbol",
+    "symbol": "class SidedProxy",
+    "detail": "import net.minecraftforge.fml.common.SidedProxy;\n                                    ^\n  symbol:   class SidedProxy\n  location: package net.minecraftforge.fml.common\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 60,
+    "message": "package net.minecraftforge.fml.common.event does not exist",
+    "symbol": "",
+    "detail": "import net.minecraftforge.fml.common.event.FMLInitializationEvent;\n                                          ^\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 61,
+    "message": "package net.minecraftforge.fml.common.event does not exist",
+    "symbol": "",
+    "detail": "import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;\n                                          ^\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 62,
+    "message": "package net.minecraftforge.fml.common.event does not exist",
+    "symbol": "",
+    "detail": "import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;\n                                          ^\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 65,
+    "message": "package net.minecraftforge.fml.common.registry does not exist",
+    "symbol": "",
+    "detail": "import net.minecraftforge.fml.common.registry.GameRegistry;\n                                             ^\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 179,
+    "message": "cannot find symbol",
+    "symbol": "class FMLInitializationEvent",
+    "detail": "    public void init(FMLInitializationEvent e) {\n                     ^\n  symbol:   class FMLInitializationEvent\n  location: class Mill\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 250,
+    "message": "cannot find symbol",
+    "symbol": "class FMLPostInitializationEvent",
+    "detail": "    public void postInit(FMLPostInitializationEvent e) {\n                         ^\n  symbol:   class FMLPostInitializationEvent\n  location: class Mill\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 254,
+    "message": "cannot find symbol",
+    "symbol": "class FMLPreInitializationEvent",
+    "detail": "    public void preInit(FMLPreInitializationEvent event) {\n                        ^\n  symbol:   class FMLPreInitializationEvent\n  location: class Mill\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 107,
+    "message": "cannot find symbol",
+    "symbol": "method modid()",
+    "detail": "@Mod(modid=\"millenaire\", name=\"Mill\\u00e9naire\", version=\"Mill\\u00e9naire 8.1.2\", useMetadata=true)\n     ^\n  symbol:   method modid()\n  location: @interface Mod\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 107,
+    "message": "cannot find symbol",
+    "symbol": "method name()",
+    "detail": "@Mod(modid=\"millenaire\", name=\"Mill\\u00e9naire\", version=\"Mill\\u00e9naire 8.1.2\", useMetadata=true)\n                         ^\n  symbol:   method name()\n  location: @interface Mod\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 107,
+    "message": "cannot find symbol",
+    "symbol": "method version()",
+    "detail": "@Mod(modid=\"millenaire\", name=\"Mill\\u00e9naire\", version=\"Mill\\u00e9naire 8.1.2\", useMetadata=true)\n                                                 ^\n  symbol:   method version()\n  location: @interface Mod\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 107,
+    "message": "cannot find symbol",
+    "symbol": "method useMetadata()",
+    "detail": "@Mod(modid=\"millenaire\", name=\"Mill\\u00e9naire\", version=\"Mill\\u00e9naire 8.1.2\", useMetadata=true)\n                                                                                  ^\n  symbol:   method useMetadata()\n  location: @interface Mod\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 115,
+    "message": "cannot find symbol",
+    "symbol": "class SidedProxy",
+    "detail": "    @SidedProxy(clientSide=\"org.millenaire.client.forge.ClientProxy\", serverSide=\"org.millenaire.common.forge.CommonProxy\")\n     ^\n  symbol:   class SidedProxy\n  location: class Mill\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 117,
+    "message": "cannot find symbol",
+    "symbol": "class Instance",
+    "detail": "    @Mod.Instance\n        ^\n  symbol:   class Instance\n  location: @interface Mod\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 178,
+    "message": "cannot find symbol",
+    "symbol": "class EventHandler",
+    "detail": "    @Mod.EventHandler\n        ^\n  symbol:   class EventHandler\n  location: @interface Mod\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 249,
+    "message": "cannot find symbol",
+    "symbol": "class EventHandler",
+    "detail": "    @Mod.EventHandler\n        ^\n  symbol:   class EventHandler\n  location: @interface Mod\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 253,
+    "message": "cannot find symbol",
+    "symbol": "class EventHandler",
+    "detail": "    @Mod.EventHandler\n        ^\n  symbol:   class EventHandler\n  location: @interface Mod\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 107,
+    "message": "annotation @Mod is missing a default value for the element 'value'",
+    "symbol": "",
+    "detail": "@Mod(modid=\"millenaire\", name=\"Mill\\u00e9naire\", version=\"Mill\\u00e9naire 8.1.2\", useMetadata=true)\n^\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\utilities\\Point.java",
+    "line": 303,
+    "message": "cannot find symbol",
+    "symbol": "method func_176201_c(BlockState)",
+    "detail": "        return state.getBlock().func_176201_c(state);\n                               ^\n  symbol:   method func_176201_c(BlockState)\n  location: class Block\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\utilities\\ThreadSafeUtilities.java",
+    "line": 36,
+    "message": "cannot find symbol",
+    "symbol": "method func_176205_b(BlockGetter,BlockPos)",
+    "detail": "        return block.func_176205_b((BlockGetter)world, new BlockPos(x, y, z));\n                    ^\n  symbol:   method func_176205_b(BlockGetter,BlockPos)\n  location: variable block of type Block\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\utilities\\ThreadSafeUtilities.java",
+    "line": 40,
+    "message": "cannot find symbol",
+    "symbol": "method func_190526_b(int,int)",
+    "detail": "        return world.func_190526_b(x / 16, z / 16);\n                    ^\n  symbol:   method func_190526_b(int,int)\n  location: variable world of type Level\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\utilities\\ThreadSafeUtilities.java",
+    "line": 48,
+    "message": "cannot find symbol",
+    "symbol": "method func_191062_e(int,int)",
+    "detail": "            return ((ClientLevel)world).getChunkSource().func_191062_e(x >> 4, z >> 4);\n                                                        ^\n  symbol:   method func_191062_e(int,int)\n  location: class ClientChunkCache\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\utilities\\ThreadSafeUtilities.java",
+    "line": 58,
+    "message": "cannot find symbol",
+    "symbol": "method func_191062_e(int,int)",
+    "detail": "        } else if (world instanceof ClientLevel && !((ClientLevel)world).getChunkSource().func_191062_e(x >> 4, z >> 4)) {\n                                                                                         ^\n  symbol:   method func_191062_e(int,int)\n  location: class ClientChunkCache\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\ui\\MillMapInfo.java",
+    "line": 91,
+    "message": "incompatible types: possible lossy conversion from int to byte",
+    "symbol": "",
+    "detail": "                this.data[x][y] = winfo.water[x][y] ? 1 : (winfo.danger[x][y] ? 2 : (winfo.buildingForbidden[x][y] ? 3 : (winfo.buildingLocRef[x][y] != null ? 4 : (winfo.tree[x][y] ? 5 : (winfo.path[x][y] ? 10 : (townHall.regionMapper != null && townHall.regionMapper.regions[x][y] != thRegionId ? 6 : (!winfo.canBuild[x][y] ? 7 : (Math.abs(relcentreX - x) > townHall.villageType.radius || Math.abs(relcentreZ - y) > townHall.villageType.radius ? 8 : 9))))))));\n                                                    ^\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\client\\network\\ClientReceiver.java",
+    "line": 268,
+    "message": "cannot find symbol",
+    "symbol": "method openGui(Object,int,Level,int,int,int)",
+    "detail": "                Mill.proxy.getTheSinglePlayer().openGui((Object)Mill.instance, 2, Mill.clientWorld.world, p.getiX(), p.getiY(), p.getiZ());\n                                               ^\n  symbol:   method openGui(Object,int,Level,int,int,int)\n  location: class Player\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\client\\network\\ClientReceiver.java",
+    "line": 275,
+    "message": "cannot find symbol",
+    "symbol": "method openGui(Object,int,Level,int,int,int)",
+    "detail": "            Mill.proxy.getTheSinglePlayer().openGui((Object)Mill.instance, 8, Mill.clientWorld.world, id1, id2, 0);\n                                           ^\n  symbol:   method openGui(Object,int,Level,int,int,int)\n  location: class Player\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\client\\network\\ClientReceiver.java",
+    "line": 281,
+    "message": "cannot find symbol",
+    "symbol": "method openGui(Object,int,Level,int,int,int)",
+    "detail": "                    Mill.proxy.getTheSinglePlayer().openGui((Object)Mill.instance, 1, Mill.clientWorld.world, p.getiX(), p.getiY(), p.getiZ());\n                                                   ^\n  symbol:   method openGui(Object,int,Level,int,int,int)\n  location: class Player\nC:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\block\\BlockMillSapling.java:48: warning: [removal] SaplingGrowTreeEvent(LevelAccessor,Random,BlockPos) in SaplingGrowTreeEvent has been deprecated and marked for removal\n        SaplingGrowTreeEvent event = new SaplingGrowTreeEvent(level, random, pos);\n                                     ^\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 184,
+    "message": "cannot find symbol",
+    "symbol": "variable MapGenVillage",
+    "detail": "            MapGenVillage.field_75055_e = Arrays.asList(new Biome[0]);\n            ^\n  symbol:   variable MapGenVillage\n  location: class Mill\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 219,
+    "message": "cannot find symbol",
+    "symbol": "variable GameRegistry",
+    "detail": "        GameRegistry.addSmelting((ItemStack)org.millenaire.common.item.LegacyItemStacks.stack((Block)MillBlocks.STONE_DECORATION, 1, 0), (ItemStack)org.millenaire.common.item.LegacyItemStacks.stack((Block)MillBlocks.PAINTED_BRICK_WHITE, 1, 0), (float)1.0f);\n        ^\n  symbol:   variable GameRegistry\n  location: class Mill\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 220,
+    "message": "cannot find symbol",
+    "symbol": "variable GameRegistry",
+    "detail": "        GameRegistry.addSmelting((ItemStack)org.millenaire.common.item.LegacyItemStacks.stack((Item)MillItems.BEARMEAT_RAW, 1, 0), (ItemStack)org.millenaire.common.item.LegacyItemStacks.stack((Item)MillItems.BEARMEAT_COOKED, 1, 0), (float)1.0f);\n        ^\n  symbol:   variable GameRegistry\n  location: class Mill\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 221,
+    "message": "cannot find symbol",
+    "symbol": "variable GameRegistry",
+    "detail": "        GameRegistry.addSmelting((ItemStack)org.millenaire.common.item.LegacyItemStacks.stack((Item)MillItems.WOLFMEAT_RAW, 1, 0), (ItemStack)org.millenaire.common.item.LegacyItemStacks.stack((Item)MillItems.WOLFMEAT_COOKED, 1, 0), (float)1.0f);\n        ^\n  symbol:   variable GameRegistry\n  location: class Mill\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 222,
+    "message": "cannot find symbol",
+    "symbol": "variable GameRegistry",
+    "detail": "        GameRegistry.addSmelting((ItemStack)org.millenaire.common.item.LegacyItemStacks.stack((Item)MillItems.SEAFOOD_RAW, 1, 0), (ItemStack)org.millenaire.common.item.LegacyItemStacks.stack((Item)MillItems.SEAFOOD_COOKED, 1, 0), (float)1.0f);\n        ^\n  symbol:   variable GameRegistry\n  location: class Mill\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 233,
+    "message": "cannot find symbol",
+    "symbol": "variable FMLCommonHandler",
+    "detail": "        FMLCommonHandler.instance().bus().register((Object)new ServerTickHandler());\n        ^\n  symbol:   variable FMLCommonHandler\n  location: class Mill\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 234,
+    "message": "cannot find symbol",
+    "symbol": "variable FMLCommonHandler",
+    "detail": "        FMLCommonHandler.instance().bus().register((Object)this);\n        ^\n  symbol:   variable FMLCommonHandler\n  location: class Mill\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 237,
+    "message": "cannot find symbol",
+    "symbol": "variable INSTANCE",
+    "detail": "        NetworkRegistry.INSTANCE.registerGuiHandler((Object)instance, proxy.createGuiHandler());\n                       ^\n  symbol:   variable INSTANCE\n  location: class NetworkRegistry\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 238,
+    "message": "cannot find symbol",
+    "symbol": "class IWorldGenerator",
+    "detail": "        GameRegistry.registerWorldGenerator((IWorldGenerator)new WorldGenVillage(), (int)1000);\n                                             ^\n  symbol:   class IWorldGenerator\n  location: class Mill\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\forge\\Mill.java",
+    "line": 238,
+    "message": "cannot find symbol",
+    "symbol": "variable GameRegistry",
+    "detail": "        GameRegistry.registerWorldGenerator((IWorldGenerator)new WorldGenVillage(), (int)1000);\n        ^\n  symbol:   variable GameRegistry\n  location: class Mill\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\goal\\generic\\GoalGenericHarvestCrop.java",
+    "line": 121,
+    "message": "cannot find symbol",
+    "symbol": "variable field_149771_c",
+    "detail": "        return p.getAbove().getBlock(world) == Block.field_149771_c.get((Object)this.cropType) && p.getAbove().getMeta(world) == GoalGenericHarvestCrop.getCropBlockRipeMeta(this.cropType);\n                                                    ^\n  symbol:   variable field_149771_c\n  location: class Block\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\goal\\generic\\GoalGenericMining.java",
+    "line": 110,
+    "message": "cannot find symbol",
+    "symbol": "method func_176201_c(BlockState)",
+    "detail": "            return org.millenaire.common.item.LegacyItemStacks.stack(this.sourceBlockState.getBlock(), 1, this.sourceBlockState.getBlock().func_176201_c(this.sourceBlockState));\n                                                                                                                                          ^\n  symbol:   method func_176201_c(BlockState)\n  location: class Block\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\goal\\GoalBrewPotions.java",
+    "line": 40,
+    "message": "cannot find symbol",
+    "symbol": "method func_174887_a_(int)",
+    "detail": "            if (brewingStand == null || brewingStand.func_174887_a_(0) != 0) continue;\n                                                    ^\n  symbol:   method func_174887_a_(int)\n  location: variable brewingStand of type BrewingStandBlockEntity\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\goal\\GoalBrewPotions.java",
+    "line": 69,
+    "message": "cannot find symbol",
+    "symbol": "method func_174887_a_(int)",
+    "detail": "        if (brewingStand.func_174887_a_(0) == 0) {\n                        ^\n  symbol:   method func_174887_a_(int)\n  location: variable brewingStand of type BrewingStandBlockEntity\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\goal\\GoalBrewPotions.java",
+    "line": 79,
+    "message": "StringTag(String) has private access in StringTag",
+    "symbol": "",
+    "detail": "                    waterPotion.addTagElement(\"Potion\", (Tag)new StringTag(\"minecraft:water\"));\n                                                             ^\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\goal\\GoalConstructionStepByStep.java",
+    "line": 114,
+    "message": "cannot find symbol",
+    "symbol": "method func_180660_a(BlockState,Random,int)",
+    "detail": "            Item item = bblock.block.func_180660_a(blockState, MillCommonUtilities.getRandom(), 0);\n                                    ^\n  symbol:   method func_180660_a(BlockState,Random,int)\n  location: variable block of type Block\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\goal\\GoalConstructionStepByStep.java",
+    "line": 116,
+    "message": "cannot find symbol",
+    "symbol": "method func_180651_a(BlockState)",
+    "detail": "                return new ItemStack[]{org.millenaire.common.item.LegacyItemStacks.stack(item, 1, bblock.block.func_180651_a(blockState))};\n                                                                                                              ^\n  symbol:   method func_180651_a(BlockState)\n  location: variable block of type Block\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\goal\\GoalDeliverResourcesShop.java",
+    "line": 23,
+    "message": "cannot find symbol",
+    "symbol": "variable field_150364_r",
+    "detail": "        this.icon = InvItem.createInvItem(Blocks.field_150364_r);\n                                                ^\n  symbol:   variable field_150364_r\n  location: class Blocks\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\goal\\GoalGatherGoods.java",
+    "line": 84,
+    "message": "method remove in class Entity cannot be applied to given types;",
+    "symbol": "",
+    "detail": "            item.remove();\n                ^\n  required: RemovalReason\n  found:    no arguments\n  reason: actual and formal argument lists differ in length\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\utilities\\PathUtilities.java",
+    "line": 274,
+    "message": "cannot find symbol",
+    "symbol": "variable field_150470_am",
+    "detail": "        if (block == Blocks.CHEST || block == MillBlocks.LOCKED_CHEST || block == Blocks.CRAFTING_TABLE || block == Blocks.FURNACE || block == Blocks.field_150470_am) {\n                                                                                                                                                     ^\n  symbol:   variable field_150470_am\n  location: class Blocks\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\utilities\\PathUtilities.java",
+    "line": 280,
+    "message": "cannot find symbol",
+    "symbol": "method func_185914_p()",
+    "detail": "        return block instanceof SlabBlock && !block.defaultBlockState().func_185914_p();\n                                                                       ^\n  symbol:   method func_185914_p()\n  location: class BlockState\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\utilities\\VillageUtilities.java",
+    "line": 58,
+    "message": "cannot find symbol",
+    "symbol": "variable field_73010_i",
+    "detail": "        for (Player p : world.field_73010_i) {\n                             ^\n  symbol:   variable field_73010_i\n  location: variable world of type Level\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\utilities\\WorldUtilities.java",
+    "line": 203,
+    "message": "cannot find symbol",
+    "symbol": "method func_176201_c(BlockState)",
+    "detail": "        return state.getBlock().func_176201_c(state);\n                               ^\n  symbol:   method func_176201_c(BlockState)\n  location: class Block\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\utilities\\WorldUtilities.java",
+    "line": 209,
+    "message": "cannot find symbol",
+    "symbol": "method func_176201_c(BlockState)",
+    "detail": "        return bs.getBlock().func_176201_c(bs);\n                            ^\n  symbol:   method func_176201_c(BlockState)\n  location: class Block\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\utilities\\WorldUtilities.java",
+    "line": 515,
+    "message": "cannot find symbol",
+    "symbol": "method func_176203_a(int)",
+    "detail": "        BlockState state = block.func_176203_a(metadata);\n                                ^\n  symbol:   method func_176203_a(int)\n  location: variable block of type Block\n"
+  },
+  {
+    "file": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\src\\main\\java\\org\\millenaire\\common\\utilities\\WorldUtilities.java",
+    "line": 547,
+    "message": "cannot find symbol",
+    "symbol": "method func_176203_a(int)",
+    "detail": "        state = state.getBlock().func_176203_a(metadata);\n                                ^\n  symbol:   method func_176203_a(int)\n  location: class Block\nNote: Some input files use or override a deprecated API.\nNote: Recompile with -Xlint:deprecation for details.\nNote: Some input files use unchecked or unsafe operations.\nNote: Recompile with -Xlint:unchecked for details.\n"
+  }
+]

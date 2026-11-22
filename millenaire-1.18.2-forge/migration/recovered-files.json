@@ -1,0 +1,12 @@
+{
+  "tool": "Vineflower 1.11.1",
+  "fixed_syntax_files": [
+    "org/millenaire/common/buildingplan/BuildingDevUtilities.java",
+    "org/millenaire/common/buildingplan/BuildingPlan.java",
+    "org/millenaire/common/ui/ContainerTrade.java",
+    "org/millenaire/common/utilities/MillCommonUtilities.java",
+    "org/millenaire/common/village/Building.java",
+    "org/millenaire/common/village/buildingmanagers/PanelContentGenerator.java"
+  ],
+  "note": "Syntax recovery only; semantics and Forge 1.18 compatibility remain unverified."
+}

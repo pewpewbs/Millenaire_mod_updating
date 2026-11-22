@@ -1,0 +1,940 @@
+[
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\help\\help_1.txt",
+    "id": "line:3#1",
+    "source": "This help describes  the key features of Millénaire. For more information, check the wiki or ask questions on the forum minecraftforum.net.",
+    "translation": "Ця довідка описує основні можливості Millénaire. Докладніші відомості можна знайти у вікі або запитати на форумі minecraftforum.net."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\help\\help_2.txt",
+    "id": "line:5#1",
+    "source": "All trade with the village is in \"denier\", a medieval French currency. There are three types of deniers: standard deniers, silver deniers (deniers d'argent) that worth 64 deniers and gold deniers (deniers en or) that worth 64 silver deniers.",
+    "translation": "Уся торгівля з поселенням ведеться в деньє — середньовічній французькій валюті. Є три види монет: звичайні деньє, срібні деньє (deniers d’argent), що коштують 64 звичайних, і золоті деньє (deniers en or), що коштують 64 срібних."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\help\\help_2.txt",
+    "id": "line:8#1",
+    "source": "\"deniers argent\" (silver deniers)",
+    "translation": "«deniers argent» (срібні деньє)"
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\norman_sentences.txt",
+    "id": "villager.plantwarts#1",
+    "source": "Only Master Vif-argent could have understood how to grow those abominations.",
+    "translation": "Лише знання Vif-argent дають розуміння, як виростити цю мерзоту."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\quests_alchemist.txt",
+    "id": "alchemist_1_introb_0_description_success#1",
+    "source": "His name is Guillaume Vif-argent, and he calls himself an 'alchemist'. I do not have his precise location, but he is known to setup his workshop in the mountains, to best observe the stars.",
+    "translation": "Ім'я його Guillaume Vif-argent, і кличе він себе 'алхімік'. Я не знаю його точного місцезнаходження, але мені відомо, що майстерня його в горах, щоб краще обдивлятися зірки."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\quests_alchemist.txt",
+    "id": "alchemist_1_introknight_0_description_success#1",
+    "source": "He has settled in the wilderness, near mountains. He claims he need peace for his work, but I am sure he is hiding something. In any case, his name is Guillaume Vif-argent.",
+    "translation": "Він проживає на віддалі від поселень, поруч з горами. Він заявляє, що йому потрібен спокій для його досліджень, але мені здається, він просто щось приховує. Так чи інакше, звуть його Guillaume Vif-argent."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "startup.devmode2#1",
+    "source": "To disable it, go to millenaire-custom and remove the \"devmode\" line.",
+    "translation": "Щоб вимкнути цей режим, відкрийте millenaire-custom і видаліть рядок «devmode»."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "startup.outdatedversion#1",
+    "source": "You are using version <0> of Millénaire. Version <1> is available, with changes like <2>. You can download it on www.millenaire.org.",
+    "translation": "Ви використовуєте Millénaire версії <0>. Доступна версія <1> зі змінами: <2>. Її можна завантажити на www.millenaire.org."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "startup.outdatedversiondev#1",
+    "source": "You are using test version <0> of Millénaire. Test version <1> is available, with changes like <2>. You can download it on www.millenaire.org.",
+    "translation": "Ви використовуєте тестову версію <0> Millénaire. Доступна тестова версія <1> зі змінами: <2>. Її можна завантажити на www.millenaire.org."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "quest.cqcheckforupdates#1",
+    "source": "Check www.millenaire.org for future updates with more missions.",
+    "translation": "Перевірте www.millenaire.org для подальших оновлень з великою кількістю місій."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "ui.updateentity#1",
+    "source": "Error in TileEntityBuilding.updateEntity(). Check millenaire.log.",
+    "translation": "Помилка в TileEntityBuilding.updateEntity(). Перевірте millenaire.log."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "hire.hiredvillager#1",
+    "source": "This villager has been hired. He will stay at your service for <0> more hours or until he dies and respawn in his village.<ret><ret>Press '<1>' to put him in aggressive stance or left shift-'<1>' to put him in passive stance.",
+    "translation": "Цей поселенець був найнятий. Він залишиться у Вашому розпорядженні на <0> ч. або поки не помре і відродиться у своєму поселенні. <ret> <ret> Натисніть '<1>' для того щоб він прийняв агресивну тактику поведінки або LeftShift-'<1>' для переходу в пасивний режим."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "hof.forgecode2#1",
+    "source": "Forge Sprite API",
+    "translation": "Forge Sprite API"
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "hof.btw#1",
+    "source": "(BTW creator)",
+    "translation": "(виробник BTW)"
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "hof.forgehelp2#1",
+    "source": "Forge Sprite API",
+    "translation": "Forge Sprite API"
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "hof.gradlebuild2#1",
+    "source": "Gradle Build",
+    "translation": "Збірка Gradle"
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "hof.contribute4#1",
+    "source": "nCXjd4s",
+    "translation": "nCXjd4s"
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "import.errornotfound#1",
+    "source": "The building requested is not present in millenaire-custom/exports.",
+    "translation": "яку Ви хотіли будівля не існує в папці millenaire-custom/exports."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "chunk.captionwhite#1",
+    "source": "White dots indicate a chunk which is being kept loaded by a mod (Millénaire or another Forge mod)",
+    "translation": "Білі точки вказують на частину, яка зберігається завантаженою модулем ( Millénaire або інший модуль Forge)"
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "chunk.settings#1",
+    "source": "Village loading radius: <0> metres. Maximum number of chunks preserving allowed by Forge: <1>.",
+    "translation": "Радіус завантаження поселення: <0> метрів. Максимальна кількість завантажених чанків, дозволена Forge: <1>."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "chunk.explanations#1",
+    "source": "Millénaire villages are only active if all their chunks are loaded. The inhabitants of other villages are frozen. Millénaire attempts to force Minecraft to keep the chunks of villages within 200 metres of a player loaded (that value can be changed). The Forge mechanism used for this is limited by default to 200 chunks. You can configure this value in minecraft/config/forgeChunkLoading.cfg. Warning: increasing the number of chunks kept loaded will decrease performance.",
+    "translation": "Millénaire села активні лише тоді, коли всі їх частини завантажені.  Жителі інших селі заморожені. Millénaire спроби примусу Minecraft тримати кусочки села в межах 200 метрів від завантаження гравця (це значення може бути змінено).  Механізм Forge, який використовується для цього, дефолтовим чином обмежується 200 кубками.  Ви можете налаштувати це значення в minecraft/config/forgeChunkLoading.cfg.  Попередження: збільшення кількості завантажених кусочок знизить ефективність."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "config.auto_convert_profiles.desc#1",
+    "source": "When loading a single player world (including opened on LAN), have the single player use the current Millénaire profile and control all the world's controlled villages.",
+    "translation": "Під час завантаження єдиного гравця світу (включаючи відкритий на LAN), один гравця використовувати поточний Millénaire Профіль і контроль над усіма контрольованими селами світу."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\strings.txt",
+    "id": "config.send_advancement_login.desc#1",
+    "source": "Whether to send your Minecraft login to the Millénaire server, to allow your advancements to be visible on millenaire.org.",
+    "translation": "Чи відправити свій Minecraft вхід до Millénaire сервер, щоб ваші досягнення були помітні на millenaire.org."
+  },
+  {
+    "lang": "uk",
+    "file": "todeploy\\millenaire\\languages\\uk\\travelbook.txt",
+    "id": "travelbook.trade_good.turmeric.desc#1",
+    "source": "This flavorful spice is necessary for the creation of Murgh Curry and Vegetarian Curry. You'll have to ask an Indian town leader to teach you how to plant it on irrigated farmland.",
+    "translation": "Ця смачна спеція необхідна для створення куррі Murgh і вегетаріанського куррі.  Вам доведеться попросити індіанського лідера, щоб він навчив вас, як посадити його на напояних землях."
+  },
+  {
+    "lang": "uk",
+    "file": "assets/millenaire/lang/uk_ua.json",
+    "id": null,
+    "source": "/millRenameVillage <current name> <new name> <new qualifier>",
+    "translation": "/millRenameVillage <current name> <new name> <new qualifier>"
+  },
+  {
+    "lang": "uk",
+    "file": "assets/millenaire/lang/uk_ua.json",
+    "id": null,
+    "source": "/millTp <Village name> <PlayerName>",
+    "translation": "/millTp <Village name> <PlayerName>"
+  },
+  {
+    "lang": "uk",
+    "file": "assets/millenaire/lang/uk_ua.json",
+    "id": null,
+    "source": "/millGiveRep <PlayerName> <Village name> <amount>",
+    "translation": "/millGiveRep <PlayerName> <Village name> <amount>"
+  },
+  {
+    "lang": "uk",
+    "file": "assets/millenaire/lang/uk_ua.json",
+    "id": null,
+    "source": "/millImportCulture <culture> <x> <z>",
+    "translation": "/millImportCulture <culture> <x> <z>"
+  },
+  {
+    "lang": "uk",
+    "file": "assets/millenaire/lang/uk_ua.json",
+    "id": null,
+    "source": "/millSpawnVillage <culture> <village type> (<x> <z>) (<completion>)",
+    "translation": "/millSpawnVillage <culture> <village type> (<x> <z>) (<completion>)"
+  },
+  {
+    "lang": "uk",
+    "file": "assets/millenaire/lang/uk_ua.json",
+    "id": null,
+    "source": "/millSpawnLoneBuilding <culture> <lone building type> (<x> <z>) (<completion>)",
+    "translation": "/millSpawnLoneBuilding <culture> <lone building type> (<x> <z>) (<completion>)"
+  },
+  {
+    "lang": "uk",
+    "file": "assets/millenaire/lang/uk_ua.json",
+    "id": null,
+    "source": "/millDebugSendProfiles <user> or millDebugSendProfiles all",
+    "translation": "/millDebugSendProfiles <user> або millDebugSendProfiles all"
+  },
+  {
+    "lang": "uk",
+    "file": "assets/millenaire/lang/uk_ua.json",
+    "id": null,
+    "source": "/millDebugResetVillagers",
+    "translation": "/millDebugResetVillagers"
+  },
+  {
+    "lang": "uk",
+    "file": "assets/millenaire/lang/uk_ua.json",
+    "id": null,
+    "source": "/millListActiveVillages",
+    "translation": "/millListActiveVillages"
+  },
+  {
+    "lang": "uk",
+    "file": "assets/millenaire/lang/uk_ua.json",
+    "id": null,
+    "source": "/millSwitchVillageControl <village name> <player name>",
+    "translation": "/millSwitchVillageControl <village name> <player name>"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\byzantines_travelbook.txt",
+    "id": "travelbook.village.tradingvillage.desc#1",
+    "source": "Led by a Baron, the trading village is built around a market sqaure and features fine wool and silk clothes and Malvasia wine.",
+    "translation": "Купеческое поселение, возглавляемое бароном, построено вокруг рыночной площади и украшено тонкой шерстяной и шелковой одеждой и вином Malvasia."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\byzantines_travelbook.txt",
+    "id": "travelbook.building.gifthut.desc#1",
+    "source": "This house is a personal \"Thank you\" from Ticlon for helping us with Millénaire.",
+    "translation": "Этот дом - персональное «Спасибо» от Ticlon за помощь нам с Millénaire."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\byzantines_travelbook.txt",
+    "id": "travelbook.building.taverna.desc#1",
+    "source": "Probably the most visited building in a given village and the birthplace of delicate Malvasia wine.",
+    "translation": "Возможно, самое посещаемое здание в деревне и месторождение нежного вина Malvasia."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\byzantines_travelbook.txt",
+    "id": "travelbook.building.vineyard.desc#1",
+    "source": "Striding through the vineyards enhance the mood. Even when it is just the thought of a sweet bottle of Malvasia wine later that day.",
+    "translation": "Прогулки по виноградникам повышают настроение. Даже когда это просто мысль о сладкой бутылке вина Malvasia позднее в этот же день."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\help\\help_1.txt",
+    "id": "line:3#1",
+    "source": "This help describes  the key features of Millénaire. For more information, check the wiki or ask questions on the forum minecraftforum.net.",
+    "translation": "Эта справка описывает основные возможности Millénaire. Подробности можно найти в вики или спросить на форуме minecraftforum.net."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\help\\help_2.txt",
+    "id": "line:5#1",
+    "source": "All trade with the village is in \"denier\", a medieval French currency. There are three types of deniers: standard deniers, silver deniers (deniers d'argent) that worth 64 deniers and gold deniers (deniers en or) that worth 64 silver deniers.",
+    "translation": "Вся торговля с поселением ведётся в денье — средневековой французской валюте. Есть три вида монет: обычные денье, серебряные денье (deniers d’argent), которые стоят 64 обычных, и золотые денье (deniers en or), которые стоят 64 серебряных."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\help\\help_2.txt",
+    "id": "line:8#1",
+    "source": "\"deniers argent\" (silver deniers)",
+    "translation": "«deniers argent» (серебряные денье)"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_bravewoman.desc#1",
+    "source": "The Jojoufu are women warriors who are trained in bushido.",
+    "translation": "Jojoufu - это женщины-воины, которые обучены Бусидо."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_chickenfarmer.desc#1",
+    "source": "Youkeika tends the chickens to produce poultry.",
+    "translation": "Youkeika занимается выращиванием птицы."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_crafter.desc#1",
+    "source": "Saikushi are crafters who can create plaster, paper and other building items,",
+    "translation": "Saikushi - это мастера, которые могут создавать каркас, бумагу и другие строительные материалы."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_emperor.desc#1",
+    "source": "The Kokushi is a local authoritarian for the village. There powers are granted by the Imperial Court and is found at the Kumonjo building.",
+    "translation": "The Kokushi является местным авторитарным лидером деревни. Его полномочия предоставляются императорским двором, а сам он находится в здании имперского офиса."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_farmer.desc#1",
+    "source": "The Hyakushou tends to to crops and grows them to maturity.",
+    "translation": "The Hyakushou занимается посевами и выращивает их до зрелости."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_farmerchief.desc#1",
+    "source": "Chōkan is the leader of Nouji Mura.",
+    "translation": "Chōkan это лидер сельскохозяйственного поселения. Он один из старейшин выбранный, чтобы управлять деревней."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_fisherman.desc#1",
+    "source": "Ryoushi, spends his time catching fish for the village.",
+    "translation": "Ryoushi проводит время, ловя рыбу для деревни."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_girl.desc#1",
+    "source": "Onnanoko and Jou are young girls of the Heian people.",
+    "translation": "Onnanoko(девочка) и Jou(девушка) - молодые девушки из японского народа эпохи хэйан."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_innkeeper.desc#1",
+    "source": "Teishu are host and owners of Shijin and Onsenmachi",
+    "translation": "Teishu - хозяин и владелец гостиницы."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_loneminer.desc#1",
+    "source": "Koufu digs through the ground and looks for rare resources.",
+    "translation": "Koufu копается в земле и ищет редкие ресурсы."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_lumberman.desc#1",
+    "source": "The Kikori knows his trees and knows which ones they need to cut down for building project.",
+    "translation": "The Kikori знает свои деревья и знает, какие из них можно вырубить для строительства."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_merchant.desc#1",
+    "source": "Chounin sells & buys goods and wares in market.",
+    "translation": "Chounin продает и покупает товары и изделия на рынке."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_merchant_blacksmith.desc#1",
+    "source": "Chounin sells & buys goods and wares in market.",
+    "translation": "Chounin продает и покупает товары и изделия на рынке."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_merchant_food.desc#1",
+    "source": "Chounin sells & buys goods and wares in market.",
+    "translation": "Chounin продает и покупает товары и изделия на рынке."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_miner.desc#1",
+    "source": "Koufu digs through the ground and looks for rare resources.",
+    "translation": "Koufu копается в земле и ищет редкие ресурсы."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_monk.desc#1",
+    "source": "The Souryo are worshiper of the Buddhist faith.",
+    "translation": "The Souryo очень порядочный человек, хорошо знающий путь буддизма.."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_peasant.desc#1",
+    "source": "Noufu are common men who live in the village.",
+    "translation": "Noufu - простые люди, которые живут в деревне и на которых она, собственно говоря, и держится."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_peasantwife.desc#1",
+    "source": "Tsuma are common women who live in the village.",
+    "translation": "Tsuma - простые люди, которые живут в деревне и на которых она, собственно говоря, и держится."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\japanese_travelbook.txt",
+    "id": "travelbook.villager.japanese_smith.desc#1",
+    "source": "Kajiya is a crafter who produces tools.",
+    "translation": "Kajiya - это ремесленник, который производит инструменты."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\mayan_dialogues.txt",
+    "id": "newchat;key:ahmunghanan,weigth:6;|v1;0;#1",
+    "source": "Thanks to Ah Mun and Ghanan, our harvests are good. Praise be to them!",
+    "translation": "Благодаря Ah Mun и Ghanan наши урожаи хороши. Хвала им!"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\mayan_dialogues.txt",
+    "id": "newchat;key:badweather,weigth:8;|v1;0;#1",
+    "source": "Chac is angry. The weather is bad.",
+    "translation": "Chac сердится. Плохая погода."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\norman_reputation.txt",
+    "id": "16*32*64*64|title#1",
+    "source": "The Next of Kinniken",
+    "translation": "Следующий Kinniken(создатель мода и культуры Норманнов)"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\norman_sentences.txt",
+    "id": "villager.plantwarts#1",
+    "source": "Only Master Vif-argent could have understood how to grow those abominations.",
+    "translation": "Лишь знания Vif-argent дают понимание, как вырастить эту мерзость."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\norman_sentences.txt",
+    "id": "villager.childobserveproducealcohol#1",
+    "source": "When I was a baby, mum used to put calva in my milk so that I would sleep. Hips!",
+    "translation": "Когда я был маленьким, мама добавляла кальву в молоко, чтобы я мог уснуть. Hips !"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\norman_travelbook.txt",
+    "id": "travelbook.building.playersmallfield.desc#1",
+    "source": "A small field that can be purchased to build a little pieds à terre.",
+    "translation": "Небольшое поле, которое можно купить, чтобы построить маленький pieds à terre"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_alchemist.txt",
+    "id": "alchemist_1_introb_0_description_success#1",
+    "source": "His name is Guillaume Vif-argent, and he calls himself an 'alchemist'. I do not have his precise location, but he is known to setup his workshop in the mountains, to best observe the stars.",
+    "translation": "Имя его Guillaume Vif-argent, и зовет он себя 'алхимик'. Я не знаю его точного местонахождения, но мне известно, что мастерская его в горах, дабы лучше обозревать звезды."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_alchemist.txt",
+    "id": "alchemist_1_introguildmasterb_0_description#1",
+    "source": "$name, I understand that you have searched throughout the lands for help with discovering the secrets of this world. You should have come to me instead! I have the honour of knowing the greatest mind alive today, the Alchemist Guillaume Vif-argent, whose reputation is second to none amoung those of us that are schooled in philosophy. It is him you should go to.",
+    "translation": "Насколько я понимаю, $name, ты прошел многие земли в поиска помощи в открытии секретов этого мира. Ты должен был сразу найти меня вместо этого! Я имею честь знать величайший разум, живущий сегодня, алхимика Guillaume Vif-argent, чья репутация непревзойденна среди нас, в вопросах изучения философии. Как раз к нему ты и должен пойти."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_alchemist.txt",
+    "id": "alchemist_1_introknight_0_description_success#1",
+    "source": "He has settled in the wilderness, near mountains. He claims he need peace for his work, but I am sure he is hiding something. In any case, his name is Guillaume Vif-argent.",
+    "translation": "Он проживает в отдалении от поселений, рядом с горами. Он заявляет, что ему нужен покой для его исследований, но мне кажется, он попросту что-то скрывает. Так или иначе, зовут его Guillaume Vif-argent."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_alchemist.txt",
+    "id": "alchemist_3_ores_1_description#1",
+    "source": "Greetings $name, I'm Master Vif-argent's assistant. Do not be offended by his manners, he is a true man of science, too involved in his work to have time for society! But he is very wise, that I know. Anyway, here are your tools.",
+    "translation": "Здравствуй, $name. Я ассистент Мастера Vif-argent. Не обращай внимания на его манеры, но он истинный ученый муж, слишком увлеченный своей работой, чтобы находить время для общения! Но очень мудр, это уж точно. Ах да, вот твои инструменты."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_alchemist.txt",
+    "id": "alchemist_4_lavab_0_description#1",
+    "source": "I have big experiences in mind, $name. As you might have observed in your travels this world has no volcanos like those of our old Europe, but the soil is full of lava and it is not uncommon to see streams of it at the surface. I need to know what this lava is made of, and if it can be used to transmute metals. My good Robert is too old for this, but you seem resourceful enough to bring me back the samples I need.",
+    "translation": "У меня есть серьезная гипотеза, $name. Как ты мог видеть в своих путешествиях, в этом мире нет вулканов, подобным тем, что есть в нашей старой Европе, но почвы полны лавы и при этом, что весьма необычно, она не выходит на поверхность через жерла. Мне необходимо узнать, каков состав этой лавы, и не подходит ли она для трансмутации металлов. Мой добрый Robert уже слишком стар для этого, но ты выглядишь способным принести мне необходимые образцы."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_alchemist.txt",
+    "id": "alchemist_11b_guildmaster_0_description#1",
+    "source": "Guillaume Vif-argent has managed to restart alchemy in this world? He is truly an extraordinary man! I would be honoured to study his work and to initiate a gifted enough young man in it!",
+    "translation": "Guillaume Vif-argent решил возродить алхимию в этом мире? Воистину, он экстраординарный человек! Я почту за честь изучить его труды и обучить одаренного юношу его знаниям!"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_marvel_norman.txt",
+    "id": "marvel_norman_1_picklocation_0_description#1",
+    "source": "$name, have you heard the inspiring news? A great architect from the lands of the Eastern Franks, the renowned Nicolas de Weilbourg, has been touring nearby villages to raise support for the construction of a great cathedral, a monument to our faith in this new and alien land! While not a Norman, he has learned much of our architecture ever since reaching Normandy in search of work worthy of his talents.<ret><ret>Nearby lords and me have been debating where this marvel should be built - they cannot seem to recognise that $startvillager_villagename$ is the only place worthy of such a monument. But maybe you could help us break this deadlock and scout a proper location acceptable to all parties?",
+    "translation": "$name,слышал ли ты вдохновляющие новости? Великий архитектор из земель восточных франков, известный как Nicolas de Weilbourg, объездил близлежащие поселения, чтобы поддержать строительство великого собора - памятника нашей веры в этой новой и чужой для нас земле! Не будучи Нормандцем, он многое узнал о нашей архитектуре с тех пор, как прибыл в Нормандию в поисках работы,  достойной его талантов.<ret><ret>Соседние лорды и я обсуждали, где это чудо должно быть построено – и,похоже, что они не могут признать, что $startvillager_villagename$ - единственное место, достойное для такого памятника. Но, может быть, ты мог бы помочь нам выйти из этого тупика и найти подходящее место, приемлемое для всех сторон?"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_marvel_norman.txt",
+    "id": "marvel_norman_2_generate_0_description#1",
+    "source": "Ah, $name! Are you satisfied with the location you have chosen? I am impatient to see the great Nicolas at work!",
+    "translation": "Ах, $name! Довольны ли вы выбранным вами местоположением? Мне не терпится увидеть великого Nicolas за работой!"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_others.txt",
+    "id": "poems_0_description_success#1",
+    "source": "Arigatou gozaimasu! Thank you very much!<ret>You are honourable to help me like this. Here is my grateful reward.",
+    "translation": "Arigatou gozaimasu!(Большое спасибо!)<ret>Вы проявили благородство тем, что помогли мне в этом. Вот моя награда, отдаваемая вам с большой благодарностью."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_others.txt",
+    "id": "startingtrader_0_description_success#1",
+    "source": "Good, very good... This will work nice for my plans. Doumo arigatou! Many thanks!",
+    "translation": "Хорошо, очень хорошо... Это пойдет на пользу моим планам. Doumo arigatou!(Большое спасибо!)"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_sadhu.txt",
+    "id": "sadhu_intro_0_description#1",
+    "source": "$name, we have known you for a long time now, and you know we trust you as one of us, despite never asking who you were or where you came from. Originally, we thought that you were simply a man from another nation that like us had been carried here on the fateful day where the earth shook and we found ourselves in this strange land, where the seasons never change and the rivers do not flow - someone like those strange men in their stone pyramids, or the white-faced men skilled in the forging of iron.<ret><ret>But we have observed you long, and you are different. You seem to have no memory of an earlier land, and thrive here as if you belonged. And yet we have never met anyone else of your kind.<ret><ret>If you know more than we do and do not want to share it, that is your right. But if - as I suspect - you wonder yourself what strange world you roam and what is your place in it, you need wisdom I do not have. One man only that I have heard of can help you: my old guru, Sadhu Vidya. I have not seen him in many years, but I know he wanders in the forest, choosing tall and strong trees for shelter. When you meet him, convey to him my thanks for the wisdom he shared with me.",
+    "translation": "$name, мы наблюдали за тобой долгое время и теперь верим тебе, как самим себе, несмотря на все и не спрашивая, кто ты и откуда пришел. Сначала мы думали, что ты просто человек другого народа, который, как и наш, был перенесен сюда в судьбоносный день, когда земля содрогнулась, и мы оказались в этих странных землях, где сезоны никогда не меняются, и реки не текут - кто-то вроде этих странных людей в их каменных пирамидах, или людей с белым лицом, что умелы в ковке железа.<ret><ret>Однако, мы долго за тобой наблюдали, и видим, что ты иной. Ты выглядишь не помнящим прошлой земли, и процветаешь здесь, будто принадлежишь этому миру. А еще мы никогда не встречали никого твоего племени.<ret><ret>Если тебе известно больше, чем нам, и ты не желаешь поделиться этим, то это твое право. Но если, как я подозреваю, ты задаешь себе вопрос, что это за странный мир, по которому ты бродишь, и каково твое место в нем, то тебе нужна мудрость, которой нет у меня. Лишь один человек, о котором я слышал, может помочь тебе: мой старый гуру, Sadhu Vidya. Мы не виделись много лет, но я знаю, что он бродит по лесам, выбирая высокие и сильные деревья для укрытия. Когда ты встретишься с ним, вырази ему мою благодарность за мудрость, которой он поделился со мной."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_sadhu.txt",
+    "id": "sadhu_intro_1_listing#1",
+    "source": "Find the Sadhu under a tall tree in a forest. When you have met him, Say so to the Pandit of village $startvillager_villagename$.",
+    "translation": "Найдите Sadhu Vidya под высоким деревом в лесах. Когда ты его встретишь, то расскажи о встрече жрецу из $startvillager_villagename$."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_sadhu.txt",
+    "id": "sadhu_introwife_0_description#1",
+    "source": "$name, we have known you for a long time now, and you know we trust you as one of us, despite never asking who you were or where you came from. Originally, we thought that you were simply a man from another nation that like us had been carried here on the fateful day where the earth shook and we found ourselves in this strange land, where the seasons never change and the rivers do not flow - someone like those strange men in their stone pyramids, or the white-faced men skilled in the forging of iron.<ret><ret>But we have observed you long, and you are different. You seem to have no memory of an earlier land, and thrive here as if you belonged. And yet we have never met anyone else of your kind.<ret><ret>If you know more than we do and do not want to share it, that is your right. But if - as I suspect - you wonder yourself what strange world you roam and what is your place in it, you need wisdom that few people have. Only one man that I have heard of can help you: Sadhu Vidya, a wise man who helped me in difficult times. I have not seen him in many years, but I know he wanders in the forest, choosing tall and strong trees for shelter. When you meet him, convey to him my thanks for his past wisdom.",
+    "translation": "$name, мы наблюдали за тобой долгое время и теперь верим тебе как самим себе, несмотря на все и не спрашивая кто ты и откуда пришел. Сначала мы думали, что вы просто человек другого народа, который, как и наш, был перенесен сюда в судьбоносный день, когда земля содрогнулась, и мы оказались в этих странных землях, где сезоны никогда не меняются, и реки не текут - кто-то вроде этих странных людей в их каменных пирамидах, или людей с белым лицом, что умелы в ковке железа.<ret><ret>Однако мы долго за тобой наблюдали, и видим, что ты иной. Ты выглядишь не помнящим прошлой земли, и процветаешь здесь, будто принадлежишь этому миру. А еще мы никогда не встречали никого твоего племени.<ret><ret>Если тебе известно больше, чем нам, и ты не желаешь поделиться этим, то это твое право. Но если, как я подозреваю, ты задаешь себе вопрос, что это за странный мир, по которому ты бродишь, и каково твое место в нем, то тебе нужна мудрость, которой нет у меня. Лишь один человек, о котором я слышал, может помочь тебе: мой старый гуру, Sadhu Vidya. Мы не виделись много лет, но я знаю, что он бродит по лесам, выбирая высокие и сильные деревья для укрытия. Когда ты встретишься с ним, вырази ему мою благодарность за его мудрые советы."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\quests_sadhu.txt",
+    "id": "sadhu_introwife_1_listing#1",
+    "source": "Find the Sadhu under a tall tree in a forest. When you have met him, Say so to the $startvillager_villagerrole$ of village $startvillager_villagename$.",
+    "translation": "Найдите Sadhu Vidya под высоким деревом в лесах. После встречи с ним раскажи об этом $startvillager_villagerrole$ из поселения $startvillager_villagename$."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "startup.checkload#1",
+    "source": "Check that the cultures directory is in the millenaire directory in the minecraft directory.",
+    "translation": "Проверьте папку cultures в папке millenaire, находящейся в папке minecraft."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "startup.devmode2#1",
+    "source": "To disable it, go to millenaire-custom and remove the \"devmode\" line.",
+    "translation": "Чтобы отключить этот режим, откройте millenaire-custom и удалите строку «devmode»."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "startup.outdatedversion#1",
+    "source": "You are using version <0> of Millénaire. Version <1> is available, with changes like <2>. You can download it on www.millenaire.org.",
+    "translation": "Вы используете Millénaire версии <0>. Доступна версия <1> с изменениями: <2>. Её можно загрузить на www.millenaire.org."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "startup.outdatedversiondev#1",
+    "source": "You are using test version <0> of Millénaire. Test version <1> is available, with changes like <2>. You can download it on www.millenaire.org.",
+    "translation": "Вы используете тестовую версию <0> Millénaire. Доступна тестовая версия <1> с изменениями: <2>. Её можно загрузить на www.millenaire.org."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "quest.cqcheckforupdates#1",
+    "source": "Check www.millenaire.org for future updates with more missions.",
+    "translation": "Проверьте www.millenaire.org для дальнейших обновлений с большим количеством миссий."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "error.backwardtime#1",
+    "source": "World time has gone from <0> to <1>! Moving the time backward (using \"/time set\" for example) will break Millénaire.",
+    "translation": "Мировое время прошло от <0> до <1>! Отмотка времени назад (например, с помощью «/time set») сломает Millénaire."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "ui.updateentity#1",
+    "source": "Error in TileEntityBuilding.updateEntity(). Check millenaire.log.",
+    "translation": "Ошибка в TileEntityBuilding.updateEntity(). Проверьте millenaire.log."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "hire.hiredvillager#1",
+    "source": "This villager has been hired. He will stay at your service for <0> more hours or until he dies and respawn in his village.<ret><ret>Press '<1>' to put him in aggressive stance or left shift-'<1>' to put him in passive stance.",
+    "translation": "Этот поселенец был нанят. Он останется в Вашем распоряжении на <0> ч или пока не умрет и возродится в своем поселении.<ret><ret>Нажмите '<1>' для того, чтобы он принял агрессивную тактику поведения или LeftShift-'<1>' для перехода в пассивный режим."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "hof.forgecode2#1",
+    "source": "Forge Sprite API",
+    "translation": "Forge Sprite API"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "hof.btw#1",
+    "source": "(BTW creator)",
+    "translation": "(создатель BTW)"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "hof.forgehelp2#1",
+    "source": "Forge Sprite API",
+    "translation": "Forge Sprite API"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "hof.gradlebuild2#1",
+    "source": "Gradle Build",
+    "translation": "Сборка Gradle"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "hof.contribute4#1",
+    "source": "nCXjd4s",
+    "translation": "nCXjd4s"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "pujas.god0#1",
+    "source": "To Hanuman - for speed",
+    "translation": "Hanuman - для скорости"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "pujas.god1#1",
+    "source": "To Shiva - for strength",
+    "translation": "Shiva - для силы"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "pujas.god2#1",
+    "source": "To Lakshmi - for luck",
+    "translation": "Lakshmi - для удачи"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "pujas.god3#1",
+    "source": "To Ganesh - for skill",
+    "translation": "Ganesh - для мастерства"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god0#1",
+    "source": "To Ah Puch - for survival",
+    "translation": "Ah Puch - для выживания"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god1#1",
+    "source": "To K'inich Ajaw - for flames",
+    "translation": "K'inich Ajaw - для воспламенения"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god2#1",
+    "source": "To Cabrakan - for impacts",
+    "translation": "Cabrakan - для ударов"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god3#1",
+    "source": "To Ah Tabai - for arrows",
+    "translation": "Ah Tabai - для стрельбы"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god4#1",
+    "source": "To Cum Hau - for vengeance",
+    "translation": "Cum Hau - для мести"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god5#1",
+    "source": "To Uqux Cho - for the caiman's breath",
+    "translation": "Uqux Cho - для дыхания каймана"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god6#1",
+    "source": "To Uqux Palo - for work under the waves",
+    "translation": "Uqux Palo - для управления волнами"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god7#1",
+    "source": "To Alom - for lightness",
+    "translation": "Alom - для легкости"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god8#1",
+    "source": "To Buluc Chabtan - for violence",
+    "translation": "Buluc Chabtan - для силы"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god9#1",
+    "source": "To Ah Puch - for fighting the dead",
+    "translation": "Ah Puch - для борьбы с мертвыми"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god11#1",
+    "source": "To Huracan - for the strong breath",
+    "translation": "Huracan - для сильного дыхания"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god12#1",
+    "source": "To K'inich Ajaw - for the flame",
+    "translation": "K'inich Ajaw - для огнестрельности"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god13#1",
+    "source": "To Ek Chuah - for fortune",
+    "translation": "Ek Chuah - для удачи"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god14#1",
+    "source": "To Buluc Chabtan - for violence",
+    "translation": "Buluc Chabtan - для силы"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god15#1",
+    "source": "To Huracan - for the strong breath",
+    "translation": "Huracan - для сильного дыхания"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god16#1",
+    "source": "To K'inich Ajaw - for the flame",
+    "translation": "K'inich Ajaw - для огнестрельности"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god17#1",
+    "source": "To Ek Chuah - for fortune",
+    "translation": "Ek Chuah - для удачи"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "mayan.god18#1",
+    "source": "To Witz - for toughness",
+    "translation": "Witz - для прочности"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "import.errornotfound#1",
+    "source": "The building requested is not present in millenaire-custom/exports.",
+    "translation": "Запрошенное здание не существует в папке millenaire-custom/exports."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "import.copyingfrom#1",
+    "source": "Copying building from <0> to millenaire-custom/exports/",
+    "translation": "Копирование здания из <0> в millenaire-custom/exports/"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "import.missingmockblock#1",
+    "source": "Missing \"Mock Block\" for special type <0>. This building will not export properly. If you don't want to use mock blocks, add \"nomock\" to the last line of the sign.",
+    "translation": "Отсутствует \"Mock Block\" для специального типа <0>. Это здание не будет экспортироваться должным образом. Если вы не хотите использовать макетные блоки, добавьте «nomock» в последнюю строку знака."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "chunk.captionwhite#1",
+    "source": "White dots indicate a chunk which is being kept loaded by a mod (Millénaire or another Forge mod)",
+    "translation": "Белые точки указывают на кусочек, который хранится загруженным модом ( Millénaire или другой модуль Forge)"
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "chunk.settings#1",
+    "source": "Village loading radius: <0> metres. Maximum number of chunks preserving allowed by Forge: <1>.",
+    "translation": "Радиус загрузки поселения: <0> метров. Максимальное количество загруженных чанков, разрешённое Forge: <1>."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "chunk.explanations#1",
+    "source": "Millénaire villages are only active if all their chunks are loaded. The inhabitants of other villages are frozen. Millénaire attempts to force Minecraft to keep the chunks of villages within 200 metres of a player loaded (that value can be changed). The Forge mechanism used for this is limited by default to 200 chunks. You can configure this value in minecraft/config/forgeChunkLoading.cfg. Warning: increasing the number of chunks kept loaded will decrease performance.",
+    "translation": "Millénaire Деревни активны только тогда, когда все их кусочки загружены.  Жители других деревень заморожены. Millénaire попытки принуждения Minecraft для поддержания части деревень в пределах 200 метров от загруженного игрока (это значение может быть изменено).  Для этого используемый механизм Форжирования по умолчанию ограничивается 200 кусочками.  Вы можете настроить это значение в minecraft/config/forgeChunkLoading.cfg.  Предупреждение: увеличение количества загруженных кусков снизит производительность."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "config.page.bonus.desc#1",
+    "source": "Bonus for people who worked on Millénaire (translations, building plans, dialogues, textures, contributions to the wiki ect.) or donated: a free small house available from the Village Chief.",
+    "translation": "Бонус людям, которые работают над Millénaire (переводчики, строительные планы, диалоги, текстуры, вклад в wiki и т.д) или жертвуют для него: бесплатный маленький домик доступен из главного здания деревни."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\strings.txt",
+    "id": "config.send_advancement_login.desc#1",
+    "source": "Whether to send your Minecraft login to the Millénaire server, to allow your advancements to be visible on millenaire.org.",
+    "translation": "Отправьте свой логин Minecraft на сервер Millénaire, чтобы ваши достижения были видны на millenaire.org."
+  },
+  {
+    "lang": "ru",
+    "file": "todeploy\\millenaire\\languages\\ru\\travelbook.txt",
+    "id": "travelbook.trade_good.turmeric.desc#1",
+    "source": "This flavorful spice is necessary for the creation of Murgh Curry and Vegetarian Curry. You'll have to ask an Indian town leader to teach you how to plant it on irrigated farmland.",
+    "translation": "Эта вкусная специя необходима для создания курри Murgh и вегетарианского курри.  Вам придется попросить индийского городского лидера научить вас посадить его на орошаемой сельскохозяйственной земле."
+  },
+  {
+    "lang": "ru",
+    "file": "assets/millenaire/lang/ru_ru.json",
+    "id": null,
+    "source": "/millRenameVillage <current name> <new name> <new qualifier>",
+    "translation": "/millRenameVillage <current name> <new name> <new qualifier>"
+  },
+  {
+    "lang": "ru",
+    "file": "assets/millenaire/lang/ru_ru.json",
+    "id": null,
+    "source": "/millTp <Village name> <PlayerName>",
+    "translation": "/millTp <Village name> <PlayerName>"
+  },
+  {
+    "lang": "ru",
+    "file": "assets/millenaire/lang/ru_ru.json",
+    "id": null,
+    "source": "/millGiveRep <PlayerName> <Village name> <amount>",
+    "translation": "/millGiveRep <PlayerName> <Village name> <amount>"
+  },
+  {
+    "lang": "ru",
+    "file": "assets/millenaire/lang/ru_ru.json",
+    "id": null,
+    "source": "/millImportCulture <culture> <x> <z>",
+    "translation": "/millImportCulture <culture> <x> <z>"
+  },
+  {
+    "lang": "ru",
+    "file": "assets/millenaire/lang/ru_ru.json",
+    "id": null,
+    "source": "/millSpawnVillage <culture> <village type> (<x> <z>) (<completion>)",
+    "translation": "/millSpawnVillage <culture> <village type> (<x> <z>) (<completion>)"
+  },
+  {
+    "lang": "ru",
+    "file": "assets/millenaire/lang/ru_ru.json",
+    "id": null,
+    "source": "/millSpawnLoneBuilding <culture> <lone building type> (<x> <z>) (<completion>)",
+    "translation": "/millSpawnLoneBuilding <culture> <lone building type> (<x> <z>) (<completion>)"
+  },
+  {
+    "lang": "ru",
+    "file": "assets/millenaire/lang/ru_ru.json",
+    "id": null,
+    "source": "/millDebugSendProfiles <user> or millDebugSendProfiles all",
+    "translation": "/millDebugSendProfiles <user> или millDebugSendProfiles all"
+  },
+  {
+    "lang": "ru",
+    "file": "assets/millenaire/lang/ru_ru.json",
+    "id": null,
+    "source": "/millDebugResetVillagers",
+    "translation": "/millDebugResetVillagers"
+  },
+  {
+    "lang": "ru",
+    "file": "assets/millenaire/lang/ru_ru.json",
+    "id": null,
+    "source": "/millListActiveVillages",
+    "translation": "/millListActiveVillages"
+  },
+  {
+    "lang": "ru",
+    "file": "assets/millenaire/lang/ru_ru.json",
+    "id": null,
+    "source": "/millSwitchVillageControl <village name> <player name>",
+    "translation": "/millSwitchVillageControl <village name> <player name>"
+  }
+]

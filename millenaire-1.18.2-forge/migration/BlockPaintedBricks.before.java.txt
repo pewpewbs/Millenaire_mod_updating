@@ -1,0 +1,210 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.block.Block
+ *  net.minecraft.block.BlockPane
+ *  net.minecraft.block.material.Material
+ *  net.minecraft.block.properties.IProperty
+ *  net.minecraft.block.properties.PropertyBool
+ *  net.minecraft.block.state.BlockStateContainer
+ *  net.minecraft.block.state.IBlockState
+ *  net.minecraft.client.renderer.block.model.ModelResourceLocation
+ *  net.minecraft.entity.EntityLivingBase
+ *  net.minecraft.entity.player.EntityPlayer
+ *  net.minecraft.init.Items
+ *  net.minecraft.item.EnumDyeColor
+ *  net.minecraft.item.Item
+ *  net.minecraft.item.ItemStack
+ *  net.minecraft.util.BlockRenderLayer
+ *  net.minecraft.util.EnumFacing
+ *  net.minecraft.util.EnumHand
+ *  net.minecraft.util.math.BlockPos
+ *  net.minecraft.world.IBlockAccess
+ *  net.minecraft.world.World
+ *  net.minecraftforge.client.model.ModelLoader
+ *  net.minecraftforge.fml.relauncher.Side
+ *  net.minecraftforge.fml.relauncher.SideOnly
+ */
+package org.millenaire.common.block;
+
+import java.util.ArrayList;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.IronBarsBlock;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.util.BlockRenderLayer;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.millenaire.common.advancements.MillAdvancements;
+import org.millenaire.common.block.IPaintedBlock;
+import org.millenaire.common.block.MillBlocks;
+import org.millenaire.common.item.ItemPaintBucket;
+import org.millenaire.common.utilities.Point;
+
+public class BlockPaintedBricks
+extends Block
+implements IPaintedBlock, org.millenaire.common.block.LegacyVariantBlock {
+    public static final BooleanProperty TOP_FRIEZE = BooleanProperty.create((String)"top_frieze");
+    public static final BooleanProperty BOTTOM_FRIEZE = BooleanProperty.create((String)"bottom_frieze");
+    private final String blockName;
+    private final String baseBlockName;
+    private final DyeColor colour;
+
+    public static BlockState getBlockStateWithColour(BlockState input, DyeColor colour) {
+        IPaintedBlock paintedBlock = (IPaintedBlock)input.getBlock();
+        Block newBlock = MillBlocks.PAINTED_BRICK_MAP.get(paintedBlock.getBlockType()).get(colour);
+        return newBlock.func_176203_a(input.getBlock().func_176201_c(input));
+    }
+
+    public static String getColorName(DyeColor colour) {
+        String colourName = colour.getName();
+        if (colourName.equalsIgnoreCase("lightBlue")) {
+            colourName = "light_blue";
+        }
+        return colourName;
+    }
+
+    public static DyeColor getColourFromBlockState(BlockState bs) {
+        if (bs.getBlock() instanceof IPaintedBlock) {
+            return ((IPaintedBlock)bs.getBlock()).getDyeColour();
+        }
+        return null;
+    }
+
+    public BlockPaintedBricks(String baseBlockName, DyeColor colour) {
+        super(Material.STONE);
+        this.baseBlockName = baseBlockName;
+        String colourName = BlockPaintedBricks.getColorName(colour);
+        this.blockName = baseBlockName + "_" + colourName;
+        this.colour = colour;
+        this.func_149663_c("millenaire." + this.blockName);
+        this.setRegistryName(this.blockName);
+        this.func_149647_a(MillBlocks.tabMillenaire);
+        this.setHarvestLevel("pickaxe", 0);
+        this.func_149711_c(1.5f);
+        this.func_149752_b(10.0f);
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
+        builder.add(TOP_FRIEZE, BOTTOM_FRIEZE);
+    }
+
+    public int friezePriority(BlockGetter worldIn, BlockPos pos, BlockState ourState, BlockState otherState, Direction side) {
+        if (BlockPaintedBricks.getColourFromBlockState(otherState) == this.colour) {
+            if (otherState.isSideSolid(worldIn, pos, side)) {
+                return 0;
+            }
+            return 3;
+        }
+        if (otherState.func_185890_d(worldIn, pos) == field_185506_k) {
+            return 5;
+        }
+        if (otherState.getBlock() instanceof IronBarsBlock) {
+            return 2;
+        }
+        if (otherState.getBlock() instanceof IPaintedBlock) {
+            return 1;
+        }
+        return 10;
+    }
+
+    public BlockState func_176221_a(BlockState state, BlockGetter worldIn, BlockPos pos) {
+        int bottomPriority;
+        int topPriority = this.friezePriority(worldIn, pos.above(), state, worldIn.getBlockState(pos.above()), Direction.DOWN);
+        if (topPriority > (bottomPriority = this.friezePriority(worldIn, pos.below(), state, worldIn.getBlockState(pos.below()), Direction.UP))) {
+            return state.setValue(TOP_FRIEZE, Boolean.valueOf(true)).setValue(BOTTOM_FRIEZE, Boolean.valueOf(false));
+        }
+        if (bottomPriority > 0) {
+            return state.setValue(BOTTOM_FRIEZE, Boolean.valueOf(true)).setValue(TOP_FRIEZE, Boolean.valueOf(false));
+        }
+        return state.setValue(BOTTOM_FRIEZE, Boolean.valueOf(false)).setValue(TOP_FRIEZE, Boolean.valueOf(false));
+    }
+
+    public BlockRenderLayer func_180664_k() {
+        return BlockRenderLayer.CUTOUT_MIPPED;
+    }
+
+    @Override
+    public String getBlockType() {
+        return this.baseBlockName;
+    }
+
+    @Override
+    public DyeColor getDyeColour() {
+        return this.colour;
+    }
+
+    public int func_176201_c(BlockState state) {
+        return 0;
+    }
+
+    public BlockState func_180642_a(Level worldIn, BlockPos pos, Direction facing, float hitX, float hitY, float hitZ, int meta, LivingEntity placer) {
+        return this.func_176203_a(meta);
+    }
+
+    public BlockState func_176203_a(int meta) {
+        return this.defaultBlockState();
+    }
+
+    @Override
+    @OnlyIn(value=Dist.CLIENT)
+    public void initModel() {
+        ModelLoader.setCustomModelResourceLocation((Item)Item.byBlock((Block)this), (int)0, (ModelResourceLocation)new ModelResourceLocation(this.getRegistryName(), "up=true,down=true"));
+    }
+
+    public boolean func_180639_a(Level worldIn, BlockPos pos, BlockState state, Player player, InteractionHand hand, Direction facing, float hitX, float hitY, float hitZ) {
+        if (player.getInventory().getSelected() != ItemStack.EMPTY && player.getInventory().getSelected().getItem() instanceof ItemPaintBucket) {
+            ItemStack bucket = player.getInventory().getSelected();
+            DyeColor targetColor = ((ItemPaintBucket)player.getInventory().getSelected().getItem()).getColour();
+            if (targetColor != null && this.colour != targetColor) {
+                ArrayList<Point> pointsToTest = new ArrayList<Point>();
+                pointsToTest.add(new Point(pos));
+                int blockColoured = 0;
+                while (!pointsToTest.isEmpty()) {
+                    Point p = (Point)pointsToTest.get(pointsToTest.size() - 1);
+                    BlockState bs = p.getBlockActualState(worldIn);
+                    if (BlockPaintedBricks.getColourFromBlockState(bs) == this.colour) {
+                        p.setBlockState(worldIn, BlockPaintedBricks.getBlockStateWithColour(bs, targetColor));
+                        ++blockColoured;
+                        pointsToTest.add(p.getAbove());
+                        pointsToTest.add(p.getBelow());
+                        pointsToTest.add(p.getNorth());
+                        pointsToTest.add(p.getEast());
+                        pointsToTest.add(p.getSouth());
+                        pointsToTest.add(p.getWest());
+                    }
+                    pointsToTest.remove(p);
+                }
+                if (blockColoured < bucket.getMaxDamage() - bucket.getDamageValue()) {
+                    bucket.func_77972_a(blockColoured, (LivingEntity)player);
+                } else {
+                    player.getInventory().removeItemNoUpdate(player.getInventory().selected);
+                    player.getInventory().add(player.getInventory().selected, new ItemStack(Items.BUCKET));
+                }
+                MillAdvancements.RAINBOW.grant(player);
+                return true;
+            }
+        }
+        return false;
+    }
+}
+

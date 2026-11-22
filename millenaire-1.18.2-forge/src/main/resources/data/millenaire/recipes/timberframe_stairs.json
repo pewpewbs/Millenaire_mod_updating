@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "#  ",
+    "## ",
+    "###"
+  ],
+  "key": {
+    "#": {
+      "item": "millenaire:wood_deco",
+      "type": "forge:nbt"
+    }
+  },
+  "result": {
+    "item": "millenaire:stairs_timberframe",
+    "count": 4
+  }
+}

@@ -1,0 +1,1 @@
+package org.millenaire.common.culture;import org.millenaire.common.item.*;public class Culture {public String key="test";public TradeGood getTradeGood(InvItem item){return new TradeGood(item.item);}public String getReputationLevelLabel(int rep){return "test";}}

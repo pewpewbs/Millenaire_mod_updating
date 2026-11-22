@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "half=bottom": {
+      "model": "millenaire:block/slab_painted_brick_orange_bottom"
+    },
+    "half=top": {
+      "model": "millenaire:block/slab_painted_brick_orange_top"
+    }
+  }
+}

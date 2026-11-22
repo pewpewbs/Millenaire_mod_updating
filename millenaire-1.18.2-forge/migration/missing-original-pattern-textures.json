@@ -1,0 +1,10 @@
+[
+  {
+    "path": "assets/minecraft/textures/entity/shield/seljuk_rel.png",
+    "also_absent_from_original_jar": true
+  },
+  {
+    "path": "assets/minecraft/textures/entity/shield/seljuk_mil.png",
+    "also_absent_from_original_jar": true
+  }
+]

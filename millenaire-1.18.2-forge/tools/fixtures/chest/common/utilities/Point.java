@@ -1,0 +1,2 @@
+package org.millenaire.common.utilities;
+public class Point { private final net.minecraft.core.BlockPos pos; public Point(net.minecraft.core.BlockPos pos){this.pos=pos;} public org.millenaire.common.entity.TileEntityLockedChest getMillChest(net.minecraft.world.level.Level world){return null;} public void write(net.minecraft.nbt.CompoundTag tag,String key){tag.putLong(key,pos.asLong());} public static Point read(net.minecraft.nbt.CompoundTag tag,String key){return tag.contains(key)?new Point(net.minecraft.core.BlockPos.of(tag.getLong(key))):null;} }

@@ -1,0 +1,1 @@
+package org.millenaire.common.network; public class ServerSender { public static void sendAdvancementEarned(net.minecraft.world.entity.player.Player player,String key){} }

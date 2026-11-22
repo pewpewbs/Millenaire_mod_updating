@@ -1,0 +1,1 @@
+package org.millenaire.common.pathing.atomicstryker;public class AStarConfig{}

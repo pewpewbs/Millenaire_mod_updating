@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:smelting",
+  "ingredient": {
+    "type": "forge:nbt",
+    "item": "millenaire:stone_deco"
+  },
+  "result": "millenaire:painted_brick_white",
+  "experience": 1.0,
+  "cookingtime": 200
+}

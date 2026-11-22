@@ -1,0 +1,236 @@
+[
+  {
+    "original_arguments": "\"ciderapple\", 0, 0, 1, 0.05f, false, 0",
+    "durability": 0,
+    "stack_size": 64,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"olives\", 0, 0, 1, 0.05f, false, 0",
+    "durability": 0,
+    "stack_size": 64,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"oliveoil\", 0, 0, 0, 0.0f, true, 0",
+    "durability": 0,
+    "stack_size": 16,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"cider\", 4, 15, 0, 0.0f, true, 5",
+    "durability": 384,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"calva\", 8, 30, 0, 0.0f, true, 10",
+    "durability": 1024,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"boudin\", 0, 0, 8, 1.0f, false, 0",
+    "durability": 384,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"tripes\", 0, 0, 10, 1.0f, false, 0",
+    "durability": 512,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"vegcurry\", 0, 0, 6, 0.6f, false, 0",
+    "durability": 384,
+    "stack_size": 1,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"chickencurry\", 0, 0, 8, 0.8f, false, 0",
+    "durability": 512,
+    "stack_size": 1,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"rasgulla\", 2, 30, 0, 0.0f, false, 0",
+    "durability": 0,
+    "stack_size": 64,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"masa\", 0, 0, 6, 0.6f, false, 0",
+    "durability": 256,
+    "stack_size": 1,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"wah\", 0, 0, 10, 1.0f, false, 0",
+    "durability": 384,
+    "stack_size": 1,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"balche\", 6, 20, 0, 0.0f, true, 7",
+    "durability": 512,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"sikilpah\", 0, 0, 7, 0.7f, false, 0",
+    "durability": 448,
+    "stack_size": 1,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"cacauhaa\", 6, 30, 0, 0.0f, true, 0",
+    "durability": 384,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"udon\", 0, 0, 8, 0.8f, false, 0",
+    "durability": 384,
+    "stack_size": 1,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"sake\", 8, 30, 0, 0.0f, true, 10",
+    "durability": 512,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"ikayaki\", 0, 0, 10, 1.0f, false, 0",
+    "durability": 512,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"feta\", 2, 15, 0, 0.0f, false, 0",
+    "durability": 0,
+    "stack_size": 64,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"souvlaki\", 0, 0, 10, 1.0f, false, 0",
+    "durability": 512,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"winebasic\", 3, 15, 0, 0.0f, true, 5",
+    "durability": 384,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"winefancy\", 8, 30, 0, 0.0f, true, 5",
+    "durability": 1024,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"bearmeat_raw\", 0, 0, 4, 0.5f, false, 0",
+    "durability": 0,
+    "stack_size": 64,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"bearmeat_cooked\", 0, 0, 10, 1.0f, false, 0",
+    "durability": 0,
+    "stack_size": 64,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"wolfmeat_raw\", 0, 0, 3, 0.3f, false, 0",
+    "durability": 0,
+    "stack_size": 64,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"wolfmeat_cooked\", 0, 0, 5, 0.6f, false, 0",
+    "durability": 0,
+    "stack_size": 64,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"seafood_raw\", 0, 0, 2, 0.2f, false, 0",
+    "durability": 0,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"seafood_cooked\", 0, 0, 2, 0.25f, false, 0",
+    "durability": 0,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"inuitpotatostew\", 0, 0, 6, 0.6f, false, 0",
+    "durability": 384,
+    "stack_size": 1,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"inuitmeatystew\", 0, 0, 8, 0.8f, false, 0",
+    "durability": 512,
+    "stack_size": 1,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"inuitbearstew\", 0, 0, 8, 1.0f, false, 0",
+    "durability": 512,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"ayran\", 3, 15, 0, 0.2f, true, 2",
+    "durability": 6,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"yogurt\", 0, 15, 0, 0.4f, false, 0",
+    "durability": 0,
+    "stack_size": 64,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"pide\", 0, 0, 8, 1.0f, false, 0",
+    "durability": 8,
+    "stack_size": 1,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"lokum\", 0, 0, 3, 0.0f, false, 0",
+    "durability": 0,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"helva\", 0, 0, 5, 0.0f, false, 0",
+    "durability": 0,
+    "stack_size": 1,
+    "always_edible": true
+  },
+  {
+    "original_arguments": "\"pistachios\", 0, 0, 1, 0.1f, false, 0",
+    "durability": 0,
+    "stack_size": 64,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"cherries\", 0, 0, 1, 0.1f, false, 0",
+    "durability": 0,
+    "stack_size": 64,
+    "always_edible": false
+  },
+  {
+    "original_arguments": "\"cherry_blossom\", 0, 0, 1, 0.1f, false, 0",
+    "durability": 0,
+    "stack_size": 64,
+    "always_edible": false
+  }
+]

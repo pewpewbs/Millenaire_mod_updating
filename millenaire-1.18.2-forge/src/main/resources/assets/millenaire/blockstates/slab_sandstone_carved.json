@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "half=bottom": {
+      "model": "millenaire:block/slab_sandstone_carved_bottom"
+    },
+    "half=top": {
+      "model": "millenaire:block/slab_sandstone_carved_top"
+    }
+  }
+}

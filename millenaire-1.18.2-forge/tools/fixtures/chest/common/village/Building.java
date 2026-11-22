@@ -1,0 +1,2 @@
+package org.millenaire.common.village;
+public class Building { public boolean chestLocked; public int invalidations; public void invalidateInventoryCache() { invalidations++; } public String getNativeBuildingName(){return "test";} public boolean lockedForPlayer(net.minecraft.world.entity.player.Player player){return chestLocked;} }

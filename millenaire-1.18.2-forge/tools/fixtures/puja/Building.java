@@ -1,0 +1,1 @@
+package org.millenaire.common.village;public class Building { public net.minecraft.world.level.Level world; public boolean containsTags(String tag){return false;} public Building getTownHall(){return this;} public void requestSave(String why){} }

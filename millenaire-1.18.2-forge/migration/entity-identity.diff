@@ -1,0 +1,66 @@
+--- before/entity/MillVillager.java
++++ after/entity/MillVillager.java
+@@ -891,7 +891,10 @@
+             Exception e = new Exception();
+             MillLog.printException("Despawning villager: " + this, e);
+         }
+-        this.mw.clearVillagerOfId(this.getVillagerId());
++        // Removing a duplicate must not unregister the retained resident.
++        if (this.mw.getVillagerById(this.getVillagerId()) == this) {
++            this.mw.clearVillagerOfId(this.getVillagerId());
++        }
+         super.remove(Entity.RemovalReason.DISCARDED);
+     }
+ 
+@@ -910,13 +913,8 @@
+         return AStarStatic.getIntCoordFromDoubleCoord(input);
+     }
+ 
+-    public boolean equals(Object obj) {
+-        if (obj == null || !(obj instanceof MillVillager)) {
+-            return false;
+-        }
+-        MillVillager v = (MillVillager)obj;
+-        return this.getVillagerId() == v.villagerId;
+-    }
++    // Entity equality/hashCode must remain Minecraft's runtime entity identity.
++    // Persistent villager IDs are used explicitly by MillWorldData's maps.
+ 
+     public void lookAt(Entity par1Entity, float par2, float par3) {
+     }
+@@ -1582,9 +1580,6 @@
+         return this.vtype.maleChild != null && this.vtype.femaleChild != null;
+     }
+ 
+-    public int hashCode() {
+-        return (int)this.getVillagerId();
+-    }
+ 
+     public boolean helpsInAttacks() {
+         return this.vtype.helpInAttacks;
+--- before/world/MillWorldData.java
++++ after/world/MillWorldData.java
+@@ -587,7 +587,7 @@
+         }
+         ArrayList<MillVillager> villagersToDespawn = new ArrayList<MillVillager>();
+         for (Entity entity : loadedEntities) {
+-            if (!(entity instanceof MillVillager)) continue;
++            if (!(entity instanceof MillVillager) || entity.isRemoved()) continue;
+             MillVillager villager = (MillVillager)entity;
+             if (villager.getVillagerId() == 7165774886634408160L && !this.world.isClientSide) {
+                 MillLog.major(villager, "Villager with forbidden ID again.");
+@@ -599,9 +599,12 @@
+                 villagersToDespawn.add(villager);
+                 continue;
+             }
+-            if (this.villagers.containsKey(villager.getVillagerId()) && MillConfigValues.LogVillagerSpawn >= 1) {
+-                MillLog.major(this, "Duplicate villager: " + villager);
++            if (this.villagers.containsKey(villager.getVillagerId())) {
++                if (MillConfigValues.LogVillagerSpawn >= 1) {
++                    MillLog.major(this, "Duplicate villager: " + villager);
++                }
+                 villagersToDespawn.add(villager);
++                continue;
+             }
+             this.villagers.put(villager.getVillagerId(), villager);
+             if (villager.getTownHall() != null && villagersBuilding.get(villager.getTownHall()) != null) {

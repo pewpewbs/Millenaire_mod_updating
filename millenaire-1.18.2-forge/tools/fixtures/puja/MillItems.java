@@ -1,0 +1,1 @@
+package org.millenaire.common.item;import net.minecraft.world.item.*;public class MillItems {public static Item DENIER=Items.IRON_NUGGET,DENIER_ARGENT=Items.GOLD_NUGGET,DENIER_OR=Items.GOLD_INGOT,CACAUHAA=Items.COCOA_BEANS,RICE=Items.WHEAT,RASGULLA=Items.COOKIE;}

@@ -1,0 +1,1 @@
+package org.millenaire.common.block;public class BlockMillWall extends net.minecraft.world.level.block.WallBlock { public BlockMillWall(){super(Properties.of(net.minecraft.world.level.material.Material.STONE));}}

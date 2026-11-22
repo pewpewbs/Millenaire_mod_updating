@@ -1,0 +1,2 @@
+package org.millenaire.common.utilities;
+public class LanguageUtilities { public static String string(String key){return key;} public static net.minecraft.network.chat.Component textComponent(String key){return new net.minecraft.network.chat.TextComponent(key);} }

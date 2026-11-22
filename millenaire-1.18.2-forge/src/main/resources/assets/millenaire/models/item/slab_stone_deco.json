@@ -1,0 +1,41 @@
+{
+  "parent": "millenaire:block/mudbrick_bottom",
+  "overrides": [
+    {
+      "predicate": {
+        "millenaire:variant": 1
+      },
+      "model": "millenaire:item/slab_stone_deco_cookedbrick"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 2
+      },
+      "model": "millenaire:item/slab_stone_deco_mayangoldblock"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 3
+      },
+      "model": "millenaire:item/slab_stone_deco_byzantine_mosaic_red"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 4
+      },
+      "model": "millenaire:item/slab_stone_deco_byzantine_mosaic_blue"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 5
+      },
+      "model": "millenaire:item/slab_stone_deco_lightbluebrick_block"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 6
+      },
+      "model": "millenaire:item/slab_stone_deco_lightbluechiseled_block"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "parent": "millenaire:item/freeblock_0",
+  "overrides": [
+    {
+      "predicate": {
+        "millenaire:variant": 1
+      },
+      "model": "millenaire:item/freeblock_1"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 2
+      },
+      "model": "millenaire:item/freeblock_2"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 3
+      },
+      "model": "millenaire:item/freeblock_3"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 4
+      },
+      "model": "millenaire:item/freeblock_4"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 5
+      },
+      "model": "millenaire:item/freeblock_5"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 6
+      },
+      "model": "millenaire:item/freeblock_6"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 7
+      },
+      "model": "millenaire:item/freeblock_7"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 8
+      },
+      "model": "millenaire:item/freeblock_8"
+    }
+  ]
+}

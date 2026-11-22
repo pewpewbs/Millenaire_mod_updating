@@ -1,0 +1,1 @@
+package org.millenaire.common.annotedparameters;public class AnnotedParameter{public enum ParameterType{ENTITY_ID,BONUS_ITEM_ADD,BOOLEAN}public static class BonusItem{public String tag;public int chance;public org.millenaire.common.item.InvItem item;}}

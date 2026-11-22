@@ -1,0 +1,17 @@
+{
+  "parent": "millenaire:block/mudbrick_smooth",
+  "overrides": [
+    {
+      "predicate": {
+        "millenaire:variant": 1
+      },
+      "model": "millenaire:item/extended_mud_brick_mudbrick_seljuk_decorated"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 2
+      },
+      "model": "millenaire:item/extended_mud_brick_mudbrick_seljuk_ornamented"
+    }
+  ]
+}

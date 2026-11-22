@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class MillLog{public static class MillenaireException extends Exception{}public static void printException(Exception e){throw new AssertionError(e);}public static void major(Object o,String s){}public static void error(Object o,String s){}}

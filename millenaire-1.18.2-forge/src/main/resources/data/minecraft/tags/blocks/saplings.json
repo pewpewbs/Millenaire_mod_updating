@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "millenaire:sapling_appletree",
+    "millenaire:sapling_cherry",
+    "millenaire:sapling_olivetree",
+    "millenaire:sapling_pistachio",
+    "millenaire:sapling_sakura"
+  ]
+}

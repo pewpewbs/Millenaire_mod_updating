@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "###"
+  ],
+  "key": {
+    "#": {
+      "item": "millenaire:wood_deco",
+      "type": "forge:nbt",
+      "nbt": {
+        "MillenaireVariant": 2
+      }
+    }
+  },
+  "result": {
+    "item": "millenaire:slab_wood_deco",
+    "count": 6,
+    "nbt": {
+      "MillenaireVariant": 2
+    }
+  }
+}

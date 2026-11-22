@@ -1,0 +1,1 @@
+package org.millenaire.common.block; public final class MillBlocks { public static final net.minecraft.world.item.CreativeModeTab tabMillenaireContentCreator = net.minecraft.world.item.CreativeModeTab.TAB_MISC; }

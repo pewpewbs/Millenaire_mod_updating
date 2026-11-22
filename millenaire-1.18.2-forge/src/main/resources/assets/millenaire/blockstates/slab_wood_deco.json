@@ -1,0 +1,40 @@
+{
+  "variants": {
+    "type=bottom,variant=timberframeplain": {
+      "model": "millenaire:block/timberframe_bottom"
+    },
+    "type=top,variant=timberframeplain": {
+      "model": "millenaire:block/timberframe_top"
+    },
+    "type=bottom,variant=timberframecross": {
+      "model": "millenaire:block/timberframe_bottom"
+    },
+    "type=top,variant=timberframecross": {
+      "model": "millenaire:block/timberframe_top"
+    },
+    "type=bottom,variant=thatch": {
+      "model": "millenaire:block/thatch_bottom"
+    },
+    "type=top,variant=thatch": {
+      "model": "millenaire:block/thatch_top"
+    },
+    "type=double,variant=timberframeplain": {
+      "model": "millenaire:block/timberframeplain"
+    },
+    "type=double,variant=timberframecross": {
+      "model": "millenaire:block/timberframecross"
+    },
+    "type=double,variant=thatch": {
+      "model": "millenaire:block/thatch"
+    },
+    "type=double,variant=beehive": {
+      "model": "millenaire:block/beehive"
+    },
+    "type=bottom,variant=beehive": {
+      "model": "millenaire:block/beehive"
+    },
+    "type=top,variant=beehive": {
+      "model": "millenaire:block/beehive"
+    }
+  }
+}

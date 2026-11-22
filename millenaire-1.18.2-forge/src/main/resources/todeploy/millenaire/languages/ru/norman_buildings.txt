@@ -1,0 +1,158 @@
+abbey_A0=Аббатство
+abbey_A_cell_0_A0=Келья монаха
+abbey_A_cell_1_A0=Келья монаха
+abbey_A_cell_2_A0=Келья монаха
+abbey_A_altar_A0=Алтарь
+abbey_A_tower_A0=Башня аббатства
+abbey_A_tower_B0=Башня аббатства
+alchemyworkshop_A0=Алхимическая мастерская
+archives_A0=Архив
+armoury_A0=Оружейная
+bakery_A0=Пекарня
+carpenterhouse_A0=Дом плотника
+cattlefarm_A0=Коровья ферма
+church_A0=Церковь
+church_A2=Церковь
+chickenfarmnorm_a0=Куриная ферма
+darkoakgrove_a0=Роща тёмного дуба
+farm_A0=Ферма
+farm_B0=Ферма
+forge_A0=Складка
+fort_A0=Форт
+fort_A_lefttower_A0=Охранная башня
+fort_A_righttower_A0=Охранная башня
+fountain_A0=Фонтан
+grove_A0=Гров .
+grove_B0=Гров .
+grove_C0=Гров .
+guardhouse_A0=Дом охраны
+guesthouse_A0=Гостевой дом
+guildhouse_A0=Зал гильдии
+inn_A0=Постоялый двор
+largefort_A0=Большая крепость
+largefort_A_armoury_A0=Большой форт-оружейник
+largefort_A_barrack_A0=Охраняющая комната
+largefountain_A0=Большой фонтан
+lumbermanhut_A0=Лемберманская коробка
+lumbermanhut_B0=Лемберманская коробка
+manor_A0=Усадьба
+market_A0=Рынок
+pigfarm_A0=Ферма свиней
+playerestate_A0=Городская недвижимость
+playerhugefield_A0=Огромный участок
+playerlargefield_A0=Большой участок
+playerlargefort_A0=Большой форт игрока
+playerlargehouse_A0=Буржуазный дом
+playersmallfield_A0=Малый участок
+playersmallhouse_A0=Малый дом
+presbytery_A0=Дом священника
+quarry_A0=Кавёр
+sheepchickenfarm_A0=Овцеводство
+tavern_A0=Таверна
+townhall_A0=Ратуша
+townhallagricole_A0=Ратуша
+watchtower_A0=Сторожевая башня
+well_A0=Что ж,
+
+playerfort_A0=Форт игрока
+anomalyone_A0=Аномалия
+anomalytwo_A0=Аномалия
+anomalythree_A0=Аномалия
+
+custom_chickenfarm=Куриная ферма
+
+abandonedmill_A0=Заброшенная мельница
+abandonedmine_A0=Оставленная шахта
+abandonedtower_A0=Разрушенная башня
+alchemisttower_A0=Алхимическая башня
+banditlair_A0=Бандит Лаир
+bandittower_A0=Башня бандитов
+feloncastle_A0=Замок бандитов
+loneabbey_A0=Одинокая аббатство
+loneabbey_A_altar_A0=Алтарь
+lonegrove_A0=Одинокий лес
+lonegrovetaiga_A0=Одинокий лес
+loneinn_A0=Одинокий отель
+loneinn_A_stall_0_A0=Одинокая гостиница
+loneinn_A_stall_1_A0=Одинокая гостиница
+loneroadhouse_A0=Дом в одиночестве
+lonelumbermanhut_A0=Лемберманская коробка
+lonelumbermantaigahut_A0=Лемберманская коробка
+lonemill_A0=Одинокая водяная мельница
+lonemine_A0=Одинокая шахта
+loneorchard_A0=Одинокий огород
+pantheon_A0=Пантеон
+ruinedfarm_A0=Разрушенная ферма
+ruinedfarm_B0=Разрушенная ферма
+ruinedfarm_C0=Бывшая ферма
+
+gifthouse_a0=Подарочный дом
+
+glassblower_a0=Мастерская стеклодува
+weaverhouse_a0=Ткацкая мастерская
+
+smallorchard_a0=Малый фруктовый сад
+largeorchard_a0=Сидроварня
+
+abbaye_a0=Кафедральный собор
+manor_a_inn_a0=Гостиница поместья
+pilgrimhall_a0=Зал Паломников
+warehouse_a0=Склад
+workerhall_a0=Зал работников
+
+abbaye_A0=
+abbaye_A_altar_A0=Алтарь
+abbaye_A_apse_bottom_A0=Апсе (Север)
+abbaye_A_apse_top_A0=Апсе (Юг)
+abbaye_A_choir_bottom_A0=Хор (Север)
+abbaye_A_choir_top_A0=Хор (Юг)
+abbaye_A_confessional_A0=Признание
+abbaye_A_council_A0=Палата Совета
+abbaye_A_dome_A0=
+abbaye_A_library_A0=Библиотека
+abbaye_A_nave_left_bottom_A0=Корабль (северо-восток)
+abbaye_A_nave_left_top_A0=Корабль (Юго-Восток)
+abbaye_A_nave_right_bottom_A0=Корабль (северо-запад)
+abbaye_A_nave_right_top_A0=Корабль (Юго-Запад)
+abbaye_A_organ_A0=Орган
+abbaye_A_pews_A0=Пейзажи
+abbaye_A_portal_A0=Портал
+abbaye_A_pulpit_A0=Престол
+abbaye_A_tower_bottom_A0=Северная башня
+abbaye_A_tower_top_A0=Южная башня
+abbaye_A_transept_bottom_A0=Северный трансепт
+abbaye_A_transept_top_A0=Южный трансепт
+abbaye_A_treasury_A0=Церковный сокровище
+
+guardroom_a0=Комната охраны
+largeguardhouse_a0=Большой Дом Охраны
+largeinn_a0=Постоялый двор
+largeinn_a_dormitorymen_a0=Мужское общежитие
+largeinn_a_dormitorywomen_a0=Женское общежитие
+largeinn_a_tavern_a0=
+residence_a0=Епископский дворец
+residence_a_orderoutpost_a0=Штаб-квартира Ордена
+residence_a_priest_a0=Комната священника
+residence_a_vicar_a0=Комната викария
+
+
+
+
+full_wall_gateway_a0=Вход в деревню
+full_wall_a0=Стена деревни
+full_wall_slope_right1_a0=Стена деревни
+full_wall_slope_right2_a0=Стена деревни
+full_wall_slope_left3_a0=Стена деревни
+full_wall_slope_left2_a0=Стена деревни
+full_wall_slope_left1_a0=Стена деревни
+full_wall_slope_right3_a0=Стена деревни
+
+full_wall_tower_a0=Стена башни
+full_wall_cap_both_a0=Конец стены
+full_wall_cap_right_a0=Конец стены
+full_wall_cap_left_a0=Конец стены
+full_wall_corner_a0=Угловая башня
+
+borderpost_a0=Пограничный пост
+borderpost_corner_a0=Пограничный пост (угол)
+borderpost_gate_a0=Пограничный пост(Вход)

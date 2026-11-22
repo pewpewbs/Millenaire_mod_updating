@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "stable=false": {
+      "model": "millenaire:block/pathsandstone"
+    },
+    "stable=true": {
+      "model": "millenaire:block/pathsandstone"
+    }
+  }
+}

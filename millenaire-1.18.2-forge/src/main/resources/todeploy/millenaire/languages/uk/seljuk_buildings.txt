@@ -1,0 +1,141 @@
+
+//core buildings
+
+abdesthane_A0=Абестан
+armoury_A0=Зброярня
+barracks_A0=Казарми
+barracks_A_bed0_A0=Пойом солдата
+barracks_A_bed1_A0=Пойом солдата
+barracks_A_bed2_A0=Пойом солдата
+barracks_A_bed3_A0=Пойом солдата
+barracks_A_bed4_A0=Пойом солдата
+barracks_A_bed5_A0=Пойом солдата
+barracks_A_parol0_A0=Патрульний вузол
+barracks_A_parol1_A0=Патрульний вузол
+barracks_A_parol2_A0=Патрульний вузол
+barracks_a_patrol0_a0=Патрульний вузол
+barracks_a_patrol1_a0=Патрульний вузол
+barracks_a_patrol2_a0=Патрульний вузол
+barracks_A_training_A0=Майданчик навчання
+barrackssmall_A0=Маленькі казарми
+barrackssmall_A_bed0_A0=Пойом солдата
+barrackssmall_A_bed1_A0=Пойом солдата
+barrackssmall_A_patrol_A0=Патрульний вузол
+bigwell_A0=Великий скважина
+brick_A0=Брічковий печ
+cesme_A0=Цесме
+cottonfarm_A0=Памукова ферма
+cottonfield_A0=Памуково поле
+cowfarm_A0=Ферма корів
+fishery_A0=Рівніцтво
+flowerplant_A0=Цветовий сад
+flowerplantsmall_A0=Маленький квіточий сад
+gölgealti_A0=Гогельті
+hamambath_A0=Хамам
+hamambath_A_female_A0=Хамам жіночий бок
+imamshouse_A0=Дом Імама
+inn_A0=Заїжджий двір
+kitchen_A0=Кухня
+kitchen_A_ayran_A0=Зон їстини
+lumbermanshouse_A0=Дом лісору
+market_A0=Базар
+mill_A0=Мельня
+mine_brick_A0=Шахта
+mine_brick_B0=Шахта
+mosque_A0=Мечеть
+mosque_a_archive_A0=Архів
+mosque_a_femaleside_A0=Жінська сторона мечеть
+node_A0=Нод шляху
+olivefarm_A0=Оливкова ферма
+passnode_A0=Переїзд
+peasanthouse_A0=Селянський будинок
+peasanthouse_B0=Селянський будинок
+peasanthouse_C0=Селянський будинок
+pistachiotrees_A0=Дерева пістахію
+sheepfarm_A0=Овчіна ферма
+smallmosque_A0=Маленька мечеть
+smallmosque_a_female_A0=Жінська сторона мечеть
+stonecraftsman_A0=Дом каменного майстра
+sugarcanefarm_A0=Ферма цукрової тростини
+toolsmith_A0=Коваль інструментів
+watchtower_A0=Вартова вежа
+watchtower_a_patrol_A0=Патрульний вузол
+watchtower_a_soldier0_A0=Пойом солдата
+watchtower_a_soldier1_A0=Пойом солдата
+weaver_A0=Ткач
+well_A0=Ну, добре.
+wheatpaddy_A0=Ферма пшениці
+
+
+//lone buildings
+
+banditcamp_A0=Бандітський табір
+bandittower_A0=Бандітська вежа
+bath_abandoned_A0=Забудована ванна
+lonecowfarm_A0=Ферма самотніх корів
+lonefarm_A0=Одинока ферма
+lonemine_A0=Одинокий рудник
+lonemarket_A0=Нод запізнення
+lonemarket_A_market_A0=Базар
+ruinlonemine_A0=Руїни
+ruin_A0=Руїни
+ruinwell_A0=Руїни
+ruinwall_A0=Руїни
+
+
+//player buildings
+
+playerhousegift_A0=Дом селянина
+playerhousemed_A0=Маленьке місце
+playerhousemed2_A0=Середній будинок
+playerhousesmall_A0=Малий будинок
+playersmall1_A0=Мала ділянка
+playersmall2_A0=Стінаний сюжет
+
+
+//townhall buildings
+
+gfarm_A0=Велика ферма
+gfarm_a_inn_A0=Великий фермерський готель
+gmarket_A0=Великий ринок
+gmarket_a_inn_A0=Гранд Маркет Ін
+gmarket_a_market_A0=Великий ринковий базар
+hamlettownhall_A0=Ратуша
+hamlettownhall_A_inn_A0=Заїжджий двір при ратуші
+hamlettownhallplayer_A0=Ратуша
+hamlettownhallplayer_A_inn_A0=Заїжджий двір при ратуші
+sarayfort_A0=Засилений Сарай
+sarayfort_a_imams_A0=Дом Імама
+sarayfort_a_market_A0=Форт-Базар
+sarayfort_a_soldierR1_A0=Пойом форт-солдата
+sarayfort_a_soldierR2_A0=Пойом форт-солдата
+sarayfort_a_soldierL1_A0=Пойом форт-солдата
+sarayfort_a_soldierL2_A0=Пойом форт-солдата
+sarayfortplayer_A0=Гравець у фортеці Сарай
+thmosque_A0=Велика мечеть
+thmosque_a_archive_A0=Архів Великої мечети
+thmosque_a_inn_A0=Великий мечеть Ін
+thmosque_a_femaleside_A0=Жінська сторона мечеть
+thmosque_a_maleside_A0=Чоловіцька сторона мечети
+
+
+//walls
+
+full_wall_gateway_a0=Віцебські ворота
+full_wall_a0=Сцяна села
+full_wall_slope_right1_a0=Сцяна села
+full_wall_slope_right2_a0=Сцяна села
+full_wall_slope_left3_a0=Сцяна села
+full_wall_slope_left2_a0=Сцяна села
+full_wall_slope_left1_a0=Сцяна села
+full_wall_slope_right3_a0=Сцяна села
+
+full_wall_tower_a0=Сцяжна вежа
+full_wall_cap_both_a0=Останній стіна
+full_wall_cap_right_a0=Останній стіна
+full_wall_cap_left_a0=Останній стіна
+full_wall_corner_a0=Кутовий веž
+
+borderpost_a0=Прикордонний пост
+borderpost_corner_a0=Прикордонний пост (кут)
+borderpost_gate_a0=Прикордонний пункт (вхід)

@@ -1,0 +1,1 @@
+package org.millenaire.common.block;public class MillBlocks{public static final BlockSnailSoil SNAIL_SOIL=new BlockSnailSoil("snail_soil");}

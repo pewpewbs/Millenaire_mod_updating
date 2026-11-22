@@ -1,0 +1,23 @@
+{
+  "parent": "millenaire:block/timberframeplain",
+  "overrides": [
+    {
+      "predicate": {
+        "millenaire:variant": 1
+      },
+      "model": "millenaire:item/wood_deco_timberframecross"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 2
+      },
+      "model": "millenaire:item/wood_deco_thatch"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 3
+      },
+      "model": "millenaire:item/wood_deco_beehive"
+    }
+  ]
+}

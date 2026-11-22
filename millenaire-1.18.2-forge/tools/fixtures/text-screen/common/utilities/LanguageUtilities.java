@@ -1,0 +1,2 @@
+package org.millenaire.common.utilities;
+public class LanguageUtilities { public static String string(String key,String... args){return key;} }

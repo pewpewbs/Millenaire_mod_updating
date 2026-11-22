@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class Point{public net.minecraft.world.level.block.entity.BrewingStandBlockEntity stand;public net.minecraft.world.level.block.entity.BrewingStandBlockEntity getBrewingStand(net.minecraft.world.level.Level world){return stand;}}

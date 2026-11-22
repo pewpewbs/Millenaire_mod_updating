@@ -1,0 +1,100 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  javax.vecmath.Quat4f
+ *  javax.vecmath.Vector3f
+ *  net.minecraft.block.state.IBlockState
+ *  net.minecraft.client.Minecraft
+ *  net.minecraft.client.renderer.GlStateManager
+ *  net.minecraft.client.renderer.RenderItem
+ *  net.minecraft.client.renderer.block.model.ItemCameraTransforms$TransformType
+ *  net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer
+ *  net.minecraft.item.ItemStack
+ *  net.minecraftforge.common.model.TRSRTransformation
+ *  org.lwjgl.util.vector.Quaternion
+ */
+package org.millenaire.client.render;
+
+import javax.vecmath.Quat4f;
+import javax.vecmath.Vector3f;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.platform.GlStateManager;
+import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.world.item.ItemStack;
+import com.mojang.math.Transformation;
+import org.lwjgl.util.vector.Quaternion;
+import org.millenaire.common.block.BlockFirePit;
+import org.millenaire.common.entity.TileEntityFirePit;
+
+public class TESRFirePit
+extends BlockEntityRenderer<TileEntityFirePit> {
+    private static final Transformation[] COOKING_POSITIONS = new Transformation[]{TESRFirePit.get(0.5f, 1.0f, 0.4f, 25.0f, 180.0f, -45.0f, 0.35f), TESRFirePit.get(0.5f, 0.9f, 0.5f, 0.0f, 45.0f, -45.0f, 0.35f), TESRFirePit.get(0.5f, 1.0f, 0.6f, -25.0f, 180.0f, -45.0f, 0.35f)};
+    private static final Transformation[] COOKED_POSITIONS = new Transformation[]{TESRFirePit.get(0.5f, 0.9f, 0.4f, 25.0f, 180.0f, -45.0f, 0.35f), TESRFirePit.get(0.5f, 0.9f, 0.5f, 0.0f, -45.0f, -45.0f, 0.35f), TESRFirePit.get(0.5f, 0.9f, 0.6f, -25.0f, 180.0f, -45.0f, 0.35f)};
+    private static Quaternion transformation = new Quaternion();
+
+    private static void apply(Transformation transform) {
+        Vector3f translate = transform.getTranslation();
+        Quat4f left = transform.getLeftRot();
+        Quat4f right = transform.getRightRot();
+        Vector3f scale = transform.getScale();
+        GlStateManager.func_179109_b((float)translate.x, (float)translate.y, (float)translate.z);
+        transformation.set(left.x, left.y, left.z, left.w);
+        GlStateManager.func_187444_a((Quaternion)transformation);
+        transformation.set(right.x, right.y, right.z, right.w);
+        GlStateManager.func_187444_a((Quaternion)transformation);
+        GlStateManager.func_179152_a((float)scale.x, (float)scale.y, (float)scale.z);
+    }
+
+    private static Transformation get(float tx, float ty, float tz, float ax, float ay, float az, float s) {
+        return new Transformation(new Vector3f(tx, ty, tz), Transformation.quatFromXYZDegrees((Vector3f)new Vector3f(ax, ay, az)), new Vector3f(s, s, s), null);
+    }
+
+    private static void render(ItemStack stack, ItemRenderer item) {
+        item.func_181564_a(stack, ItemTransforms.TransformType.FIXED);
+    }
+
+    private static void renderPlacedItem(ItemRenderer item, ItemStack stack, Transformation transform) {
+        if (!stack.isEmpty()) {
+            GlStateManager.func_179094_E();
+            TESRFirePit.apply(transform);
+            TESRFirePit.render(stack, item);
+            GlStateManager.func_179121_F();
+        }
+    }
+
+    public void render(TileEntityFirePit te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
+        ItemRenderer item = Minecraft.getInstance().getItemRenderer();
+        BlockState firePitBS = te.getLevel().getBlockState(te.getBlockPos());
+        if (!(firePitBS.getBlock() instanceof BlockFirePit)) {
+            return;
+        }
+        double alignment = ((BlockFirePit.EnumAlignment)((Object)firePitBS.getValue(BlockFirePit.ALIGNMENT))).angle;
+        GlStateManager.func_179094_E();
+        GlStateManager.func_179137_b((double)(x + 0.5), (double)(y + 0.5), (double)(z + 0.5));
+        GlStateManager.func_179114_b((float)((float)alignment), (float)0.0f, (float)1.0f, (float)0.0f);
+        GlStateManager.func_179137_b((double)-0.5, (double)-0.5, (double)-0.5);
+        ItemStack fuel = te.fuel.getStackInSlot(0);
+        if (!fuel.isEmpty()) {
+            GlStateManager.func_179094_E();
+            GlStateManager.func_179137_b((double)0.5, (double)0.2, (double)0.5);
+            GlStateManager.func_179114_b((float)90.0f, (float)1.0f, (float)0.0f, (float)0.0f);
+            int posTotal = te.getBlockPos().getX() + te.getBlockPos().getY() + te.getBlockPos().getZ() & 3;
+            GlStateManager.func_179114_b((float)(90 * posTotal), (float)0.0f, (float)0.0f, (float)1.0f);
+            GlStateManager.func_179139_a((double)0.5, (double)0.5, (double)0.5);
+            TESRFirePit.render(fuel, item);
+            GlStateManager.func_179121_F();
+        }
+        for (int i = 0; i < 3; ++i) {
+            ItemStack input = te.inputs.getStackInSlot(i);
+            ItemStack output = te.outputs.getStackInSlot(i);
+            TESRFirePit.renderPlacedItem(item, input, COOKING_POSITIONS[i]);
+            TESRFirePit.renderPlacedItem(item, output, COOKED_POSITIONS[i]);
+        }
+        GlStateManager.func_179121_F();
+    }
+}
+

@@ -1,0 +1,88 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.advancements.CriteriaTriggers
+ *  net.minecraft.block.Block
+ *  net.minecraft.block.state.IBlockState
+ *  net.minecraft.entity.EntityLivingBase
+ *  net.minecraft.entity.player.EntityPlayer
+ *  net.minecraft.entity.player.EntityPlayerMP
+ *  net.minecraft.item.ItemStack
+ *  net.minecraft.util.EnumActionResult
+ *  net.minecraft.util.EnumFacing
+ *  net.minecraft.util.EnumHand
+ *  net.minecraft.util.math.BlockPos
+ *  net.minecraft.world.IBlockAccess
+ *  net.minecraft.world.World
+ *  net.minecraftforge.common.EnumPlantType
+ *  net.minecraftforge.common.IPlantable
+ */
+package org.millenaire.common.item;
+
+import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.common.EnumPlantType;
+import net.minecraftforge.common.IPlantable;
+import org.millenaire.common.advancements.MillAdvancements;
+import org.millenaire.common.config.MillConfigValues;
+import org.millenaire.common.forge.Mill;
+import org.millenaire.common.item.ItemMill;
+import org.millenaire.common.network.ServerSender;
+import org.millenaire.common.world.UserProfile;
+
+public class ItemMillSeeds
+extends ItemMill
+implements IPlantable {
+    public final Block crops;
+    public final String cropKey;
+
+    public ItemMillSeeds(Block crops, String cropKey) {
+        super(cropKey);
+        this.crops = crops;
+        this.cropKey = cropKey;
+    }
+
+    public BlockState getPlant(BlockGetter world, BlockPos pos) {
+        return this.crops.defaultBlockState();
+    }
+
+    public EnumPlantType getPlantType(BlockGetter world, BlockPos pos) {
+        return EnumPlantType.Crop;
+    }
+
+    public InteractionResult func_180614_a(Player player, Level world, BlockPos pos, InteractionHand hand, Direction facing, float hitX, float hitY, float hitZ) {
+        ItemStack itemstack = player.getItemInHand(hand);
+        BlockState state = world.getBlockState(pos);
+        if (facing == Direction.UP && player.mayUseItemAt(pos.relative(facing), facing, itemstack) && state.getBlock().canSustainPlant(state, (BlockGetter)world, pos, Direction.UP, (IPlantable)this) && world.isEmptyBlock(pos.above())) {
+            UserProfile profile = Mill.getMillWorld(world).getProfile(player);
+            if (!profile.isTagSet("cropplanting_" + this.cropKey) && !MillConfigValues.DEV) {
+                if (!world.isClientSide) {
+                    ServerSender.sendTranslatedSentence(player, 'f', "ui.cropplantingknowledge", new String[0]);
+                }
+                return InteractionResult.FAIL;
+            }
+            world.setBlockAndUpdate(pos.above(), this.crops.defaultBlockState());
+            this.crops.setPlacedBy(world, pos.above(), this.crops.defaultBlockState(), (LivingEntity)player, itemstack);
+            MillAdvancements.MASTER_FARMER.grant(player);
+            if (player instanceof ServerPlayer) {
+                CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer)player, pos.above(), itemstack);
+            }
+            itemstack.shrink(1);
+            return InteractionResult.SUCCESS;
+        }
+        return InteractionResult.FAIL;
+    }
+}
+

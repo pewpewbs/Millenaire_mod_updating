@@ -1,0 +1,5 @@
+{
+  "evidence": "30-second JFR on user test6: 628 server execution samples, 178 contain Building.nbGoodAvailable; GC pauses 3-6 ms. Server log also reports 2-3.6-second tick lag. Sampling does not establish every pause cause.",
+  "changes": "Return zero for no physical stock before reserve scans; resolve resident type once; skip own-house supply searches before evaluating availability. No availability cache, build speed or resource-cost changes.",
+  "validation": "Full build passed; actual Building method exercised with isolated InvItem and building fixtures for no chests, 8 empty-stock modes, positive stock, household reserves, construction bypass, and changing stock. No post-change live performance measurement yet."
+}

@@ -1,0 +1,1 @@
+package org.millenaire.common.forge;public class Mill{public static final net.minecraft.resources.ResourceLocation ENTITY_SQUID=new net.minecraft.resources.ResourceLocation("squid");}

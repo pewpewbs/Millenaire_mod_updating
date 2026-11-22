@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "###"
+  ],
+  "key": {
+    "#": {
+      "item": "millenaire:stone_deco",
+      "type": "forge:nbt"
+    }
+  },
+  "result": {
+    "item": "millenaire:slab_stone_deco",
+    "count": 6
+  }
+}

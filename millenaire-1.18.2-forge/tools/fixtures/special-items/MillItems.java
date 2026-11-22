@@ -1,0 +1,1 @@
+package org.millenaire.common.item; public class MillItems { public static net.minecraft.world.item.Item DENIER,DENIER_ARGENT,DENIER_OR; static final net.minecraft.world.item.ArmorMaterial ARMOUR_mayan_quest_crown=MillMaterials.armor("mayanQuestCrown","millenaire:mayan_quest_crown",0,new int[]{3,6,8,3},10,net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_DIAMOND,2); }

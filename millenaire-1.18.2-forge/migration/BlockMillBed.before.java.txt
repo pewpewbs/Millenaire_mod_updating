@@ -1,0 +1,124 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  javax.annotation.Nullable
+ *  net.minecraft.block.Block
+ *  net.minecraft.block.BlockBed
+ *  net.minecraft.block.BlockBed$EnumPartType
+ *  net.minecraft.block.properties.IProperty
+ *  net.minecraft.block.state.IBlockState
+ *  net.minecraft.client.renderer.block.model.ModelResourceLocation
+ *  net.minecraft.entity.Entity
+ *  net.minecraft.entity.player.EntityPlayer
+ *  net.minecraft.init.Items
+ *  net.minecraft.item.Item
+ *  net.minecraft.item.ItemStack
+ *  net.minecraft.tileentity.TileEntity
+ *  net.minecraft.tileentity.TileEntityBed
+ *  net.minecraft.util.BlockRenderLayer
+ *  net.minecraft.util.EnumBlockRenderType
+ *  net.minecraft.util.math.AxisAlignedBB
+ *  net.minecraft.util.math.BlockPos
+ *  net.minecraft.world.IBlockAccess
+ *  net.minecraft.world.World
+ *  net.minecraftforge.client.model.ModelLoader
+ *  net.minecraftforge.fml.relauncher.Side
+ *  net.minecraftforge.fml.relauncher.SideOnly
+ */
+package org.millenaire.common.block;
+
+import java.util.Random;
+import javax.annotation.Nullable;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BedBlockEntity;
+import net.minecraft.util.BlockRenderLayer;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.millenaire.common.block.MillBlocks;
+import org.millenaire.common.entity.TileEntityMillBed;
+
+public class BlockMillBed
+extends BedBlock {
+    protected final AABB field_185513_c;
+    private final int bedHeight;
+
+    public BlockMillBed(String blockName, int height) {
+        this.bedHeight = height;
+        this.field_185513_c = new AABB(0.0, 0.0, 0.0, 1.0, (double)height / 16.0, 1.0);
+        this.func_149647_a(MillBlocks.tabMillenaire);
+        this.func_149663_c("millenaire." + blockName);
+        this.setRegistryName(blockName);
+    }
+
+    public BlockEntity func_149915_a(Level worldIn, int meta) {
+        return new TileEntityMillBed();
+    }
+
+    public void func_180653_a(Level worldIn, BlockPos pos, BlockState state, float chance, int fortune) {
+        if (state.getValue(PART) == BedBlock.EnumPartType.HEAD) {
+            ItemStack itemstack = this.getCloneItemStack(worldIn, pos, state);
+            BlockMillBed.popResource((Level)worldIn, (BlockPos)pos, (ItemStack)itemstack);
+        }
+    }
+
+    public int getBedHeight() {
+        return this.bedHeight;
+    }
+
+    public BlockRenderLayer func_180664_k() {
+        return BlockRenderLayer.CUTOUT_MIPPED;
+    }
+
+    public AABB func_185496_a(BlockState state, BlockGetter source, BlockPos pos) {
+        return this.field_185513_c;
+    }
+
+    @Deprecated
+    public ItemStack getCloneItemStack(Level worldIn, BlockPos pos, BlockState state) {
+        return org.millenaire.common.item.LegacyItemStacks.stack(Item.byBlock((Block)this), 1, this.func_180651_a(state));
+    }
+
+    public Item func_180660_a(BlockState state, Random rand, int fortune) {
+        return state.getValue(PART) == BedBlock.EnumPartType.FOOT ? Items.AIR : Item.byBlock((Block)this);
+    }
+
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
+    }
+
+    public void playerDestroy(Level worldIn, Player player, BlockPos pos, BlockState state, BlockEntity te, ItemStack stack) {
+        if (state.getValue(PART) == BedBlock.EnumPartType.HEAD && te instanceof BedBlockEntity) {
+            ItemStack itemstack = this.getCloneItemStack(worldIn, pos, state);
+            BlockMillBed.popResource((Level)worldIn, (BlockPos)pos, (ItemStack)itemstack);
+        } else {
+            super.playerDestroy(worldIn, player, pos, state, (BlockEntity)null, stack);
+        }
+    }
+
+    @OnlyIn(value=Dist.CLIENT)
+    public void initModel() {
+        ModelLoader.setCustomModelResourceLocation((Item)Item.byBlock((Block)this), (int)0, (ModelResourceLocation)new ModelResourceLocation(this.getRegistryName(), ""));
+    }
+
+    public boolean isBed(BlockState state, BlockGetter world, BlockPos pos, @Nullable Entity player) {
+        return true;
+    }
+}
+

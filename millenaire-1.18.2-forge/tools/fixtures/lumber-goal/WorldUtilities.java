@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class WorldUtilities{public static net.minecraft.world.level.block.Block getBlock(net.minecraft.world.level.Level w,Point p){return p.getBlock(w);}}

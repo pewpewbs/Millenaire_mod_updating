@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities;public class Point {public double x,y,z;public net.minecraft.core.BlockPos getBlockPos(){return net.minecraft.core.BlockPos.ZERO;}}

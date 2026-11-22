@@ -1,0 +1,158 @@
+abbey_A0=Абатство
+abbey_A_cell_0_A0=Келія ченця
+abbey_A_cell_1_A0=Келія ченця
+abbey_A_cell_2_A0=Келія ченця
+abbey_A_altar_A0=Вівтар
+abbey_A_tower_A0=Вежа абатства
+abbey_A_tower_B0=Вежа абатства
+alchemyworkshop_A0=Алхімічна майстерня
+archives_A0=Архів
+armoury_A0=Зброярня
+bakery_A0=Пекарня
+carpenterhouse_A0=Будинок теслі
+cattlefarm_A0=Коров’яча ферма
+church_A0=Церква
+church_A2=Церква
+chickenfarmnorm_a0=Куриня ферма
+darkoakgrove_a0=Тёмний дубовий ліс
+farm_A0=Ферма
+farm_B0=Ферма
+forge_A0=Згортавання
+fort_A0=Форт
+fort_A_lefttower_A0=Охоронна вежа
+fort_A_righttower_A0=Охоронна вежа
+fountain_A0=Фонтан
+grove_A0=Гроув
+grove_B0=Гроув
+grove_C0=Гроув
+guardhouse_A0=Дом охоронців
+guesthouse_A0=Заїжджий двір
+guildhouse_A0=Гільдейський будинок
+inn_A0=Заїжджий двір
+largefort_A0=Великий форт
+largefort_A_armoury_A0=Великий форт-ормарій
+largefort_A_barrack_A0=Охоронний номер
+largefountain_A0=Великий фонтан
+lumbermanhut_A0=Кетка лісовника
+lumbermanhut_B0=Кетка лісовника
+manor_A0=Маєток
+market_A0=Ринок
+pigfarm_A0=Ферма свиней
+playerestate_A0=Міське маєток
+playerhugefield_A0=Величезна ділянка
+playerlargefield_A0=Велика ділянка
+playerlargefort_A0=Огравець Великий форт
+playerlargehouse_A0=Будинок міщанина
+playersmallfield_A0=Мала ділянка
+playersmallhouse_A0=Малий будинок
+presbytery_A0=Будинок священника
+quarry_A0=Кварі
+sheepchickenfarm_A0=Овчіна ферма
+tavern_A0=Таверна
+townhall_A0=Ратуша
+townhallagricole_A0=Ратуша
+watchtower_A0=Вартова вежа
+well_A0=Ну, добре.
+
+playerfort_A0=Форт гравця
+anomalyone_A0=Аномалія
+anomalytwo_A0=Аномалія
+anomalythree_A0=Аномалія
+
+custom_chickenfarm=Куриня ферма
+
+abandonedmill_A0=Забудований мельниць
+abandonedmine_A0=Покінчена шахта
+abandonedtower_A0=Зруйнована вежа
+alchemisttower_A0=Вежа алхіміка
+banditlair_A0=Лігво бандитів
+bandittower_A0=Вежа бандитів
+feloncastle_A0=Замок злочинців
+loneabbey_A0=Самотнє абатство
+loneabbey_A_altar_A0=Вівтар
+lonegrove_A0=Одинокий ліс
+lonegrovetaiga_A0=Одинокий ліс
+loneinn_A0=Самотній готель
+loneinn_A_stall_0_A0=Стол в одиночному іннаті
+loneinn_A_stall_1_A0=Стол в одиночному іннаті
+loneroadhouse_A0=Дом на одинокій дорозі
+lonelumbermanhut_A0=Кетка лісовника
+lonelumbermantaigahut_A0=Кетка лісовника
+lonemill_A0=Одинокий водяний мельниць
+lonemine_A0=Одинокий рудник
+loneorchard_A0=Одинокий плодовий сад
+pantheon_A0=Пантеон
+ruinedfarm_A0=Зруйнована ферма
+ruinedfarm_B0=Зруйнована ферма
+ruinedfarm_C0=Колишня ферма
+
+gifthouse_a0=Подарунковий будинок
+
+glassblower_a0=Глас-бловерська майстерня
+weaverhouse_a0=Уектор Вейвера
+
+smallorchard_a0=Маленький плодовий сад
+largeorchard_a0=Сидерні
+
+abbaye_a0=Катедраль
+manor_a_inn_a0=Хотельня "Манор"
+pilgrimhall_a0=Зал паломників
+warehouse_a0=Склад
+workerhall_a0=Зал працівників
+
+abbaye_A0=
+abbaye_A_altar_A0=Вівтар
+abbaye_A_apse_bottom_A0=Апсе (півночі)
+abbaye_A_apse_top_A0=Апсе (Південь)
+abbaye_A_choir_bottom_A0=Хор (Север)
+abbaye_A_choir_top_A0=Хор (Юг)
+abbaye_A_confessional_A0=Признання
+abbaye_A_council_A0=Палата Ради
+abbaye_A_dome_A0=
+abbaye_A_library_A0=Бібліотека
+abbaye_A_nave_left_bottom_A0=Нава (северо-схід)
+abbaye_A_nave_left_top_A0=Нав (юго-схід)
+abbaye_A_nave_right_bottom_A0=Нава (Северо-Захід)
+abbaye_A_nave_right_top_A0=Нава (Юго-Захід)
+abbaye_A_organ_A0=Організм
+abbaye_A_pews_A0=Павини
+abbaye_A_portal_A0=Портал
+abbaye_A_pulpit_A0=Престоль
+abbaye_A_tower_bottom_A0=Північна вежа
+abbaye_A_tower_top_A0=Південна вежа
+abbaye_A_transept_bottom_A0=Північний трансепт
+abbaye_A_transept_top_A0=Південний трансепт
+abbaye_A_treasury_A0=Церковний скарб
+
+guardroom_a0=Охоронний зал
+largeguardhouse_a0=Великий будинок охоронців
+largeinn_a0=Заїжджий двір
+largeinn_a_dormitorymen_a0=Мужська спальня
+largeinn_a_dormitorywomen_a0=Жінська спальня
+largeinn_a_tavern_a0=
+residence_a0=Палас єпископа
+residence_a_orderoutpost_a0=Штаб-квартира Ордена
+residence_a_priest_a0=Палати священика
+residence_a_vicar_a0=Кімназія вікаря
+
+
+
+
+full_wall_gateway_a0=Віцебські ворота
+full_wall_a0=Сцяна села
+full_wall_slope_right1_a0=Сцяна села
+full_wall_slope_right2_a0=Сцяна села
+full_wall_slope_left3_a0=Сцяна села
+full_wall_slope_left2_a0=Сцяна села
+full_wall_slope_left1_a0=Сцяна села
+full_wall_slope_right3_a0=Сцяна села
+
+full_wall_tower_a0=Сцяжна вежа
+full_wall_cap_both_a0=Останній стіна
+full_wall_cap_right_a0=Останній стіна
+full_wall_cap_left_a0=Останній стіна
+full_wall_corner_a0=Кутовий веž
+
+borderpost_a0=Прикордонний пост
+borderpost_corner_a0=Прикордонний пост (кут)
+borderpost_gate_a0=Прикордонний пункт (вхід)

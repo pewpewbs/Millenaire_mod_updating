@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "millenairepathslab",
+  "pattern": [
+    "###"
+  ],
+  "key": {
+    "#": {
+      "item": "millenaire:pathochretiles"
+    }
+  },
+  "result": {
+    "item": "millenaire:pathochretiles_slab",
+    "count": 6
+  }
+}

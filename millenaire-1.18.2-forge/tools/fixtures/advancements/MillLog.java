@@ -1,0 +1,1 @@
+package org.millenaire.common.utilities; public class MillLog { public static void printException(String message,Exception error){throw new RuntimeException(message,error);} }

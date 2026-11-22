@@ -1,0 +1,1330 @@
+{
+  "source_sha256": "305279561ec4c75cd7be3eff31a9eb47bac5f2d0a2b3faabdf4adb874ef6744f",
+  "entries": [
+    {
+      "id": "E:C02",
+      "finding": "TileEntityImportTable.java: небезпечна заміна блока на табличку",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C05",
+      "finding": "TileEntityLockedChest.java: межі мережевого оновлення слотів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:2",
+      "finding": "Mill.java: правильний вибір даних світу",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:6",
+      "finding": "ServerGuiHandler.getServerGuiElement(): авторизація й перевірка світу",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:7",
+      "finding": "MillEventController: вивантаження світу та збереження",
+      "status": "partial test21: join/fresh final town hall save on unload; other lifecycle paths not fully audited"
+    },
+    {
+      "id": "F:8",
+      "finding": "MillEventController.worldLoaded(): частково ініціалізований світ",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R01",
+      "finding": "Завантаження печі з ресурсів, які не були списані",
+      "status": "fixed: actual cooking input from storage and resident"
+    },
+    {
+      "id": "G:R02",
+      "finding": "Та сама помилка в звичайній печі та результатах",
+      "status": "fixed: actual furnace inputs and retained output remainder"
+    },
+    {
+      "id": "G:R03",
+      "finding": "Виробництво без гарантії повного списання інгредієнтів",
+      "status": "test25: verified withdrawals/deposits; snapshot rollback on partial results/exceptions; isolated method tests passed, live world untested"
+    },
+    {
+      "id": "G:R04",
+      "finding": "Втрата більшої частини стака предметів при застряганні",
+      "status": "fixed for commodity drops; custom NBT drops deliberately left intact"
+    },
+    {
+      "id": "G:R06",
+      "finding": "Саджанець встановлюється незалежно від наявності у NPC",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R07",
+      "finding": "Лісоруб також ігнорує факт витрати саджанця",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R08",
+      "finding": "Бонусні предмети видаються ще до вбивства тварини",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R09",
+      "finding": "Невдала установка може пропускати будівельні блоки",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R10",
+      "finding": "Нагорода нараховується до підтвердження зміни блока",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R11",
+      "finding": "Цеглу видають до підтвердження вилучення блока",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R12",
+      "finding": "Шовк нараховується до підтвердження скидання прогресу",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R13",
+      "finding": "Цукрова тростина додається навіть якщо видалення не вдалося",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R14",
+      "finding": "Незерські бородавки зберігають без перевірки збирання",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R15",
+      "finding": "Насіння списується перед підтвердженням посадки",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R39",
+      "finding": "Будівництво дороги продовжується навіть без маршруту",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R40",
+      "finding": "Очистка дороги просуває індекс без підтвердження",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N01",
+      "finding": "Обмежити зовнішні та внутрішні розміри масивів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N02",
+      "finding": "Перевіряти довжину всіх колекцій до циклу",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N04",
+      "finding": "Не припиняти читання посеред QuestInstance",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N05",
+      "finding": "Валідувати ключі перед вставкою в ConcurrentHashMap",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N06",
+      "finding": "Перевірити ідентифікатор EnumProjects у проєктних списках",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N07",
+      "finding": "Захистити кількість квестових учасників від усічення",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N10",
+      "finding": "Перевіряти авторизацію дій, а не довіряти відкритому GUI",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N11",
+      "finding": "Перевірити команду імпорту будівлі до зміни світу",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N12",
+      "finding": "Перевіряти дистанцію та контекст інтеракції NPC",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N14",
+      "finding": "Відхиляти невідомі типи пакетів і зайві поля",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N15",
+      "finding": "Не дозволяти спам логів некоректними пакетами",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N19",
+      "finding": "Перевірити права перед синхронізацією повного інвентарю скрині",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N20",
+      "finding": "Не серіалізувати розмір скрині знаковим байтом без контракту",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-01",
+      "finding": "Зайве вилучення предметів із багатослотового багаття",
+      "status": "fixed: remaining firepit extraction count"
+    },
+    {
+      "id": "U:U-02",
+      "finding": "Видалення села порушує відповідність паралельних списків",
+      "status": "fixed: village timing-list removal"
+    },
+    {
+      "id": "U:U-03",
+      "finding": "Незахищені фінансові транзакції в changeMoney()",
+      "status": "test26: staged long balance/capacity planning, exact trade rollback, payment-gated services; money/trade fixture tests passed; full service/quest exception transactions and live tests remain open"
+    },
+    {
+      "id": "U:U-11",
+      "finding": "setBlock повідомляє про успіх навіть за невдалої постановки",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-23",
+      "finding": "Конвертація подвійної скрині й відновлення після помилки",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V01",
+      "finding": "Успіх збереження фіксується навіть після IOException",
+      "status": "test21: IOException keeps dirty state and schedules retry; isolated failure test passed"
+    },
+    {
+      "id": "V:V02",
+      "finding": "Фоновий потік читає живі об’єкти поселення",
+      "status": "test21: immutable server-thread snapshot; worker only file IO; no live world validation"
+    },
+    {
+      "id": "V:V03",
+      "finding": "Вхідні лічильники шляхів із файлів не обмежені",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V04",
+      "finding": "Шляхи перезаписуються напряму без атомарної заміни",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V08",
+      "finding": "Розмір bblocks береться з файлу без меж",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V09",
+      "finding": "Прапорець bblocksChanged скидається навіть після помилки запису",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V10",
+      "finding": "Від’ємний індекс поточного блока не перевіряється",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V11",
+      "finding": "Підтримка legacy _id є, але значення не завантажується",
+      "status": "test22: legacy int/long ID decoded; invalid zero/MIN_VALUE/type rejected; duplicates detected by world loader; tests passed"
+    },
+    {
+      "id": "V:V29",
+      "finding": "Потреба не зменшується між пожертвами різних сіл",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V31",
+      "finding": "Панель відновлюється поверх будь-якого блока у позиції знака",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V34",
+      "finding": "Спавн торговця не перевіряється, але товари додаються",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:D01",
+      "finding": "Виняток одного профілю перериває завантаження інших",
+      "status": "test22: isolated profile directory reads; listing failure protects new profiles; isolated tests passed"
+    },
+    {
+      "id": "W:D02",
+      "finding": "Міграція профілю ігнорує невдале перейменування",
+      "status": "test22: no rename-on-read; legacy source retained; automatic directory migration deliberately deferred"
+    },
+    {
+      "id": "W:D03",
+      "finding": "Автоконвертація бере довільний перший профіль",
+      "status": "test22: arbitrary first-profile auto-conversion removed; cross-UUID migration rejected without explicit identity verification"
+    },
+    {
+      "id": "W:D04",
+      "finding": "Перестворення файлу записів NPC під час завантаження",
+      "status": "test22: no save during read; partial/duplicate/corrupt load blocks later original-file writes; tests passed"
+    },
+    {
+      "id": "W:U01",
+      "finding": "Невалідне ім’я legacy-профілю може зупинити міграцію",
+      "status": "test22: strict canonical UUID parse, per-directory exception isolation"
+    },
+    {
+      "id": "W:X02",
+      "finding": "Генерація нових сіл пов’язана з ризиками збереження Building.SaveWorker",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:D07",
+      "finding": "Статичні кеші перевірки будівель спільні для вимірів і світів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C08",
+      "finding": "TileEntityFirePit.java: повторні обчислення рецептів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C09",
+      "finding": "TileEntityFirePit.java: часте позначення блоку зміненим",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C10",
+      "finding": "TileEntityFirePit.java: кілька пакетів під час одного плавлення",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C13",
+      "finding": "TileEntityPanel.java: обсяг даних і створення рядків",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:4",
+      "finding": "BuildingChunkLoader.loadChunks(): entity-ticking квитки",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:5",
+      "finding": "BuildingChunkLoader: облік tickets та повторний запуск сервера",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:9",
+      "finding": "ServerTickHandler: вимірювати updateWorldServer(), а не сліпо сповільнювати",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:16",
+      "finding": "MillEventController.worldLoaded(): повторні завантаження мов",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R25",
+      "finding": "Пошук місця для сну переглядає тисячі позицій",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R26",
+      "finding": "Сканування всієї будівлі двічі",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R27",
+      "finding": "Багато повторних перевірок одних і тих самих джерел",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R28",
+      "finding": "Повторне обчислення запасів дров для кожної печі",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R43",
+      "finding": "Перевірка leisure goal може повторно сканувати всі завдання",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N03",
+      "finding": "Не додавати елементи по одному до CopyOnWriteArrayList",
+      "status": "partial: four simple readers batch construction; nested project reader unchanged"
+    },
+    {
+      "id": "N:N08",
+      "finding": "Не будувати відповідь синхронізації за довільними лічильниками клієнта",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N09",
+      "finding": "Централізовано обмежити частоту дорогих запитів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N22",
+      "finding": "Не створювати надмірно великі неподільні відповіді",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N23",
+      "finding": "Скоротити надсилання однакових пакетів через ручний цикл",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:A03",
+      "finding": "openQueue, closedNodes та пріоритети: найбільша можливість оптимізації A*",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:C01",
+      "finding": "небезпечний життєвий цикл асинхронного пошуку",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:C02",
+      "finding": "рекомендований PathfindingManager (окремий етап)",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:D6",
+      "finding": "RegionMapper.createConnectionsTable() має квадратичне зв'язування вузлів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:D7",
+      "finding": "RegionMapper.findRegions() виконує синхронний A* для з'єднання регіонів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:D8",
+      "finding": "RegionMapper.Point2D та Node неправильно реалізують hashCode / equals",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:D13",
+      "finding": "IAStarPathedEntity не дозволяє відрізнити застарілий результат пошуку",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-04",
+      "finding": "Off-by-one у межах перевірки готовності чанків",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-20",
+      "finding": "Глобальний FileWriter без синхронізації й flush на кожному рядку",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-27",
+      "finding": "Потенційно дорогий прямий доступ до даних MCA для перевірки чанків",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-46",
+      "finding": "Назва ThreadSafe не гарантує потокобезпечного доступу до Level",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V05",
+      "finding": "Завершення асинхронного пошуку змінює колекції без єдиного потоку",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V06",
+      "finding": "RegionMapper публікує результати і стан потоку напряму",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V07",
+      "finding": "Частина перевірок жителів і будівництва виконується дуже часто",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V26",
+      "finding": "CopyOnWriteArrayList для масового завантаження ресурсів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:T01",
+      "finding": "Повне rebuildVillagerList() під час кожного серверного тика",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:T02",
+      "finding": "forcePreload() багаторазово сканує одну й ту саму площу",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:T03",
+      "finding": "Генерація поселення синхронно завантажує квадрат чанків",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:T04",
+      "finding": "Черга кандидатів PENDING без ліміту й очищення за давністю",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:X01",
+      "finding": "Статична генерація й основний світовий цикл мають спільний CPU-бюджет",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:G06",
+      "finding": "Пошук району для села може не обмежувати бюджет одного тика",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:T05",
+      "finding": "Позначення вже перевірених чанків зростає весь час існування світу",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:T06",
+      "finding": "Повторні синхронні записи координат поселень",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:U05",
+      "finding": "Часте збереження репутації та мережеві оновлення",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C01",
+      "finding": "VillagerConfig.java: статична мапа скидається під час copyDefault()",
+      "status": "fixed: static config fields excluded from copying"
+    },
+    {
+      "id": "E:C07",
+      "finding": "VillagerConfig.java: невідома категорія інвентарю",
+      "status": "fixed: unknown category returns null"
+    },
+    {
+      "id": "G:R05",
+      "finding": "Завдання посадки помилково потребує попередньої цілі NPC",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R16",
+      "finding": "Порожні конфігурації mining можуть викликати NPE",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R17",
+      "finding": "Mining обирає джерела без validateDest",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R18",
+      "finding": "Перевірка відстані не відповідає обраній точці візиту",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R19",
+      "finding": "NullPointerException при відсутності храму/pujas",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R20",
+      "finding": "Не перевіряється temple.pujas під час активного чергування",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R21",
+      "finding": "Негативний ID торгового прилавка",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R22",
+      "finding": "Немає перевірки гравця перед повідомленням",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R23",
+      "finding": "Другий NPC втрачає завдання до підтвердження діалогу",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:B01",
+      "finding": "скрині, опора та колізії (перший практичний патч)",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:B02",
+      "finding": "розбиття діагоналі на два ортогональні кроки",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:B03",
+      "finding": "сортування точок доступу до мети",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:A01",
+      "finding": "критична невизначеність Y=0 у JPS",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:A02",
+      "finding": "MAX_SKIP_DISTANCE = 25 використовується неправильно",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:A04",
+      "finding": "правильно узгодити евристику AStarNode",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:A05",
+      "finding": "підозрілі вартості g у findNeighbours: не перебільшувати",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:A06",
+      "finding": "незадіяна логіка драбин та forced neighbours",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:R01",
+      "finding": "вибір цілі: не лише possibles[0]",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:R02",
+      "finding": "localStuck та longDistanceStuck переривають корисний рух",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:R03",
+      "finding": "Vanilla fallback і часткові маршрути",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:T01",
+      "finding": "ліміт 150 мс: чому великі будівлі можуть не проходитися",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:O01",
+      "finding": "неповна класифікація парканів/хвірток",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:O02",
+      "finding": "додаткові оптимізації після виправлення коректності",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-05",
+      "finding": "Завантаження пергаментів обривається на відсутній папці",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-06",
+      "finding": "Regex-заміна імені гравця може кидати виняток",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-07",
+      "finding": "Regex-підстановка значень перекладу",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-08",
+      "finding": "Рядки перекладу зі знаком = відкидаються",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-09",
+      "finding": "Некоректне ім’я файлу може зірвати завантаження локалізації",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-12",
+      "finding": "Справжня координата (0,0,0) перетворюється на null",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-13",
+      "finding": "compareTo порівнює hashCode, а не координати",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-15",
+      "finding": "Порівняння версій перекладів може падати з NPE",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-16",
+      "finding": "Мова позначається завантаженою до завершення завантаження",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-18",
+      "finding": "Regex-підстановки в діалогах жителів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-24",
+      "finding": "Невалідні параметри перетворюються на вихідний стан без явної помилки",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-25",
+      "finding": "Списки парканів/хвірток неповні для 1.18.2",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-26",
+      "finding": "Парсер blocktypes не нормалізує елементи списків",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-39",
+      "finding": "Fail-fast завантаження інвентарю з невідомим item ID",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-40",
+      "finding": "Не можна мовчки скидати невідомі блоки ресурсних джерел",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-42",
+      "finding": "Вузький кодек metadata не повинен замінювати повні стани",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-44",
+      "finding": "Побудова доріг і блокування перешкод",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-45",
+      "finding": "Пошук поверхні та позицій у світі",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V12",
+      "finding": "Clone поверхневий: raidRecord ділить inventory/questTags з оригіналом",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V13",
+      "finding": "Генерація ID через Math.abs(randomLong()) має крайовий випадок",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V14",
+      "finding": "Деякі поля NBT записуються без перевірки null",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V20",
+      "finding": "Карта не оновлює навіть центральний чанк без 3×3 сусідів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V21",
+      "finding": "Видалення будівлі стирає записи інших перекритих локацій",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V22",
+      "finding": "Виконується один чанк за бюджетний інтервал без черги пропусків",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V23",
+      "finding": "Сканування висоти обмежене baseline±25",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V24",
+      "finding": "Повторне читання NBT накопичує дублікати координат",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:G01",
+      "finding": "Автоматичне створення custom-села з null гравцем",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:G02",
+      "finding": "Відстань між селами частково обчислюється у 3D з Y = 0",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:G05",
+      "finding": "Вимкнення vanilla-сіл через reflection залежить від приватного поля",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:R01",
+      "finding": "isReplaceable() надто широко дозволяє заміну важливих блоків",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:W01",
+      "finding": "Null gatewayPlanSet спричинить NPE",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:W02",
+      "finding": "Цикл підбору радіуса може не прогресувати при невалідному плані",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:R02",
+      "finding": "Висота стовбура Apple/Olive жорстко зафіксована",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:R04",
+      "finding": "Генератори повертають true навіть після часткового розміщення",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:R03",
+      "finding": "Виклик rand.nextInt(1) не додає випадковості",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C03",
+      "finding": "EntityWallDecoration.java: вибір найбільшого зображення",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C04",
+      "finding": "TileEntityImportTable.java: несистематичне збереження змін",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C06",
+      "finding": "TileEntityPanel.java: захист від відсутнього світу / будівлі",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C11",
+      "finding": "EntityTargetedGhast.java: «смикання» випадкової цілі",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C14",
+      "finding": "TileEntityLockedChest.java: автоматика та подвійні скрині",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C15",
+      "finding": "TileEntityLockedChest.java: кеш суміжних скринь",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C16",
+      "finding": "EntityTargetedBlaze/Ghast/WitherSkeleton: керування життєвим циклом",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C17",
+      "finding": "EntityTargetedBlaze.java: непідключена перевірка маршруту",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C19",
+      "finding": "MillVillagerEntities.java: нечутливість усіх жителів до вогню",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C21",
+      "finding": "EntityWallDecoration.java: безпечна обробка невідомого типу",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:3",
+      "finding": "BuildingChunkLoader.requiredChunks(): арифметика діапазону",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:10",
+      "finding": "MillEventController.damageOnPlayer(): лінійний перебір NPC",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:11",
+      "finding": "MillEventController.handleFurnaceWithdrawals(): хибні штрафи",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:12",
+      "finding": "MillEventController: null-контроль профілю у drop handlers",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:18",
+      "finding": "MillEventController: захист панелей — питання дизайну, не автоматичний баг",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R24",
+      "finding": "Випадковий колір діалогу завжди перезаписується",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R29",
+      "finding": "Кількість спавнів перезаписується замість сумування",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R30",
+      "finding": "Кури можуть бути у списку класів двічі",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R31",
+      "finding": "Ліміт усього села і ліміт ратуші рахуються однаково",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R32",
+      "finding": "priorityRandom може дорівнювати нулю",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R33",
+      "finding": "Ключі generic goal можуть тихо перезаписувати інші goals",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R34",
+      "finding": "Налаштування завантажуються перед applyDefaultSettings",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R35",
+      "finding": "Візит до іншого жителя щоразу вибирає випадкового співрозмовника",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R36",
+      "finding": "Кількість закупівлі не враховує наявний запас/вже отримане",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R37",
+      "finding": "Порівнюються координати будинку і робочої точки",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R38",
+      "finding": "Дистанційне будівництво після невдалого маршруту",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R41",
+      "finding": "Legacy bed metadata для Minecraft 1.18.2",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R42",
+      "finding": "Подвійні культури та властивість HALF",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R44",
+      "finding": "Категорії інструментів використовуються без null-захисту",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N13",
+      "finding": "Не видавати довільну мапу поселення без контекстної перевірки",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N18",
+      "finding": "Захистити displayPanel() та GUI від відсутніх world data",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:D1",
+      "finding": "PathingSurface.contains() / getPath() падають на порожньому списку",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:D2",
+      "finding": "PathingSurface має некоректний двійковий пошук, який пропускає наявні плитки",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:D3",
+      "finding": "PathingSurface читає сусідні клітинки без достатніх перевірок меж і null",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:D4",
+      "finding": "PathingSurface змішує результат «немає шляху» з порожнім шляхом і мутує пошуковий стан",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:D5",
+      "finding": "PathingSurface пакує X/Y/Z в одне число без перевірки діапазону",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:D10",
+      "finding": "LoggedThreadPoolExecutor.afterExecute() не бачить усі винятки від submit()",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:D11",
+      "finding": "AS_PathPoint переприсвоює внутрішні поля Node — перевірити семантику",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:D12",
+      "finding": "AS_PathEntity позначає шлях до останнього вузла як досягнутий",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-10",
+      "finding": "Спавн моба допускається, коли зайнята лише одна клітинка",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-17",
+      "finding": "Небезпечне приведення Player до ServerPlayer",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-19",
+      "finding": "exceptionCount — HashMap, але логування відбувається з потоків",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-21",
+      "finding": "listFiles() може падати при невдалому File.listFiles()",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-22",
+      "finding": "Кеш не інвалідується після змін на диску",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-32",
+      "finding": "Файловий Reader не закривається при IOException",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-37",
+      "finding": "Міграцію банерів потрібно тестувати на всіх культурах",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-38",
+      "finding": "Аліаси біомів і кеш оновлень",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-41",
+      "finding": "Перевірити roundtrip індексів горщиків",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-43",
+      "finding": "Відкритий InputStream у testResourcePresence()",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V15",
+      "finding": "Невідомий колір у NBT спричиняє NullPointerException",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V16",
+      "finding": "Порівняння планів не є null-safe",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V17",
+      "finding": "Clone не копіює змінювану карту кольорів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V18",
+      "finding": "Варіація плану перевіряється лише з верхньої межі",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V19",
+      "finding": "Негативні індекси варіації й рівня не перевіряються",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V25",
+      "finding": "Список signs може містити null",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V28",
+      "finding": "Потреби проєктів обчислюються для variation 0",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V30",
+      "finding": "marvelPos може залишитися null",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V32",
+      "finding": "Глобальний кеш повертає один і той самий змінюваний ItemStack",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V33",
+      "finding": "UI може брати випадковий стартовий план для відображення",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V35",
+      "finding": "Відсутній тип відвідувача спричиняє NPE",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:D05",
+      "finding": "Потоки файлів не закриваються в низці методів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:D06",
+      "finding": "Небезпечне читання CSV-подібного реєстру поселень",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:G04",
+      "finding": "Глобальний генератор випадкових чисел перепризначається локальним Random",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:U02",
+      "finding": "receiveQuestInstancePacket() розіменовує можливе null",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:U03",
+      "finding": "Брак перевірки існування WorldQuest у карті конфігурації",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:G03",
+      "finding": "Стрибок коефіцієнта готовності поселення на порозі",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:U04",
+      "finding": "Репутаційні досягнення можуть викликатися для offline-профілю",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:U06",
+      "finding": "loadActionData() розбиває рядки без збереження двокрапок",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:W04",
+      "finding": "Середня висота мурів має початкове зміщення +2",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:W03",
+      "finding": "Порівняння Float за ідентичністю замість значення",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C12",
+      "finding": "VillagerConfig.java: одноразові сортування та перезавантаження",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C18",
+      "finding": "EntityTargetedWitherSkeleton/MillQuestEntities: узгодити назву та фактичний тип",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C20",
+      "finding": "TileEntityMillBed.java і TileEntityMockBanner.java: тест відповідності типів/NBT",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "E:C22",
+      "finding": "MillBlockEntities/MillDecorationEntities/MillQuestEntities: реєстрація і синхронізація",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:13",
+      "finding": "Mill.java: подвійна ініціалізація банерів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:14",
+      "finding": "CommonProxy.executeWorldTask(): мовчазне ігнорування",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:15",
+      "finding": "CommonProxy.loadedEntities(): повний знімок сутностей",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:17",
+      "finding": "ServerGuiHandler: старий API, повторні пошуки і мертві гілки",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:19",
+      "finding": "ServerTickHandler: не витрачати час на незначні алокації",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:20",
+      "finding": "CommonProxy: порожні / null методи — перевірка контрактів, не масове переписування",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "F:21",
+      "finding": "Реєстрації Forge і порядок старту — контроль сумісності",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "G:R45",
+      "finding": "Збирання врожаю вже перевіряє стиглість перед дією",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N16",
+      "finding": "Залишити поточний bounded payload і snapshot копію",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N17",
+      "finding": "Визначити власника вихідного FriendlyByteBuf і його release",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N21",
+      "finding": "Спростити надсилання повідомлень і усунути повторні перевірки",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N24",
+      "finding": "Не покладатися на поточний індекс Item у довгоживучому форматі",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N25",
+      "finding": "Зберегти перевірку напрямку та перенесення на game thread",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N26",
+      "finding": "Не допустити надмірних координат і невідомих світів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N27",
+      "finding": "Перевірити протокольну симетрію всіх читачів і письменників",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "N:N28",
+      "finding": "Перевірити версію протоколу при будь-якій зміні wire-формату",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:R04",
+      "finding": "не ламати будівельні Goal",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "P:D14",
+      "finding": "PathingPathCalcTile — дрібні покращення без доказу впливу на NPC",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-14",
+      "finding": "Дубльований сусід у getNeightboursWithDiagonals()",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-28",
+      "finding": "Повторні sqrt та читання стану блока під час пошуку найближчого",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-29",
+      "finding": "getChoiceWeight() викликається двічі на кожен варіант",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-30",
+      "finding": "Перевірка порожнього стеку через == ItemStack.EMPTY",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-31",
+      "finding": "Розробницьке автопереміщення виконує дві зміни позиції",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-33",
+      "finding": "Застарілі HTTP-запити статистики й логіна",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-34",
+      "finding": "VillageInfo.equals() і hashCode() порушують контракт",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-35",
+      "finding": "Регіонний індекс не підтверджує FULL-готовність чанка",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "U:U-36",
+      "finding": "Пошук старого ID проходить всю таблицю",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V27",
+      "finding": "Майже повний дублікат активного ResManager",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "V:V36",
+      "finding": "Клас лише визначає імена тегів",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:R05",
+      "finding": "Класичні форми п’яти дерев дублюють великий обсяг коду",
+      "status": "not individually verified in this implementation batch"
+    },
+    {
+      "id": "W:D08",
+      "finding": "Некоректний запис журналу ActionData",
+      "status": "not individually verified in this implementation batch"
+    }
+  ]
+}

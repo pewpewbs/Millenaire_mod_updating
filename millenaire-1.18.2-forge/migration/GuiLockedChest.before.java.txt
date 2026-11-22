@@ -1,0 +1,54 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.client.gui.inventory.GuiChest
+ *  net.minecraft.entity.player.EntityPlayer
+ *  net.minecraft.inventory.IInventory
+ *  net.minecraft.util.math.BlockPos
+ *  net.minecraft.world.World
+ */
+package org.millenaire.client.gui;
+
+import java.io.IOException;
+import net.minecraft.client.gui.screens.inventory.ContainerScreen;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.Container;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import org.millenaire.common.block.BlockLockedChest;
+import org.millenaire.common.entity.TileEntityLockedChest;
+
+public class GuiLockedChest
+extends ContainerScreen {
+    boolean locked = true;
+
+    public static GuiLockedChest createGUI(Level world, int i, int j, int k, Player entityplayer) {
+        TileEntityLockedChest lockedchest = (TileEntityLockedChest)world.getBlockEntity(new BlockPos(i, j, k));
+        if (lockedchest == null || world.isClientSide && !lockedchest.loaded) {
+            return null;
+        }
+        Container chest = BlockLockedChest.getInventory(lockedchest, world, i, j, k);
+        return new GuiLockedChest(entityplayer, chest, lockedchest);
+    }
+
+    private GuiLockedChest(Player player, Container iinventory1, TileEntityLockedChest lockedchest) {
+        super((Container)player.getInventory(), iinventory1);
+        this.locked = lockedchest.isLockedFor(player);
+    }
+
+    protected void func_73869_a(char par1, int par2) throws IOException {
+        if (!this.locked) {
+            super.func_73869_a(par1, par2);
+        } else if (par2 == 1 || par2 == this.minecraft.options.keyInventory.func_151463_i()) {
+            this.minecraft.player.closeContainer();
+        }
+    }
+
+    protected void func_73864_a(int i, int j, int k) throws IOException {
+        if (!this.locked) {
+            super.func_73864_a(i, j, k);
+        }
+    }
+}
+

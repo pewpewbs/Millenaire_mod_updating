@@ -1,0 +1,2 @@
+package org.millenaire.common.forge;
+public class Mill { public static org.millenaire.common.world.MillWorldData getMillWorld(net.minecraft.world.level.Level level){throw new UnsupportedOperationException("Server capture not tested here");} }

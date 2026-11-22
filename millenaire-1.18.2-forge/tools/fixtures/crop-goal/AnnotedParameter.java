@@ -1,0 +1,1 @@
+package org.millenaire.common.annotedparameters;public class AnnotedParameter{public enum ParameterType{BLOCK_ID,BLOCKSTATE_ADD,INVITEM}}

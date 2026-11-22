@@ -1,0 +1,111 @@
+travelbook.culture.desc=Сельджуки, турецкая династия с сильными и дисциплинированными солдатами, правившими на Ближнем Востоке.  Эта культура имеет потрясающую архитектуру и вкусную кухню.  Она живет по правилам ислама.
+
+travelbook.villager.turk_armourysmith.desc=Этот человек проводит дни, создавая турецкое вооружение и оружие так, как это мог сделать только турк.
+travelbook.villager.turk_bandit.desc=Этот разбойник живёт простой жизнью: грабит, убивает, бунтует и переходит дорогу в неположенных местах — ради острых ощущений и нескольких денье.
+travelbook.villager.turk_banditleader.desc=Лидер бандитской группы, которая хорошо разбирается в грабежах и боях.
+travelbook.villager.turk_boy.desc=Когда этот мальчик вырастет, он может стать солдатом, коваром, фермером или даже служителем Бога, но это займет некоторое время.
+travelbook.villager.turk_cook.desc=Создатель фантастических кулинарных деликатесов, вы можете ожидать, что он сделает Пид, Айран и Локум.
+travelbook.villager.turk_cookwife.desc=Жена сельского повара, эта женщина помогает, приобретая ингредиенты и продавая результаты.
+travelbook.villager.turk_cottonfarmer.desc=Простый человек с очень важной работой.  Памук можно использовать практически везде.
+travelbook.villager.turk_cowfarmer.desc=Говядина - основной продукт турецкой кухни.  Это делает животноводства важной работой в турецком обществе.
+travelbook.villager.turk_cowfarmerwife.desc=Рыноводство - это тяжелая работа, и фермер не смог бы сделать всю работу без своей жены!
+travelbook.villager.turk_fisherman.desc=Это удача, умение или благословение сверху?  Что бы это ни было, этот человек способен вытащить корзины с рыбой из крошечного пруда.
+travelbook.villager.turk_girl.desc=Сейчас она может быть маленькой, но она станет важной частью своего сообщества, когда вырастет.
+travelbook.villager.turk_hamletvali.desc=Эмир, гордый и сильный, защищает свою деревню и свой народ с честью.
+travelbook.villager.turk_headfarmer.desc=Этот умный фермер, обладающий знаниями, приобретенными на протяжении многих лет, хранит свою деревню.
+travelbook.villager.turk_hoca.desc=Этот божий человек посвятил свою жизнь распространению учения пророка Мухаммеда и укреплению веры деревенцев.
+travelbook.villager.turk_hocaswife.desc=Жена Хоки служит образцом для женского сообщества деревни.
+travelbook.villager.turk_imam.desc=Этот божий человек посвятил свою жизнь распространению учения пророка Мухаммеда и укреплению веры деревенцев.
+travelbook.villager.turk_imamswife.desc=Жена имама служит образцом для женской общины деревни.
+travelbook.villager.turk_localmerchant.desc=Торговля - жизненная сила любого села.  Этот торговец торгует с близлежащими деревнями, чтобы улучшить свою родной деревню.
+travelbook.villager.turk_lonecowfarmer.desc=Иногда лучшее место для скота находится далеко от его деревни.  Этот человек решил поставить своих коров перед своей потребностью в социальном взаимодействии.
+travelbook.villager.turk_lonefarmer.desc=Иногда лучшее место для ферм - далеко от его деревни.  Этот человек и его семья решили поставить свою ферму перед необходимостью социального взаимодействия.
+travelbook.villager.turk_lonemerchant.desc=Очень гордный человек с честью, без него торговля не могла быть поддерживана.
+travelbook.villager.turk_loneminer.desc=Это человек, который ищет эту особую руду, которую можно найти только в пустыне.
+travelbook.villager.turk_lonesoldier.desc=Честный товарищ трейдера, его задача - сохранить безопасность трейдера.
+travelbook.villager.turk_lumberman.desc=Дерево полезно как универсальный строительный материал, так и источник топлива, и его работа состоит в том, чтобы магазины деревни были наполнены деревом.
+
+
+travelbook.villager.turk_merchant_art.desc=В свободное время художник продает множество картин и красивых ковров.
+travelbook.villager.turk_merchant_food.desc=Этот торговец уехал из дома, чтобы поделиться своими кулинарными шедеврами со всем миром - за цену.
+travelbook.villager.turk_merchant_mine.desc=В свободное время этот торговца продает широкий ассортимент кирпичей и камня для других хобистов и декораторов.
+travelbook.villager.turk_merchant_plant.desc=Этот купца можно найти, продавая свои ботанические товары на рынке.  Он надеется получить прибыль от цветов и саженцев, которые вырастил сам.
+travelbook.villager.turk_merchant_weapon.desc=Раньше он работал в армии, но сегодня продает свои товары на рынках.
+travelbook.villager.turk_merchant_wool.desc=Этот купца, родом из пастухов, регулярно имел гораздо больше шерсти, чем знал, что с ней делать.
+
+
+travelbook.villager.turk_miller.desc=Мельницы превращают пшеницу в свежепеклый хлеб.
+travelbook.villager.turk_miner.desc=Его задача - добывать камень и обеспечивать кирпичи, необходимые деревне для роста.
+travelbook.villager.turk_peasant.desc=Деревня лежит на плечах скромного крестьянина.  Кто еще выполняет такие унижительные работы, которые нужно делать.
+travelbook.villager.turk_peasantwife.desc=Деревня лежит на плечах скромного крестьянина.  Кто еще выполняет такие унижительные работы, которые нужно делать.
+travelbook.villager.turk_richpeasantwife.desc=Несмотря на то, что она богаче своих сверстников, она по-прежнему глубоко в себе крестьянка, и на самом деле не намного особеннее.
+travelbook.villager.turk_richtrader.desc=Успешный человек, посвятивший свою жизнь торговле и хорошим отношениям, ничего не упускает.
+travelbook.villager.turk_richwoman.desc=Самая богатая женщина в городе, она смотрит вниз на других, несмотря на то, что они намного полезнее.
+travelbook.villager.turk_shepherd.desc=Этот пастух делает то, что вы ожидали бы - пасает овец и заколевает их за их вкусную овцу.
+travelbook.villager.turk_shepherdwife.desc=Жена пастуха так же важна, как и пастух, помогая кормить и заботиться о них.
+travelbook.villager.turk_soldier.desc=Вооруженный мечом и луком, этот солдат является первой линией обороны для деревни.
+travelbook.villager.turk_stonecrafter.desc=Этот деревенский человек может превратить скромный камень и кирпичи в красивые шедевры, подходящие для султанов.
+travelbook.villager.turk_toolsmith.desc=Заливчик, специализирующийся на инструментах, необходимых для цивилизованной жизни, таких как куски и топоры.
+travelbook.villager.turk_vali.desc=Человек богатства и престижа, он возглавляет свою деревню с одинаковой грациозностью и железной решимостью.
+travelbook.villager.turk_weaver.desc=После того, как пастух стрижет овец, а фермер собирает растения, к этому человеку приходит шерсть и хлопок, чтобы превратить их в ковры и другие товары.
+travelbook.villager.turk_weaverwife.desc=Жена ткацки, он не смог бы жить без нее.
+	
+	
+travelbook.village.agriculture_small_seljuks.desc=Небольшая селджукская деревня, занимающаяся сельским хозяйством.
+travelbook.village.agriculture_village_seljuks.desc=Сельджукская деревня, занимающаяся сельским хозяйством.
+travelbook.village.artisans_small_seljuks.desc=Маленькая деревня, где деревенцы добывают камень и производят декоративные изделия, чтобы продавать их другим деревням.
+travelbook.village.controlled_fort_seljuks.desc=Игрок контролирует форт.
+travelbook.village.controlled_small_village_seljuks.desc=Игрок контролирует село.
+travelbook.village.military_village_seljuks.desc=Сельджукская деревня, которая сосредоточена на безопасности, поэтому и на вооружении и доспехах.
+travelbook.village.religious_village_seljuks.desc=Сельджукская деревня, в центре которой находится мечеть.
+travelbook.village.trading_village_seljuks.desc=Сельджукская деревня сосредоточена на торговле и производстве.
+	
+	
+travelbook.building.abdesthane.desc=Источник воды, где жители деревни могут освежиться и очиститься.
+travelbook.building.banditcamp.desc=Лагерь бандитов, где они хранят свои захваченные товары и продолжают оснащать себя.
+travelbook.building.bandittower.desc=Башня, построенная предателями Сельджуков, откуда они планируют свои набеги и хранят свою добычу.
+travelbook.building.barrackssmall.desc=Маленькая казарма, где обучаются великие солдаты сельджуков.
+travelbook.building.bath_abandoned.desc=Совершенно разрушенный хамам посреди пустыни.
+
+
+travelbook.building.cesme.desc=Скважина помогает сельджукским фермерам регулярно орошать свои культуры, что повышает урожайность земли и, следовательно, увеличивает урожайность.
+travelbook.building.cottonfarm.desc=Дом хлопководцы, где он также хранит и выращивает хлопок.
+travelbook.building.cottonfield.desc=Небольшое поле, где сельджуки сажают чудодейственный хлопок.
+travelbook.building.flowerplant.desc=Декоративное здание, где посадили цветы.
+travelbook.building.flowerplantsmall.desc=Декоративное здание, где посадили цветы.
+
+
+travelbook.building.gfarm_a_inn.desc=Комната, построенная для торговцев в мэрии.
+travelbook.building.gmarket_a_inn.desc=Комната, построенная для торговцев в мэрии.
+travelbook.building.gmarket_a_market.desc=Сердце этой деревни, палатки для торговцев из близких и дальних
+travelbook.building.gölgealti.desc=Место, где жители деревни могут отступить от жаркого солнца
+travelbook.building.hamlettownhall.desc=Место, где управляется деревня и могут быть рассмотрены проекты.
+travelbook.building.hamlettownhall_A_inn.desc=Комната, построенная для торговцев в мэрии.
+travelbook.building.hamlettownhallplayer.desc=Место, где управляется деревня и могут быть рассмотрены проекты.
+travelbook.building.hamlettownhallplayer_A_inn.desc=Комната, построенная для торговцев в мэрии.
+travelbook.building.lonemarket_a_market.desc=Независимый торговый пункт, игроки могут покупать товары здесь.
+travelbook.building.mosque_a_archive.desc=Архив под этой мечетью, где хранятся история и информация деревни.
+travelbook.building.node.desc=
+travelbook.building.olivefarm.desc=Посадка оливков, после сбора, перерабатывается в оливковое масло.
+travelbook.building.passnode.desc=На перекрестке, где торговцы и деревенцы встречаются и обмениваются новостями и сплетнями
+travelbook.building.pistachiotrees.desc=Плантация для фисташек, иногда приезжает дровщик собирать их.
+travelbook.building.playerhousegift.desc=Дом-подарк для игрока, где он может жить и хранить свои вещи.
+travelbook.building.playerhousemed2.desc=Дом, который игрок может купить, чтобы жить и хранить свои вещи.
+travelbook.building.playersmall1.desc=Дом, который игрок может купить, чтобы жить и хранить свои вещи.
+travelbook.building.ruin.desc=Разрушенная руина.
+travelbook.building.ruinlonemine.desc=Заброшенная шахта
+travelbook.building.ruinwall.desc=Разрушенная древняя стена.
+travelbook.building.ruinwell.desc=Разрушенный древний колодец.
+travelbook.building.sarayfort.desc=Невероятный замок Селджука, построенный для своего могущественного эмира.  Трейдеры поселяются здесь, чтобы вести бизнес с деревенцами.  Здесь тоже живет имам деревни.
+travelbook.building.sarayfort_a_imams.desc=Этот дом является домом для семьи имама.
+travelbook.building.sarayfort_a_market.desc=Тенты для торговцев из близких и дальних.
+travelbook.building.sarayfortplayer.desc=Невероятный замок Селджука, построенный для своего могущественного эмира.  Трейдеры поселяются здесь, чтобы вести бизнес с деревенцами.  Здесь тоже живет имам деревни.
+travelbook.building.smallmosque.desc=Маленькая мечеть для поселенцев, чтобы совершать молитвы.  Молитвы совершаются 5 раз в день.
+travelbook.building.sugarcanefarm.desc=Маленькая сахарная ферма.  Полученный сахар используется для приготовления вкусных сладостей.
+travelbook.building.thmosque.desc=Большая мечеть.  Построен для сохранения веры и управления деревней.
+travelbook.building.thmosque_a_archive.desc=Архив под этой мечетью, где хранятся история и информация деревни.
+travelbook.building.thmosque_a_femaleside.desc=Район, где женщины совершают молитвы.
+travelbook.building.thmosque_a_inn.desc=Отель, построенный для торговцев в мэрии.
+travelbook.building.watchtower_a_soldier0.desc=Здесь живёт могучий солдат-сельджук.
+travelbook.building.weaver.desc=Здесь делают ковры, одежду, все, что связано с хлопок и шерстью.
+	

@@ -1,0 +1,381 @@
+{
+  "scope": "Full original mod, all mechanics retained as the migration target",
+  "complete": false,
+  "playable_jar": false,
+  "minecraft": "1.18.2",
+  "forge": "40.3.0",
+  "java_source_files": 366,
+  "syntax_errors_before": 21,
+  "syntax_errors_after": 0,
+  "recovered_source_files": 6,
+  "full_compile_errors": 0,
+  "resource_processing": "passed 2026-10-05",
+  "custom_translation_files_preserved": 23,
+  "game_tested": true,
+  "command_parsing_check": "passed against Forge dependencies",
+  "material_regression_check": "passed against Forge dependencies",
+  "wood_variant_check": "passed against Forge dependencies",
+  "legacy_item_stack_check": "passed against Forge dependencies",
+  "variant_block_check": "passed: decorative blocks, roads, oriented tiles, stairs, walls, panes, rosettes and production-state codecs",
+  "ported_model_audit": {
+    "models": 916,
+    "missing_references": 0,
+    "unresolved_texture_bindings": 0
+  },
+  "latest_compile": "migration/latest-compile.log",
+  "updated": "2026-11-22",
+  "firepit_state_check": "passed with isolated registry fixture: fuel, slot validation, inventory and timer persistence; capability routing and live cooking not tested",
+  "tree_port": "five original algorithms, saplings and fruit leaves migrated; full game growth not tested",
+  "marker_port": "eight plan marker blocks migrated, all original enum values retained",
+  "chest_check": "passed with isolated service fixtures: persistence, double-chest locks, all locked click modes, transfers, automation slot restrictions; no live game test",
+  "banner_bed_check": "passed with isolated registry fixtures: metadata, patterns, colors, persistence, custom block types, bed drops",
+  "banner_patterns": "28 flattened items; legacy item conversion checked; Forge enum registration not game-tested; two shield textures missing in original archive",
+  "network_check": "payload roundtrip, ownership, UTF-8 and malformed/oversized rejection passed; channel and dimension-aware senders compile, client/server session not tested",
+  "chunk_loading": "modern Forge tickets ported, including partial-acquisition cleanup and original restart reset behavior; no live world test",
+  "quest_entity_registry_check": "passed using real Forge registries with isolated Point fixture and direct invocation of Forge attribute registration; spawning, target persistence, AI and rendering not game-tested",
+  "world_helpers": "world-height limits, full block states, sounds, entity spawning/UUID lookup and existing chunk checks migrated; legacy block metadata methods remain unported",
+  "advancement_resource_check": "56 production JSON files parsed successfully by Minecraft with icon/config/network fixtures; parent links, trigger namespace and icon variant NBT checked; live granting not tested",
+  "special_item_check": "passed with registry/service fixtures: crown durability/enchantment idempotence, bow parameters, purse NBT and hover name; server item use and bow animation not game-tested",
+  "item_interactions": "sapling knowledge gate, summoning/negation wand hooks and parchment use migrated; world interactions not game-tested",
+  "parchment_check": "passed with service fixtures: stack size, missing tag safety, village coordinates/title and obsolete item creative visibility",
+  "wall_decoration_check": "passed 196 art/facing NBT and spawn-data roundtrips using real entity and Forge registry with service/item fixtures; anchor, bounds, dimensions and fallback checked; live placement, rendering and network connection not tested",
+  "unlock_toasts": "modern render callback, shader, font and item renderer; empty/expired lists hidden before rendering; not game-tested",
+  "text_screen_check": "passed using actual Screen/Button/EditBox and production book classes with font/culture service fixtures: action ownership, event/render registration, page bounds and focus cleanup, text limits/character input/responder, Escape; no graphical client or server actions tested",
+  "text_screen_rendering": "shared modern rendering and callbacks, villager preview, village-map geometry; debug chunk-map snapshots now migrated, not game-tested",
+  "chunk_map_check": "passed: read-only region header fixtures with negative coordinates, clipping, missing/truncated/invalid entries; vanilla + four Forge ticket categories; immutable snapshots and village bounds. Server capture/scheduling/rendering not game-tested",
+  "client_key_check": "passed: M/V/G GLFW defaults, IN_GAME context, keyboard and mouse rebinding against real KeyMapping. MOD setup registration, physical input and actions not game-tested",
+  "client_tick": "Forge client subscriber processes END phase once, resets startup flag when world/player unavailable; old duplicate registration removed",
+  "travel_book_content": "price/list types, resource sorting, flattened icons, tool statistics and biome filtering compile; not game-tested",
+  "java_files": 366,
+  "biome_matching": "22 aliases tested against real 1.18.2 registry; shared matcher for generation and book; surface height lookup; generation hook still unported",
+  "villager_rendering": "models, clothing layers, renderer callbacks, armor, sleeping transforms and labels ported; model geometry isolated test passed; entity registry migrated separately; gameplay still incomplete; no in-game rendering validation",
+  "villager_registration": "Three modern entity types and renderer providers; attributes 40 health/.5 speed, immunity, 128-block tracking, Forge spawn packet; isolated registry test uses entity fixture and copied production attribute builder; actual spawn not tested",
+  "villager_lifecycle": "Modern mobInteract and NBT save callbacks; removal reason hook avoids treating chunk unload as death; remaining AI, storage and combat errors; no live world validation",
+  "villager_behaviour": "Modern movement, projectile spawning, player lookup, entity queries and transient speed modifier; six-family log transfers preserve species and requested limits; inventory fixture checks pass; crop memory stores full BlockState, old numeric wheat supported; custom old-world block ids require registry mapping",
+  "puja_port": "Modern menu registration/opening/screen, target click validation, six synchronized data fields, full-int building packet progress and no-target sentinel, named enchantment NBT; fees and upgrades tested against actual ritual class with service fixtures; GUI/live server menu untested",
+  "trade_port": "Modern menu/screen and open packets; server-only trades, stable offer sorting, bounded purchases, read-only offer slots and scrolling. Actual menu fixture checks passed; live network, screen and storage services untested.",
+  "path_adapter": "Modern Path/Node APIs without reflective field order; endpoint preservation and synchronized advancement, mutable route list, negative-height checks, modern leaves/water/motion. Adapter checks passed; worker world access/threading still unported.",
+  "block_palette_check": "Passed 236 numeric and 377 named vanilla palette entries, 251 block costs, all 613 modern state serialization round trips, six plank-family exclusions, 22 flowerpot entries and unsupported guards. Generated legacy tables use Mojang 1.18.2 BlockStateData. Original block identity is explicit; generic modern-block/legacy-metadata calls and building export still need migration.",
+  "furnace_goal_check": "Actual goal passed with vanilla furnace and villager/storage/firepit fixtures: six species, consumed-log conversion, bounded stack size, shared-house counting, threshold, stale stocks, other fuel, NBT and firepit slot zero. Live AI/storage untested.",
+  "lumber_goal_check": "Actual chop/plant goals passed with world/villager/storage fixtures: six log and sapling species, bark normalization, original sapling random bounds, one-log batching, negative height, construction block exclusion, marker planting and existing-sapling preservation. Generic fruit planting compiles; live grove behavior untested.",
+  "wall_decoration_block_check": "Modern BlockMillWallItem class compiled and passed shape, rotation, facing metadata, support/removal, redstone restriction, ladder flag and drop checks with world/registry fixture. No production instances found; live placement untested.",
+  "world_data_port": "Modern player lists, server/client loaded-entity snapshots via sided proxy, cached profile Optional handling, negative chunk coordinates, existing-chunk checks and modern generation/save calls. Full lifecycle/world persistence and force preload not game-tested.",
+  "village_terrain": "Column scanner respects dimension bounds, including -64 floor. Scans scheduled on world thread with loaded chunks only, no generation, stale map/world guards. Independent snapshots include all flag arrays. Equal-sized moved maps and replaced building locations refresh correctly. Tests passed with classification/world/scheduler fixtures; live timing/pathfinding and initial-map creation not game-tested. Background AStar workers still need separate thread-safety migration.",
+  "snail_goal": "Modern purple dye and full soil state transition; award only after successful write. Actual goal/block test passed with world/inventory fixtures: maturity, repeat/failed write, limits, held stacks, nearest farm, priorities.",
+  "resource_source_states": "Both resource managers save full NBT block_state and read old named+metadata or numeric vanilla IDs. 20342 vanilla states and 253 old IDs passed isolated codec test; numeric-only skull record remains unsupported. Unknown states fail explicitly. Cocoa recognizes jungle log/wood; loaded chest chunk coordinates floor correctly.",
+  "simple_navigation": "Modern PathFinder(int), node positions, dimensions, state pathfinding; bounded fluid surface scan, floor negative Y, axis-aligned DDA zero handling, completed path guard. Actual follow logic test passed with world/direct-path fixtures; live movement/swimming untested.",
+  "culture_banners": "LegacyBannerItems converts 1.12 Base/item damage and pattern colors via Minecraft item data fixer; normalizes key casing without modifying values; preserves invalid dye black fallback in two Inuit entries. 256 color combinations, 16 modern banner colors, 5576 original config entries passed. Culture and village generators migrated; rendering untested.",
+  "world_events": "Forge 40.3 player/world events and separate Dist.CLIENT login subscriber. Overworld-only server loading/saving, duplicate load guard, client dimension unload cleanup and cleanup after startup errors, explicit profile disconnect. Server-only drops/damage/reputation; hired defender targets resolved living attacker. No event-class compilation errors; actual bus/lifecycle and world save untested.",
+  "saved_inventory": "Versioned stock item identity (2975), explicit legacy item flattening, damage/wildcards preserved, unknown IDs rejected. 2202 vanilla item/wildcard roundtrips plus legacy variants passed. Modern server root/FML mod paths; server/client particles and chief screen APIs migrated. No world files loaded.",
+  "custom_markers": "Original six sapling/log/bark families, flattened wool resource markers, quarry variants and actual wet-brick stage. Extracted production classifier passed with Point/world/custom-block fixtures. Panel flowers/skulls migrated; dev path visualization copies coordinates and schedules writes on world thread. Full custom building registration still has legacy chest/sign conversion and remains untested.",
+  "crop_planting": "Modern registered block states and normalized double-plant halves including grape branch; actual seed availability required; null destination, soil and headroom guards; legacy decorative two-block clearing retained. Actual goal test passed with world/inventory fixtures. Live updates, grape growth and failed crop writes remain untested.",
+  "cacao_planting": "Modern cocoa beans icon/held stack, JUNGLE_LOGS tag supports, facing and age-zero states, no placement if missing support or occupied destination. Extracted production state/action test passed for 4 directions x 4 tagged jungle supports; fixtures, no live growth.",
+  "tree_clearing": "Modern LOGS tag, colored glass debug states and dimension-specific vertical scan limits. Compiles without file errors; live clearing and loaded tag behavior untested.",
+  "animal_goals": "Modern entity registry/age API; cattle includes mooshrooms for breeding spawn capacity; food withdrawal checked before love, current live herd checked at action. Slaughter queries exact registered living entity type, excludes children, rechecks adult surplus before targeting. Actual goal classes pass entity/world/storage fixture tests for food, stale stocks, cap, babies, cooldown, dead animals, stale surplus, aggressive threshold, unknown ID and null house. Concurrent hunters, births, combat and live AI untested; original bonus-on-target behavior retained.",
+  "fishing_shearing": "Modern cod/cooked cod and all 16 registered wool items, original 3 wool per sheep, eligibility guards, fresh rod stacks, skip empty fishing destinations, destination availability consistent with tags. Actual goal classes pass isolated entity/world/storage fixture tests. Live AI/inventory integration untested.",
+  "plan_costs": "Modern oak-log wildcard for sticks, six wood-family conversions, slab item metadata zero, ceil for odd Byzantine slab quantities, BuildingPlan full-state cost delegates to InvItem. Original green/red slab to gray tile material mapping retained. Extracted production cost methods passed with plan/inventory/custom-block fixtures; actual InvItem integration, full PNG loading and live building untested. Unsupported image decoder return handled.",
+  "quest_compatibility": "Registry biome matching via LegacyBiomeNames (mountain -> Extreme Hills), ghast target cast, dimension-relative top/bottom milestones, bounded underwater/overhead glass scans, floor-correct exploration surface coordinates. Extracted four quest methods pass fixtures for three height ranges, thresholds, open sky, underwater depths and opaque ceiling. Actual biome/chat APIs checked. Borehole/TNT/void heights now migrated in borehole_quests; live quest flow untested.",
+  "villager_record_compatibility": "String family-name set, missing town hall fallback and modern armor defense accessor; compiles without file errors, no new record integration test.",
+  "server_chat_compatibility": "Mutable component withStyle and sendMessage with NIL_UUID. Color API checked; live delivery untested.",
+  "chief_learning_compatibility": "Modern optional registry lookup before changing profile or charging money; unknown item IDs return safely. No end-to-end transaction/authorization test.",
+  "borehole_quests": "Dimension-relative depth gates, shaft scans full build height to bottom bedrock band, exact floor-based 5x5 negative coordinates, cave/void air acceptance, bottom-relative TNT/obsidian band, symmetric ignited-TNT AABB and missing position guard, actual minimum-Y void test. Extracted four production methods pass fixture tests over three dimensions, obstructions, progress thresholds, TNT/cover, both directions and intact/broken floor. Live chunk loading, explosions, full quest chains and old instructional text still untested.",
+  "construction_state_io": "New versioned -2975 named NBT state records for both construction queues and roads; special and marker bytes preserved separately. Full states used in normal placement and completion checks, modern pots preserve contents. Actual codec passes 20342 vanilla states and concatenation, ladder/stair marker mappings, legacy vanilla log ID, malformed IDs/properties/version and truncation. Old mod numeric IDs require missing historical mapping; skull numeric-only records unsupported. No actual old world or complete construction placement tested. Bed placement retains original head-first plan assumption.",
+  "building_services": "Full-state inventory key conversion, wildcard cache counts actual entries once with overflow cap; modern profile/banner/entity APIs, six-family sapling growth through vanilla grower, loaded chunk presence checks, squid-inclusive pen counting and successful spawn accounting, netherwart age property. Cache method tested with fixtures + actual LegacyItemStacks for six woods/16 wool colors. Storage mutation, trees, mob respawn and banners not game-tested.",
+  "building_markers": "Spawner entity types, supported ground/wall torches, door properties, vanilla configured tree features and existing custom generators, solidity/log tags, lower dimension limits. Modern vanilla tree shapes can differ from original algorithms; cherry/sakura shared marker ID remains original ambiguity. No live marker test.",
+  "plan_rotation": "BlockState.rotate counterclockwise replaces old facing/axis/quartz special cases, full-state handoff, modern stone variants and wall banner facing; obsolete rendering range call removed because placements notify individually. Compiles, live rotations not validated.",
+  "travelbook_export": "TextureTarget + Screenshot/NativeImage readback, fixed 2x projection for 32x32 item and 600x440 villager canvas, original portrait crop rectangles; projection/modelview/main target and item offset restored in finally. PNG writer tested against real filesystem/ImageIO (parents, alpha, overwrite). Live rendering and complete GL state restoration untested.",
+  "remaining_goals": "Cocoa beans harvested only on successful block clear, maturity/null/server guards, independent held stack. Extracted action passed world/inventory fixtures including irrigation extremes and failed writes. Sugarcane checks survival and successful write; no live test. LanguageData generic types fixed; obsolete impossible banner model init call removed.",
+  "client_proxy": "MOD bus for client model/color and common registry events; modern foliage tint, resource reload, player and chat APIs. Legacy named keyboard settings mapped to GLFW, 121 key save/load roundtrips and aliases pass with native libraries. Old GUI handler remains a local compatibility adapter; modern menus already registered separately. Removed unused old per-leaf graphics method; render layers configured in LegacyVariantModels. No graphical client or lifecycle test.",
+  "loading_collections": "Typed plan variations, village plan-set copies and virtual directory sorting. Modern shared spawn coordinates from LevelData and overworld identity. Legacy profile lookup uses Optional and fails explicitly if unresolved. Full compile still blocked elsewhere; no actual legacy profile load tested.",
+  "jar_built": true,
+  "game_test_result": "Sixth dev-client run loaded existing world, recognized village/building and quest messages; ran until clean close and all dimensions saved. Prior inventory packet and null-player-predicate errors did not recur. Keyboard-based menu tests inconclusive: injected M/V/Escape had no observed response, while mouse and Alt+F4 worked; no proven deadlock. Full gameplay and packaged JAR execution remain unverified.",
+  "jar_path": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\build\\libs\\millenaire-8.1.2-port.0.jar",
+  "jar_sha256": "5b380c75364ddc4d54c9373fa1e9aeb813a056126d35b44a1362b758350f1587",
+  "modern_lifecycle": "Forge constructor, sided proxy, queued common setup, sound registry, registry subscriber separated from inheritance, named NBT smelting recipes. Union-filesystem content deployment preserves old directories by backup. Client launch verified; dedicated server untested.",
+  "village_generation": "Decoration feature queues candidate chunks; one loaded candidate per server-world END tick, owning server thread. Long chunk keys scoped weakly by world, seeded random, fractional completion preserved. Vanilla village toggle uses mapped configured-biome reflection with restore on stop. Full generation, policy, deterministic ordering and unloaded candidate retention not fully validated.",
+  "export_states": "Palette keyed by full BlockState rather than integer hash or metadata. Export reverses plan rotation, includes 14 leaf persistence/distance states, lit furnace and actual wool borders. Complete import/export roundtrip untested.",
+  "brewing": "Actual goal + vanilla stand with world/storage fixtures passes: withdrawal failure, water NBT, fuel, stock consumption, full storage preserves output, potion tags, repeat guard, active brew and nulls. Live brewing tick/AI untested. Legacy water/awkward metadata supported; arbitrary potion inventory identity still incomplete.",
+  "harvest_metadata": "Actual harvest predicate tested over 28 crop ages with Point fixture. Crop max age, explicit state, missing/unknown types; metadata codec checked for signs/chests/beds/warts, unsupported state rejection, water/awkward matching. World writes now return actual result. Live harvesting untested.",
+  "crafting_recipes": "99 recipes present in built JAR. Custom silver IDs preserved; recipe-load errors absent from sixth run. Crafting actions not yet verified.",
+  "runtime_fixes": "Derived walls/stairs/slabs capture base map color; inherited static registry events no longer double-register. Legacy item names normalized, sign alias, numeric vanilla block ID, flower soil semantic key, custom animal name casing and silver colour compatibility. Last aliases await next runtime verification.",
+  "remaining_risks": "Background AStar live world access/threading remains unresolved. Chest/sign conversion, old mod numeric IDs, full world saving/building/trading/quest chains and server/client parity require validation. Original two shield textures missing. No full-mechanics completion claim.",
+  "packet_fix": "FriendlyByteBuf item and NBT codecs replace mismatched legacy formats. Protocol 1.18.2-2. 36 actual codec item-pair roundtrips pass; no previous inventory decode errors during sixth world run.",
+  "panel_model": "Corrected model reference and vanilla texture; seventh client launch no model loading warning. Existing world reopened and saved cleanly.",
+  "custom_chest_conversion": "Full vanilla container NBT transferred to locked chest after detaching old block entity to avoid dropped/duplicated contents. Restore original state and entity on failure. Actual conversion helper passes world/container fixture tests: transfer, orientation, repeated invocation, four rollback paths, four guards. Real in-world conversion and double-chest integration still untested.",
+  "test_jar_delivery": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-8.1.2-port.0-mc1.18.2-test30-uk-ru.jar",
+  "user_runtime_feedback": "User confirmed installed test JAR: M/V and trading work. Reported crowding, malformed door halves (screenshot), missing two Seljuk shield textures and visible teleporting.",
+  "door_fix": "Normal/inverted doors share placement helper. Both halves installed with matching full state and deferred shape updates; right hinge applied to both halves. 512 real vanilla states/rotations pass. Existing malformed world doors not automatically migrated; live placement remains to test.",
+  "path_recovery_fix": "Path following calls vanilla stuck detection and permits opening doors; repeated active path assignment preserves stuck timer. Stuck route is discarded for replan. Short-range unconditional teleport removed. Path failure requires >=3 failures over >=200 ticks before fallback; success/destination change resets. Emergency destination checks collision and uses correct feet height. Navigation fixtures and pure policy tests pass; crowding/live movement not yet verified.",
+  "shield_fallback": "Two missing Seljuk shield pattern assets use copies of existing generic Seljuk shield, not distinct military/religious artwork. Packaged bytes verified.",
+  "panel_clock_fix": "All PanelManager cooldown reads/writes use getGameTime instead of getDayTime, initial last update -100 permits immediate refresh. User confirms new test2 villages and time commands; time reversal was a plausible cause of blank panels. Live repair/click confirmation pending.",
+  "door_pair_fix": "Plan auto-guess now covers every DoorBlock lower half, chooses opposite outer hinges for adjacent pairs and compares actual solid neighbors instead of map membership. Stores hinge in full BlockState. 36 real block-type/direction combinations pass, including walls and explicit air. Live construction confirmation pending.",
+  "localization": {
+    "coverage": {
+      "uk_text_units": 8126,
+      "uk_files": 63,
+      "ru_text_units": 8126,
+      "ru_files": 63
+    },
+    "method": "Existing translations retained where valid; missing entries translated locally with NLLB and manually reviewed terminology. Not fully human proofread.",
+    "runtime_test": "Pending user test",
+    "checks": "Protected tokens, resource coverage, JSON keys, archive bytes and deployment backup fixture verified"
+  },
+  "work_clock_fix": "actionStart, goalStarted and every lastGoalTime writer/reader use getGameTime; periodic villager tasks also use game time. Daily schedules retain day time. Transient timers are not persisted. Build and source consumer audit passed; live time-reset recovery pending. Other day-time timers and asynchronous pathfinding errors still require review.",
+  "coincident_villager_separation": "Small server-side horizontal impulses for nearly coincident awake villagers; ordinary overlapping during motion still possible. Live verification pending.",
+  "wood_translation_fix": "Generic Wood corrected to Деревина будь-якого виду / Древесина любого вида; deployment revision incremented.",
+  "goods_scan_optimization": {
+    "evidence": "30-second JFR on user test6: 628 server execution samples, 178 contain Building.nbGoodAvailable; GC pauses 3-6 ms. Server log also reports 2-3.6-second tick lag. Sampling does not establish every pause cause.",
+    "changes": "Return zero for no physical stock before reserve scans; resolve resident type once; skip own-house supply searches before evaluating availability. No availability cache, build speed or resource-cost changes.",
+    "validation": "Full build passed; actual Building method exercised with isolated InvItem and building fixtures for no chests, 8 empty-stock modes, positive stock, household reserves, construction bypass, and changing stock. No post-change live performance measurement yet."
+  },
+  "resource_panel_empty_state": "Resources heading always shown; null current goal plan shows localized no-selected-project message. Resource counts and click actions unchanged. Spare town-hall panel index 3 remains without content or action. Full build and packaged labels checked; live display not tested.",
+  "path_refresh_fix": {
+    "changes": [
+      "Keep active navigation during background route refresh; explicit stop and destination changes still clear path.",
+      "Exactly one worker completion callback on failures; volatile flags and finally cleanup.",
+      "Construction action range uses actual block instead of alternate access node.",
+      "Pathfinding and action reach use matching strict boundary."
+    ],
+    "validation": "Full build; 8 actual AStarWorker fixture scenarios (logger isolated); code review of construction and path range checks. In-game effect not yet verified.",
+    "remaining": "Asynchronous planner stale callbacks/live-world access not redesigned; unreachable-site fallback still uses original 100 ticks; no claim that all stutter or observed clearing delay is resolved."
+  },
+  "construction_approach_fix": {
+    "change": "Construction only: aim AStar tolerance at actual block instead of shifted access node. Avoid compounded horizontal offset and requiring viable access nodes near elevated canopy. Existing horizontal/vertical tolerance and action cadence unchanged.",
+    "validation": "Full build; 243 actual worker endpoint acceptance cases plus scaffold height check and reproduction of old offset outside 5-block work radius. No live world pathfinding or clearing-rate verification.",
+    "lumberman": "Separate chopping goal retains legacy horizontal range 8 and no line-of-sight condition; screenshot of indoor lumberman alone does not establish stalled work."
+  },
+  "lumber_navigation_fix": {
+    "changes": [
+      "Lumber search and action centre on actual wood target, preserving 8-block work range.",
+      "On failed custom route, try vanilla path at most once per 40 game ticks before emergency teleport; only reached, nonempty, in-range routes accepted.",
+      "Failed refresh does not abandon active unstuck route.",
+      "Cross-thread result flags volatile; throttled Navigation recovery log with goal/position/target.",
+      "Ukrainian sleep status corrected, bundled locale revision updated."
+    ],
+    "validation": "Build passed; 1014 actual worker tolerance cases and path adapter progression checks passed. Vanilla fallback has not been tested in a live world.",
+    "remaining": "Duplicate entity UUID warnings and server stalls remain unexplained. Async stale callback cancellation remains incomplete. Emergency teleport retained when route attempts fail. Previous speech may remain visible briefly after task changes."
+  },
+  "entity_identity_crash_fix": {
+    "changes": [
+      "Remove MillVillager equals/hashCode based on persistent villagerId; inherit Minecraft runtime entity identity.",
+      "Duplicate cleanup independent of logging, retain first canonical entity, skip removed entities.",
+      "Silent duplicate discard only unregisters itself if it is the registered instance."
+    ],
+    "evidence": "Before fix, actual Minecraft EntitySection removes A when asked to remove B with same persistent villager ID, leaving B in its old section. After fix, actual section and HashSet checks pass, including persistent ID mutation. Full build passed.",
+    "limitations": "Crash stack on test10 is Entity is already tracked during chunk visibility transition. Reproduced underlying section corruption, not full saved-world crash. Live reload and chunk transitions in affected world still need verification. No world file edits; unloaded-chunk respawn scheduling not redesigned."
+  },
+  "review13": {
+    "translations": "Correct reported Ukrainian planting, fishing quest, house/guard/quarry/archery/army forge names and not-built label; additional Japanese building names proofread against English. Ukrainian/Russian counted upgrade forms, 11-14 exceptions. Locale marker 2026-11-17-2.",
+    "navigation": "Accept useful partial vanilla recovery routes rather than requiring whole destination reached. Reject stationary/backwards/empty/consumed routes. Does not disable emergency teleport or establish all navigation issues fixed.",
+    "validation": "Full build, 72 plural cases and partial-path acceptance checks, packaged keys and quest-name placeholder checked. No live testing of test13."
+  },
+  "review15": {
+    "changes": [
+      "Reported Ukrainian labels, crop tuition and culture leadership text corrected. Brave woman -> warrior per original description; lord/farmer/shop names corrected. Includes undelivered test14 labels.",
+      "Minecraft GroundPathNavigation with doors/swimming replaces legacy path following; bounded native path search preferred, old JPS retained as fallback. Removed random route refreshes.",
+      "Road and road slab states explicitly non-traversable interiors, collision heights unchanged.",
+      "Sleeping residents use sleeping label; map includes active task alongside occupation.",
+      "Panels hardness 20 and Shift required to mine/break, including creative."
+    ],
+    "validation": "Full build, actual six road state passability/height checks, panel hardness, navigation inheritance, sleep labels, packaged text placeholders. Live navigation/rendering/creative panel interaction not tested.",
+    "balance": "Compared ContainerTrade to original 8.1.2 decompilation: normal sales reputation value*count, donation multiplier 4, unchanged.",
+    "remaining": "No guarantee all stalls/teleports resolved; async JPS fallback and village resurrections remain risk areas. Dedicated server untested."
+  },
+  "delivery16": {
+    "fix": "Preserve original target/canReach when adapting partial native routes. Only complete-route endpoints can substitute for action destination; home delivery always uses actual home delivery point. Shared 3D range check for home approach/action/deposit, guarding against remote inventory access.",
+    "validation": "Full build and actual GoalBringBackResourcesHome fixture: far/other-floor refuses before inventory read, nearby accepted; partial/full route target and completion preserved. No live-world test.",
+    "limits": "Delivery still uses original house selling position and 3-block range; does not enforce crossing a doorway or line of sight."
+  },
+  "advancements17": {
+    "change": "All 56 Ukrainian achievement names/descriptions (112 keys) manually reviewed against English source, synchronized modern JSON and legacy locale copies.",
+    "validation": "Full build; all 112 packaged strings and both legacy copies match review; achievement definition files byte-identical to test16. UI wrapping not live-tested."
+  },
+  "test18": {
+    "changes": [
+      "FloatGoal for swimming",
+      "physical movement watchdog: repath 80/160 ticks, existing recovery 240 ticks",
+      "label spacing and removal of legacy sleeping label offset",
+      "new fence placement neighbour shapes",
+      "Ukrainian Japanese battle dialogue"
+    ],
+    "validation": "Full build, watchdog stationary/detour/destination/reset tests and packaged resources. Not live tested.",
+    "outstanding": [
+      "live deep-water bank and fort navigation tests",
+      "builder elevated work access and remote construction fallback",
+      "server stall profiling",
+      "cheat-only construction speed/health settings in M menu",
+      "farm activity diagnosis in affected world",
+      "clarify planned-project versus active-construction signs",
+      "remaining localization audit"
+    ]
+  },
+  "test19": {
+    "review": "C:\\Users\\sviat\\Desktop\\mods\\millenaire-1.18.2-forge\\migration\\master-audit-2026-11-21\\REVIEW-UA.md",
+    "scope": "First verified audit batch only; full audit remains open",
+    "validation": "Full build and actual-method isolated tests; no live world/dedicated server test"
+  },
+  "test20": {
+    "changes": [
+      "ground and JPS paths reject chest body and chest-top support; includes vanilla/trapped/ender and Millenaire locked chests",
+      "road and road slab light attenuation uses inherited vanilla partial-shape behavior instead of hardcoded 15"
+    ],
+    "validation": "Full build; six chest states and adjacent floor; 36 road states compare light attenuation with vanilla, preserve collision height. No live client visual or full route test.",
+    "limitation": "Existing chunk light may need relighting if previously saved with incorrect attenuation."
+  },
+  "test21": {
+    "changes": [
+      "Server-thread immutable main and auxiliary snapshots; worker performs only file IO",
+      "Failure preserves dirty flag with retry backoff; successful older generation cannot clear newer changes",
+      "Atomic per-file replacement with previous .bak; construction and road dirty revisions",
+      "Synchronous fresh final village save on world save/unload, including inactive villages"
+    ],
+    "validation": "Full build plus actual atomic IO and SaveWorker methods; injected write/auxiliary failure, NBT/byte snapshot isolation, revision matching, retry, backups, construction dirty changes.",
+    "limitations": [
+      "No multi-file transaction or startup rollback; interrupted batch can contain mixed generations",
+      "No live world restart or dedicated server test",
+      "Profiles, NPC loading, binary reader bounds and other audit items remain open"
+    ]
+  },
+  "test22": {
+    "changes": [
+      "Profiles loaded independently with strict UUID parsing; no arbitrary cross-player auto-conversion",
+      "Legacy profiles retain original directory; no rename or rewrite on read; partial profile becomes read-only",
+      "NPC read never writes source; invalid/duplicate/failed record load blocks subsequent writes to original NPC file",
+      "Legacy int/long IDs decoded; zero/MIN_VALUE and wrong types rejected",
+      "Atomic profile and NPC file writes with backups; action values preserve colons"
+    ],
+    "validation": "Full build, actual-method fixtures for valid/partial/duplicate/corrupt NPC file loads and subsequent saves, strict UUID, profile isolation/partial read protection, atomic profile backup, legacy IDs; test21 save regression passed.",
+    "limitations": [
+      "No live world restart or dedicated server test",
+      "Unreadable data is protected, not automatically repaired; read-only profile progress is not persisted until data is repaired",
+      "Legacy name resolution still depends on server profile cache; cross-UUID migration requires explicit identity verification",
+      "Atomic writes are per-file; no multi-file transaction or startup rollback",
+      "Remaining audit issues are not closed"
+    ]
+  },
+  "test23": {
+    "changes": [
+      "Plant goal destination selection no longer requires a previous target",
+      "Breeding arrival reduced from 5 to 3 blocks with vertical bound under 2, inside existing feeding scan",
+      "Shared hard barrier rules for fences/walls/bars in native and JPS planning, block barrier-top stepping, gates retain separate door handling"
+    ],
+    "validation": "Full build; actual planting source with field/inventory fixtures includes idle null-target selection, seed consumption and invalid-soil cases; node classification for oak/nether fences/wall/bars, gate rules, breeding action-range boundaries; chest/road regression checks.",
+    "limitations": [
+      "No live world AI test or full-route end-to-end test; other sources of stalled jobs may remain",
+      "No change to profession assignments, seeds, production rates, breeding cooldown or herd cap",
+      "Existing installed worlds untouched"
+    ]
+  },
+  "test24": {
+    "changes": [
+      "Complete-before-publish bounded binary readers: construction, nested paths and clearing points",
+      "64 MiB file cap, one million total block/point entries, feasible counts, EOF and coordinate validation",
+      "Saved progress validated before construction array publication; path cursor bounds checked",
+      "Invalid plan protects auxiliary files and main village snapshot from overwrite; removed zero-plan automatic rush"
+    ],
+    "validation": "Full build; valid modern state roundtrips, every truncated prefix of two-block file, negative/huge counts, nested paths, trailing bytes, cursor bounds, coordinate limits, oversized file, direct main/auxiliary write protection; test21 regression.",
+    "limitations": [
+      "No live world restart test",
+      "Protection is not repair: later progress of affected village is not saved until files are repaired and reloaded",
+      "No generation/hash matching across files or automatic backup rollback",
+      "Absent plan with zero progress retained as legacy completed/no-plan state; missing files cannot always be distinguished from legitimate absence",
+      "Other audit findings remain open"
+    ]
+  },
+  "test25": {
+    "changes": [
+      "Generic crafting verifies actual ingredient withdrawals and output deposits",
+      "Exact snapshot rollback of resident inventory, building chest/furnace slots and firepit outputs on partial result or exception",
+      "Nonpositive recipe quantities rejected; availability sum uses long; client action blocked"
+    ],
+    "validation": "Full build; real GoalGenericCrafting and GoodsTransaction with storage/resident fixtures, real putItemsInChest for output; successful recipe, partial ingredient, partial output, capacity failure, exception rollback, exact slot/NBT and resident preservation.",
+    "limitations": [
+      "No live village production test or dedicated server test",
+      "Money operations P0-05, trade and hire transactions remain unmodified and open",
+      "In-memory server-thread rollback is not a crash-durable transaction",
+      "Snapshot overhead not profiled in a large village"
+    ]
+  },
+  "test26": {
+    "changes": [
+      "Staged long money planning with balance/capacity and purse validation; failure leaves inventory unchanged",
+      "Village and merchant trade rollback goods and payment together, retaining smaller quantity fallback",
+      "Hire/extension, building purchase and paid teaching require successful payment first; scroll delivery/payment rolled back together",
+      "Quest monetary reward checked before step mutations; purse deposits use safe planner",
+      "Native paths allow operable fence gates; 64-block search horizon and bounded increased node budget",
+      "Water/farmland costs favor detours; physical watchdog replaces old distance-to-target stall cancellation"
+    ],
+    "validation": "Full build; real money/trade/crafting methods with fixtures covering insufficient funds, change capacity, multiple purses, long balances, successful buy/sell, failed trade and exception rollback; gate/crop node classification; chest/road/breeding regressions.",
+    "limitations": [
+      "No live route test in user fort or dedicated server test; water/crop cost only affects native planner, JPS fallback retains existing costs",
+      "In-memory transactions are not crash-durable",
+      "Service success paths and whole quest completion not fully transactional under arbitrary exceptions; server permissions remain separate audit work",
+      "No CPU profiling for wider route search",
+      "Rice planting remains assigned to five Japanese villager roles; no worker-count cap introduced"
+    ]
+  },
+  "test27": {
+    "changes": [
+      "Bounded fallback executor: two daemon workers, queue 64, cancellation removes queued tasks",
+      "Generation and worker identity checks discard stale completions; server-thread result delivery",
+      "Real interruption and monotonic timeout, including recursive JPS jump checks",
+      "Native replacement requests and entity removal cancel old fallback work",
+      "Queue rejection is backpressure, not unreachable-path failure"
+    ],
+    "validation": "Full build; actual planner/executor with controlled worker fixtures: stale callbacks, explicit cancellation, deferred server delivery, single classic fallback, saturation and drain. 71 submitted, one deliberate rejection, active count never above two.",
+    "limitations": [
+      "Workers still access live world; immutable snapshots remain necessary",
+      "No live-world tick-time profiling or full fort route test",
+      "Native path calculations not covered by shared executor budget",
+      "No claim of complete navigation optimization"
+    ]
+  },
+  "test28": {
+    "changes": [
+      "Native detour fallback keeps the same world region, permits walked distance up to 192, capped at 4096 visited nodes",
+      "Only incomplete normal routes trigger expanded search; max one per level tick and one per resident per 100 ticks",
+      "Only a complete detour replaces the normal result"
+    ],
+    "validation": "Full build; actual Minecraft PathFinder with controlled 2D fort grid: fence enclosure and moat/bridge, both directions. Original 64-block limit fails all four. Expanded search reaches all four without crossing barrier or water. Existing gate/chest/road classification checks pass.",
+    "limitations": [
+      "No live save or full 3D movement test yet",
+      "Grid timings are not live server performance measurements",
+      "Background JPS still reads live world; native search global budget remains partial",
+      "User reports Byzantine fenced fort in the other save too; both saves need live verification"
+    ]
+  },
+  "test29": {
+    "root_cause": "MillVillager never overrode createNavigation: PathNavigateSimple and its custom evaluator/detour search were unused by entities.",
+    "fix": "Override createNavigation(Level) to install PathNavigateSimple.",
+    "validation": "Full build; actual MillVillager factory invoked on controlled entity verifies navigator, evaluator, detour finder, water penalty and door flags. Saved Byzantine fort blocks replayed through actual WalkNodeEvaluator/PathFinder: routes from (11,67,591) to (2,64,562) and (10,67,599) reach destination, 49 and 9 nodes.",
+    "limitations": [
+      "Offline replay uses fixture entity/region and vanilla substitutions for modded chest/path blocks, not live movement",
+      "No live game validation yet; Japanese maximum fort not replayed",
+      "Navigation optimization audit remains incomplete"
+    ]
+  },
+  "test30": {
+    "changes": [
+      "Classic AStar fallback uses indexed min heap with decrease-key and coordinate map for closed nodes",
+      "Door/gate handling reads actual navigation path with previous/current/two next nodes and vertical offsets; no closing occupied passage",
+      "Generic cooking approaches furnace front and verifies work position/physical access; generic crafting requires arrival at crafting point",
+      "Shearing requires actual animal proximity and unblocked waist-height access",
+      "Programmatic placement initializes wall/custom wall/gate connections as well as fences; vanilla wall post override preserves top torch support"
+    ],
+    "validation": [
+      "Full build",
+      "30000 randomized indexed-heap operations vs reference plus priority decrease regression",
+      "Wall/cobblestone/acacia/oriented gate shapes; top torch support with vanilla wall_post_override tag; open/closed gate skylight",
+      "Work access: solid wall/fence/closed gate block, open gate permits, furnace can be target but wall in front blocks",
+      "Scheduler cancellation/generation/bounded queue regressions and actual entity navigation factory"
+    ],
+    "limitations": [
+      "No live game movement or work-action validation for test30 yet",
+      "No measured live MSPT improvement; JPS search itself still has separate linear collections and reads live world",
+      "Work-arrival rules added to generic cooking/crafting and shearing, not a universal two-stage job system for every profession",
+      "Already saved incorrect wall connections not globally rewritten",
+      "Torch preservation verified for direct wall replacement with valid final support, not arbitrary demolition",
+      "Gate skylight tested as vanilla block state, not visual shading/render in user save"
+    ]
+  }
+}

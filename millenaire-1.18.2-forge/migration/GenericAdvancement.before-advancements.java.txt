@@ -1,0 +1,87 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  com.google.gson.JsonDeserializationContext
+ *  com.google.gson.JsonObject
+ *  net.minecraft.advancements.ICriterionTrigger
+ *  net.minecraft.advancements.ICriterionTrigger$Listener
+ *  net.minecraft.advancements.PlayerAdvancements
+ *  net.minecraft.entity.player.EntityPlayer
+ *  net.minecraft.entity.player.EntityPlayerMP
+ *  net.minecraft.util.ResourceLocation
+ */
+package org.millenaire.common.advancements;
+
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
+import java.util.HashMap;
+import java.util.Map;
+import net.minecraft.advancements.CriterionTrigger;
+import net.minecraft.server.PlayerAdvancements;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.resources.ResourceLocation;
+import org.millenaire.common.advancements.AlwaysTrueCriterionInstance;
+import org.millenaire.common.advancements.MillAdvancements;
+import org.millenaire.common.advancements.PlayerListeners;
+import org.millenaire.common.network.ServerSender;
+
+public class GenericAdvancement
+implements CriterionTrigger<AlwaysTrueCriterionInstance> {
+    private final String key;
+    private final ResourceLocation triggerRL;
+    private final Map<PlayerAdvancements, PlayerListeners> playerListeners = new HashMap<PlayerAdvancements, PlayerListeners>();
+
+    public GenericAdvancement(String key) {
+        this.key = key;
+        this.triggerRL = new ResourceLocation(key);
+    }
+
+    public void addPlayerListener(PlayerAdvancements playerAdvancementsIn, CriterionTrigger.Listener<AlwaysTrueCriterionInstance> listener) {
+        PlayerListeners listeners = this.playerListeners.get(playerAdvancementsIn);
+        if (listeners == null) {
+            listeners = new PlayerListeners(playerAdvancementsIn);
+            this.playerListeners.put(playerAdvancementsIn, listeners);
+        }
+        listeners.add(listener);
+    }
+
+    public AlwaysTrueCriterionInstance deserializeInstance(JsonObject json, JsonDeserializationContext context) {
+        return new AlwaysTrueCriterionInstance(this.getId());
+    }
+
+    public ResourceLocation getId() {
+        return this.triggerRL;
+    }
+
+    public String getKey() {
+        return this.key;
+    }
+
+    public void grant(Player player) {
+        if (player instanceof ServerPlayer) {
+            PlayerListeners playerListeners = this.playerListeners.get(((ServerPlayer)player).getAdvancements());
+            if (playerListeners != null) {
+                playerListeners.grantAndNotify();
+            }
+            ServerSender.sendAdvancementEarned((ServerPlayer)player, this.key);
+        }
+        MillAdvancements.addToStats(player, this.key);
+    }
+
+    public void removePlayerListeners(PlayerAdvancements playerAdvancementsIn) {
+        this.playerListeners.remove(playerAdvancementsIn);
+    }
+
+    public void removePlayerListener(PlayerAdvancements playerAdvancementsIn, CriterionTrigger.Listener<AlwaysTrueCriterionInstance> listener) {
+        PlayerListeners listeners = this.playerListeners.get(playerAdvancementsIn);
+        if (listeners != null) {
+            listeners.remove(listener);
+            if (listeners.isEmpty()) {
+                this.playerListeners.remove(playerAdvancementsIn);
+            }
+        }
+    }
+}
+

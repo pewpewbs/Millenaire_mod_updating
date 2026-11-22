@@ -1,0 +1,1 @@
+package org.millenaire.common.item; public class InvItem { public interface IItemInitialEnchantmens { void applyEnchantments(net.minecraft.world.item.ItemStack stack); } }

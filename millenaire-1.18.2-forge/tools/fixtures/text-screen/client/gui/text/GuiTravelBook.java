@@ -1,0 +1,2 @@
+package org.millenaire.client.gui.text;
+public class GuiTravelBook extends GuiText { public GuiTravelBook(net.minecraft.world.entity.player.Player player){} public void jumpToDetails(org.millenaire.common.culture.Culture culture,GuiButtonReference.RefType type,String key,boolean flag){} protected void customDrawBackground(int x,int y,float f){} protected void customDrawScreen(int x,int y,float f){} public net.minecraft.resources.ResourceLocation getPNGPath(){return null;} public void initData(){} }

@@ -1,0 +1,534 @@
+//For most villagers, greeting lines have not been added yet.
+
+architect_byzantine.construction=$name! Gnorízeis óti oi Romaíoi eínai oi kalýteroi kataskevastés? / $name, а ты знал, что Римляне лучшие строители?
+architect_byzantine.construction=$name! Des pos ftiaxno ena architektoniko dimiourgima! / $name, смотри как я строю это прекрасное здание.
+architect_byzantine.construction=Aftó to ktírio tha ginei poli ómorfo! / Это будет самое красивое здание!
+architect_byzantine.construction=Den échei teliosei, allá vlépo tin omorfiá stin douleiá mou. / Хоть оно и не достроено, но я уже вижу, что это здание великолепно.
+architect_byzantine.construction=Dimioúrgo tóso entiposiakes domés. I architektoniki eínai pragmatiká i pio ómorfi morfí téchnis./ Я умею строить такие сложные конструкции. Строительство - вот истинная форма искусства.
+architect_byzantine.construction=I Rómi den chtístike se mia méra, chtístike toublo me toublo. / Рим не был построен в один день, его строили веками.
+architect_byzantine.construction=I architektonikí mas eínai anóteri apó óla ta álla ktíria se olókliro ton kósmo. / Наша архитектура самая лучшая из всех.
+architect_byzantine.construction=I oikodómisi me ton romaïkó trópo eínai o kalýteros trópos. / Строить по-римски - лучший способ.
+architect_byzantine.construction=Sas arései to tropos kataskeuis mou? / Тебе нравится мой стиль?
+architect_byzantine.construction=Chtizo apo tote pou thymamai. I architektoniki échei gínei i zoí mou. / Я строил здания почти всю мою жизнь. Строительство стало частью моей жизни.
+
+architect_byzantine.getResourcesForBuild=Apó poú proérchetai to chorió? / Откуда деревня получает эти блоки?
+architect_byzantine.getResourcesForBuild=Chreiázomai ylika gia na ftiáxo tis kalýteres kataskevés! / Мне нужны блоки, чтобы построить лучшие структуры!
+architect_byzantine.getResourcesForBuild=Káthe kataskeví archízei me ta blok. / Каждое строительство начинается с блоков.
+architect_byzantine.getResourcesForBuild=Prépei na epiléxo prosektiká ta ylika o ídios. / Я сам должен тщательно выбрать блоки.
+architect_byzantine.getResourcesForBuild=Pós metaférete tósa pollá ylika ótan ftiáchnete $name? / Как ты можешь нести столько блоков, когда строишь $name?
+architect_byzantine.getResourcesForBuild=To cheirótero méros tou ktiríou eínai na i metafora ton ylikon. / Худшая часть строительства - это получение блоков.
+
+architect_byzantine.goDrink=Arketá ktísimo! Chreiázomai krasí! / Достаточно строить!  Мне нужно немного вина!
+architect_byzantine.goDrink=Chreiázomai éna potó gia na me empnéfsei! / Мне нужен напиток, чтобы вдохновить меня!
+architect_byzantine.goDrink=Káthe kalós oikodómos chreiázetai éna potó sto télos tis iméras. / Каждому хорошему архитектору нужен напиток.
+architect_byzantine.goDrink=I douleia mou fernei dipsa gia krasí. / Строительство заставляет меня жаждать вина.
+
+architect_byzantine.gopray=Elpízo o Theós mou dínei émpnefsi gia to epómeno ktírio mou! / Надеюсь, Бог даст мне вдохновения на следующую постройку!
+architect_byzantine.gopray=Giatí o Theós me ékane architéktona? / Почему Бог сделал меня архитектором?
+architect_byzantine.gopray=I prosefchí eínai éna simantikó méros tou romaïkoú ktiríou. / Мольба - важнейшая часть Римских построек.
+architect_byzantine.gopray=Katanoeí ta provlímata pou échoun oi architéktones. / Он поймет все проблемы архитекторов.
+
+architect_byzantine.gorest=An den koimithó, yparxei periptosi na kano palabomara. / Если я не высплюсь, то я могу ошибиться в постройке.
+architect_byzantine.gorest=Den boró na oikodomíso ótan eimai kourasmenos. / Я не могу строить, когда устал.
+architect_byzantine.gorest=Eínai dýskolo na chtizei kaneis sto skotádi. / В темноте невозможно строить.
+architect_byzantine.gorest=Telos bardias, kalynychta. / Хватит стойки на сегодня.
+architect_byzantine.gorest=Ísos tha oneireftó ta kalýtera ktíria ston kósmo! / Может, мне приснится как я строю самые лучшие в мире здания!
+
+architect_byzantine.gosocialise=Kaneís se aftó to chorió den katalavaínei ta provlímata tis oikodómisis. / Никто в деревне не понимает проблемы строителей.
+architect_byzantine.gosocialise=Káthe architéktonas chreiázetai émpnefsi apó állous. / Каждый архитектор требует вдохновения от других.
+architect_byzantine.gosocialise=Oi architéktones chreiázontai polles apopseis gia na evdokimísoun. / Архитекторам нужна критика для развития.
+architect_byzantine.gosocialise=Ti na skéftetai to chorió gia ta ktíriá mou? / Что деревня думает о моих постройках?
+
+//armysmith_byzantine.MakeIndianTools=Ta romaïka ergaleia einai ta kalytera ston kosmo. / Roman tools are the best in world.
+armysmith_byzantine.MakeByzantineMace=Min prosvállete kanénan pou chrisimopoieí ta ópla mou... / Не нападайте на тех, кто использует мои оружие.
+armysmith_byzantine.MakeByzantineMace=Aftó to ropalo steilei tous barbarous sto gamo tou karagkiozi! / Этот мач выпустит варваров далеко!
+armysmith_byzantine.MakeByzantineMace=To na to xrisimopoieis eukolo, to na to ftiaxneis dyskolo. / Сделать мачку сложнее, чем использовать ее.
+armysmith_byzantine.MakeByzantineMace=O stratós chreiázetai ropala. / Армии нужны булавы.
+
+armysmith_byzantine.gopray=Énas kalós sideras prépei na proséfchetai káthe forá kai lígo. / Хороший кузнец должен время от времени молиться.
+armysmith_byzantine.gopray=Giatí o Theós me ékane éna sídera? / Почему Бог сделал меня кузнецом?
+armysmith_byzantine.gopray=I prosefchí eínai éna simantikó méros tis romaïkís cheirotechnías. / Молиться - важнейшая часть Римского рукоделия.
+armysmith_byzantine.gopray=O Theos katanoei ta problimata mas. / Он поймет проблемы кузнецов.
+
+armysmith_byzantine.gorest=Ávrio tha káno pio ómorfa prágmata! / Завтра я сделаю больше качественных инструментов!
+armysmith_byzantine.gorest=Écho teliosei me tin oikodomi gia simera. / Я закончил с работой на сегодня
+armysmith_byzantine.gorest=Ísos tha oneireftó na ftiáchno ta kalýtera ópla ston kósmo! / Может, мне приснится, как я делаю лучшее оружие в мире!
+armysmith_byzantine.gorest=Ísos tha oneireftó na ftiáxo tin kalýteri panoplía tou kósmou! / Может, мне приснится, как я делаю лучшую в мире броню!
+armysmith_byzantine.gorest=Ísos tha oneireftó na káno ta kalýtera ergaleía ston kósmo! / Может, мне приснится, как я делаю лучшие в мире инструменты!
+
+armysmith_byzantine.gosocialise=Tha zitíso na do an kápoios chreiázetai na kataskeváso káti. / Пойду спрошу, может кому-нибудь нужно что-нибудь создать .
+armysmith_byzantine.gosocialise=Elpízo óti to chorió ektimá ta ergaleía mou. / Надеюсь, деревня ценит мои инструменты.
+
+armysmith_byzantine.goDrink=Arketi cheirotechnía! Chreiázomai krasí! / Хватит мастерить!  Мне нужно немного вина!
+armysmith_byzantine.goDrink=Chreiázomai éna potó gia na me empnéfsei! / Мне нужен напиток, чтобы вдохновить меня!
+armysmith_byzantine.goDrink=Káthe kalós siderás chreiázetai éna potó sto télos tis iméras. / Каждому хорошему кузнецу нужно выпить.
+armysmith_byzantine.goDrink=I cheirotechnía me kánei na dipsá gia to krasí. / Мастерство делает меня жаждущим вина.
+
+armysmith_byzantine.makearrow=$name, chrisimopoieíte pollá véli stis peripéteiés sas? / $name, много ли стрел тебе нужно в твоих похождениях?
+armysmith_byzantine.makearrow=Káthe tóxo chreiázetai éna oraío vélos. / Каждый лук нуждается в качественной стреле.
+armysmith_byzantine.makearrow=Káthe vélos pou káno tha vlápsei énan ochtró tis autokratorías. / Каждая стрела, что я создаю, защитит нашу Империю от врагов.
+armysmith_byzantine.makearrow=O romaïkós stratós chreiázetai véli gia na mas prostatéfsei apó tous xénous. / Римская армия нуждается в стрелах, чтобы защищать нас от врагов.
+
+armysmith_byzantine.makebow=O romaïkós stratós chreiázetai tóxa. / Римская армия нуждается в луках.
+armysmith_byzantine.makebow=Geia sou! Sas arésoun ta tóxa mou $name? / Тебе нравятся мои луки, $name?
+armysmith_byzantine.makebow=Káthe kaló tóxo proérchetai apó to kalýtero xýlo. / Каждый лук сделан из самой лучшей древесины.
+armysmith_byzantine.makebow=Aftó to tóxo tha nikísei polloús bárbarous. Eímai pragmatiká kýrios kataskevastís tóxon. / Этим луком мы победим много варваров. Я действительно мастер в своем деле.
+
+armysmith_byzantine.makeByzantineBoots=O romaïkós stratós chreiázetai mpótes! / Римской армии нужны ботинки!
+armysmith_byzantine.makeByzantineBoots=Oi Romaíoi kánoun tis kalýteres mpótes ston kósmo. / Римляне делают лучшие ботинки в мире.
+armysmith_byzantine.makeByzantineBoots=Kápoios prépei na kánei tis mpótes ton stratiotón... / Кто-то должен сделать ботинки солдат...
+armysmith_byzantine.makeByzantineBoots=Kánoume tis kalýteres mpótes. / Мы делаем лучшие ботинки.
+armysmith_byzantine.makeByzantineBoots=Geia sou! Sas arésoun i mpótes $name? / Эй! Эй!  Тебе нравятся мои ботинки? $name?
+armysmith_byzantine.makeByzantineBoots=Aisthánomai san énas ypervoliká doxasménos kataskevastís papoutsión. / Я чувствую себя как слишком славный обувщик.
+armysmith_byzantine.makeByzantineBoots=Óles oi biotechníes eínai simantikés! Akómi kai oi mpótes pou pigaínoun sta pódia sas! / Все бронерабатывающие работы важны!  Даже туфли, которые подходят на ноги!
+
+armysmith_byzantine.makeByzantineChest=O romaïkós stratós chreiázetai panoplia! / Римской армии нужны грудные щиты!
+armysmith_byzantine.makeByzantineChest=Oi Romaíoi kánoun tis kalýteres plákes thoraka ston kósmo. / Римляне изготавливают лучшие грудные щиты в мире.
+armysmith_byzantine.makeByzantineChest=Geia sou! Sas arései i panoplía mou $name? / Эй! Эй!  Тебе нравятся мои доспехи $name?
+armysmith_byzantine.makeByzantineChest=Kánoume tin kalýteri panoplía. / Мы изготавливаем лучшие доспехи.
+armysmith_byzantine.makeByzantineChest=Aftó tha prépei na eínai se thési na párei perissótera chtypimata  apó ó, ti boreis esi. / Это должно быть способно принять больше ударов, чем вы можете.
+armysmith_byzantine.makeByzantineChest=Aisthánomai san énas ypervoliká doxasménos technítis. / Чувствую себя как слишком славный мастер рубашек.
+
+armysmith_byzantine.makeByzantineHelmet=O romaïkós stratós chreiázetai kráni! / Римской армии нужны шлемы!
+armysmith_byzantine.makeByzantineHelmet=Kápoios prépei na kánei ta kráni ton stratiotón... / Кто-то должен сделать шлемы солдат...
+armysmith_byzantine.makeByzantineHelmet=Oi Romaíoi kánoun tis kalýteres mpótes ston kósmo. / Римляне делают лучшие ботинки в мире.
+armysmith_byzantine.makeByzantineHelmet=Geia sou! Sas arésoun ta kráni mou $name? / Эй! Эй!  Тебе нравятся мои шлемы? $name?
+armysmith_byzantine.makeByzantineHelmet=Kánoume ta kalýtera kráni. / Мы делаем лучшие шлемы.
+armysmith_byzantine.makeByzantineHelmet=Aisthánomai san énas ypervoliká doxasménos kataskevastís papoutsión. / Чувствую себя слишком славным шляпщиком.
+
+armysmith_byzantine.makeByzantineLegs=O romaïkós stratós chreiázetai kremasmata ! / Римской армии нужны лиггинсы!
+armysmith_byzantine.makeByzantineLegs=Kápoios prépei na kánei ta kremasmata ton stratiotón... / Кто-то же должен изготавливать поножи для воинов...
+armysmith_byzantine.makeByzantineLegs=Oi Romaíoi kánoun ta kalýtera kremasmata ston kósmo. / Римляне изготавливают лучшие поножи в мире.
+armysmith_byzantine.makeByzantineLegs=Geia sou! Sas arésoun ta kremasmata mou $name? / Эй! Эй!  Тебе нравятся мои поножи $name?
+armysmith_byzantine.makeByzantineLegs=Kánoume ta kalýtera kremasmata. / Мы изготавливаем лучшие поножи.
+armysmith_byzantine.makeByzantineLegs=Aisthánomai san mia ypervoliká doxasménos pantelonas. / Чувствую себя слишком славным панталоном.
+
+armysmith_byzantine.makesteelaxe=Den boreíte na kópsete ta déntra chorís tsekoúri! / Нельзя срубить дерево без топора.
+armysmith_byzantine.makesteelaxe=Kataskevázo ekpliktikoús pelekeis. / Я делаю превосходные топоры.
+armysmith_byzantine.makesteelaxe=Oi romaïkoí áxones eínai merikoí apó tous kalýterous ston kósmo! / Римские топоры одни из лучших в мире!
+armysmith_byzantine.makesteelaxe=Oi xylourgoí chreiázontai na kánoun tous pelekeis tous. / Лесникам нужны топоры.
+armysmith_byzantine.makesteelaxe=Pós ftiáchneis tous pelekeis sou $name? / Как ты делаешь свои топоры, $name?
+
+armysmith_byzantine.makesteelhoe=Den boreíte na doulepsetai chorís tsapes! / Нельзя обрабатывать землю без специальных инструментов!
+armysmith_byzantine.makesteelhoe=Kataskevázo katapliktikes tsapes. / Я делаю великолепные фермерские инструменты.
+armysmith_byzantine.makesteelhoe=Romaïká ergaleía kalliérgeias eínai meriká apó ta kalýtera ston kósmo! / Римские инструменты одни из лучших в мире!
+armysmith_byzantine.makesteelhoe=Oi agrótes chreiázontai na kataskevásoume ta ergaleía tous. / Фермерам нужны инструменты.
+armysmith_byzantine.makesteelhoe=Pós dimiourgeíte ta georgiká sas ergaleía $name? / Как ты делаешь свои фермерские инструменты, $name?
+
+armysmith_byzantine.makesteelpickaxe=Den boreíte na skapsetai sas chorís axina! / Нельзя копать без кирки!
+armysmith_byzantine.makesteelpickaxe=Kataskevázo poli anthektikes axines. / Я изготавливаю прочные кирки.
+armysmith_byzantine.makesteelpickaxe=Oi romaïkes axines eínai merikes apó tis kalýteres ston kósmo! / Римские кирки одни из лучших в мире!
+armysmith_byzantine.makesteelpickaxe=Oi anthrakorýchoi mas chreiázontai na kataskevásoume tis axines tous. / Шахтерам нужны кирки.
+armysmith_byzantine.makesteelpickaxe=Pós ftiáchnete tis axines sas $name? / Как ты делаешь свои кирки, $name?
+
+armysmith_byzantine.makesteelshovel=Den boreíte na chtísete í na skápsete chorís éna ftyári! / Без лопаты невозможно копать или строить!
+armysmith_byzantine.makesteelshovel=Kataskevázo anthektiká ftyária. / Я делаю прочные лопаты.
+armysmith_byzantine.makesteelshovel=Ta Romaïká ftyária eínai meriká apó ta kalýtera ston kósmo! / Римские лопаты одни из лучших в мире!
+armysmith_byzantine.makesteelshovel=Oi architéktones chreiázontai na kataskevásoume ta ftyária tous. / Архитекторам нужны лопаты.
+armysmith_byzantine.makesteelshovel=Pós ftiáchneis ta ftyária sou $name? / Как ты делаешь свои лопаты, $name?
+
+//artisan_byzantine.makePainting=H Romaikh texnh einai h pio exeligmenh ston kosmo. / Roman art is the most advanced in the world.
+
+artisan_byzantine.gopray=Énas kalós technítis prépei na proséfchetai káthe forá kai lígo. / Хорошему ремесленнику нужно молиться время от времени.
+artisan_byzantine.gopray=Giatí o Theós me ékane énan techníti? / Почему бог сделал меня ремесленником?
+artisan_byzantine.gopray=I prosefchí eínai éna simantikó méros tis romaïkís cheirotechnías. / Мольба Богу - важнейшая часть Римского ремесла.
+artisan_byzantine.gopray=Katanoeí ta provlímata pou échei o technítis. / Бог поймет проблемы ремесленников...
+
+artisan_byzantine.gorest=Ávrio tha káno pio ómorfa prágmata! / Завтра я сделаю столько прекрасных вещей!
+artisan_byzantine.gorest=Écho kánei me ktírio gia tin iméra. / Довольно работы на сегодня.
+artisan_byzantine.gorest=Ísos tha oneireftó na káno ta kalýtera toúvla tou kósmou! / Может, мне приснится, как я делаю лучшие в мире кирпичи!
+artisan_byzantine.gorest=Ísos tha oneireftó na káno ta kalýtera plakákia ston kósmo! / Может, мне приснится, как я делаю лучшую в мире кровлю!
+
+artisan_byzantine.gosocialise=Tha zitíso na do an kápoios chreiázetai na kataskeváso káti. / Спрошу у народа, надо ли им чего-нибудь от меня.
+artisan_byzantine.gosocialise=Elpízo óti to chorió tha ektimísei ta keramídia mou. / Надеюсь, деревне нравится моя кровля.
+artisan_byzantine.gosocialise=Elpízo óti to chorió tha ektimísei ta toúvla mou. / Надеюсь, деревне нравятся мои кирпичи.
+
+artisan_byzantine.goDrink=Arketi cheirotechnía! Chreiázomai krasí! / Хватит мастерить!  Мне нужно немного вина!
+artisan_byzantine.goDrink=Chreiázomai éna potó gia na me empnéfsei! / Мне нужен напиток, чтобы вдохновить меня!
+artisan_byzantine.goDrink=Káthe kalós technítis chreiázetai éna potó sto télos tis iméras. / Каждому хорошему ремесленнику нужен напиток в конце дня.
+artisan_byzantine.goDrink=I cheirotechnía me kánei na dipso gia to krasí. / Мастерство делает меня жаждущим вина.
+
+artisan_byzantine.greeting=Zo kalýtera apó ólous se aftó to chorió. / Моя жизнь гораздо лучше, чем жизнь других людей здесь.
+artisan_byzantine.greeting=Geia sas $name! Chreiázeste apokleistiká romaïká ylika? / Приветствую, $name! Тебе нужны уникальные Римские блоки?
+
+artisan_byzantine.makeBrick=Kápoios prépei na kataskevásei ta toúvla. / Кто-то должен сделать кирпичи.
+artisan_byzantine.makeBrick=To chorió chreiázetai na kataskeváso toúvla gia tous toíchous tous. / Селе нужно, чтобы я сделал кирпичи для стен.
+artisan_byzantine.makeBrick=Romaïká toúvla eínai meriká apó ta pio ómorfa blok ston kósmo! / Римские кирпичи - одни из самых красивых в мире!
+artisan_byzantine.makeBrick=Ergazómaste píso apó tis skinés, enó oi kataskevastés paírnoun óli tin pístosi. / Мы работаем за кулисами, а строители получают все заслуги.
+artisan_byzantine.makeBrick=Oúte oi kalýteroi oikodómoi boroún na oikodomísoun chorís blok. / Даже лучшие строители не могут строить без блоков.
+artisan_byzantine.makeBrick=Poios skéftike na metatrépsei ton piló se toúvla? / Кто придумал о том, чтобы превратить глину в кирпичи?
+
+artisan_byzantine.makeBookshelves=Kápoios prépei na válei ta vivlía sta ráfia. / Кто-то должен поставить книги на полки.
+artisan_byzantine.makeBookshelves=To chorió mou chreiázetai na káno tis ráfia tous. / В деревне нужно, чтобы я создал их книжные полки.
+artisan_byzantine.makeBookshelves=Romaïká vivlía eínai meriká apó ta kalýtera pou diavázei ston kósmo! / Римские книги - одни из лучших в мире!
+artisan_byzantine.makeBookshelves=Ergazómaste píso apó tis skinés, enó oi syngrafeís paírnoun óli tin pístosi. / Мы работаем за кулисами, а писатели получают все заслуги.
+artisan_byzantine.makeBookshelves=Merikés forés vlépo ta vivlía prin ta válo sto ráfi, tha íthela na diaváso. / Иногда я просматриваю книги перед тем, как положить их на полки, я хотел бы уметь читать.
+artisan_byzantine.makeBookshelves=Poios skéftike na grápsei ta prágmata káto? / Кто придумал записывать вещи?
+
+artisan_byzantine.makeByzantineTiles=Kápoios prépei na kánei ta keramídia. / Кто-то должен сделать плитки для крыши.
+artisan_byzantine.makeByzantineTiles=To chorió chreiázetai na káno tis stéges tous. / Селе нужно, чтобы я сделал их крышу.
+artisan_byzantine.makeByzantineTiles=Romaïká plakákia eínai meriká apó ta pio ómorfa blok ston kósmo! / Римские плитки - одни из самых красивых в мире!
+artisan_byzantine.makeByzantineTiles=Ergazómaste píso apó tis skinés, enó oi kataskevastés paírnoun óli tin pístosi. / Мы работаем за кулисами, а строители получают все заслуги.
+artisan_byzantine.makeByzantineTiles=Oúte oi kalýteroi oikodómoi boroún na oikodomísoun chorís blok. / Даже лучшие строители не могут строить без блоков.
+artisan_byzantine.makeByzantineTiles=Poios skéftike na metatrépsei ton piló se stéges? / Кто придумал сделать глину крышей?
+
+artwife_byzantine.gopray=I prosefchí eínai éna simantikó méros tis romaïkís cheirotechnías. / Молитва — важная часть Римского ремесла.
+artwife_byzantine.gopray=Elpízo óti o Theós me voithá na káno ta kalýtera roúcha! / Я надеюсь, что Бог поможет мне сделать лучшую одежду.
+artwife_byzantine.gopray=Giatí o Theós ékane ti sýzygo enós architéktona? / Почему Бог создал жену архитектора?
+
+artwife_byzantine.gosocialise=O! Ékana to poukámiso tou anthrópou! / О! Я сделала рубашку того парня!
+artwife_byzantine.gosocialise=Edó eímai gností os sýzygos tou architéktona. / Здесь я известна, как жена архитектора.
+artwife_byzantine.gosocialise=Eímai árrostos óti eímai gností os "sýzygos tou architéktona". / Я устала от того, что меня называют «женой архитектора».
+
+artwife_byzantine.makeclothes_byz_silk=Káno meriká apó ta kalýtera roúcha sto chorió! / Я делаю одну из лучших одежд в деревне.
+artwife_byzantine.makeclothes_byz_silk=To romantikó metáxi eínai to kalýtero ýfasma ston kósmo! / Римский шёлк — лучшая ткань в мире!
+artwife_byzantine.makeclothes_byz_silk=To metaxotó roúcho eínai pio simantikó apó to na écheis éna fantachteró spíti. / Шелковая одежда важнее, чем шикарный дом.
+artwife_byzantine.makeclothes_byz_silk=$name, échete forései metáxi? / $name, ты носил шелковую одежду когда-нибудь?
+artwife_byzantine.makeclothes_byz_silk=Óloi chreiázontai roúcha, eidiká an thélete na eíste politisménoi. / Всем нужно одеваться, особенно, если вы хотите быть цивилизованным.
+artwife_byzantine.makeclothes_byz_silk=I alithiní omorfiá den eínai se blok, i omorfiá eínai sta roúcha. / Настоящая красота не в блоках, настоящая красота в одежде.
+artwife_byzantine.makeclothes_byz_silk=Ypárchei énas lógos gia ton opoío yfaíno aftó kai óchi o sýzygós mou. / Есть причина, почему это тку я, а не мой муж.
+artwife_byzantine.makeclothes_byz_silk=I ýfansi ton roúchon sto metáxi eínai móno gia tis pio evgeneís gynaíkes. / Изготовление одежды из шелка предназначено только для самых престижных женщин.
+artwife_byzantine.makeclothes_byz_silk=Chaíromai pou prépei na káno pragmatikí douleiá. / Я просто рада, что я должна делать настоящую работу.
+
+artwife_byzantine.makeclothes_byz_wool=Káno meriká apó ta kalýtera mallina roucha sto chorió! / Я делаю одну из лучших одежд из шерсти в деревне.
+artwife_byzantine.makeclothes_byz_wool=Oraía endymasía eínai pio simantikó apó ó, ti échei éna fantachteró spíti. / Хорошая одежда важнее, чем шикарный дом.
+artwife_byzantine.makeclothes_byz_wool=$name, échete forései to mallí sas prin? / $name, ты носил шерстяную одежду когда-нибудь?
+artwife_byzantine.makeclothes_byz_wool=I alithiní omorfiá den eínai se blok, i omorfiá eínai sta roúcha. / Настоящая красота не в блоках, настоящая красота в одежде.
+artwife_byzantine.makeclothes_byz_wool=Óloi chreiázontai roúcha, eidiká an thélete na eíste politisménoi. / Всем нужно одеваться, особенно, если вы хотите быть цивилизованным.
+artwife_byzantine.makeclothes_byz_wool=Ypárchei énas lógos gia ton opoío yfaíno aftó kai óchi o sýzygós mou. / Есть причина, почему это тку я, а не мой муж.
+artwife_byzantine.makeclothes_byz_wool=Den boreí káthe gynaíka na yfánei me mallí. / Не каждая женщина может ткать из шерсти.
+artwife_byzantine.makeclothes_byz_wool=Chaíromai pou prépei na káno pragmatikí douleiá. / Я просто рада, что я должна делать настоящую работу.
+
+artwife_byzantine.DeliverGoodsHousehold=Pragmata opws auto einai ta mona pou mporw na kanw. / Такие вещи - единственное, что я могу сделать здесь.
+artwife_byzantine.GetHouseTHResources=Epitelous o syzygos mou metefere ta agatha opws tou eipa. / Мой муж наконец-то доставил свои ресурсы, как я ему сказал.
+artwife_byzantine.getGoodsHousehold=Óra na frontízo tin oikogéneiá mou. / Пришло время позаботиться о своей семье.
+artwife_byzantine.greeting=Tha boroúsa na káno pollá perissótera edó an ímoun ándras, an móno... / Я могла бы сделать намного больше здесь, если бы только я была мужчиной.
+artwife_byzantine.greeting=To kathikon mas einai na elegxoume tous andres. / Наша задача — контроль наших мужчин.
+
+//Add (more) lines for artwife block transport and going to rest
+
+baron_byzantine.greeting=$name, to chorió mou échei ta kalýtera emporévmata gia pólisi! / $name, моя деревня продавать самые лучшие товары.
+baron_byzantine.greeting=Xaire, ploúsie taxidióti! / Привет, богатый путешественник.
+baron_byzantine.greeting=Thélete na voithísete na parakolouthísete tous agrótes $name? / Хочешь помочь следить за крестьянами? $name?
+
+baron_byzantine.goDrink=Arketes metarýthmiseis! Chreiázomai éna potó. / Достаточно править!  Мне нужно выпить.
+baron_byzantine.goDrink=Axízei na pio to kalýtero krasí! / Я заслуживаю лучшего вина!
+baron_byzantine.goDrink=Prépei na elénxo an i tavérna eínai kerdofóra. / Я должен проверить, прибыльна ли таверна.
+baron_byzantine.goDrink=Káthe ischyró átomo prépei na piei í tha pethánei apó to ánchos! / Каждому могущественному человеку нужно пить, иначе они умрут от стресса!
+
+baron_byzantine.gopray=Giatí o Theós na me kanei Eparxo? / Почему Бог сделал меня бароном?
+baron_byzantine.gopray=I prosefchí eínai éna simantikó méros tis romaïkís kyvérnisis. / Молитва — важная часть управления Римом.
+baron_byzantine.gopray=Katanoeí ta provlímata pou échoun oi Eparxoi. / Он понимает проблемы, которые есть у баронов.
+baron_byzantine.gopray=To chorió mou chreiázetai apantíseis apó to Theó! / Моей деревни нужны ответы от бога!
+
+baron_byzantine.gorest=Arketí diacheírisi ton agrotón! Chreiázomai lígo ýpno. / Хватит управлять крестьянами! Мне нужно поспать.
+baron_byzantine.gorest=*Chasmouritó* Den boró na odigíso tous agrótes ótan eímai kourasménos. / *Зевок* Я не могу руководить крестьянами, когда я уставший.
+baron_byzantine.gorest=Óra na koimithó sti metaxénia mou kouvérta. / Пора уснуть под моим шёлковым одеялом.
+baron_byzantine.gorest=Óloi chreiázontai ýpno, eidiká ótan eíste igétis enós chorioú. / Всем необходимо спать, особенно если вы лидер деревни.
+
+baron_byzantine.gosocialise=Giatí oi anóitoi chorikoí vlépoun móno ton eaftó mou os ton "Eparxo"? / Почему тупые крестьяне видят меня только как "барона"?
+baron_byzantine.gosocialise=Hm, as doúme an katévale tous fórous tou. / Хе-хе-хе, давай посмотрим, заплатил ли он налоги.
+baron_byzantine.gosocialise=Óra na empnéfso tous ftochoús na kerdísoun kana denarion! / Пора вдохновить бедняков зарабатывать денье!
+baron_byzantine.gosocialise=Prépei na milíso me ton koinó laó? / Я должен говорить с простолюдином?
+baron_byzantine.gosocialise=Os Eparxos, prépei na milíso ston laó mou, akóma ki an den to thélo. / Как барон, я должен говорить с моими людьми, даже если я не хочу.
+
+baron_byzantine.inspectconstruction=Prépei na sigoureftó óti oi agrótes den ésfaxan káti. / Я должен убедиться, что крестьяне ничего не поломают.
+baron_byzantine.inspectconstruction=Aftó to ktírio tha férei kérdos sto chorió mou. / Это строение принесет пользу моей деревне.
+baron_byzantine.inspectconstruction=I pragmatiki eutixia einai na vlépeis to chorió sou na ploutízei. / Красота - наблюдать за тем как твоя деревня становится богаче.
+baron_byzantine.inspectconstruction=Xéro óti i Rómi den chtístike se mia méra, allá giatí o architéktonas mou eínai tóso argós? / Я знаю, что Рим не был построен за день, но почему мой архитектор такой медленный?
+baron_byzantine.inspectconstruction=Eínai dikí mou douleiá na diasfalíso óti ta ktíria tha kataskevastoún sostá. / Это моя работа - убеждаться, что все будет построено правильно.
+baron_byzantine.inspectconstruction=Oi architéktones mou kánoun syníthos kalí douleiá, allá prépei pánta na tis elénxo. / Мои архитекторы обычно работают хорошо, но я должен присматривать за ними.
+
+boy_byzantine.becomeAdult=Óra na gíneis dynatós antras! / Пришло время стать сильным мужчиной!
+boy_byzantine.becomeAdult=Eímai arketá megálos gia na doulépso mia douleiá! / Я уже достаточно взрослый, чтобы работать!
+boy_byzantine.becomeAdult=Chreiázomai mia douleiá tóra. / Мне нужна работа сейчас.
+boy_byzantine.becomeAdult=Oi méres mou na eímai agóri teleiónoun. / Мои детские дни закончились.
+
+boy_byzantine.goPlay=Thélo na polemíso kápoion! / Я хочу с кем-то драться!
+boy_byzantine.goPlay=Thélo na paíxo "Katapolémisi ton Barbáron"! / Я хочу сыграть "Борьба с варваром"!
+boy_byzantine.goPlay=Tha deíxo se ólous óti eímai megálos kai ischyrós! / Я покажу всем, что я большой и сильный!
+boy_byzantine.goPlay=Óra na paíxo ton stratióti.! / Пора сыграть "воин".
+
+boy_byzantine.gopray=Thélo na mátho gia to Theó! / Я хочу узнать о Боге!
+boy_byzantine.gopray=Boreí na mou pei o Theós gia tous enílikes? / Может ли Бог рассказать мне про взрослых?
+boy_byzantine.gopray=Pós boró na prosefchithó? / А как молиться?
+boy_byzantine.gopray=Den thélo na prosefchithó! Thélo na paíxo! / Я не хочу молиться! Я хочу играть!
+
+boy_byzantine.childobservesmithing=Ótan megaló, thélo na eímai kimás epísis. Í énas stratiótis. Í énas stratigós! / Когда я вырасту я стану кузнецом. Или солдатом. Или генералом!
+
+//Add lines for boys resting and socializing
+
+centurio_byzantine.goDrink=Káthe ischyró átomo prépei na piei, allios tha pethánei apó to ánchos! / Каждому могущественному человеку нужно пить, иначе они умрут от стресса!
+centurio_byzantine.goDrink=Os stratiótis, chreiázomai krasí, kai geniká, to chreiázomai perissótero apo tous allous. / Как солдат, мне нужно вино, как сотник, мне нужно еще больше.
+centurio_byzantine.goDrink=Prépei na xekourasto, alliós tha eímai áchristos ótan érchontai oi bárbaroi. / Мне нужно расслабиться, расслабиться, иначе я буду бесполезным, когда придут варвары.
+
+centurio_byzantine.gopray=Giatí o Theós me ékane Stratego? / Почему Бог сделал меня центурионом?
+centurio_byzantine.gopray=I prosefchí eínai éna simantikó méros tou Romaíou polémou. / Молитва - важная часть римского военного дела.
+centurio_byzantine.gopray=Katanoeí ta provlímata pou échoun oi Strategoi. / Он понимает какие проблемы могут быть у центурионов.
+centurio_byzantine.gopray=O stratós mou chreiázetai apantíseis apó to Theó! / Моя армия хочет ответов от Бога!
+
+centurio_byzantine.gorest=Arketí diacheírisi ton stratiotón! Chreiázomai lígo ýpno. / Достаточно управлять солдатами!  Мне нужно поспать.
+centurio_byzantine.gorest=Óra na apogeiotheí i panoplía mou kai na koimithó. / Пришло время снять доспехи и заснуть.
+centurio_byzantine.gorest=*Chasmouritó* Den boró na odigíso tous stratiótes ótan eímai kourasménos./ Я не могу вести солдат, когда устал.
+centurio_byzantine.gorest=Óloi chreiázontai ýpno, eidiká ótan eíste igétis enós chorioú. / Все нуждаются в снах, особенно если вы руководитель деревни.
+
+centurio_byzantine.gosocialise=Óra na enischytheí to ithikó ton stratiotón! / Пришло время поднять мораль солдат!
+centurio_byzantine.gosocialise=Énas kalós trópos gia na kerdísete tin písti eínai na symvoulefteíte tous anthrópous sas. / Хороший способ обрести лояльность - посоветоваться со своими людьми.
+centurio_byzantine.gosocialise=Chreiázomai perissóterous stratológous gia to strató! / Мне нужно больше рекрутов для армии!
+centurio_byzantine.gosocialise=Oi yfistaménoi mou prépei na gnorízoun ta amyntiká mou schédia. / Мои подчиненные должны знать мои планы обороны.
+centurio_byzantine.gosocialise=Oi yfistaménoi mou prépei na gnorízoun ta prosvlitiká mou schédia. / Мои подчиненные должны знать мои наступательные планы.
+centurio_byzantine.gosocialise=Oi ánthropoi prépei na katalávoun tin apeilí mias varvarikís epíthesis! / Люди должны понять угрозу варварской атаки!
+centurio_byzantine.gosocialise=Prépei na ypenthymíso se ólous óti prépei na eímaste étoimoi na polemísoume aná pása stigmí! / Я должен напомнить всем, что мы должны быть готовы воевать в любое время!
+
+centurio_byzantine.huntmonster=Akómi kai os Strategos, prepei na eimai sklirotrachilos stratiótis. / Даже как сотник, я не могу заржавиться, будучи солдатом.
+centurio_byzantine.huntmonster=Poú eínai oi yfistaménoi mou? Den prepei na kanoun etsi. / Где мои подчиненные?  Они должны это делать.
+centurio_byzantine.huntmonster=Eímai Strategos tis Romaïkís Autokratorías kai pistévete óti boreíte na me antimetopisete? Xa! / Я стратег Римской империи и ты думаешь, что сможешь со мной сражаться?  Да что?
+
+centurio_byzantine.inspectconstruction=Ti oraio na blepeis to chorio na megalonei. / Красота наблюдает за тем, как ваша деревня становится сильнее.
+
+farmiller_wife_byzantine.DeliverGoodsHousehold=Pragmata opos auto einai ta mona pou mporw na kanw. / Такие вещи - единственное, что я могу сделать здесь.
+farmiller_wife_byzantine.GetHouseTHResources=Epitelous o syzygos mou metefere ta agatha, opos tou eipa. / Мой муж наконец-то доставил свои ресурсы, как я ему сказал.
+farmiller_wife_byzantine.getGoodsHousehold=Óra na frontízo tin oikogéneiá mou. / Пришло время позаботиться о своей семье.
+farmiller_wife_byzantine.greeting=Tha boroúsa na káno pollá perissótera edó an ímoun ándras, an móno... / Я мог бы сделать здесь гораздо больше, если бы я был мужчиной, если бы только...
+farmiller_wife_byzantine.greeting=To kathikon mas einai na elegxoume tous andres. / Наша задача - контролировать наших людей.
+
+girl_byzantine.childobserveproducefood=Eínai kaló pou oi antres den mageirévoun, tha kápsoun ta pánta. / Хорошо, что мужчины не готовят, они все сожгут.
+
+keeperBirch_byzantine.greeting=Einai toso bareta edo, den symvainei sxedon tipota... / Здесь так скучно, что ничего не происходит...
+keeperBirch_byzantine.greeting=Eínai dikí mou douleiá na parakolouthó aftés tis periochés. / Моя работа - следить за этими районами.
+keeperBirch_byzantine.greeting=Kalhspera taxideuth, anarwtiemai pws irthes ews edw. / Здравствуйте, путешественник. Интересно, как вы оказались в этом отдаленном месте.
+keeperBirch_byzantine.greeting=Pws skeftike kapios oti mporei na brei ergasia edw... / Как кто-то мог подумать, что кто-то должен быть размещен здесь...
+
+keeperOak_byzantine.greeting=Aftoi oi anthrwpoi, autoapokalountai "Normans", moy thimyzoun thn xakousth autokratotria mas. / Эти люди, называющие себя норманнами, напоминают мне нашу славную империю.
+keeperOak_byzantine.greeting=Einai toso bareta edo, den symvainei sxedon tipota... / Здесь так скучно, что ничего не происходит...
+keeperOak_byzantine.greeting=Eínai dikí mou douleiá na parakolouthó aftés tis periochés. / Моя работа - следить за этими районами.
+keeperOak_byzantine.greeting=Kalhspera taxideuth, anarwtiemai pws irthes ews edw. / Здравствуйте, путешественник. Интересно, как вы оказались в этом отдаленном месте.
+keeperOak_byzantine.greeting=Pws skeftike kapios oti mporei na brei ergasia edw... / Как кто-то мог подумать, что кто-то должен быть размещен здесь...
+
+keeperPine_byzantine.greeting=Afto to kryo einai tsouxtero. Den anarwtiemai pou den yparxei kaneis edw... / Эта холода ужасно.  Неудивительно, что здесь никого нет.
+keeperPine_byzantine.greeting=Einai toso bareta edo, den symvainei sxedon tipota... / Здесь так скучно, что ничего не происходит...
+keeperPine_byzantine.greeting=Eínai dikí mou douleiá na parakolouthó aftés tis periochés. / Моя работа - следить за этими районами.
+keeperPine_byzantine.greeting=Kalhspera taxideuth, anarwtiemai pws irthes ews edw. / Здравствуйте, путешественник. Интересно, как вы оказались в этом отдаленном месте.
+keeperPine_byzantine.greeting=Pws skeftike kapios oti mporei na brei ergasia edw... / Как кто-то мог подумать, что кто-то должен быть размещен здесь...
+
+keeperTropical_byzantine.greeting=Einai toso bareta edo, den symvainei sxedon tipota... / Здесь так скучно, что ничего не происходит...
+keeperTropical_byzantine.greeting=Eínai dikí mou douleiá na parakolouthó aftés tis periochés. / Моя работа - следить за этими районами.
+keeperTropical_byzantine.greeting=Einai toso zesta edo. Den borw na katalavo giati aftoi 'Indian' zoun se afth th gh. / Здесь так жарко.  Я не могу понять, почему эти индейцы живут на этих землях.
+keeperTropical_byzantine.greeting=Exeis dei pote aftous tous periergous tous 'Maya' ? Ta ktiria tous moiazoun san na einai etoima na katareusoun. / Вы когда-нибудь видели этих странных майя?  Их здания могут рухнуть в любой момент.
+keeperTropical_byzantine.greeting=Kalhspera taxideuth, anarwtiemai pws irthes ews edw. / Здравствуйте, путешественник. Интересно, как вы оказались в этом отдаленном месте.
+keeperTropical_byzantine.greeting=Pws skeftike kapios oti mporei na brei ergasia edw... / Как кто-то мог подумать, что кто-то должен быть размещен здесь...
+
+lumberman_byzantine.BringBackResourcesHome=As elpísoume óti aftó tha eínai arketó gia na evdokimísei to chorió! / Надеюсь, этого будет достаточно, чтобы деревня процветала!
+lumberman_byzantine.BringBackResourcesHome=Eímai polý epitychiménos xylourgós, i apografí mou eínai gemáti me koútsoura! / Я очень успешный лесоделец, мой инвентарь заполнен бревнами!
+lumberman_byzantine.BringBackResourcesHome=Férno pollá déntra allá den eínai variá gia kápoio lógo. / Я несу много деревьев, но они не тяжелые по какой-то причине.
+lumberman_byzantine.BringBackResourcesHome=Aftí ítan mia kalí douleiá. / Это была хорошая работа.
+lumberman_byzantine.BringBackResourcesHome=H gynaika mou prepei na einai perhfanh me olo to xilo pou efera . / Моя жена, должно быть, гордится всем деревом, которое я принесла.
+
+lumberman_byzantine.ChopTrees=Kathe ktirio edw xreiazete xilo, h apokthsh tou einai douleia mou! / Каждому строению здесь нужна древесина, и достать ее - моя работа!
+lumberman_byzantine.ChopTrees=Éna állo déntro káto, perissótero xýlo gia to chorió! / Еще одно дерево вниз, больше дерева для деревни!
+lumberman_byzantine.ChopTrees=Éna állo déntro káto, perissótero xýlo gia to chorió! / Еще дерево вниз, больше дерева для деревни!
+lumberman_byzantine.ChopTrees=$name, échete kópsei poté éna déntro prin? / $nameТы когда-нибудь вырубала дерево раньше?
+lumberman_byzantine.ChopTrees=Párte to déntro Choppa! / Подойдите к дереву Чоппа!
+lumberman_byzantine.ChopTrees=Pethaínoun déntro pethaínoun! CHACHACHA! Kaloúpi! Kaloúpi! Kaloúpi! CHA-O, Geia sou, $name! Típota ... paráxeno ... symvaínei edó.! / Смерть дерева!  ХАХАХА!  Умирайте!  Умирайте!  Умирайте!  Привет. $name! Здесь ничего странного не происходит.
+lumberman_byzantine.ChopTrees=Den thélo na se skotóso, allá prépei na ... Antío déntro! / Я не хочу тебя убивать, но я должен...  До свидания дерево!
+lumberman_byzantine.ChopTrees=Échete anarotitheí poté giatí ta temachisména déntra ftánoun edó, $name? Eínai polý períergo. Ó, ti ki an káno, pántote epipléoun kai prépei na spáso to déntro pros ta páno lígo sigá, eínai énas tétoios pónos.! / Вы когда-нибудь задумывались, почему здесь плывут вырубленные деревья? $name? Это очень странно.  Что бы я ни делал, они всегда плавают, и мне приходится порывать дерево вверх понемногу, это так больно.
+
+lumberman_byzantine.GatherGoods=Re $name! Min to paírneis auto! / Эй , ты ... $name! Не возьми это!
+lumberman_byzantine.GatherGoods=Ta déntra megálosan kalá aftí ti forá, tósa pollá koútsoura kai fytá. / На этот раз деревья хорошо росли, так много бревен и рассады.
+lumberman_byzantine.GatherGoods=Elpízo óti to chorió tha chreiasteí óla aftá ta koútsoura. / Надеюсь, поселению пригодятся все эти брёвна.
+lumberman_byzantine.GatherGoods=Aftó ítan éna megálo déntro! Tóra to chorió boreí na chrisimopoiísei ta koútsourá tou. / Это было одно большое дерево!  Теперь поселение может использовать эти брёвна.
+lumberman_byzantine.GatherGoods=Koitáxte óla aftá ta néa kormoús kai ta fytá pou píra apó tin kopí ton déntron! / Посмотрите на все эти новые бревна и саженцы, которые я получил от рубки деревьев!
+lumberman_byzantine.GatherGoods=Polu wraio dentryllio. / Вон там хороший саженец.
+
+lumberman_byzantine.PlantSaplings=Aftá ta fytá eínai tóso mikrá, merikés forés den boró na pistépso óti tha gínoun tóso megála. / Эти саженцы настолько маленькие, иногда я не могу поверить, что они станут такими большими.
+lumberman_byzantine.PlantSaplings=Eísai tóso charitoméno mikrófyllo, schedón me afínei na xecháso óti tha se kópso ótan megalóseis. / Ты такая милая маленькая саженка, я почти забуду, что разрублю тебя, когда вырастешь.
+lumberman_byzantine.PlantSaplings=$name, thélete na fytépsete éna fytó? / $nameХочешь посадить саженца?
+lumberman_byzantine.PlantSaplings=Ta déntra megalónoun tóso grígora edó, se líges méres gyrízoun apó aftó to mikroskopikó déntro méchri na eínai éna gemáto déntro. / Здесь деревья растут так быстро, что через несколько дней они превращаются из этого крошечного куста в полное дерево.
+lumberman_byzantine.PlantSaplings=I fýtefsi eínai i efkolóteri douleiá, to móno pou prépei na káno eínai na ta topothetíso sto édafos. / Посадка - самая легкая работа, мне нужно просто посадить их на землю.
+lumberman_byzantine.PlantSaplings=Syntoma tha ginei ena megalo, panemorfo dentro! Kai tha to kopsw.  / Скоро это будет величественное дерево!  А я его срублю.
+
+merchant_art.greeting=Kamía póli ston kósmo den boreí na synkritheí me tin omorfiá kai ti dýnami tis Konstantinoúpolis. / Ни один город в мире не может сравниться с Константинополем.
+merchant_art.greeting=Eímaste oi teleftaíoi alithinoí Romaíoi! / Мы - Византийцы, последние из истинных Римлян.
+
+miner_byzantine.Mining=I douleiá mou eínai na spáso ta vráchia kai na metatrépso aftá ta vráchia pros epexergasía, aftó eínai. / Моя работа - ломать камни и брать их, чтобы их растаять.
+miner_byzantine.Mining=To chéri mou ponáei apó ti chrísi aftís tis pikkáx káthe méra. / У меня болит рука, потому что я использую этот пикакс каждый день.
+miner_byzantine.Mining=Éna blok, dýo blok, tría blok, téssera blok, den teleiónei poté. Akrivós to ídio prágma xaná kai xaná. / Один квартал, два квартала, три квартала, четыре квартала, это никогда не заканчивается.  То же самое снова и снова.
+miner_byzantine.Mining=Éna blok, dýo blok, treis anamonís, eínai aftós o chrysós? Aftó eínai? Vríka to chrysó! CHRYSOS! CHRYSOS! Eímai ploúsios! HAHA-ítan aplá sidírou pou antanaklá se kakó fos. Epistrofí sto exóryxi sidírou kai ánthraka ... / Один квартал, два квартала, три квартала, это золото?  - Это что?  Я нашла золото!  Золото! Золото!  Золото! Золото!  Я богатый!  О, это было просто железо, отражающееся в плохом свете.  Снова за добычу железа и угля...
+miner_byzantine.Mining=Ogdónta blok, ogdónta éna blok, októ dýo blok, ogdónta tría blok ... / Восемьдесят блоков, восемьдесят один, восемьдесят два, восемьдесят три...
+miner_byzantine.Mining=Geia sou! Pós metaféroun tósa pollá blok kai i dikí mou tóso grígora? Chreiázontai óres gia na káno aftó pou káneis se mia méra. / Эй! Эй!  Как ты носишь столько блоков и так быстро копаешь?  Мне нужны часы, чтобы сделать то, что ты делаешь в день.
+miner_byzantine.Mining=*ghouch* *Ghouch*, misó na ergázomai me ánthraka. / *Кашель* *Кашель* *Я ненавижу работать с углями.
+miner_byzantine.Mining=Gia na kaneis aythn thn douleia h dynamh kai h antoxh einai aparaithta. Kaneis omws den to katalabainei... / В этой работе нужна сила и стойкость.  Но никто здесь не замечает...
+miner_byzantine.Mining=Eimai perifanos pou eimai Romaios katoikos kai pou douleyw gia thn aytokratoria , an kai einai dyskolh douleia. / Я горжусь тем, что являюсь римским гражданином, работающим на славную Империю, даже при такой тяжелой работе.
+
+patriarch_byzantine.makebooks=Ta biblia mou einai merika apo ta kalytera xeirografa ekei exo. / Мои книги являются одними из лучших рукописей за пределами Византии.
+
+patriarch_byzantine.gopray=Giatí o Theós me ékane énan apó tous pio polýtimous ypirétes tou? / Почему Бог сделал меня одним из своих самых ценных служителей?
+patriarch_byzantine.gopray=Os Patriárchis, prépei na odigíso tin prosefchí. / Как патриарх, я должен возглавить молитву.
+patriarch_byzantine.gopray=Katalavaíno ta provlímata pou échei. / Я понимаю, какие у него проблемы.
+patriarch_byzantine.gopray=Katanoeí ta provlímata pou échoun oi patriárches. / Он понимает проблемы патриархов.
+patriarch_byzantine.gopray=To chorió mou chreiázetai apantíseis apó to Theó! / Моя деревня нуждается в ответах от Бога!
+
+patriarch_byzantine.gorest=Óloi chreiázontai ýpno, eidiká ótan eíste igétis enós chorioú. / Все нуждаются в снах, особенно если вы руководитель деревни.
+patriarch_byzantine.gorest=*Chasmouritó* Den boró na odigíso tous iereís ótan eímai kourasménos./ Я не могу вести священников, когда устал.
+
+patriarch_byzantine.inspectconstruction=I omorfiá vlépei to chorió sas na plisiázei perissótero sto Theó. / Красота - это смотреть на то, как твоя деревня приближается к Богу.
+
+pastor_byzantine.makebooks=Ta biblia mou einai merika apo ta kalytera xeirografa ekei exo. / Мои книги являются одними из лучших рукописей за пределами Византии.
+
+//smith_byzantine.MakeIndianTools=Ta romaïkós ergaleia einai ta kalytera ston kosmo. / Roman tools are the best in world.
+
+smith_byzantine.gopray=Énas kalós sideras prépei na proséfchetai káthe forá kai lígo. / Хорошему кузнецу нужно время от времени молиться.
+smith_byzantine.gopray=Giatí o Theós me ékane éna sídera? / Почему Бог сделал меня кузнецом?
+smith_byzantine.gopray=I prosefchí eínai éna simantikó méros tis romaïkís cheirotechnías. / Молитва - важная часть римского искусства.
+smith_byzantine.gopray=Katanoeí ta provlímata pou échoun oi siderades. / Он понимает, какие проблемы у кузнецов.
+
+smith_byzantine.gorest=Ávrio tha káno pio ómorfa prágmata! / Завтра я сделаю еще более красивые вещи!
+smith_byzantine.gorest=Écho kánei me ktírio gia tin iméra. / Я закончил с мастерской на сегодня.
+smith_byzantine.gorest=Ísos tha oneireftó na káno ta kalýtera ergaleía ston kósmo! / Может быть, я мечтаю создать лучшие инструменты в мире!
+
+smith_byzantine.gosocialise=Tha zitíso na do an kápoios chreiázetai na kataskeváso káti. / Я попрошу посмотреть, нужен ли мне кто-нибудь, чтобы что-то создать.
+smith_byzantine.gosocialise=Elpízo óti to chorió ektimá ta ergaleía mou. / Надеюсь, деревня оценит мои инструменты.
+
+smith_byzantine.goDrink=Arketi cheirotechnía! Chreiázomai krasí! / Хватит мастерить!  Мне нужно немного вина!
+smith_byzantine.goDrink=Chreiázomai éna potó gia na me empnéfsei! / Мне нужен напиток, чтобы вдохновить меня!
+smith_byzantine.goDrink=Káthe kalós siderás chreiázetai éna potó sto télos tis iméras. / Каждому хорошему кузнецу нужно выпить.
+smith_byzantine.goDrink=I cheirotechnía me kánei na dipsá gia to krasí. / Мастерство делает меня жаждущим вина.
+
+smith_byzantine.makesteelaxe=Den boreíte na kópsete ta déntra chorís tsekoúri! / Ты не можешь вырубить деревья без топора!
+smith_byzantine.makesteelaxe=Kataskevázo ekpliktikoús áxones. / Я создаю удивительные топоры.
+smith_byzantine.makesteelaxe=Oi romaïkoí áxones eínai merikoí apó tous kalýterous ston kósmo! / Римские топоры - одни из лучших в мире!
+smith_byzantine.makesteelaxe=Oi xylourgoí chreiázontai na kánoume tous áxonés tous. / Древесники нуждаются в нас, чтобы сделать свои топоры.
+smith_byzantine.makesteelaxe=Pós ftiáchneis tous áxones sou $name? / Как вы делаете топоры? $name?
+
+smith_byzantine.makesteelhoe=Den boreíte na ekmetallefteíte chorís ergaleía kalliérgeias! / Нельзя выращивать без сельскохозяйственных средств!
+smith_byzantine.makesteelhoe=Kataskevázo katapliktiká ergaleía kalliérgeias. / Я делаю удивительные сельскохозяйственные инструменты.
+smith_byzantine.makesteelhoe=Romaïká ergaleía kalliérgeias eínai meriká apó ta kalýtera ston kósmo! / Римские сельскохозяйственные инструменты - одни из лучших в мире!
+smith_byzantine.makesteelhoe=Oi agrótes chreiázontai na kataskevásoume ta ergaleía tous. / Фермеры хотят, чтобы мы создавали их инструменты.
+smith_byzantine.makesteelhoe=Pós dimiourgeíte ta georgiká sas ergaleía $name? / Как вы делаете свои сельскохозяйственные инструменты $name?
+
+smith_byzantine.makesteelpickaxe=Den boreíte na to dikí sas chorís pickaxe! / Ты не можешь добывать добычу без пикселя!
+smith_byzantine.makesteelpickaxe=Kataskevázo dynatá pickaxes. / Я изготавливаю прочные кирки.
+smith_byzantine.makesteelpickaxe=Ta romaïká pickaxes eínai meriká apó ta kalýtera ston kósmo! / Римские пикаки - одни из лучших в мире!
+smith_byzantine.makesteelpickaxe=Oi anthrakorýchoi mas chreiázontai na kataskevásoume ta pickaxes tous. / Копальцам нужно, чтобы мы создали их пикаки.
+smith_byzantine.makesteelpickaxe=Pós ftiáchnete ta pickaxes sas $name? / Как вы делаете свои пикаки? $name?
+
+smith_byzantine.makesteelshovel=Den boreíte na chtísete í na skápsete chorís éna ftyári! / Ты не можешь строить или копать без лопаты!
+smith_byzantine.makesteelshovel=Kataskevázo anthektiká ftyária. / Я делаю прочные лопаты.
+smith_byzantine.makesteelshovel=Romaïká ftyária eínai meriká apó ta kalýtera ston kósmo! / Римские лопаты - одни из лучших в мире!
+smith_byzantine.makesteelshovel=Oi architéktones chreiázontai na kataskevásoume ta ftyária tous. / Архитекторам нужно, чтобы мы создали их лопаты.
+smith_byzantine.makesteelshovel=Pós ftiáchneis ta ftyária sou $name? / Как вы делаете лопаты $name?
+
+villager.greeting=Xaire, $name! / Привет, $name!
+villager.greeting=Omorfi mera, etsi den einai? / Прекрасный день, не правда ли?
+villager.greeting=Tha brexei syntoma.  / Будет дождь. Скоро.
+villager.greeting=Kamia polh ston kosmo den sygrinete me tin Konstantinoúpoli./ Нет такого города в мире, что мог бы сравниться с Константинополем.
+villager.greeting=Den eimaste Ellines , eimaste Romaioi. / Мы не Греки, мы - Римляне.
+villager.greeting=Eímaste oi mónoi alithinoí Romaíoi. / Мы - последние настоящие Римляне.
+villager.greeting=Varéli sti dóxa tou politismoú mas katá ti diárkeia tis paramonís sas edó. / Посмотрите на славу нашей цивилизации во время вашего пребывания здесь.
+villager.greeting=Kalós ílthate sto chorió mas, $name! / Смотрите! Здесь $name!
+villager.greeting=Koíta! Ypárchei ónoma $name! / Смотрите!  Вот и все. $name!
+villager.greeting=Eimaste oi Byzantinoi, oi teleutaioi alhthinoi Romaioi. Ypoklitheite stin doxa tou politismou mas. / Мы последние настоящие римляне.  Купаться в свете нашей цивилизации.
+
+villager.BecomeAdult=Epitélous, écho gínei Romaíos polítis! / Наконец я стал римским гражданином!
+
+villager.huntmonster=Prépei na skotóso aftón ton bárbaro! / Надо бы убить этого варвара!
+
+villager.goPlay=Mallon tha paixw ekso. / Думаю, я пойду поиграть снаружи.
+villager.goPlay=Tha páo na paíxo tóra. / Я пойду поиграть.
+villager.goPlay=$name! Théleis na paíxeis mazí mou? / $name! Хочешь поиграть со мной?
+villager.goPlay=Thélo na tréxo! / Я хочу бежать!
+
+villager.calltoarms=Hxiste synagermo! Dexomaste epithesi! / Римская Империя под атакой! К оружию!
+villager.calltoarms=Barbaroi! Sta opla Romaioi! / Здесь варвары! Защитите деревню любой ценой!
+
+villager.childeatgrapes=Orkízomai óti aftá ta stafýlia épesan mónoi tous! / Клянусь, этот виноград уже так и лежал здесь!
+
+villager.childobservevines=Oi enílikes prépei na stamatísoun na chánoun nóstima stafýlia kánontas aftó to apaísio krasí apó aftó! / Взрослые должны научиться ценить этот сладкий виноград, а не делать из него это гадкое вино!
+villager.childobserveconstruction=Mia méra tha episkefthó tin Konstantinoúpoli kai tha doúme ti moiázoun me ta pragmatiká romaïká ktíria! / Однажды я посещу Константинополь и увижу, как выглядят настоящие римские здания!
+villager.childobserveproducealcohol=Dokímasa éna krasí mia forá, eínai aidiastikó. / Как-то попробовал вино — гадость.
+
+villager.gorest=An den koimithó, boreí na symvoún atychímata. / Я устал. Пойду домой посплю.
+villager.gorest=Eímai kourasménos. Páo spíti gia na koimithó. / Пойду, пожалуй,  посплю.
+villager.gorest=Mallon oti tha pao gia ypno. / Лучше пойду посплю.
+
+villager.makeBread=To psomi myrizei idi wraia. / Хлеб уже хорошо пахнет...
+
+villager.gopray=Diefchon ton agion pateron eimon. / Я руководствуюсь Святым Отцом.
+villager.gopray=Basileus ouranie paraklite... / Господи, ты рожденный с неба, и милосердный.
+villager.gopray=O paides eulogitai, oi iereis animneite! / Мужчины поклоняются, священнослужители пеют!
+villager.gopray=Xaire nymfe anymfeute! / Поздравляю девственную нимфу!
+villager.gopray=Tin upermaxo stratigo ta nikitiria! / О, святой Брак, Великий командир Викториус!
+villager.gopray=Os lytrothisa ton doinon euxaristiria... / Ты спас меня от зла, я благодарю тебя...
+villager.gopray=Laos uperipsoute, eis pantas tous aiones / Люди будут молиться за тебя, до бесконечных веков, аминь.
+
+villager.goDrink=Óra na ftiáxete éna frésko romaïkó krasí! / Пора купить свежее римское вино!
+villager.goDrink=Chreiázomai éna potó. / Мне нужно выпить.
+villager.goDrink=O oínos tha plýnei ta provlímatá mou. / Вино умывает мои проблемы.
+villager.goDrink=Xérate óti to romaïkó krasí eínai to kalýtero ston kósmo? / Вы знали, что римское вино лучшее в мире?
+villager.goDrink=Échei perásei polýs kairós apó tóte pou écho éna potó. / Я давно не пил.
+
+wife_byzantine.DeliverGoodsHousehold=Pragmata opws auto einai ta mona pou mporw na kanw. / Такие вещи - единственное, что я могу сделать здесь.
+wife_byzantine.GetHouseTHResources=Epitelous o syzygos mou metefere ta agatha opws tou eipa. / Мой муж наконец-то доставил свои ресурсы, как я ему сказал.
+wife_byzantine.cooking=H mageirikh einai poly diaskedastikh. / Готовить очень весело.
+wife_byzantine.getGoodsHousehold=Óra na frontízo tin oikogéneiá mou. / Пришло время позаботиться о своей семье.
+wife_byzantine.greeting=Tha boroúsa na káno pollá perissótera edó an ímoun ándras, an móno... / Наша задача - контроль наших мужчин
+wife_byzantine.greeting=To kathikon mas einai na elegxoume tous andres. / Как и женщины, вы не можете сделать здесь многое
+
+//refresh
+villager.givespeech=I Romaïkí Aftokratoría eínai megáli kai to chorió mas eínai to Spoudaióteron. / Римская империя великая, и наша деревня величайшая.
+villager.givespeech=To chorió mas prépei na efcharistísei gia tin igesía tou gia ólo to megaleío tou. / Наша деревня должна поблагодарить ее руководство за все ее величие.
+villager.givespeech=Emeís oi Romaíoi échoume tous kalýterous igétes kai tous kalýterous anthrópous. / У нас, римлян, лучшие лидеры и лучшие люди.
+
+villager.listentospeech=Échei díkio! / Он прав!
+villager.listentospeech=Dóxa eimín! / Слава нам!
+villager.listentospeech=Boroúme na nikísoume opoiondípote! / Мы можем победить любого!
+villager.listentospeech=Dóxa ston Theó kai ston Theóchristo igéti! / Слава Богу и нашему Богом посланному правителю!
+
+special_byzantine.greeting=Bahhh, $name. / Твой рабство будет вознаграждено, $name.
+special_byzantine.calltoarms=Bahhh! Bah! Bahhhhh! Bah. / Не испытывай удачу, дитя.
+special_byzantine.gopray=Bahhhhh… Bahhhh… / Поклонись ко мне...
+
+oldshepherd_byzantine.greeting=Oi pepoithíseis mou me krátisan kala… / Мои убеждения держали меня в силе...
+oldshepherd_byzantine.greeting=Voíthisé me na ekpliróso to óneiró mou, $name, kai tha antameiftheíte / Помоги мне исполнить свою мечту. $name, и вы будете вознаграждены...
+oldshepherd_byzantine.calltoarms=Gia ton Boskokrátor! / За Боскократора!
+oldshepherd_byzantine=Ágios Boskokrátor, parakaló evlogíste me kai ta próvatá mou. / Святой Боскократор, благослови меня и моих овец.
+
+merchant_armour.greeting=Móno ta oraiótera ópla kai ta ópla! / Только наилучшие доспехи и оружие!
+merchant_armour.keepStall=Kalós írthate! Sas férno ta kalýtera spathiá pou boreíte na vreíte! / Добро пожаловать, добро пожаловать!  Я принесу тебе самые лучшие мечи!
+
+merchant_dyes.greeting=Érchomai sta chrómata káthe méra! Periménete, den eímai indós. / Я  в цветах каждый день! Подожди, я не индиец.
+merchant_dyes.keepStall=Ela na deis! Vafés apó ólo ton kósmo! / Идите и посмотрите!  Цветы со всего мира!
+
+merchant_food.greeting=Если бы существовало капоио ностимо сувляки, $name? Как насчет вкусного сувлаки, $name?
+merchant_food.keepStall=Óla ta trófima pou thélete na fáte! / Вся еда, которую ты захочешь съесть!
+
+merchant_materials.greeting=Eláte na agorásete ta kalýtera oikodomiká yliká! Egó kai i pláti mou tha sas efcharistíso. / Подходи и покупай лучшие материалы для строительства. Я и моя спина поблагодарят тебя.
+merchant_materials.keepStall=Ámmos, pétra kai toúvla! Diorite kai chalazía! / Песок, камень и кирпичи!  Диорит и кварц!
+
+merchant_relics.greeting=Pouláo polýtimes cheirotechníes kai ierá koimilia, $name. / Я продаю ценные и священные товары, $name.
+merchant_relics.keepStall=Eláte kai deíte tin koryfí tis romaïkís cheirotechnías. / Приезжайте и посмотрите на пик римского ремесла.
+
+merchant_textiles.greeting=Sovará, $name? Aftó to Endyma? / Серьезно, $name? Эта одежда?
+merchant_textiles.keepStall=Montérna chaliá kai roúcha, ópos akrivós kai stin Konstantinoúpoli! / Модные ковры и одежда, как в Константинополе!
+
+loneabbot_byzantine.greeting=Kalós ílthate, $name. Boreíte na xekourasteíte apó ta taxídia sas, eíste asfaleís edó. / Добро пожаловать. $name. Вы можете отдохнуть от своих путешествий, здесь вы в безопасности.
+lonemonk_byzantine.greeting=Den boró na sou prosféro típota, $name / Я ничего тебе не могу предложить. $name.
+
+loneabbot_byzantine.gosocialise=Anypomonó na moirastó tis spoudés mou. / Я не могу дождаться, чтобы поделиться своими исследованиями.
+
+lonemonk_byzantine.gosocialise=Anypomonó na moirastó tis spoudés mou. / Я не могу дождаться, чтобы поделиться своими исследованиями.
+lonemonk_byzantine.plantseeds=Eíthe o Theós na evlogeí aftoús tous spórous. / Пусть Бог благословит эти семена.
+lonemonk_byzantine.collectcrop=Aftés oi kalliérgeies eínai dóro apó ton ídio ton Theó. / Эти культуры - дар от самого Бога.
+lonemonk_byzantine.makebread=I megáli thysía ton Yión tha xekinísei me aftó to psomí. / Великая жертва Сына начнется с этого хлеба.
+
+villager.plantseeds=Pistévo óti tha échoume ploúsia synkomidí fétos. / Я чувствую, что у нас будет богатый урожай в этом году.
+villager.collectcrop=To íxera! Mia ploúsia synkomidí! / Я знал!  Богатый урожай!
+
+villager.gostudy=Parakaló, min me apospoún tin prosochí, $name. / Пожалуйста, не отвлекайте меня. $name.
+
+villager.gotreerelax=Aftó to skieró méros eínai téleio... / Это теневое место просто идеально...
+villager.gotreerelax=Tha boroúsa na meíno káto apó aftó to déntro óli tin iméra… / Я мог бы остаться под этим деревом весь день...
+
+villager.relight=I agápi tou Theoú eínai i móni mou epithymía! / Любовь Бога - это мое единственное желание!
+villager.golookout=Símera, éna ploío tha érthei. To xéro. / Сегодня придет корабль.  Я знаю, что это так.
+villager.golookout=Mia varetí douleiá, allá touláchiston plirónomai. / Это скучная работа, но по крайней мере я получаю плату.

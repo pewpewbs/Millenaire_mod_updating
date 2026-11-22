@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "millenaire:cherry_leaves",
+    "millenaire:leaves_appletree",
+    "millenaire:leaves_olivetree",
+    "millenaire:leaves_pistachio",
+    "millenaire:sakura_leaves"
+  ]
+}

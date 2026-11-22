@@ -1,0 +1,1 @@
+package org.millenaire.common.entity;public class MillVillager{public net.minecraft.world.level.Level level;public org.millenaire.common.village.Building house;public org.millenaire.common.utilities.Point dest;public org.millenaire.common.village.Building getHouse(){return house;}public org.millenaire.common.utilities.Point getGoalDestPoint(){return dest;}}

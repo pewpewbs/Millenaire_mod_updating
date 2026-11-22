@@ -1,0 +1,23 @@
+{
+  "parent": "millenaire:item/snail_soil_0",
+  "overrides": [
+    {
+      "predicate": {
+        "millenaire:variant": 1
+      },
+      "model": "millenaire:item/snail_soil_1"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 2
+      },
+      "model": "millenaire:item/snail_soil_2"
+    },
+    {
+      "predicate": {
+        "millenaire:variant": 3
+      },
+      "model": "millenaire:item/snail_soil_3"
+    }
+  ]
+}

@@ -1,0 +1,509 @@
+[
+  {
+    "id": "millenaire:amateurarchitect",
+    "criteria": [
+      "amateurarchitect"
+    ],
+    "icon": {
+      "item": "minecraft:crafting_table"
+    }
+  },
+  {
+    "id": "millenaire:attila",
+    "criteria": [
+      "attila"
+    ],
+    "icon": {
+      "item": "millenaire:normanbroadsword"
+    }
+  },
+  {
+    "id": "millenaire:byzantines_nottoday",
+    "criteria": [
+      "leader_seljuk"
+    ],
+    "icon": {
+      "item": "millenaire:byzantineplate"
+    }
+  },
+  {
+    "id": "millenaire:cheers",
+    "criteria": [
+      "cheers"
+    ],
+    "icon": {
+      "item": "millenaire:calva"
+    }
+  },
+  {
+    "id": "millenaire:complete_byzantines",
+    "criteria": [
+      "complete_byzantines"
+    ],
+    "icon": {
+      "item": "millenaire:byzantine_stone_tiles"
+    }
+  },
+  {
+    "id": "millenaire:complete_indian",
+    "criteria": [
+      "complete_indian"
+    ],
+    "icon": {
+      "item": "millenaire:stone_deco"
+    }
+  },
+  {
+    "id": "millenaire:complete_inuits",
+    "criteria": [
+      "complete_norman"
+    ],
+    "icon": {
+      "item": "millenaire:icebrick"
+    }
+  },
+  {
+    "id": "millenaire:complete_japanese",
+    "criteria": [
+      "complete_japanese"
+    ],
+    "icon": {
+      "item": "millenaire:paper_wall"
+    }
+  },
+  {
+    "id": "millenaire:complete_mayan",
+    "criteria": [
+      "complete_mayan"
+    ],
+    "icon": {
+      "item": "millenaire:stone_deco",
+      "nbt": "{MillenaireVariant:2}"
+    }
+  },
+  {
+    "id": "millenaire:complete_norman",
+    "criteria": [
+      "complete_norman"
+    ],
+    "icon": {
+      "item": "millenaire:wood_deco",
+      "nbt": "{MillenaireVariant:1}"
+    }
+  },
+  {
+    "id": "millenaire:complete_seljuk",
+    "criteria": [
+      "complete_seljuk"
+    ],
+    "icon": {
+      "item": "millenaire:extended_mud_brick",
+      "nbt": "{MillenaireVariant:1}"
+    }
+  },
+  {
+    "id": "millenaire:cresus",
+    "criteria": [
+      "cresus"
+    ],
+    "icon": {
+      "item": "millenaire:purse"
+    }
+  },
+  {
+    "id": "millenaire:darkside",
+    "criteria": [
+      "darkside"
+    ],
+    "icon": {
+      "item": "minecraft:stone_sword"
+    }
+  },
+  {
+    "id": "millenaire:explorer",
+    "criteria": [
+      "explorer"
+    ],
+    "icon": {
+      "item": "minecraft:leather_boots"
+    }
+  },
+  {
+    "id": "millenaire:firstcontact",
+    "criteria": [
+      "firstcontact"
+    ],
+    "icon": {
+      "item": "millenaire:denieror"
+    }
+  },
+  {
+    "id": "millenaire:friendindeed",
+    "criteria": [
+      "friendindeed"
+    ],
+    "icon": {
+      "item": "minecraft:poppy"
+    }
+  },
+  {
+    "id": "millenaire:greathunter",
+    "criteria": [
+      "greathunter"
+    ],
+    "icon": {
+      "item": "millenaire:wolfmeat_raw"
+    }
+  },
+  {
+    "id": "millenaire:hired",
+    "criteria": [
+      "hired"
+    ],
+    "icon": {
+      "item": "millenaire:normanaxe"
+    }
+  },
+  {
+    "id": "millenaire:leader_byzantines",
+    "criteria": [
+      "leader_byzantines"
+    ],
+    "icon": {
+      "item": "millenaire:byzantinehelmet"
+    }
+  },
+  {
+    "id": "millenaire:leader_indian",
+    "criteria": [
+      "leader_indian"
+    ],
+    "icon": {
+      "item": "minecraft:iron_helmet"
+    }
+  },
+  {
+    "id": "millenaire:leader_inuits",
+    "criteria": [
+      "leader_inuits"
+    ],
+    "icon": {
+      "item": "millenaire:furhelmet"
+    }
+  },
+  {
+    "id": "millenaire:leader_japanese",
+    "criteria": [
+      "leader_japanese"
+    ],
+    "icon": {
+      "item": "millenaire:japanesebluehelmet"
+    }
+  },
+  {
+    "id": "millenaire:leader_mayan",
+    "criteria": [
+      "leader_mayan"
+    ],
+    "icon": {
+      "item": "minecraft:leather_helmet"
+    }
+  },
+  {
+    "id": "millenaire:leader_norman",
+    "criteria": [
+      "leader_norman"
+    ],
+    "icon": {
+      "item": "millenaire:normanhelmet"
+    }
+  },
+  {
+    "id": "millenaire:leader_seljuk",
+    "criteria": [
+      "leader_seljuk"
+    ],
+    "icon": {
+      "item": "millenaire:seljukhelmet"
+    }
+  },
+  {
+    "id": "millenaire:magellan",
+    "criteria": [
+      "magellan"
+    ],
+    "icon": {
+      "item": "minecraft:compass"
+    }
+  },
+  {
+    "id": "millenaire:maitreapenser",
+    "criteria": [
+      "maitreapenser"
+    ],
+    "icon": {
+      "item": "minecraft:writable_book"
+    }
+  },
+  {
+    "id": "millenaire:marcopolo",
+    "criteria": [
+      "marcopolo"
+    ],
+    "icon": {
+      "item": "minecraft:map"
+    }
+  },
+  {
+    "id": "millenaire:marvel_norman",
+    "criteria": [
+      "marvel_norman"
+    ],
+    "icon": {
+      "item": "millenaire:rosette"
+    }
+  },
+  {
+    "id": "millenaire:masterfarmer",
+    "criteria": [
+      "masterfarmer"
+    ],
+    "icon": {
+      "item": "millenaire:grapes"
+    }
+  },
+  {
+    "id": "millenaire:medievalmetropolis",
+    "criteria": [
+      "medievalmetropolis"
+    ],
+    "icon": {
+      "item": "minecraft:white_concrete"
+    }
+  },
+  {
+    "id": "millenaire:mp_friendlyvillage",
+    "criteria": [
+      "main"
+    ],
+    "icon": {
+      "item": "minecraft:golden_apple"
+    }
+  },
+  {
+    "id": "millenaire:mp_hiredgoon",
+    "criteria": [
+      "main"
+    ],
+    "icon": {
+      "item": "millenaire:byzantinemace"
+    }
+  },
+  {
+    "id": "millenaire:mp_neighbourtrade",
+    "criteria": [
+      "main"
+    ],
+    "icon": {
+      "item": "millenaire:denier"
+    }
+  },
+  {
+    "id": "millenaire:mp_raidonplayer",
+    "criteria": [
+      "main"
+    ],
+    "icon": {
+      "item": "minecraft:gold_ingot"
+    }
+  },
+  {
+    "id": "millenaire:mp_weapon",
+    "criteria": [
+      "main"
+    ],
+    "icon": {
+      "item": "millenaire:mayanmace"
+    }
+  },
+  {
+    "id": "millenaire:pantheon",
+    "criteria": [
+      "pantheon"
+    ],
+    "icon": {
+      "item": "minecraft:oak_sign"
+    }
+  },
+  {
+    "id": "millenaire:puja",
+    "criteria": [
+      "puja"
+    ],
+    "icon": {
+      "item": "millenaire:indianstatue"
+    }
+  },
+  {
+    "id": "millenaire:rainbow",
+    "criteria": [
+      "rainbow"
+    ],
+    "icon": {
+      "item": "millenaire:painted_brick_decorated_pink"
+    }
+  },
+  {
+    "id": "millenaire:rep_byzantines",
+    "criteria": [
+      "rep_byzantines"
+    ],
+    "icon": {
+      "item": "millenaire:winefancy"
+    }
+  },
+  {
+    "id": "millenaire:rep_indian",
+    "criteria": [
+      "villagebhai"
+    ],
+    "icon": {
+      "item": "millenaire:rasgulla"
+    }
+  },
+  {
+    "id": "millenaire:rep_inuits",
+    "criteria": [
+      "rep_inuits"
+    ],
+    "icon": {
+      "item": "millenaire:inuitbearstew"
+    }
+  },
+  {
+    "id": "millenaire:rep_japanese",
+    "criteria": [
+      "rep_japanese"
+    ],
+    "icon": {
+      "item": "millenaire:sake"
+    }
+  },
+  {
+    "id": "millenaire:rep_mayan",
+    "criteria": [
+      "rep_mayan"
+    ],
+    "icon": {
+      "item": "millenaire:cacauhaa"
+    }
+  },
+  {
+    "id": "millenaire:rep_norman",
+    "criteria": [
+      "rep_norman"
+    ],
+    "icon": {
+      "item": "millenaire:cider"
+    }
+  },
+  {
+    "id": "millenaire:rep_seljuk",
+    "criteria": [
+      "rep_seljuk"
+    ],
+    "icon": {
+      "item": "millenaire:ayran"
+    }
+  },
+  {
+    "id": "millenaire:sacrifice",
+    "criteria": [
+      "sacrifice"
+    ],
+    "icon": {
+      "item": "millenaire:mayanstatue"
+    }
+  },
+  {
+    "id": "millenaire:scipio",
+    "criteria": [
+      "scipio"
+    ],
+    "icon": {
+      "item": "millenaire:negationwand"
+    }
+  },
+  {
+    "id": "millenaire:selfdefense",
+    "criteria": [
+      "selfdefense"
+    ],
+    "icon": {
+      "item": "millenaire:byzantineplate"
+    }
+  },
+  {
+    "id": "millenaire:seljuk_istanbul",
+    "criteria": [
+      "leader_seljuk"
+    ],
+    "icon": {
+      "item": "millenaire:seljukscimitar"
+    }
+  },
+  {
+    "id": "millenaire:summoningwand",
+    "criteria": [
+      "summoningwand"
+    ],
+    "icon": {
+      "item": "millenaire:summoningwand"
+    }
+  },
+  {
+    "id": "millenaire:thequest",
+    "criteria": [
+      "thequest"
+    ],
+    "icon": {
+      "item": "minecraft:torch"
+    }
+  },
+  {
+    "id": "millenaire:viking",
+    "criteria": [
+      "main"
+    ],
+    "icon": {
+      "item": "minecraft:iron_axe"
+    }
+  },
+  {
+    "id": "millenaire:wq_indian",
+    "criteria": [
+      "wq_indian"
+    ],
+    "icon": {
+      "item": "millenaire:vishnu_amulet"
+    }
+  },
+  {
+    "id": "millenaire:wq_mayan",
+    "criteria": [
+      "wq_mayan"
+    ],
+    "icon": {
+      "item": "millenaire:mayanquestcrown"
+    }
+  },
+  {
+    "id": "millenaire:wq_norman",
+    "criteria": [
+      "wq_norman"
+    ],
+    "icon": {
+      "item": "millenaire:alchemistexplosive"
+    }
+  }
+]

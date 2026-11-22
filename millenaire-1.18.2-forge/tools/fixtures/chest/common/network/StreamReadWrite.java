@@ -1,0 +1,2 @@
+package org.millenaire.common.network;
+public class StreamReadWrite { public static org.millenaire.common.utilities.Point readNullablePoint(net.minecraft.network.FriendlyByteBuf buffer){return null;} public static net.minecraft.world.item.ItemStack readNullableItemStack(net.minecraft.network.FriendlyByteBuf buffer) throws java.io.IOException {return net.minecraft.world.item.ItemStack.EMPTY;} }

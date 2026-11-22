@@ -1,0 +1,94 @@
+[
+  {
+    "file": "ar_sa.lang",
+    "entries": 150
+  },
+  {
+    "file": "cs_cz.lang",
+    "entries": 171
+  },
+  {
+    "file": "da_dk.lang",
+    "entries": 22
+  },
+  {
+    "file": "de_de.lang",
+    "entries": 524
+  },
+  {
+    "file": "en_us.lang",
+    "entries": 1000
+  },
+  {
+    "file": "es_es.lang",
+    "entries": 472
+  },
+  {
+    "file": "et_et.lang",
+    "entries": 121
+  },
+  {
+    "file": "fr_fr.lang",
+    "entries": 977
+  },
+  {
+    "file": "it_it.lang",
+    "entries": 167
+  },
+  {
+    "file": "ja_jp.lang",
+    "entries": 159
+  },
+  {
+    "file": "ko_kr.lang",
+    "entries": 941
+  },
+  {
+    "file": "nl_nl.lang",
+    "entries": 159
+  },
+  {
+    "file": "no_no.lang",
+    "entries": 159
+  },
+  {
+    "file": "pl_pl.lang",
+    "entries": 512
+  },
+  {
+    "file": "pt_br.lang",
+    "entries": 941
+  },
+  {
+    "file": "pt_pt.lang",
+    "entries": 158
+  },
+  {
+    "file": "ru_ru.lang",
+    "entries": 938
+  },
+  {
+    "file": "sl_si.lang",
+    "entries": 36
+  },
+  {
+    "file": "sv_se.lang",
+    "entries": 355
+  },
+  {
+    "file": "th_th.lang",
+    "entries": 175
+  },
+  {
+    "file": "uk_ua.lang",
+    "entries": 158
+  },
+  {
+    "file": "zh_cn.lang",
+    "entries": 985
+  },
+  {
+    "file": "zh_tw.lang",
+    "entries": 336
+  }
+]

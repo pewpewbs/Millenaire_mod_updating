@@ -1,0 +1,1 @@
+package org.millenaire.common.item;import net.minecraft.world.item.*;public class LegacyItemStacks {public static ItemStack stack(Item item,int count,int meta){return new ItemStack(item,count);}}

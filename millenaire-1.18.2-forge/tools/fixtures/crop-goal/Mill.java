@@ -1,0 +1,1 @@
+package org.millenaire.common.forge;public class Mill{public static final net.minecraft.resources.ResourceLocation CROP_FLOWER=new net.minecraft.resources.ResourceLocation("flower");}

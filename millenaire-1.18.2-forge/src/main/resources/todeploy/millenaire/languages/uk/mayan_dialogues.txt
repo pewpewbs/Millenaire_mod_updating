@@ -1,0 +1,336 @@
+//* Dialogue lines start with a code like "v2;30;" which specify who is speaking and when the line shows up. Please copy it exactly in your translations.
+//* First half of the line (till the /) is in the villagers' language and must be kept as-is, second part should be translated
+//* French by xIflot, English by Teethdude, Maya by TheyCallMePoncho
+
+newchat;key:stone,weigth:10;
+v1;0;Nojoch tuunich antal ts’íib ku bin táanil ti’ junp’éel k’aaba’ tia’al u ye’esik xiib yéetel chéen juntúul wáa junp’éel ma’alobkin wíiklal ka kuxtal. / Камень - найкращий матеріал, який коли-небудь існував.
+v2;30;¡Kux yaan ma'alobtal bi'bi'ki! ¡Ts'íic tuunich! / Це ще краще, коли готують!  Грей за каменем!
+v1;60;¡Haah k'ana'an hóok's! Ich meyah! / Ми повинні розкопати його!  На роботу!
+
+newchat;key:pyramid,building:mayanpyramid,weigth:7;
+v1;0;Tin nah k'uh haah ma'alobkin hats'uts yéetel ma'alobkin beet. / Наша піраміда - найкрасивіша і найкраще побудована.
+v2;30;Haah u t'aan. Xíimbal uláak' chan kaah. Utia'al letio'ob antal ki'ichpam, ¡Ba'ale' ma' ki'ichkelem he'ebix in tia'al! / Це правда.  Я відвідала інші села.  Їхні дуже приємні, але не такі елегантні, як наші!
+v1;60;In tia'al xook utia'al nahil haah hun yéetel ha'as óol.  / Наша архітектура унікальна і оригінальна.
+v2;90;Ma' u'uyba nohchil hach. Ma' k'áat kex antal he'ebix Byzantines. / Не надто хвалиться.  Я не хочу, щоб ми були як візантийці.
+v1;120;Ah, kux. In ch'a' k'uux. ¿¡Bixi' páahtal yaan hach  u'uyba noh ba'al!? / О, так, е-е...  Я їх ненавижу.  Як хтось може бути таким претензійним!
+
+newchat;key:player,weigth:10;
+v1;0;To'on ma' hach wíiniko'ob ka taal ich xíimbal lelo' kúuch. / Ми не отримуємо тут багато відвідувачів.
+v2;30;Kux, chéen lela' $name yéetel uláak' wíiniko'ob saat... / Так, є тільки $name і інших втрачених людей...
+v1;60;T'aan utia'al $name, ¿ma' teech tuukul ka $name il ka'anal yéetel hela'an? / Говорячи про $nameЧи не думаєте, що він стає все більш дивним і втомленим?
+v2;90;Kux. Leti' p'aax wa'atal. / Це правда.  Він повинен відпочити.
+
+newchat;key:miner,weigth:9;
+v1;0;To'on p'aax antal máas áaktun máako'ob. / Ми повинні набрати більше шахтерів.
+v2;30;¡Ah kux! Nohoch tuunich yéetel yaan ma'alokin bi'bi'ki ti' kúuch. / А, так!  Скали і мінерали - найкращі матеріали.
+v1;60;Kux, haah u t'aan. Kurx yaan k'aana'an máas utia'al to'on, P'aax ya'abtal xook. / Я згоден... але нас в селі недостатньо, кількість наших людей повинна зростати.
+v2;90;Yéetel ma' ts'aa ich meyah ich mix may paal. / І ми не можемо змусити дітей працювати.  Вони занадто молоді.
+
+newchat;key:woman,weigth:6,v1:adult,v2:adult,v1:female;
+v1;0;Haah k'iin utia'al nah. / Пора очистити будинок.
+v2;30;¡Kurx teech hun k'iin! / Але ти зробив це вчора!
+v1;60;Ma', yaan mix ba'al ka beet te'ela'. / Незважаючи на це, мені не дозволено робити тут нічого іншого.
+v2;90;¡Teech huntiich' tak ho'ol! / Ти завжди скаржишся!
+v1;120;Yaáxil tak pool, ¡óot na'at! / Замість того, щоб протестувати, що я скаржуся, спробуй зрозуміти, чому я скаржуся!
+
+newchat;key:friend,v1:vtype:mayan_miner,v2:adult,weigth:10;
+v1;0;Ah, tin uts amikoo, ¡$targetfirstname! ¿Bixi' antal? / А мій хороший друг $targetfirstname! Як ти?
+v2;30;¡Toh oolal, $targetfirstname! Meen ka in páahtal, meyahil bin k'aas. / Привіт. $targetfirstname! Робивши те, що я можу, Буїснес - це погане.
+v1;60;¿Teech p'aat koonol tuunich ich Indians? / Ви перестали продавати індіанцям камінь?
+v2;90;Kux. Behla'e' leo'ob Japanese sahkab máako'ob k'a'ay meyah, leito'ob ma' k'abeet. / - Так, я знаю.  Тепер, коли незалежні японські шахтерці запропонували свої послуги, вони більше не потребують мене.
+v1;120;Teech ts'a'ah wa ba'ax hach. / Ви просто повинні запропонувати їм щось інше.
+v2;150;¿Teech yaan hun tuukul? / У тебе є ідеї?
+
+newchat;key:monster,weigth:5;
+v1;0;Yaan hach k'aak'as ba'al táankab. / Тут багато монстрів.
+v2;30;In antal máako'ob ba'ate'il páahtal kíimsah. / Я впевнений, що охоронці зможуть з ними боротися.
+v1;60;In antal sahkil beey hun múuch' lelo'ob paal wáak'al ya'ax taah ich chan kaah. / Мене турбує, якщо на них нападе купа вибуховісно-зеленіх істот.
+v2;90;Ma' sahakil. To'on yaan léech tia'al ts'aa yiknal letio'ob. / Не хвилюйся.  У нас є підстави проти них.
+v1;120;Lela' uts, to'on yaan ich $name. Leti' ma' ba'ate'el k'aw. Leti' páahtal áantah to'on.  / Добре, в гіршому випадку є $name. Він добре бореться і може захищати нас.
+v2;150;Kin ma' péek óol. Leti' ma' k'aw. / Я теж не сумніваюся.  Він не такий поганий.
+
+newchat;key:normands,weigth:6;
+v1;0;¿Teech yaan paakat boon oot'il utia'al Normans? ¡Letio'ob hach saas! / Ви бачили колір шкіри норманнів?  Там все так бледно!
+v2;30;¡Kux! In mix bik'in yaan paakat saas máako'ob. Hela'n.  / О, так!  Я ніколи раніше не бачив такого кольору.  Це дивно.
+v1;60;In tuukul letio'ob xota'an u k'iin... / Я думаю, вони могли бути прокляті...
+v2;90;Ma' yaan ma' na'at. Letio'ob yaan wíinik he'ebix tuláakal to'on. / Не будьте дурні.  Вони люди, як і всі інші.
+v1;120;Ma' péek óol yaan káaltalil k'eex beey. In antal chich leio'ob ma' yaan beey. / Безсумнівно, алкоголь змінив їх таким чином.  Я впевнений, що вони не завжди були такими.
+v2;150;Wale' teech antal k'aw. / Ви, мабуть, помиляєтеся.
+
+newchat;key:alchimist,weigth:4;
+v1;0;Ch'óoch' káax, in il báaxal t'aan wáay. / Коли я досліджував ліс, я побачив смішного алхіміка.
+v2;30;¿Teech' he'ebix leti' léeyli'e'? Leti' yaan su'utsil hela'an. / Ти теж його бачив?  Він смішно дивний.
+v1;60;"¡Yéetel bixi'! Leti' yaan hun ts'íib hela'an xa'ak'. ¿Teech oohel "tseek' baakel muuts'" wa "sa'am utia'al píixan" p'aax a'al? / І як.  Там був список дивних інгредієнтів.  Ти знаєш, що таке "збіті скелетові черепи" або "песок душі"?
+v2;90;Ma'. Kurx ma' yaan hach hets' tuukul. / Ні, але це не дуже заспокоює.
+v1;120;¡Kurx! To'on tuukul leti' óot beet ich tuunich yum k'iin. / Так, так!  Ми думаємо, що він намагається зробити Філософський камінь.
+v2;150;Tohol $targetfirstname, beey teech tuukul huum u tsikbalil wáa ba’ax, teech antal hach k'as tuukul kab yaan táax. / Мужна. $targetfirstnameЯкщо ви вірите у чутки, ви ризикуєте повірити, що Земля круглая.
+v1;180;Teech antal wáa ma'alob. / Ви, мабуть, маєте рацію.
+
+newchat;key:dragonegg,v1:adult,v2:adult,weigth:5;
+v1;0;Kin il ich hela'an he' boox ich bilim. / Я бачив дивне чорне яйце в пустелі.
+v2;30;Ah, ¿ich wa maax? ¿Bixi' haah il? / О, правда?  Як це виглядало?
+v1;60;Yaan noh, yaan wóolis chak puk’e’en. Yaan hach noh. ¡Nohoch! / Він був великий з фіолетовими плями.  Дуже великий.
+v2;90;¿Teech uk' Norman máak sen ya'ab wa teech antal p'a'as? / Ти знову випив Нормана алкоголю або ти жартуєш?
+v1;120;Ba'ale'... ¡Haah haahil! / Але...  Це правда!  Я клянуся!
+v2;150;¡Jaja! Teech tuukul teech tuus beey, ¡teech k'aw! / Хаха!  Якщо ви думаєте, що можете обдурити мене таким чином, ви помиляєтеся!
+
+newchat;key:wither,weigth:3;
+v1;0;Ich k'aáx in il ich hela'an boox paal. / У лісі я побачив дивне чорне істота.
+v2;30;¿Haah haahil? Tsool, ¡in k'áat oohel máas! / - Справді?  Опишіть мені, мені цікаво!
+v1;60;Leti' yaan boox he'ebix baakel paal, yiknal ho'ol ich ts'ook utia'al k'ab, yéetel ich kaal, yéetel yaan ta' hach ke'el he'ebix ha' chichkunta'an tumen ke'el wáa síis... / Ну, це був чорний скелет, схожий на істоту, з двома головами на кінці рук і однією на шиї, і він виглядав холодно, як лід...
+v2;90;Xi'ix mukuy pu'uch. / Це призводить до студіння в мого хребту.
+v1;120;Enderwíinik antal k'óoch leti'. / На нього напали люди з підпорядку.
+v2;150;¿Ederwíinik? Letio'ob ma' kuxtal, teech antal wayak'. / Ендермен?  Вони не існують, ти, мабуть, мріяв.
+
+newchat;key:bakery,notbuilding:mayanbakery,weigth:7;
+v1;0;To'on p'aax wa'akum nah hun tu'ux ku meenta'al yéetel ku ko'onol waah. Too'n antal ich meyahil. / Ми повинні побудувати пекарню.  Це поставить нас у бізнес.
+v2;30;Haah u t'aan. To'on ma' kukin otoch waah. / Це правда.  Ми не можемо задовольнятися домашнім хлібом.
+v1;60;Bin ich t'aan ich halach wíinik. / Поговоримо з начальником.
+
+newchat;key:bestdad,v1:child,v2:child,weigth:8;
+v1;0;Tin taatáa yaan toop tumen leti' haah hun ma'ako'ob mol che'. / Мій батько найкращий, тому що він дереворобник!
+v2;30;¡Jah! ¡Che' haah ma' k'abéet! Tin taatáa yaan toop tumen antal sahkab máako'ob. / Пффф!  Дерево безпотрібне!  Мій краще, бо він шахтер!
+v1;60;Mina'an che', a taatáa ma' meyah. / Без дерева твій батько не служить.
+v2;90;¿¡Ba'ax!? ¿Teech kaxan hun? / О, так!?  Ти шукаєш одного?!
+v1;120;Ka'anal, tuunich ma' yaan meyah. ¡Ta'! / Стоп, камінь безпотрібний, визнай це.
+v2;150;¡Mina'an tuunich, a taatáa weneh yáanal eek'! / Без каміня твій батько спав би під зірками!
+
+newchat;key:becomeadult,v1:child,v2:child,weigth:9;
+v1;0;Kin yaan sahakil utia'al suut nohoch máak. / Я боюся стати дорослим.
+v2;30;¿Ba'ax ten? / Чому так?
+v1;60;Tumen... Yaan hach hach meyahil yéetel ma' báaxah... / Бах, тому що...  Тут занадто багато роботи, і ми більше не можемо грати...
+v2;90;Teech il, ¡toop! / Ви побачите, це чудово!
+v1;120;Ma'... Kin ma' k'áat! Kin ma' k'áat! Kin ma' k'áat! / Ні, ні, ні.  Я не хочу, я не хочу, я не хочу!
+
+newchat;key:rebellion,v1:child,v2:child,rel:sibling,weigth:6;
+v1;0;¡Taatáa yéetel na' yaan k'aw! ¡To'on yaan léeyli'e' cho' tin otoch! / Мама і тато несправедливі!  Ми завжди повинні чистити свою кімнату!
+v2;30;¡Kurx! ¡To'on p'aax e'es yéetel k'áat hun kuxtal hach tsikbe’en! / Так, так!  Ми повинні бунтувати і вимагати кращого лікування!
+v1;60;¡To'on il! ¡Teech na'! / Давайте боротися!  Зверніть увагу на маму!
+
+newchat;key:japanese,v1:adult,weigth:8;
+v1;0;Eh, $taargetfirstname, il. / Гей, $targetfirstnameПодивіться на це.
+v2;30;¡Báaxal t'aan ts'oons! ¿Tu'ux teech antal? / Смішний меч!  І смішний лук!  Де ти це взяла?
+v1;60;Haah yumi yéetel tachi. Utia'al Japanese máaskab. / Це Юмі Боу і Тачі.  З японської Форжі.
+v2;90;Haah hats'uts yéetel k'abéet. ¿Haah ko'ok? / Це красиво і ефективно.  Це було дорого?
+v1;120;¡Kurx! ¡In ch'iin 2 sak taak'in yiknal yumi! / Чорт, так!  Я витратив дві срібні монети тільки на лук !
+v2;150;¡Oohh! Teech líik'es hach táanil maan. / Подібіться!  Вам доведеться багато заощадити перед покупкою.
+
+newchat;key:exchange,v1:adult,v2:adult,v1:male,v2:male,weigth:9;
+v1;0;Heh, $targetfirstname. ¿To'on k'íiwik toohol koonol? / Привіт. $targetlastnameСэр.  Чи наш ринок все ще триває?
+v2;30;Kurx, kurx. He'ebix in a'al, in yaan túulis. / Так, так, так.  Як я вже сказав, у мене все.
+v1;60;¡Huntiich ich k'iin! Haah ma'aldo beet meyahil yiknal teech. / Завжди пунктуальний!  Приємно вести з вами бізнес.
+v2;90;Ki’imak óolal haah tin. Le túun... 32 chuun che' tumen 8 máaskab. ¡Péeka'an! q/ Все задоволення моє.  Так що... 32 дрібниці проти 8 залізничних згуб.  Воїла!
+v1;120;Hach dyos bo’otik, yuum. Teech yaan ich ma'aldo k'iin. / Дякую вам, пане.  Угоду вам.
+v2;150;Teech, yuum $targetlastname! / Вам теж, містер. $targetlastname !
+
+newchat;key:embauchement,v1:adult,v2:vtype:mayan_warrior,weigth:7;
+v1;0;Kin meyah máak teech tia'al kalan in, tumen 48 Deniers tumen k'iin. / Я найму тебе, щоб захистити мене, в обмін на 48 монет на день.
+v2;30;Amm... koonol bahux k'iin teech meyah máak, $targetfirstname. / Хмм.  Залежно від того, скільки часу ти мене наймеш. $targetfirstname .
+v1;60;6 K'iin. Tin xiibil peek' ma' ka'ans tia'al kalan in kin. / Шість днів.  Мої собаки недостатньо, щоб забезпечити мені достатню охорону.
+v2;90;Hun Argentum. Ma' óotsil. / Добре, срібня монета.  Не менш.
+v1;120;¡Lelo' haah ookol! / Це грабеж!
+v2;150;Ma', $targetfirstname. Kin péek óol tin kuxtal waye' meyahil. / Ні в жодному разі. $targetfirstname. Я ризикую своїм життям у цій роботі.
+
+newchat;key:cereal,v2:vtype:mayan_farmer,weigth:9;
+v1;0;Kin k'áat pak'al arroz. / Я спробую вирощувати рис.
+v2;30;¿Arroz? ¿Ba'ax yaan? / Рис?  Що це таке?
+v1;60;Hun aban in maan utia'al Indians. ¡Letio'ob t'aan yaan ki'! / Рослина, яку я купив від індіанців.  Кажуть, що він смачний!
+v2;90;¿Kin páahtal túum? / Я можу попробувати?
+v1;120;Yah tu yool, ma'. Kin pak' neek'. / На жаль, ні.  Я повинен посадити кожне зерно.
+v2;150;Lelo' ma' antal k'abéet. / Це не спрацює.
+
+newchat;key:zombiepigmen,weigth:6;
+v1;0;¿Teech il chak iik' hach túumben? / Ви бачили останню буру?
+v2;30;¡Yéetel he'ebix! Tin koolki' óolt ha', kurx kin yaan sahkil. / І як!  Наші культури насолоджувалися водою, але вона була жахливою.
+v1;60;Kin antal pak'al, yéetel antal k'éek'en tséel kin. / Я був на рівнині, і побач зі мною була свиня.
+v2;90;¿Yéetel? / А що ж?
+v1;120;Hun haats' cháak yéetel leti'... Leti' níikil paachil mo'ol... / З'явилася м'яча і...  Він стояв на задніх ногах...
+v2;150;¿Haah u t'aan? ¿Bixi' il? / Справді?!  Як це виглядало?
+v1;180;Lei' yaan kuuxum ya'ax óok'ol... wa wa ba'axhe'ebix leto'. Lei' yaan xtol k'uun. / На ньому була зелена плесня чи щось подібне і був і золотий меч.
+v2;210;¿Teech kóoch wa hóok'ol? / Ви напали або втекали?
+v1;240;In antal ma' xtol. Kurx leti' ma' k'áat kóoch kin. Leti' il kin, suut, yéetel xíimbal ma' ohéelal t'aan máan. / Я була без зброї, але вона не хотіла напасти на мене.  Він дивився на мене, повернув голову і скинувся, не знаючи, що відбувається.
+v2;270;Teech p'aax ts'aa k'áak'. ¿Yéetel k'óoch chan kaah? / Ти повинен був використовувати вогонь.  А що, якщо він атакує село?
+v1;300;Kurx haats' cháak, yéetel leti' uúy mix ba'al. / Він був непридатний до вогню, яскравим ударом знову і він нічого не відчував.
+
+newchat;key:recolt,weigth:10;
+v1;0;T'ook yaan pik'taan tun. / В цьому році урожай багатий.
+v2;30;Kurx, yéetel tak ho'ol yaan chich pool. / Так, і скаржитися було б дурно.
+v1;60;¡Wáa! / Так і є!
+
+newchat;key:village,weigth:8;
+v1;0;Kin tuukul chan kaah il ma'aldo. / Я думаю, наша село виглядає добре.
+v2;30;Wáa. Yaan hach hats' uts. / Я теж.  Це дуже художнє.
+v1;60;Yaan dyos bo'otik tuunich yéetel na'at meent. / Це все через камінь і наше майстерство архітектури.
+
+newchat;key:peasantdialog,v1:vtype:mayan_peasant,v2:vtype:mayan_peasant,weigth:10;
+v1;0;Hach hach nal tia'al hooch, hach kóom k'iin... / Дуже багато кукурузи, щоб збирати, так мало часу...
+v2;30;Kurx, in k'áat to'on yaan xet' utia'al hooch. / Так, я б хотів, щоб ми отримали частину врожаю.
+
+newchat;key:playerorigins,weigth:10;
+v1;0;$name haah ich hela'an máako'ob. / $name Це дуже дивна людина.
+v2;30;Haah hach hela'an ka normans. / Навіть дивніше, ніж норманни.
+v1;60;¿Kurx utia'al tu'ux taal leti'? / Але звідки він прийшов?
+v2;90;Kin ma' antal, leti' ma' haah il he'ebix uláak' chan kaah. / Не впевнений, він, здається, не з будь-якої культури.
+
+newchat;key:byzantins,weigth:9;
+v1;0;Kin ma' muk'yah ich leio'ob Byzantines, ¡letio'ob tuukul letio'ob yaan yuumil lu'um! / Я не можу терпіти тих візантійців, вони думають, що вони володіють цією землей!
+v2;30;¿Yéetel teech il lelo'ob nahils? / І ви бачили їхні будівлі?
+v1;60;Kurx kin il lelo'ob, hach hela'am. / Так, дуже дивно.
+v2;90;¿Pak'lu'um? ¿Ka haah xuul? / Бріки?  Який сенс!?
+v1;120;Letio'ob ts'aa ba'al utia'al xukul, he'ebix Normans. / Вони навіть використовують те стъкло, як норманни.
+v2;150;Túun, kurx leio'ob il hach máan táanil ka indians. Letio'ob chéen yaan hool. / Правда, але вони здаються більш розвинені, ніж індіанці.  У них немає нічого в вікнах.
+
+newchat;key:dialogchildmother,v1:child,v2:adult,v2:female,rel:parent,weigth:10;
+v1;0;¡Na'! ¿Kin páathal bin báaxal táanakb chan kaah? / Мамо!  Я можу піти іграти далі від села?
+v2;30;Ma' tin paal, kin ma' k'áat ka teech k'ool. / Ні, дитяче, я не хочу, щоб тобі пошкоджували.
+v1;60;K'ool utia'al ka? Ma' haah hach k'as táanak. / Пошкоджений від чого?  Там не небезпечно.
+v2;90;U'uy, yaan hach k'as paal táankab... / Слухай, там небезпечні істоти...
+v1;120;¿K-ka xook utia'al paal, na'? / Що за істота мама?
+v2;150;K'aas ba'al he'ebix... creepers. / Жуткі речі, такі як...
+v1;180;C-c-creepers? / Ч-ч-криперів?
+v2;210;Kurx tin paal, letio'ob áalkab paach teech chan kaah yéetel waak' teech. / Так, дитяче, вони підуть за тобою додому і взорвуть тебе, коли ти найменше цього очікуєш.
+
+newchat;key:tobewarrior,v1:vtype:mayan_warrior,v2:notvtype:mayan_warrior,weigth:9;
+v1;0;Antal máako'ob ba'ate'el yaan ma'aldo ka in beet. / Стати воїном було найкращим рішенням у моєму житті.
+v2;30;¿He'ebix bin?? / Як це?
+v1;60;Tumen kin páahtal bin aantah ich toop ch’a’ k’uxta’an, hach  náays óol ka hooch ixi'im. / Тому що я можу піти на вулицю і допомогти боротися з ворогами, набагато цікавіше, ніж збирати кукурузу.
+v2;90;Kux kuxtal yaan máas hets'. / Але моє життя набагато безпечніше.
+v1;120;Túun, kux huntiich' antal óot hach k'as. / Правда, але я завжди хотів відчути хвилювання.
+
+newchat;key:likemydad,v1:male,v2:child,v1:child,weigth:8;
+v1;0;¡Kin k'áat yaan he'ebix taat utia'al noch. / Я хочу бути як мій батько, коли виросту!
+v2;30;¿Hun sahak? / - Нездатний?
+v1;60;¿Ba'ax? Ma', Leti' ma' yaan hun sahak. / Ні, він не хітра.
+
+newchat;key:palace,v1:vtype:mayan_king-mayan_leader-mayan_chieftain,v2:adult,weigth:9;
+v1;0;Leti' kuxtal kuxtah tin ha'ak'óol nukuch nah. / Це, безумовно, життя в моєму чудовому палаці.
+v2;30;¡Yéetel yaan hun ha'ak'óol nukuch nah, tin chanan! / І дуже чудовий палац це мій лідер!
+
+newchat;key:become,v1:adult,v2:child,v2:male,rel:child,weigth:9;
+v1;0;¿Kex teech k'áat yaan utia'al noch? / Що ти хочеш бути , коли виростиш ?
+v2;30;Kin ma' oohel, wale' kanan, wa pan... we'matz wale'.. / Я не знаю, можливо воїн, або шахтер... фермер, можливо...
+v1;60;Teech yaan yéey hayp'éel k'iin. / Ну, колись ти повинен вирішити.
+
+newchat;key:wah,weigth:9;
+v1;0;Kin yaakun hanal wah. / Я так люблю їсти Ваха.
+v2;30;¡Kin léeyli'e'! Yaan alobkin tuukul. / Я теж!  Найкраще, що коли-небудь було придумано.
+
+newchat;key:rain,v1:female,v2:female,v1:hasspouse,v2:hasspouse,weigth:9;
+v1;0;To'on k'abeet cháak tia'al ixi'im. / Нам потрібен дощ для кукурузи.
+v2;30;Kin óot cháak. / Як я б хотів, щоб дощ.
+v1;60;Wale' beey payal chi', píixan ts'a'ah to'on hun hooch nohoch lelo' tun. / Можливо, якщо ми будемо молитися, Духи дадуть нам дощ, який підходить для ідеального врожаю цього року.
+v2;90;Ma'aldo, bin behla'e' túumen to'on ma' antal tusbel. / Добре, підемо, як тільки ми не будемо занадто зайняті.
+
+newchat;key:zombie,v2:vtype:warrior,v2:vtype:mayan_warrior,weigth:8;
+v1;0;¿Yéetel beey hun túuk utia'al kimen k'óoch? / Що ми зробимо, якщо хорда зомбі вторгнеться?
+v2;30;Teech ma' tuukul, kin yaan ba'ate'el máako'ob ti' lu'um. / Не хвилюйся, я найкращий воїн у всіх цих країнах.
+
+newchat;key:rich,v1:female,v2:vtype:mayan_peasantwife,v1:vtype:mayan_peasantwife,weigth:8;
+v1;0;Ix yaan túulis, ma' beet mix ba'al. / Багаті жінки роблять це, вони не роблять жодної роботи.
+v2;30;Kux, kin tuukul kuxtal beey. / Так, я хотів би, щоб мені так поводилися.
+v1;60;Kin tuukul kin ts’o’okol beel yiknal wa maax yiknal máas taak'in. / Я знав, що повинен був одружитися за когось з більшими грошими.
+
+newchat;key:rule,v1:male,v2:male,v1:notvtype:mayan_king-mayan_leader-mayan_chieftain,v2:notvtype:mayan_king-mayan_leader-mayan_chieftain,weigth:9;
+v1;0;Kin pa'at hayp'éel k'iin kin ahau lela' chan kaah. / Я сподіваюся, що одного дня я буду правити цією селі.
+v2;30;Teech toohol náay, tumen kin antal ka'an ba'a teech. / Тоді продовжуй мріяти, бо я буду на вершині перед тобою.
+v1;60;To'on paakat... to'on paakat. / Ми побачимо. Ми побачимо.
+
+newchat;key:indians,weigth:8;
+v1;0;Indians il máas hets' óol kex normans, ¿ma'? / Індуї здаються набагато мирнішими, ніж норманни, чи не так?
+v2;30;Kux, wale' to'on páathal óot nuuch yiknal letio'ob. / Так, можливо, нам слід спробувати союз з ними.
+v1;60;Hmm... Kux, le túun wale' to'on páathal k'óoch normans, wa Byzantines. / Так, тоді, можливо, разом ми могли б напасти на норманнів або навіть візантійців.
+
+newchat;key:gravity,weigth:7;
+v1;0;K'iin yaan kóom waye' lu'um. / У цих країнах дні набагато коротші.
+v2;30;Ka, yéetel lu'um chíikpahal báab ichmáal. / Так, а землі іноді здається, що вони плавають.
+v1;60;Chichan yaah... yéetel sa'am. / За винятком грава... і піску.
+v2;90;Kin k'áat ba'ax ten. / Цікаво чому.
+
+newchat;key:obsidian,v1:vtype:mayan_obsidiancrafter,weigth:8;
+v1;0;Nu'ukul yéetel ts'oon utia'al obsidiana yaan máas hats'uts. / Обсидіанні інструменти і зброя - найкращі.
+v2;30;Hats'uts ba'ale kex mix máak páahtal yaan wa hayp'éel. / Так розкішний, але все ж кожен може мати.
+v1;60;Bahab yaan ma'alob tia'al peech' ich a ch’a’ k’uxta’an. / Мач відмінна для розбиття ворога.
+v2;90;¿Haahil? Kin yaakun il hun ts'aa ich péek. / - Справді?  Я хотів би побачити, як його використовують в дії.
+
+newchat;key:mayanarchitecture,weigth:7;
+v1;0;Nahil maya antal tsíib máas chichha'an ti' lu'um.  / Архітектура майя є найсильнішою у всіх цих землях.
+v2;30;Yaan yiknal túulis áaktum utia'al tuunich ka to'on beet lelo' hats'utsil. / Саме з усіх камінь, які ми робимо, ми будуємо ці краси.
+v1;60;Kin k'áat bahux nah utai'al tuunich to'on yaan ka beet. / Цікаво, скільки ще каменних будинків ми зробимо?
+v2;90;Chéen k'iin a'al, amikoo./ Тільки час покаже, друже.
+
+newchat;key:cacaoyer,weigth:7;
+v1;0;Тут мало какаових дерев, це місце нездорове.
+v2;40;Давайте посадимо.
+v1;80;Ти говориш!  Какаові зерна надзвичайно дорогі!
+v2;120;Ек-Чуах допоможе нам.
+
+newchat;key:chickenegg,weigth:5;
+v1;0;У нас не достатньо куряць, щоб принести в жертву.
+v2;40;Я думаю, ми минули. $name. Купимо яйця від нього.
+v1;90;Ти маєш рацію, давай зробимо це.
+
+newchat;key:ahmunghanan,weigth:6;
+v1;0;Завдяки Амуну і Ганану, наші урожаї хороші.  Хвала їм!
+v2;30;Давайте дякуємо їм під час молитви.
+v1;80;Що ми можемо запропонувати їм?
+v2;120;Не будьте дурні!  Наша кров, звичайно!
+
+newchat;key:badweather,weigth:8;
+v1;0;Чак злився.  Погода погана.
+v2;40;Ми недостатньо молимося.
+
+newchat;key:monotheisme,weigth:4;
+v1;0;- Справді? $name є монотеїстичним?
+V2;35;Схоже, він не ставиться до нашої релігії серйозно...
+v1;75;Нехай, він не настільки дурний, щоб не вірити в наших богів.
+
+newchat;key:mayangods,v1:adult,v2:adult,weigth:8;
+v1;0;Віра є нашим єдиним зброєю в цих дивних землях.
+v2;40;Зважаючи на нашу ситуацію, ми повинні покарати тих, хто ображає наших богів.
+v1;80;Ми не можемо їх обидити.
+
+newchat;key:poktapok,weigth:7;
+v1;0;Я люблю Пок-та-Пок!
+v2;40;Я теж!  Я повинен сказати, що це одна з небагатьох наших цікавих заходів тут.
+v1;80;Це правда.  Це нудно... і я втратив свій останній м'яч!
+
+newchat;key:year,weigth:5;
+v1;0;Ми знали раніше, ніж будь-хто інший, що один рік становить саме 365.2420 днів.
+v2;40;Ми хороші у всіх областях: математиці, мистецтві, географії...
+
+newchat;key:puja,weigth:6;
+v1;0;Ти ходив молитися?
+v2;35;Звичайно!  Справжня Майя повинна!
+v1;80;Хаха!  Звичайно!  Що за дурний питання я поставив.
+
+newchat;key:endofworld,weigth:3;
+v1;0;Наші шамани і астрологи бачать щось.
+v2;40;О, правда?  - Що ж?
+v1;80;Вони бачать важливу подію в 2012 році.
+v2;120;Ви не думаєте, що вони планують занадто далеко вперед?
+
+newchat;key:xaire,weigth:3;
+v1;0;Ксарі, $targetfirstname!
+v2;30;"Зайр?  Що таке "шеїр"?
+v1;70;Візанцій привітав мене таким чином.
+v2;110;Подібіться.  Ти Майя.  Повітаймо себе на нашій мові.
+v1;150;Справжня Майя повинна мати знання у всіх сферах.
+v2;200;Признаюся, що добре вміти розмовляти кількома мовами, але ви не будете так говорити в селі!
+
+newchat;key:bloodbis,v1:adult,v2:adult,weigth:2;
+v1;0;Давайте зруйнуємо себе під час наступної молитви.
+v2;40;Я вже це зробив.  - Не ти?
+v1;80;Я - я - я віддаю перевагу зберегти свою кров
+v2;120;І тепер ти знову це робиш!  Кожного разу, коли ви виглядаєте рішуче, ви змінюєте думку!
+v1;160;Я не хочу!
+v2;200;Ви відмовляєтеся шанувати наших богів?!
+
+newchat;key:cacao,weigth:6;
+v1;0;Какао є здоровим і смачним...
+v2;40;Безсумнівно здоровий!  Але смачно, звичайно, ні!  Вах набагато краще.
+v1;80;Какао - улюблене їже богів.  Їжте те, що вони пропонують.
+
+newchat;key:reborn,weigth:7;
+v1;0;Що за прекрасна бабочка там.  Можливо, це наш друг, який був пожертвуваний чотири роки тому?
+v2;40;Я думаю, він буде колибрим!
+v1;80;Ми не будемо знати.

@@ -1,0 +1,1 @@
+package org.millenaire.common.entity; public final class MillBlockEntities { public static net.minecraft.world.level.block.entity.BlockEntityType<TileEntityMockBanner> MOCK_BANNER; public static net.minecraft.world.level.block.entity.BlockEntityType<TileEntityMillBed> MILL_BED; }

@@ -1,0 +1,56 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  com.google.common.collect.Lists
+ *  com.google.common.collect.Sets
+ *  net.minecraft.advancements.ICriterionTrigger$Listener
+ *  net.minecraft.advancements.PlayerAdvancements
+ */
+package org.millenaire.common.advancements;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import java.util.List;
+import java.util.Set;
+import net.minecraft.advancements.CriterionTrigger;
+import net.minecraft.server.PlayerAdvancements;
+import org.millenaire.common.advancements.AlwaysTrueCriterionInstance;
+
+public class PlayerListeners {
+    private final PlayerAdvancements playerAdvancements;
+    private final Set<CriterionTrigger.Listener<AlwaysTrueCriterionInstance>> listeners = Sets.newHashSet();
+
+    public PlayerListeners(PlayerAdvancements playerAdvancementsIn) {
+        this.playerAdvancements = playerAdvancementsIn;
+    }
+
+    public void add(CriterionTrigger.Listener<AlwaysTrueCriterionInstance> listener) {
+        this.listeners.add(listener);
+    }
+
+    public void grantAndNotify() {
+        List<CriterionTrigger.Listener<AlwaysTrueCriterionInstance>> list = null;
+        for (CriterionTrigger.Listener<AlwaysTrueCriterionInstance> listener : this.listeners) {
+            if (!((AlwaysTrueCriterionInstance)listener.getTriggerInstance()).test()) continue;
+            if (list == null) {
+                list = Lists.newArrayList();
+            }
+            list.add(listener);
+        }
+        if (list != null) {
+            for (CriterionTrigger.Listener<AlwaysTrueCriterionInstance> listener : list) {
+                listener.run(this.playerAdvancements);
+            }
+        }
+    }
+
+    public boolean isEmpty() {
+        return this.listeners.isEmpty();
+    }
+
+    public void remove(CriterionTrigger.Listener<AlwaysTrueCriterionInstance> listener) {
+        this.listeners.remove(listener);
+    }
+}
+

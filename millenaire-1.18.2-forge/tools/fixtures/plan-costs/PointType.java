@@ -1,0 +1,1 @@
+package org.millenaire.common.buildingplan;import org.millenaire.common.item.InvItem;public record PointType(InvItem item,int quantity){public int getCostQuantity(){return quantity;}public InvItem getCostInvItem(){return item;}}

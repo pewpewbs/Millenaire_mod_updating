@@ -1,0 +1,25 @@
+{
+  "replace": false,
+  "values": [
+    "millenaire:earth_deco",
+    "millenaire:inuitcarving",
+    "millenaire:pathdirt",
+    "millenaire:pathdirt_slab",
+    "millenaire:pathgravel",
+    "millenaire:pathgravel_slab",
+    "millenaire:pathgravelslabs",
+    "millenaire:pathgravelslabs_slab",
+    "millenaire:pathochretiles",
+    "millenaire:pathochretiles_slab",
+    "millenaire:pathsandstone",
+    "millenaire:pathsandstone_slab",
+    "millenaire:pathslabs",
+    "millenaire:pathslabs_slab",
+    "millenaire:pathsnow",
+    "millenaire:pathsnow_slab",
+    "millenaire:snail_soil",
+    "millenaire:snowbrick",
+    "millenaire:snowwall",
+    "millenaire:wet_brick"
+  ]
+}
