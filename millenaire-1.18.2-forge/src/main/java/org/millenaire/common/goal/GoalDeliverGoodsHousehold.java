@@ -45,6 +45,12 @@ extends Goal {
     }
 
     @Override
+    public boolean isWithinActionRange(MillVillager villager,
+            org.millenaire.common.utilities.Point destination) {
+        return WorkAccess.canAccessStock(villager, destination, this.range(villager));
+    }
+
+    @Override
     public boolean performAction(MillVillager villager) throws Exception {
         for (MillVillager v : villager.getHouse().getKnownVillagers()) {
             for (InvItem key : v.requiresGoods().keySet()) {
