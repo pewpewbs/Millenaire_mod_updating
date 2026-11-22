@@ -152,6 +152,15 @@
 
 **Тести:** повторити 5 циклів Анни зі складу `38/67/575` до `makesandstoneworkshop` та `getgoodshousehold`; підтвердити `NAV-GATE EXIT forced-crossing` і фізичний вихід через `43/67/578`, без телепортації/даху. Якщо знову `bypassedOpening=1`, перевірити `createPath(gate,0)` і висоту/вісь/коридор біля хвіртки; можливо, зовнішній двоблоковий вихід має іншу висоту. Перевірити, що інші NPC не застрягають або не виконують дії посеред проходу.
 
+### NAV-01I. Повторний bypass після forced-crossing: 23.11.2026 00:08:30
+**Факт із логу:** Anna `38/67/575 -> 10/67/599`, `deliverresourcesshop`, gate `43/67/578`: `noRoute=0 wrongEndpoint=0 bypassedOpening=1 moveFailed=0 unloadedExit=0`. `NAV-GATE EXIT forced-crossing` у наданому фрагменті немає. Це **не доводить**, чи було встановлено попередній forced-crossing patch: той метод міг повернути `false` без жодного журналу.
+
+**Недолік старого forced-crossing:** `navigation.createPath(gate,0)` вимагав повний шлях до **самого закритого** вузла хвіртки; окрім того, вимагав конкретний передостанній вузол. У звичайній навігації закрита хвіртка може не бути прийнятою кінцевою точкою. Це ймовірна причина тихого відхилення, але без додаткових логів не підтверджена.
+
+**Новий експериментальний патч:** `tryForcedGateCrossing()` спершу шукає шлях до **прохідного блоку безпосередньо з внутрішнього боку хвіртки**, `gate.relative(outDirection.getOpposite())`, а потім за умови `AStarStatic.isViable` для внутрішнього блока, хвіртки та двох зовнішніх клітин доповнює маршрут вузлами `gate → outside1 → outside2`. Зберігається обмеження підйому на дах, довжини підходу, лише завантажені чанки. Це навмисно проміжний шлях, `canReach=false` для основного завдання. Результат: `NAV-GATE EXIT forced-crossing` або **новий** `NAV-GATE FORCE rejected: reason=...`.
+
+**Обов'язкова перевірка:** Pull → `Update-Millenaire.bat` → `BUILD SUCCESSFUL`. У світі 2–5 разів простежити вихід Анни. Витягти записи з `NAV-GATE FORCE`, `NAV-GATE EXIT` і `Navigation recovery`. Якщо відхилення `gateOrAdjacentBlocked`, уточнити координати/висоти біля хвіртки. Якщо `insideApproachOnRoof` або `insideDetourTooLong`, потрібно шукати помилку іншого підходу на внутрішньому боці, а не відкривання. **Не оголошувати виправлення перевіреним без гри.**
+
 ### NAV-02. Підйом на сходинку збоку в тісному приміщенні
 **Статус:** діагностика; **не виправлялося**.
 **Код:** `pathing/VillagerWalkNodeEvaluator`, `pathing/DetourPathFinder`, `pathing/atomicstryker/AStarStatic`, `entity/PathNavigateSimple`, `entity/MillVillager`.
