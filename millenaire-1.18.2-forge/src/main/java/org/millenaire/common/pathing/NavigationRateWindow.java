@@ -15,7 +15,8 @@ public final class NavigationRateWindow {
                          long cacheHits, long cacheMisses, long cacheInvalidated,
                          long failedRetryDeferred, long actualNoPathFailures, long cacheReplayDeferred,
                          long inflightJoined, long queueStarted, long queueWaitNanos,
-                         long ladderScans, long ladderProbes) {}
+                         long ladderScans, long ladderProbes,
+                         long searchPreempted, long goalDriftRequests, long goalDriftBursts) {}
 
     private Counts previous;
     private long lastNanos;
@@ -49,6 +50,9 @@ public final class NavigationRateWindow {
         long queueNanos = delta(totals.queueWaitNanos, previous.queueWaitNanos);
         long ladderScans = delta(totals.ladderScans, previous.ladderScans);
         long ladderProbes = delta(totals.ladderProbes, previous.ladderProbes);
+        long preempted = delta(totals.searchPreempted, previous.searchPreempted);
+        long drift = delta(totals.goalDriftRequests, previous.goalDriftRequests);
+        long bursts = delta(totals.goalDriftBursts, previous.goalDriftBursts);
         previous = totals;
         lastNanos = nowNanos;
         double hitPct = hits + misses == 0 ? 0.0 : hits * 100.0 / (hits + misses);
@@ -58,11 +62,13 @@ public final class NavigationRateWindow {
                 + " snapshots_s=%.2f sections_s=%.2f cache_hit_pct=%.2f"
                 + " cache_invalidated_s=%.2f failed_retry_deferred_s=%.2f no_path_failures_s=%.2f"
                 + " cache_replay_deferred_s=%.2f inflight_joined_s=%.2f"
-                + " queue_wait_window_avg_ms=%.3f ladder_scans_s=%.2f ladder_probes_s=%.2f",
+                + " queue_wait_window_avg_ms=%.3f ladder_scans_s=%.2f ladder_probes_s=%.2f"
+                + " search_preempted_s=%.2f moving_goal_requests_s=%.2f moving_goal_bursts_s=%.2f",
                 seconds, jps / seconds, astar / seconds, snapshot / seconds,
                 sections / seconds, hitPct, invalidated / seconds, failed / seconds,
                 actualNoPath / seconds, cacheReplay / seconds, joined / seconds, waitMs,
-                ladderScans / seconds, ladderProbes / seconds);
+                ladderScans / seconds, ladderProbes / seconds,
+                preempted / seconds, drift / seconds, bursts / seconds);
     }
 
     public synchronized void reset() {
