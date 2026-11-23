@@ -553,3 +553,65 @@ java -cp build/nav-snapshot-pool-smoke SnapshotSectionPoolSmoke
 
 **Статус:** GitHub source-level checks — очікуються наприкінці цього етапу; повна Forge compile, Java smoke, Minecraft лог NAV-OPT-12 — **NOT RUN** за рішенням користувача. `main` не чіпати; не обіцяти виміряне прискорення до A/B benchmarks.
 
+
+
+## 16. NAV-OPT-13 — усунення re-cache після PRE-mutation Forge events
+
+**Дата:** 23.11.2026. **Контекст:** користувач попросив продовжувати оптимізацію snapshot, а компіляцію, Java/пітон тести й Minecraft playtest провести всі разом після завершення пакета змін. `main` не змінювати. Фізичні проблеми дверей/сходинок/драбин і reverse `ENDPOINT_MISMATCH` залишити для поглибленого аудиту іншої моделі.
+
+### 16.1. Знайдено реальну логічну вразливість NAV-OPT-12
+
+Саме лише `SnapshotSectionPool.invalidateSection(nowTick,key)` **видаляло** стару копію. Але Forge `BlockEvent.BreakEvent` (та низка інших подій) може відбутися **до** фактичної мутації блоку. Послідовність:
+
+1. Існує знімок / або його ще немає.
+2. Приходить PRE-change повідомлення; `invalidateSection` видаляє поточну копію, або нічого не знаходить, якщо кеш ще пустий.
+3. До запису нового `BlockState` інший виклик `PathWorldSnapshot.capture` копіює **старий** `PalettedContainer`.
+4. Після зміни блоку другий пошук за той самий серверний tick міг отримати з `pool.get` застарілу копію — **event source check через тотожність object reference цього не виявить**, бо палітра мутує in-place.
+5. Раніше цілий `Capture` також міг бути повторно використаний як superset, хоча PRE-event уже трапився до його створення.
+
+Таким чином NAV-OPT-12 інвалідація була **недостатньою**, особливо при подіях до першого snapshot. Це не статистична гіпотеза, а детермінована помилка протоколу **відстеження відомих змін**. Реальний ігровий репродьюсер ще не виконано; не стверджувати, що NPC вже фізично пройшов крізь блок.
+
+### 16.2. NAV-OPT-13: реалізація bounded poison + ревізії
+
+- `SnapshotSectionPool`: новий `poisonedSections: Set<Long>` і `poisonedWorld` **тільки в межах цього server game tick**. `invalidateSection` завжди позначає section key як poisoned, навіть якщо в кеші **ще не було** палітри; `invalidateAll` позначає весь pool poisoned. `get` НІКОЛИ не повертає poisoned секцію, `remember` рахує фактичну копію у `copies`, але **не кладе її назад у pool**, поки poison діє. Не-poisoned секції можуть продовжити працювати як раніше.
+- Масові події обмежені пам'яттю: коли `poisonedSections.size() >= maxCopies` (поточний ліміт 1024), відбувається `poisonedWorld=true` і очищення множини, без необмеженого росту кількості ключів. Після нового тіку `resetIfNewTick` прибирає poison і старі посилання на source palettes, скидає лічильники й локальну `revision`.
+- Для цілих snapshot введено `pool.mayReuseSnapshots(tick)`. Якщо **хоч одна** відома зміна сталася у світі протягом тіку, відключається повторне використання **всього раніше зібраного** `LAST_CAPTURE` в цьому тіку; нові знімки все одно допускаються через старий bounded `pool.begin`. Це свідомо консервативно — відома зміна в іншому чанку також блокує full-snapshot reuse цього світу до кінця тіку.
+- `PathWorldSnapshot.onKnownBlockMutation` і `onKnownWorldMutation` тепер використовують `SECTION_POOLS.computeIfAbsent` **навіть до першого `capture`**, щоб PRE-change подія не зникла непоміченою.
+- `SnapshotSectionPool.revision(tick)` збільшується на кожне повідомлення про зміну. `PathWorldSnapshot.capture` записує `captureRevision` **після резервування квоти** і **перед копіюванням**. Перед публікацією знімка під `synchronized(LAST_CAPTURE)` перевіряє, що `pool.revision(tick) == captureRevision`. Якщо подія прийшла під час копіювання — `NavigationMetrics.snapshotMutationRaceRejected()` + `deferred()`, повертає `null` замість підозрілої копії. Це не відшкодовує витрачені квоти, щоб запобігти CPU stampede.
+- `NavigationMetrics` додає накопичені `snapshot_poisoned_bypasses` (скопійовано замість кеш-хіта через poison) і `snapshot_mutation_race_rejected` (відхилено знімок, зібраний через відому подію). Якщо обидва нульові, це не доводить, що світ не змінювався.
+- `tools/tests/SnapshotSectionPoolSmoke.java` додано standalone Java кейси: PRE-event **до first capture**; not-refund of copy quota; blocking re-cache old state, revision change during copy; global poison після piston/chunk; tick reset; bounded poison-keys overflow. **Не виконані ще.**
+- `tools/tests/test_navigation_optimization_wiring.py` додано два source-level tests: перевіряють pre-event pool initialization, poison use, порядок дозволу superset reuse, зміну ревізії і відхилення до `new WeakReference<>(result)`. Має бути **23** Python wiring-тести (очікувано, не результат запуску).
+
+**Нові коміти:**
+- `b7c3b26` — poison protocol and revision in `SnapshotSectionPool`;
+- `8ff2937` — event-first poison and revision guard у `PathWorldSnapshot`;
+- `e466a54` — діагностика poison/race;
+- `b09690b` — нові Java smoke tests;
+- `c2cb5dc` — два нові wiring guards.
+
+### 16.3. Чого NAV-OPT-13 НЕ гарантує
+
+1. **Це НЕ універсальний revision counter для всіх `setBlockState`**. Якщо мутують палітру через API, що не генерує жодну перехоплену Forge-подію, poison не ввімкнеться. Тому **кеш між тіками лишається вимкненим**, як і раніше.
+2. PRE-event попереджає про зміну, але не каже точно, коли вона завершилася. У межах тіку `PathWorldSnapshot.capture` все ще може зробити **власну нову копію до фактичного оновлення блоку**; цей snapshot повертається *тільки* одному worker, а не записується у shared poisoned pool. Завдяки live-world directed-edge validation у `MillVillager.applyPathCalculatedSinceLastTick` готовий некоректний маршрут має відхилятися; однак сам пошук міг витратити CPU на неактуальні дані.
+3. Між `captureRevision` та перевіркою на публікації може бути невідома без-event мутація — без нижчого hook не детектується. Навіть відома мутація **після** повернення snapshot не змінює вже detached palette. Фінальна перевірка маршруту необхідна.
+4. Event callback може викликатися з іншого потоку. Синхронізація `LAST_CAPTURE` + усіх публічних методів пулу і `revision` зменшує ризик гонок, але повна сумісність Forge event lifecycle (особливо chunk loading) вимагає Gradle+ігрового тесту.
+5. Безпечна правильність важливіша за hit rate. При активній забудові `snapshot_poisoned_bypasses` може зрости, а `snapshot_section_reuse_pct` впасти — **очікувана** ціна тимчасового захисту.
+
+### 16.4. Майбутній спільний тест
+
+Із кореня `Millenaire_mod_updating`, після `Update-Millenaire.bat` і підтвердженого `BUILD SUCCESSFUL`:
+
+```powershell
+py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_optimization_wiring.py
+py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_priority.py
+cd .\millenaire-1.18.2-forge
+javac --release 17 -d build/nav-snapshot-pool-smoke src/main/java/org/millenaire/common/pathing/SnapshotSectionPool.java tools/tests/SnapshotSectionPoolSmoke.java
+java -cp build/nav-snapshot-pool-smoke SnapshotSectionPoolSmoke
+```
+
+Виконати й інші smoke-тести NAV-OPT-09/10 та `RouteMemorySmoke` із розділу 13.4. Ігровий сценарій: кілька NPC; **до/під час** обчислення маршруту зламати/поставити блок, активувати поршень, оновити рідину; перевіряти `snapshot_poisoned_bypasses`, `snapshot_known_sections_invalidated`, `snapshot_mutation_race_rejected`, `stale_routes`, `NAV-OPT-STATS`, `DOOR-BLOCKED`, `NAV-TELEPORT`. Критично: відсутність крашів і відхилення реально застарілих шляхів. Усі нові Java/Python/Gradle/Minecraft тести цього етапу поки **NOT RUN**, якщо користувач не повідомить результат.
+
+### 16.5. Наступний напрямок (перед фінальним тестуванням)
+
+Для справжнього cross-tick versioned cache треба інтеграція з низькорівневим `LevelChunkSection.setBlockState` / `PalettedContainer` або універсальний mutation listener **після** всіх типів змін (vanilla, fluids, redstone, third-party mods) плюс chunk unload/reload epochs. Не додавати Mixin або ASM навмання без гарантії сумісності Forge 40.3.0 й без перевірки bytecode/діапазонів версій. Альтернативна безпечна оптимізація — **менше копіювати протягом тіку, не виходячи за його межі**, або профілювати найбільші джерела CPU. Геометричні проблеми відкладені на іншу модель за окремим рішенням користувача.
+
