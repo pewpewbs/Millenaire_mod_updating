@@ -200,18 +200,24 @@ implements Runnable {
                 new AStarNode(this.startNode.x, this.startNode.y, this.startNode.z), this.config);
         ArrayList<AStarNode> discovered = opposite.runSync();
         boolean valid = discovered != null && discovered.size() > 1;
+        String invalidReason = valid ? "NONE" : "NO_REVERSE_PATH";
         ArrayList<AStarNode> candidate = null;
         if (valid) {
             candidate = new ArrayList<>(discovered);
             java.util.Collections.reverse(candidate);
             valid = candidate.get(0).equals(this.targetNode)
                     && candidate.get(candidate.size() - 1).equals(this.startNode);
+            if (!valid) invalidReason = "ENDPOINT_MISMATCH";
         }
         if (valid) {
             try {
                 for (int i = candidate.size() - 1; i > 0; i--) {
                     if (Thread.currentThread().isInterrupted()
-                            || System.nanoTime() > reverseDeadline) { valid = false; break; }
+                            || System.nanoTime() > reverseDeadline) {
+                        invalidReason = "VALIDATION_TIMEOUT";
+                        valid = false;
+                        break;
+                    }
                     AStarNode from = candidate.get(i), to = candidate.get(i - 1);
                     if (Math.abs(from.y - to.y) > 1
                             || Math.abs(from.x - to.x) > 1
@@ -222,11 +228,14 @@ implements Runnable {
                                 && from.x != to.x && from.z != to.z
                                 && AStarStatic.findSafeOrthogonalCorner(
                                     this.world, from, to, this.config) == null)) {
+                        invalidReason = "BLOCKED_EDGE " + from.x + "," + from.y + "," + from.z
+                                + "->" + to.x + "," + to.y + "," + to.z;
                         valid = false;
                         break;
                     }
                 }
             } catch (ThreadSafeUtilities.ChunkAccessException exception) {
+                invalidReason = "UNLOADED_CHUNK " + exception.x + "," + exception.z;
                 valid = false;
             }
         }
@@ -239,6 +248,7 @@ implements Runnable {
             MillLog.major(this, "NAV-OPT-REVERSE from=" + this.startNode
                     + " to=" + this.targetNode
                     + " candidateValid=" + valid
+                    + " reason=" + invalidReason
                     + " forwardCost=" + String.format(java.util.Locale.ROOT, "%.2f", routeCost(forward))
                     + " reverseCost=" + String.format(java.util.Locale.ROOT, "%.2f",
                             valid ? routeCost(candidate) : Double.POSITIVE_INFINITY)
