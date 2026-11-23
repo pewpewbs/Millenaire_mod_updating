@@ -13,6 +13,10 @@ ROOT = Path(__file__).resolve().parents[2] / "src/main/java/org/millenaire/commo
 VILLAGER = (ROOT / "entity/MillVillager.java").read_text(encoding="utf-8")
 DOORS = (ROOT / "pathing/VillageDoorAccess.java").read_text(encoding="utf-8")
 NAVIGATOR = (ROOT / "entity/PathNavigateSimple.java").read_text(encoding="utf-8")
+DOOR_EDGES = (ROOT / "pathing/DoorTransitionRules.java").read_text(encoding="utf-8")
+WALK_EVALUATOR = (ROOT / "pathing/VillagerWalkNodeEvaluator.java").read_text(encoding="utf-8")
+CLASSIC_ASTAR = (ROOT / "pathing/atomicstryker/AStarWorker.java").read_text(encoding="utf-8")
+JPS = (ROOT / "pathing/atomicstryker/AStarWorkerJPS.java").read_text(encoding="utf-8")
 
 
 class DoorLifecycleWiring(unittest.TestCase):
@@ -84,6 +88,23 @@ class DoorLifecycleWiring(unittest.TestCase):
         self.assertIn('this.mob.getDeltaMovement()', NAVIGATOR)
         self.assertIn('now + 40L', NAVIGATOR)
         self.assertIn('if (!state.is(net.minecraft.world.level.block.Blocks.LADDER)) return;', NAVIGATOR)
+
+
+
+    def test_door_transitions_check_both_ends_of_edge(self):
+        self.assertIn("private static boolean allows(BlockState state, int dx, int dz)", DOOR_EDGES)
+        self.assertIn("if (!allows(from, dx, dz)) return false;", DOOR_EDGES)
+        self.assertIn("return allows(to, dx, dz);", DOOR_EDGES)
+        self.assertIn("DoorApproachRules.followsDoorNormal(dx, dz, eastWestFacing)", DOOR_EDGES)
+
+    def test_vanilla_pathfinder_respects_door_transition(self):
+        self.assertIn("public int getNeighbors(", WALK_EVALUATOR)
+        self.assertIn("DoorTransitionRules.allowsEdge(this.level,", WALK_EVALUATOR)
+
+    def test_both_astar_workers_respect_door_transition(self):
+        self.assertIn("DoorTransitionRules.allowsEdge(", CLASSIC_ASTAR)
+        self.assertIn("DoorTransitionRules.allowsEdge(", JPS)
+        self.assertIn("this.world, px, py, pz, nextX, nextY, nextZ", JPS)
 
 
 
