@@ -167,16 +167,110 @@ implements Runnable {
         return this.isCoordsEnd(cn.x, cn.y, cn.z, end);
     }
 
+    /**
+     * A path discovered in B->A may be a useful candidate for A->B, notably
+     * at a top-of-ladder entrance. NEVER assume that reversing a route is
+     * physically valid: a jump, one-way drop or top exit may be directional.
+     * The candidate is validated in the requested A->B direction.
+     *
+     * Called only after classic A* failed or found a large detour, not for
+     * every ordinary village walk. The reverse worker has its own 150 ms cap.
+     */
+    private ArrayList<AStarNode> tryReverseClassic(ArrayList<AStarNode> forward) {
+        if (this instanceof AStarWorkerJPS || this.config.allowDropping
+                || this.startNode == null || this.targetNode == null
+                || this.world == null || this.shouldInterrupt()) return forward;
+        int vertical = Math.abs(this.startNode.y - this.targetNode.y);
+        int dx = this.startNode.x - this.targetNode.x;
+        int dz = this.startNode.z - this.targetNode.z;
+        if (vertical < 2 || vertical > 48 || (long) dx * dx + (long) dz * dz > 96L * 96L) {
+            return forward;
+        }
+        double direct = Math.sqrt((double)dx * dx + (double)dz * dz + (double)vertical * vertical);
+        if (forward != null && routeCost(forward) <= direct * 1.8D + 4.0D) {
+            return forward; // Forward route is already reasonably direct.
+        }
+        org.millenaire.common.pathing.NavigationMetrics.reverseTried();
+        long started = System.nanoTime();
+        AStarWorker opposite = new AStarWorker(this.boss);
+        opposite.setup(this.world, new AStarNode(this.targetNode.x, this.targetNode.y, this.targetNode.z),
+                new AStarNode(this.startNode.x, this.startNode.y, this.startNode.z), this.config);
+        ArrayList<AStarNode> discovered = opposite.runSync();
+        boolean valid = discovered != null && discovered.size() > 1;
+        ArrayList<AStarNode> candidate = null;
+        if (valid) {
+            candidate = new ArrayList<>(discovered);
+            java.util.Collections.reverse(candidate);
+            valid = candidate.get(0).equals(this.targetNode)
+                    && candidate.get(candidate.size() - 1).equals(this.startNode);
+        }
+        if (valid) {
+            try {
+                for (int i = candidate.size() - 1; i > 0; i--) {
+                    if (this.shouldInterrupt()) { valid = false; break; }
+                    AStarNode from = candidate.get(i), to = candidate.get(i - 1);
+                    if (Math.abs(from.y - to.y) > 1
+                            || Math.abs(from.x - to.x) > 1
+                            || Math.abs(from.z - to.z) > 1
+                            || !AStarStatic.isViable(this.world, to, 0, this.config)
+                            || !AStarStatic.isTransitionViable(this.world, from, to, this.config)
+                            || (!this.config.canTakeDiagonals && from.y == to.y
+                                && from.x != to.x && from.z != to.z
+                                && AStarStatic.findSafeOrthogonalCorner(
+                                    this.world, from, to, this.config) == null)) {
+                        valid = false;
+                        break;
+                    }
+                }
+            } catch (ThreadSafeUtilities.ChunkAccessException exception) {
+                valid = false;
+            }
+        }
+        ArrayList<AStarNode> chosen = forward;
+        if (valid && (chosen == null || routeCost(candidate) < routeCost(chosen))) {
+            chosen = candidate;
+            org.millenaire.common.pathing.NavigationMetrics.reverseFound();
+        }
+        if (MillConfigValues.LogPathing >= 2) {
+            MillLog.major(this, "NAV-OPT-REVERSE from=" + this.startNode
+                    + " to=" + this.targetNode
+                    + " candidateValid=" + valid
+                    + " forwardCost=" + String.format(java.util.Locale.ROOT, "%.2f", routeCost(forward))
+                    + " reverseCost=" + String.format(java.util.Locale.ROOT, "%.2f",
+                            valid ? routeCost(candidate) : Double.POSITIVE_INFINITY)
+                    + " chosen=" + (chosen == candidate ? "REVERSED" : "FORWARD")
+                    + " tookMs=" + String.format(java.util.Locale.ROOT, "%.2f",
+                            (System.nanoTime() - started) / 1.0E6D));
+        }
+        return chosen;
+    }
+
+    private static double routeCost(ArrayList<AStarNode> nodes) {
+        if (nodes == null || nodes.size() < 2) return Double.POSITIVE_INFINITY;
+        double result = 0.0D;
+        for (int i = 1; i < nodes.size(); i++) {
+            AStarNode a = nodes.get(i - 1), b = nodes.get(i);
+            int x = a.x - b.x, y = a.y - b.y, z = a.z - b.z;
+            result += Math.sqrt(x * x + y * y + z * z);
+            if (x == 0 && z == 0 && y != 0) result += 0.8D;
+        }
+        return result;
+    }
+
     @Override
     public void run() {
         this.isRunning = true;
         this.isBusy = true;
-        this.timeLimit = System.nanoTime() + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(150L);
+        final long began = System.nanoTime();
+        this.timeLimit = began + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(150L);
         try {
             ArrayList<AStarNode> result = null;
             try {
                 if (this.world instanceof Level) throw new IllegalArgumentException("Background search requires a detached block snapshot");
                 result = this.getPath(this.startNode, this.targetNode, this.config.allowDropping);
+                if (!this.shouldInterrupt()) {
+                    result = this.tryReverseClassic(result);
+                }
             }
             catch (ThreadSafeUtilities.ChunkAccessException e) {
                 MillLog.error(this, "Chunk access violation while calculating a path for " + this.boss);
@@ -186,6 +280,9 @@ implements Runnable {
             }
             if (!Thread.currentThread().isInterrupted()) this.boss.completed(this, result);
         } finally {
+            org.millenaire.common.pathing.NavigationMetrics.search(
+                    this instanceof AStarWorkerJPS ? 0 : 1,
+                    System.nanoTime() - began, this.closedNodes.size());
             this.isBusy = false;
             this.isRunning = false;
         }
