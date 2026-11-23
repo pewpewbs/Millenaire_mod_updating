@@ -359,3 +359,70 @@ java -cp build/nav-executor-smoke PathSearchExecutorSmoke
 
 **Не вважати завершеними:** двері (`DOOR-BLOCKED`), непідтверджений спуск драбинами, алгоритм у складних сходах/плитах, кінцеві точки зворотного A* (tolerance). Користувач окремо просив залишити ці складні геометричні проблеми для іншої моделі; не робити з `NAV-OPT-09` висновок про їх виправлення. Усі фактичні результати гри, числа та статуси Build мають позначатися джерелом і версією патча.
 
+
+## 13. NAV-OPT-10 — алокації, чесні інтервальні метрики, справедливість snapshot
+
+**Дата:** 23.11.2026. **Вимога користувача:** продовжувати загальну оптимізацію зараз, а **всі нові зміни тестувати одним раундом пізніше**. Не запитувати поточного запуску Minecraft після кожного коміту. Водночас слід зберігати точні тести для спільного запуску. Це НЕ дозвіл пропускати компіляційні/регресійні перевірки перед release.
+
+### 13.1. Інженерне обґрунтування
+
+- У `ThreadSafeUtilities.getBlockState(BlockGetter, int,int,int)` майже кожне читання блоку створювало `new BlockPos`, навіть коли джерелом був immutable `PathWorldSnapshot`. A*/JPS викликають цей метод багато разів на маршрут, тому тимчасові алокації збільшують тиск на GC.
+- `AStarPathPlannerJPS.nearbyLadderOnVerticalRoute()` теоретично робив до `25 * 9 * 9 * 12 = 24300` читань стану блоків із окремим `BlockPos` на кожне. Це верхня математична межа, **не** виміряний середній час. Логіка перевірки геометрії сходинок/драбин **не змінюється**.
+- `PathWorldSnapshot.capture()` до NAV-OPT-10 займав єдиний бюджет snapshot на world+tick **перед** перевіркою `>256` чанків області. Один завідомо надмірний запит міг заборонити коротші допустимі запити NPC у тому самому тіку. Це підтверджений аналізом порядку коду недолік; практична частота **ще не виміряна**.
+- Старий `NAV-OPT-STATS` містив лише накопичені лічильники. Дві сесії різної тривалості непорівнювані без нормалізації за реальною тривалістю.
+
+### 13.2. Реалізовані зміни NAV-OPT-10
+
+1. **Вивантаження блоків без алокації координат:** `PathWorldSnapshot.getBlockState(int x,int y,int z)` читає immutable палітру за примітивними координатами, з ТОЧНО тими самими правилами `BEDROCK` для незавантажених чанків/виходу за висоту і `AIR` для порожніх секцій. `getBlockState(BlockPos)` тепер делегує примітивному методу.
+2. `ThreadSafeUtilities.getBlockState()` і `getBlock()` використовують цей fast path **тільки** для `PathWorldSnapshot`. Живі світи `ServerLevel/ClientLevel` і всі інші `BlockGetter` залишають старий захист `validateCoords` і стандартну семантику.
+3. **Скан драбин без тисяч короткоживучих об'єктів:** `nearbyLadderOnVerticalRoute` використовує один локальний `BlockPos.MutableBlockPos` та заздалегідь обчислені висоти. Кількість перевірених блоків, порядок і bounding area НЕ змінені. Додано `ladder_scans`, `ladder_probes`, `ladder_hits`, `ladder_scan_avg_ms`.
+4. **Fairness при великих маршрутах:** перевірка площі `>256` чанків відбувається **до** `synchronized(LAST_CAPTURE)` і `LAST_CAPTURE.put`. Такий запит відхиляється, але вже НЕ займає квоту snapshot на тик. Метрики розділено на `snapshot_area_rejected`, `snapshot_tick_budget_deferred`, `snapshot_section_rejected` (базовий `deferred` збережений).
+5. **Монотонна діагностика за реальний час:** новий незалежний від Minecraft `NavigationRateWindow` бере різницю накопичених лічильників між двома викликами `NavigationMetrics.report()` та ділить на фактичну різницю `System.nanoTime`. Додає до `NAV-OPT-STATS` поля `window_scope=process window_wall_s jps_s astar_s snapshots_s sections_s cache_hit_pct cache_invalidated_s failed_retry_deferred_s cache_replay_deferred_s inflight_joined_s queue_wait_window_avg_ms ladder_scans_s ladder_probes_s`. Перший виклик показує `window_state=warmup`; якщо минула менш ніж 1 с, `window_state=pending`. Метрики **глобальні для процесу** (всі dimensions), не per-village, FPS чи TPS. Нульові дельти і reset обробляються без негативних rates.
+6. Додано `tools/tests/NavigationRateWindowSmoke.java`, який перевіряє wall-clock deltas, avg queue wait за інтервал, cache-hit %, reset та короткий інтервал. `tools/tests/test_navigation_optimization_wiring.py` тепер містить **17** структурних тестів: fast snapshot path, mutable ladder probe, rate integration і те, що oversized area перевіряється перед резервуванням квоти.
+
+**Коміти NAV-OPT-10:**
+- `1231b3e` — `NavigationRateWindow.java`;
+- `91e2ba6` — інтеграція window та ladder metrics;
+- `083a70b` — менші алокації при ladder scan;
+- `0a93705` — primitive snapshot lookup;
+- `da84e11` — fast path із `ThreadSafeUtilities`;
+- `5b04f6e` — Java smoke для rate window;
+- `e13980b` — три source-level регресії;
+- `3fbb894` — виправлення квоти snapshot;
+- `b644286` — деталізація відхилень snapshot;
+- `99c4113` — source regression на порядок перевірки площі та квоти.
+
+### 13.3. Статус тестування (принципово розділяти)
+
+**Перевірено зіставлення тексту вихідних файлів після запису в GitHub** (перевірка наявності методів, маркерів, збереження викликів); **НЕ** виконано повної Forge-компіляції, Java smoke та Minecraft playtest для NAV-OPT-10. Оскільки користувач просить один об'єднаний цикл тестування пізніше, наразі результати smoke тестів позначати як **NOT RUN**, а не `PASS`. Фізична механіка дверей, драбин, ступенів, `ENDPOINT_MISMATCH` та HPA* лишаються поза цією фазою.
+
+### 13.4. Єдиний майбутній набір перевірок (після завершення пакета оптимізацій)
+
+Запускати з **кореневої** папки `Millenaire_mod_updating` у PowerShell:
+
+```powershell
+.\Update-Millenaire.bat
+py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_optimization_wiring.py
+py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_priority.py
+cd .\millenaire-1.18.2-forge
+javac --release 17 -d build/nav-window-smoke src/main/java/org/millenaire/common/pathing/NavigationRateWindow.java tools/tests/NavigationRateWindowSmoke.java
+java -cp build/nav-window-smoke NavigationRateWindowSmoke
+javac --release 17 -d build/nav-request-smoke src/main/java/org/millenaire/common/pathing/NavigationRequestKey.java tools/tests/NavigationRequestKeySmoke.java
+java -cp build/nav-request-smoke NavigationRequestKeySmoke
+javac --release 17 -d build/nav-executor-smoke src/main/java/org/millenaire/common/pathing/atomicstryker/PathSearchExecutor.java tools/tests/PathSearchExecutorSmoke.java
+java -cp build/nav-executor-smoke PathSearchExecutorSmoke
+javac --release 17 -d build/route-cache-smoke src/main/java/org/millenaire/common/pathing/RouteMemory.java tools/tests/RouteMemorySmoke.java
+java -cp build/route-cache-smoke RouteMemorySmoke
+```
+
+Очікувано `17` Python wiring тестів, `9` navigation priority тестів + чотири Java smoke `PASS`, але **це очікування, не виміряний результат**. Для Gradle обов'язково зафіксувати `BUILD SUCCESSFUL` і шлях встановленого JAR.
+
+Ігрова сесія: ті самі поселення/радіус симуляції/чисельність NPC, 5–10 хв; `logpathing=minor`; збирати `NAV-OPT-STATS` щонайменше за 3 звітні інтервали. Зіставляти `jps_s`, `astar_s`, `snapshots_s`, `sections_s`, `ladder_scans_s`, `cache_hit_pct`, `inflight_joined_s`, queue delays і фактичні паузи TPS. Перший `window_state=warmup` не є виміром. Після руху NPC порівняти з baseline; не змішувати різні сесії як строгий бенчмарк.
+
+### 13.5. Пріоритети наступної оптимізації
+
+1. Після об'єднаних тестів визначити, де витрати: queue wait, snapshot copy, JPS expansions або ladder scans.
+2. Кешування між тіками потребує версій секцій та інвалідації **при кожній зміні блоку**; не додавати blind TTL, який може створити небезпечні маршрути.
+3. Пріоритетна черга та HPA* — велика архітектурна зміна; без вимірів і тестового harness ризикує погіршити starvation, correctness та memory.
+4. Геометричні проблеми дверей/драбин — відкладені на більш потужну модель за явним рішенням користувача, не змінені тут.
+
