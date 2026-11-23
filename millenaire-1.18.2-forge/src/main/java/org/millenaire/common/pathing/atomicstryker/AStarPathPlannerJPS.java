@@ -35,6 +35,126 @@ public class AStarPathPlannerJPS {
     // JPS never expands vertical ladder edges. Keep its candidate while a
     // bounded classic A* attempt checks for a shorter ladder alternative.
     private ArrayList<AStarNode> jpsCandidate;
+    private boolean immediatePath;
+    private boolean deferred;
+    private static final java.util.Map<Level, org.millenaire.common.pathing.RouteMemory> ROUTES =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+    private static final java.util.Map<Level, Long> REPORT_TICKS =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    private static org.millenaire.common.pathing.RouteMemory routes(Level world) {
+        synchronized (ROUTES) {
+            return ROUTES.computeIfAbsent(world,
+                    ignored -> new org.millenaire.common.pathing.RouteMemory(96, 96, 200L));
+        }
+    }
+
+    private static int routeOptions(AStarConfig cfg) {
+        return java.util.Objects.hash(cfg.canUseDoors, cfg.canTakeDiagonals,
+                cfg.allowDropping, cfg.canSwim, cfg.canClearLeaves,
+                cfg.tolerance, cfg.toleranceHorizontal, cfg.toleranceVertical);
+    }
+
+    private static org.millenaire.common.pathing.RouteMemory.Cell cell(AStarNode node) {
+        return new org.millenaire.common.pathing.RouteMemory.Cell(node.x, node.y, node.z);
+    }
+
+    private void reportPeriodically() {
+        if (this.world == null || MillConfigValues.LogPathing < 1) return;
+        long tick = this.world.getGameTime();
+        synchronized (REPORT_TICKS) {
+            long previous = REPORT_TICKS.getOrDefault(this.world, tick - 200L);
+            if (tick < previous || tick - previous >= 200L) {
+                REPORT_TICKS.put(this.world, tick);
+                MillLog.major(null, "NAV-OPT-STATS world=" + this.world.dimension().location()
+                        + " " + org.millenaire.common.pathing.NavigationMetrics.report());
+            }
+        }
+    }
+
+    /**
+     * Verify cached coordinates against the LIVE world. In particular,
+     * reversibility is not assumed for drops or uneven ladder entrances.
+     * This runs on the server thread, so only short paths may be cached.
+     */
+    private ArrayList<AStarNode> reusePath(AStarNode start, AStarNode end) {
+        if (this.world == null || this.world.isClientSide) return null;
+        var memory = routes(this.world);
+        var alternatives = memory.candidates(this.world.getGameTime(),
+                routeOptions(this.config), cell(start), cell(end));
+        ArrayList<AStarNode> best = null;
+        boolean bestReversed = false;
+        double bestCost = Double.POSITIVE_INFINITY;
+        for (var alternative : alternatives) {
+            var coordinates = alternative.goalToStart();
+            if (coordinates.size() < 2 || coordinates.size() > 96) continue;
+            ArrayList<AStarNode> path = new ArrayList<>(coordinates.size());
+            for (var position : coordinates) {
+                path.add(new AStarNode(position.x(), position.y(), position.z()));
+            }
+            boolean valid = path.get(0).equals(end)
+                    && path.get(path.size() - 1).equals(start);
+            if (valid) {
+                try {
+                    for (int i = path.size() - 1; i > 0; i--) {
+                        AStarNode from = path.get(i), to = path.get(i - 1);
+                        // No unbounded jumps. The route cache never licenses
+                        // moving through an unverified intermediate block.
+                        if (Math.abs(to.y - from.y) > 1
+                                || Math.abs(to.x - from.x) > 1
+                                || Math.abs(to.z - from.z) > 1
+                                || !AStarStatic.isViable(this.world, to, 0, this.config)
+                                || !AStarStatic.isTransitionViable(this.world, from, to, this.config)
+                                || (!this.config.canTakeDiagonals && from.y == to.y
+                                    && from.x != to.x && from.z != to.z
+                                    && AStarStatic.findSafeOrthogonalCorner(
+                                            this.world, from, to, this.config) == null)) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                } catch (ThreadSafeUtilities.ChunkAccessException problem) {
+                    valid = false;
+                }
+            }
+            if (!valid) {
+                memory.forget(this.world.getGameTime(), routeOptions(this.config),
+                        cell(start), cell(end), alternative.reversed());
+                org.millenaire.common.pathing.NavigationMetrics.cacheStale();
+                continue;
+            }
+            double cost = pathCost(path);
+            if (cost < bestCost) {
+                best = path;
+                bestCost = cost;
+                bestReversed = alternative.reversed();
+            }
+        }
+        if (best == null) {
+            org.millenaire.common.pathing.NavigationMetrics.cacheMiss();
+            return null;
+        }
+        org.millenaire.common.pathing.NavigationMetrics.cacheHit(bestReversed);
+        if (MillConfigValues.LogPathing >= 2) {
+            MillLog.major(null, "NAV-OPT-CACHE action=HIT reverse=" + bestReversed
+                    + " from=" + start + " to=" + end + " nodes=" + best.size()
+                    + " cost=" + String.format(java.util.Locale.ROOT, "%.2f", bestCost));
+        }
+        return best;
+    }
+
+    private void rememberPath(ArrayList<AStarNode> path) {
+        if (this.world == null || path == null || path.size() < 2
+                || path.size() > 96 || this.lastStart == null || this.lastEnd == null
+                || !path.get(path.size() - 1).equals(this.lastStart)
+                || !path.get(0).equals(this.lastEnd)) return;
+        ArrayList<org.millenaire.common.pathing.RouteMemory.Cell> cells =
+                new ArrayList<>(path.size());
+        for (AStarNode node : path) cells.add(cell(node));
+        routes(this.world).remember(this.world.getGameTime(), routeOptions(this.config), cells);
+        org.millenaire.common.pathing.NavigationMetrics.routeStored();
+    }
+
 
     private static double pathCost(ArrayList<AStarNode> nodes) {
         if (nodes == null || nodes.size() < 2) return Double.POSITIVE_INFINITY;
@@ -112,10 +232,31 @@ public class AStarPathPlannerJPS {
         result.tolerance=source.tolerance;result.toleranceHorizontal=source.toleranceHorizontal;result.toleranceVertical=source.toleranceVertical;return result;
     }
     public synchronized void getPath(AStarNode start,AStarNode end,AStarConfig settings) {
-        if(this.world != null && this.world.getGameTime()<this.nextSnapshotAttempt)return;
-        stopPathSearch(true);this.jpsCandidate=null;this.lastStart=copy(start);this.lastEnd=copy(end);this.config=copy(settings);
-        this.snapshot=captureWorld(start,end);
-        if(this.snapshot==null && this.world!=null) { this.nextSnapshotAttempt=this.world.getGameTime()+20+Math.floorMod(System.identityHashCode(this),17);return; }
+        stopPathSearch(true);
+        this.immediatePath = false;
+        this.deferred = false;
+        this.jpsCandidate = null;
+        this.lastStart = copy(start);
+        this.lastEnd = copy(end);
+        this.config = copy(settings);
+        reportPeriodically();
+        ArrayList<AStarNode> cached = reusePath(this.lastStart, this.lastEnd);
+        if (cached != null) {
+            this.immediatePath = true;
+            if (this.pathedEntity != null) this.pathedEntity.onFoundPath(cached);
+            return;
+        }
+        if (this.world != null && this.world.getGameTime() < this.nextSnapshotAttempt) {
+            this.deferred = true;
+            return;
+        }
+        this.snapshot = captureWorld(start,end);
+        if (this.snapshot == null && this.world != null) {
+            this.deferred = true;
+            this.nextSnapshotAttempt = this.world.getGameTime() + 5
+                    + Math.floorMod(System.identityHashCode(this), 7);
+            return;
+        }
         submit(false);
     }
     private void submit(boolean classic) {
@@ -127,6 +268,7 @@ public class AStarPathPlannerJPS {
             this.busy = false;
             this.worker = null;
             this.snapshot = null;
+            this.deferred = true;
             // If the optional ladder-capable comparison could not be queued,
             // retain JPS's already successful route. Never discard a real
             // path simply because the executor is temporarily saturated.
@@ -146,6 +288,8 @@ public class AStarPathPlannerJPS {
         getPath(new AStarNode(x,y,z),new AStarNode(dx,dy,dz),settings);
     }
     public synchronized boolean isBusy() { return this.busy; }
+    public synchronized boolean hadImmediatePath() { return this.immediatePath; }
+    public synchronized boolean wasDeferred() { return this.deferred; }
     public void completed(AStarWorker source,ArrayList<AStarNode> result) {
         dispatch(()->deliver(source,result));
     }
@@ -168,6 +312,7 @@ public class AStarPathPlannerJPS {
         }
         this.jpsCandidate=null;
         this.snapshot=null;
+        if (result != null) rememberPath(result);
         if(this.pathedEntity!=null) {
             if(result==null)this.pathedEntity.onNoPathAvailable();
             else this.pathedEntity.onFoundPath(result);
