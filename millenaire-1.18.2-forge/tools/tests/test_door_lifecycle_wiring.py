@@ -60,15 +60,17 @@ class DoorLifecycleWiring(unittest.TestCase):
     def test_route_and_scanner_sources_are_distinct(self):
         self.assertIn('this.level, pos, this, "ROUTE"', VILLAGER)
         self.assertIn('this.level, door, this, "SCANNER-RENEW"', VILLAGER)
-        self.assertIn('this.level, best, this, "SCANNER-OPEN"', VILLAGER)
+        self.assertIn('? "SCANNER-HOLD" : "SCANNER-OPEN"', VILLAGER)
 
 
 
-    def test_stuck_wooden_door_scanner_has_bounded_retry(self):
+    def test_stuck_wooden_door_scanner_keeps_passage_open_then_releases(self):
         self.assertIn("DoorApproachRules.suppressStationaryScannerReopen(", VILLAGER)
+        self.assertIn("DoorApproachRules.expiredStationaryScannerHold(", VILLAGER)
         self.assertIn("boolean woodenCandidate =", VILLAGER)
         self.assertIn("boolean repeatedWithoutProgress = woodenCandidate", VILLAGER)
-        self.assertIn('DOOR-SCANNER-SUPPRESSED door=', VILLAGER)
+        self.assertIn('DOOR-SCANNER-HOLD-EXPIRED door=', VILLAGER)
+        self.assertIn('this.noteScannerDoorProgress(door, destination, now)', VILLAGER)
 
     def test_stall_diagnostics_show_route_nodes(self):
         self.assertIn("private String doorRoutePreview(Path route)", VILLAGER)
