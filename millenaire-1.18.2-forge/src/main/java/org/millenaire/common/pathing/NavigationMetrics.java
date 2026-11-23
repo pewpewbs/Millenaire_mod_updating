@@ -29,6 +29,8 @@ public final class NavigationMetrics {
     private static final LongAdder SNAPSHOT_ADDITIONAL_CAPTURES = new LongAdder();
     private static final LongAdder SNAPSHOT_KNOWN_SECTIONS_INVALIDATED = new LongAdder();
     private static final LongAdder SNAPSHOT_KNOWN_CAPTURES_INVALIDATED = new LongAdder();
+    private static final LongAdder SNAPSHOT_POISONED_BYPASSES = new LongAdder();
+    private static final LongAdder SNAPSHOT_MUTATION_RACE_REJECTED = new LongAdder();
     private static final NavigationRateWindow RATE_WINDOW = new NavigationRateWindow();
     private NavigationMetrics() {}
     public static void record(int kind,long nanos){COUNT[kind].increment();NANOS[kind].add(nanos);MAX[kind].accumulateAndGet(nanos,Math::max);}
@@ -49,6 +51,8 @@ public final class NavigationMetrics {
         SNAPSHOT_KNOWN_SECTIONS_INVALIDATED.add(Math.max(0, count));
     }
     public static void snapshotKnownCaptureInvalidated() { SNAPSHOT_KNOWN_CAPTURES_INVALIDATED.increment(); }
+    public static void snapshotPoisonedBypass() { SNAPSHOT_POISONED_BYPASSES.increment(); }
+    public static void snapshotMutationRaceRejected() { SNAPSHOT_MUTATION_RACE_REJECTED.increment(); }
     public static void stale(){STALE.increment();}
     /** kind: 0=JPS, 1=classic A*; includes search and validation time. */
     public static void search(int kind, long nanos, int expanded) {
@@ -97,6 +101,8 @@ public final class NavigationMetrics {
             +" snapshot_additional_captures="+SNAPSHOT_ADDITIONAL_CAPTURES.sum()
             +" snapshot_known_sections_invalidated="+SNAPSHOT_KNOWN_SECTIONS_INVALIDATED.sum()
             +" snapshot_known_captures_invalidated="+SNAPSHOT_KNOWN_CAPTURES_INVALIDATED.sum()
+            +" snapshot_poisoned_bypasses="+SNAPSHOT_POISONED_BYPASSES.sum()
+            +" snapshot_mutation_race_rejected="+SNAPSHOT_MUTATION_RACE_REJECTED.sum()
             +String.format(java.util.Locale.ROOT, " snapshot_section_reuse_pct=%.1f",
                     SECTIONS.sum()+SNAPSHOT_SHARED_SECTIONS.sum()==0 ? 0.0D
                     : SNAPSHOT_SHARED_SECTIONS.sum()*100.0D
@@ -138,6 +144,7 @@ public final class NavigationMetrics {
         SNAPSHOT_AREA_REJECTED.reset();SNAPSHOT_TICK_BUDGET.reset();SNAPSHOT_SECTION_LIMIT.reset();
         SNAPSHOT_SHARED_SECTIONS.reset();SNAPSHOT_ADDITIONAL_CAPTURES.reset();
         SNAPSHOT_KNOWN_SECTIONS_INVALIDATED.reset();SNAPSHOT_KNOWN_CAPTURES_INVALIDATED.reset();
+        SNAPSHOT_POISONED_BYPASSES.reset();SNAPSHOT_MUTATION_RACE_REJECTED.reset();
         RATE_WINDOW.reset();
     }
 }
