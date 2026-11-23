@@ -32,6 +32,11 @@ public class AStarPathPlannerJPS {
     public AStarConfig config;
     private net.minecraft.world.level.BlockGetter snapshot;
     private long nextSnapshotAttempt;
+    // Do not retry the exact same failed start, goal and movement settings on
+    // every villager tick. Different start/goal/config retries immediately.
+    private AStarNode failedStart, failedEnd;
+    private int failedOptions;
+    private long failedRetryTick;
     // JPS never expands vertical ladder edges. Keep its candidate while a
     // bounded classic A* attempt checks for a shorter ladder alternative.
     private ArrayList<AStarNode> jpsCandidate;
@@ -260,6 +265,17 @@ public class AStarPathPlannerJPS {
             if (this.pathedEntity != null) this.pathedEntity.onFoundPath(cached);
             return;
         }
+        if (this.world != null && this.failedStart != null
+                && this.lastStart.equals(this.failedStart)
+                && this.lastEnd.equals(this.failedEnd)
+                && routeOptions(this.config) == this.failedOptions
+                && this.world.getGameTime() < this.failedRetryTick) {
+            // Waiting for a cooldown is not a definitive NO_PATH and must
+            // not issue an additional Vanilla fallback on every game tick.
+            this.deferred = true;
+            org.millenaire.common.pathing.NavigationMetrics.noPathCooldown();
+            return;
+        }
         if (this.world != null && this.world.getGameTime() < this.nextSnapshotAttempt) {
             this.deferred = true;
             return;
@@ -326,7 +342,20 @@ public class AStarPathPlannerJPS {
         }
         this.jpsCandidate=null;
         this.snapshot=null;
-        if (result != null) rememberPath(result);
+        if (result != null) {
+            this.failedStart = null;
+            this.failedEnd = null;
+            rememberPath(result);
+        } else if (this.world != null && this.lastStart != null && this.lastEnd != null) {
+            // A short retry backoff removes hot failure loops (observed
+            // 192 reverse attempts for the same quarry route in ~10 seconds).
+            // Changes to either endpoint or route permissions bypass it.
+            this.failedStart = copy(this.lastStart);
+            this.failedEnd = copy(this.lastEnd);
+            this.failedOptions = routeOptions(this.config);
+            this.failedRetryTick = this.world.getGameTime() + 20L
+                    + Math.floorMod(System.identityHashCode(this), 7);
+        }
         if(this.pathedEntity!=null) {
             if(result==null)this.pathedEntity.onNoPathAvailable();
             else this.pathedEntity.onFoundPath(result);
