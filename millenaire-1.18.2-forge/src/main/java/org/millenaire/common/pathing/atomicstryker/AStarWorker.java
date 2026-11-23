@@ -67,8 +67,10 @@ implements Runnable {
                     ThreadSafeUtilities.getBlock(this.world, x, nextY, z),
                     x, nextY, z)) continue;
             // Both feet and head must be clear. No climbing through solid ceilings.
-            if (!AStarStatic.isPassableBlock(this.world, x, nextY, z, this.config)
-                    || !AStarStatic.isPassableBlock(this.world, x, nextY + 1, z, this.config)) continue;
+            boolean feetClear = AStarStatic.isPassableBlock(this.world, x, nextY, z, this.config);
+            boolean headClear = AStarStatic.isPassableBlock(this.world, x, nextY + 1, z, this.config);
+            if (!org.millenaire.common.pathing.LadderTransitionRules.canTraverse(
+                    true, true, feetClear, headClear)) continue;
             AStarNode candidate = new AStarNode(x, nextY, z, node.getG() + 2, node, this.targetNode);
             AStarOpenSet.Position key = AStarOpenSet.Position.of(candidate);
             AStarNode closed = this.closedIndex.get(key);
