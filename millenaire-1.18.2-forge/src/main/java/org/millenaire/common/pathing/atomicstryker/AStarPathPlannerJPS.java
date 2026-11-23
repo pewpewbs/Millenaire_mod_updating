@@ -34,11 +34,10 @@ public class AStarPathPlannerJPS {
     public AStarConfig config;
     private net.minecraft.world.level.BlockGetter snapshot;
     private long nextSnapshotAttempt;
-    // Do not retry the exact same failed start, goal and movement settings on
-    // every villager tick. Different start/goal/config retries immediately.
-    private AStarNode failedStart, failedEnd;
-    private int failedOptions;
-    private long failedRetryTick;
+    // NAV-OPT-16: exact request identity, capped 20/40/80 tick backoff and
+    // immediate wake-up on known world edits. Different goals retry normally.
+    private final org.millenaire.common.pathing.FailedRouteBackoff failedRouteBackoff =
+            new org.millenaire.common.pathing.FailedRouteBackoff();
     // JPS never expands vertical ladder edges. Keep its candidate while a
     // bounded classic A* attempt checks for a shorter ladder alternative.
     private ArrayList<AStarNode> jpsCandidate;
@@ -81,6 +80,12 @@ public class AStarPathPlannerJPS {
 
     private static org.millenaire.common.pathing.RouteMemory.Cell cell(AStarNode node) {
         return new org.millenaire.common.pathing.RouteMemory.Cell(node.x, node.y, node.z);
+    }
+
+    private long knownWorldMutationEpoch() {
+        return this.world instanceof net.minecraft.server.level.ServerLevel server
+                ? org.millenaire.common.pathing.PathWorldSnapshot.knownMutationEpoch(server)
+                : 0L;
     }
 
     private void reportPeriodically() {
@@ -306,6 +311,7 @@ public class AStarPathPlannerJPS {
     }
     public synchronized void getPath(AStarNode start,AStarNode end,AStarConfig settings) {
         var requested = requestKey(start, end, settings);
+        this.failedRouteBackoff.onRequest(requested);
         if (this.busy && requested.equals(this.activeRequest)) {
             // The same NPC asked for an already running or queued A*/JPS
             // search. Do NOT cancel/restart that expensive computation.
@@ -347,13 +353,11 @@ public class AStarPathPlannerJPS {
             if (this.pathedEntity != null) this.pathedEntity.onFoundPath(cached);
             return;
         }
-        if (this.world != null && this.failedStart != null
-                && this.lastStart.equals(this.failedStart)
-                && this.lastEnd.equals(this.failedEnd)
-                && routeOptions(this.config) == this.failedOptions
-                && this.world.getGameTime() < this.failedRetryTick) {
-            // Waiting for a cooldown is not a definitive NO_PATH and must
-            // not issue an additional Vanilla fallback on every game tick.
+        if (this.world != null && this.failedRouteBackoff.shouldDefer(
+                requested, tick, knownWorldMutationEpoch())) {
+            // Suppressing a repeated failure is NOT a definitive NO_PATH.
+            // A different start / target / movement policy, a known world edit
+            // or the expiry of this bounded backoff starts a fresh search.
             this.deferred = true;
             org.millenaire.common.pathing.NavigationMetrics.noPathCooldown();
             return;
@@ -429,24 +433,21 @@ public class AStarPathPlannerJPS {
         this.activeRequest = null;
         this.joinedSearch = false;
         if (result != null) {
-            this.failedStart = null;
-            this.failedEnd = null;
+            this.failedRouteBackoff.clear();
             rememberPath(result);
         } else if (this.world != null && this.lastStart != null && this.lastEnd != null) {
-            // A short retry backoff removes hot failure loops (observed
-            // 192 reverse attempts for the same quarry route in ~10 seconds).
-            // Changes to either endpoint or route permissions bypass it.
-            this.failedStart = copy(this.lastStart);
-            this.failedEnd = copy(this.lastEnd);
-            this.failedOptions = routeOptions(this.config);
-            this.failedRetryTick = this.world.getGameTime() + 20L
-                    + Math.floorMod(System.identityHashCode(this), 7);
+            var failed = requestKey(this.lastStart, this.lastEnd, this.config);
+            int level = this.failedRouteBackoff.onFailed(failed,
+                    this.world.getGameTime(), knownWorldMutationEpoch(),
+                    Math.floorMod(System.identityHashCode(this), 7));
+            org.millenaire.common.pathing.NavigationMetrics.noPathFailure(level);
             if (MillConfigValues.LogPathing >= 2) {
-                // Report once when a real NO_PATH is observed, rather than
-                // logging each of its suppressed retries.
+                // Report once per actual failed search, not on suppressed
+                // attempts. The increasing level pinpoints persistent stalls.
                 MillLog.major(null, "NAV-OPT-COOLDOWN action=NO_PATH"
-                        + " from=" + this.failedStart + " to=" + this.failedEnd
-                        + " retryTick=" + this.failedRetryTick);
+                        + " from=" + this.lastStart + " to=" + this.lastEnd
+                        + " retryTick=" + this.failedRouteBackoff.retryTick()
+                        + " level=" + level);
             }
         }
         if(this.pathedEntity!=null) {
