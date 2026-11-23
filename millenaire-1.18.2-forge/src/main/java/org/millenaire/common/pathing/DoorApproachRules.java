@@ -29,6 +29,38 @@ public final class DoorApproachRules {
     }
 
     /**
+     * Actual physical traversability of a door BLOCK. The closed door
+     * panel occupies one edge. Crossing the middle of the block parallel
+     * to the closed panel can be possible; opening swings that panel into
+     * the sideways lane. A traversal across the closed panel instead
+     * needs the door OPEN, which the resident does before reaching it.
+     * Pure geometry for dependency-free smoke tests.
+     */
+    public static boolean canTraverseDoorEdge(int stepX, int stepZ,
+            boolean eastWestFacing, boolean currentlyOpen) {
+        if (stepX == 0 && stepZ == 0) return true;
+        if (followsDoorNormal(stepX, stepZ, eastWestFacing)) return true;
+        boolean sideways = eastWestFacing ? stepX == 0 && stepZ != 0
+                                          : stepZ == 0 && stepX != 0;
+        return sideways && !currentlyOpen;
+    }
+
+    /**
+     * Emergency scanner has no door node in its route. Use the NPC's
+     * PHYSICAL position relative to the door, not its distant goal.
+     * Only open if approaching the closed door panel approximately head-on;
+     * from the side, opening it would swing into a clear sideways lane.
+     */
+    public static boolean facingDoorPanel(double residentX, double residentZ,
+            double centerX, double centerZ, boolean eastWestFacing) {
+        double nx = Math.abs(centerX - residentX);
+        double nz = Math.abs(centerZ - residentZ);
+        double towardNormal = eastWestFacing ? nx : nz;
+        double sideways = eastWestFacing ? nz : nx;
+        return towardNormal >= 0.30D && towardNormal >= sideways * 0.75D;
+    }
+
+    /**
      * A door that FACES east/west has its closed panel in the Z plane,
      * so crossing its doorway is along X; north/south doors cross along Z.
      * When opened, the leaf swings onto a perpendicular edge of the same
