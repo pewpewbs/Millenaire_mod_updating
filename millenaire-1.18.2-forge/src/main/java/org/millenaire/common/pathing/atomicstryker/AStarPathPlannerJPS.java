@@ -85,6 +85,10 @@ public class AStarPathPlannerJPS {
         ArrayList<AStarNode> best = null;
         boolean bestReversed = false;
         double bestCost = Double.POSITIVE_INFINITY;
+        // Cache hits are validated on the main thread. Hard-limit that extra
+        // work; a cache miss may be cheaper than a huge shape revalidation.
+        final long validationDeadline = System.nanoTime()
+                + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(2L);
         for (var alternative : alternatives) {
             var coordinates = alternative.goalToStart();
             if (coordinates.size() < 2 || coordinates.size() > 96) continue;
@@ -94,9 +98,15 @@ public class AStarPathPlannerJPS {
             }
             boolean valid = path.get(0).equals(end)
                     && path.get(path.size() - 1).equals(start);
+            boolean timedOut = false;
             if (valid) {
                 try {
                     for (int i = path.size() - 1; i > 0; i--) {
+                        if (System.nanoTime() > validationDeadline) {
+                            timedOut = true;
+                            valid = false;
+                            break;
+                        }
                         AStarNode from = path.get(i), to = path.get(i - 1);
                         // No unbounded jumps. The route cache never licenses
                         // moving through an unverified intermediate block.
@@ -118,9 +128,13 @@ public class AStarPathPlannerJPS {
                 }
             }
             if (!valid) {
-                memory.forget(this.world.getGameTime(), routeOptions(this.config),
-                        cell(start), cell(end), alternative.reversed());
-                org.millenaire.common.pathing.NavigationMetrics.cacheStale();
+                // A time-budget rejection does not mean the stored path is
+                // stale. Keep it for future requests with more free CPU.
+                if (!timedOut) {
+                    memory.forget(this.world.getGameTime(), routeOptions(this.config),
+                            cell(start), cell(end), alternative.reversed());
+                    org.millenaire.common.pathing.NavigationMetrics.cacheStale();
+                }
                 continue;
             }
             double cost = pathCost(path);
