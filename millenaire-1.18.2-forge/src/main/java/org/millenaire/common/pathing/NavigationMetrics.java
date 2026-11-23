@@ -64,7 +64,11 @@ public final class NavigationMetrics {
             +" cache_reverse="+CACHE_REVERSE.sum()+" cache_miss="+CACHE_MISS.sum()
             +" cache_invalidated="+CACHE_STALE.sum()+" routes_stored="+ROUTES_STORED.sum()
             +" reverse_tried="+REVERSE_TRIED.sum()+" reverse_found="+REVERSE_FOUND.sum()
-            +" active="+queue[2]+" queued="+queue[3]+" rejected="+queue[1];
+            +" active="+queue[2]+" queued="+queue[3]+" rejected="+queue[1]
+            +" queue_started="+queue[5]
+            +String.format(java.util.Locale.ROOT, " queue_wait_avg_ms=%.3f queue_wait_max_ms=%.3f",
+                    queue[5]==0 ? 0.0D : queue[6]/1.0E6D/queue[5],
+                    queue[7]/1.0E6D);
     }
     public static void reset(){
         for(int i=0;i<2;i++){
