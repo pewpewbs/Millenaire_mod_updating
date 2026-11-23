@@ -1039,3 +1039,81 @@ java -cp build/nav-failure-events-smoke FailedRouteBackoffEventsSmoke
 
 Якщо `no_path_reset_world` домінує, потрібні **безпечно обмежені просторові mutation evidence** (bounding rectangles / chunk corridor, unloaded chunks and epoch) із гарантією, що мутації за межами corridor не відкривають альтернативний маршрут. Без такої гарантії коректніше обмежити cooldown і лишити слабший hit rate. Якщо домінує `no_path_reset_start`, причина може бути коливання start node через рух/Vanilla fallback, а не world changes; тоді зміни стосуються правил визначення stable start, **але не** грубого об'єднання координат або ігнорування висоти. Якщо часті `RESET_GOAL_CHANGED`, розібрати scheduler tasks та resource delivery. Якщо `RETRY_EXPIRED` є, але level2/3 нема, потрібна перевірка черги, успішного fallback й переривань. Геометричні проблеми іншої моделі і `main` залишити недоторканими.
 
+
+
+## 24. Третій Minecraft playtest — NAV-OPT-17 (причини reset)
+
+**Дата аналізу:** 23.11.2026. **Джерело:** користувацький `latest(20261123-220113).log`, **14 322 рядки**, **3 327 689 байтів**, Forge 40.3.0 / Minecraft 1.18.2 / `millenaire-8.1.2-port.0.jar`. Minecraft стартував 22:49:40, integrated server 22:51:46; перший `NAV-OPT-STATS` **22:51:56**, останній із **52** звітів **23:00:46**, штатне `Stopping server` 23:00:55, `Stopping!` 23:00:58. Тривалість звітного інтервалу **530 с / 8 хв 50 с**; повна інтегрована сесія ~9 хв. Наявність усіх нових `no_path_reset_*` і `no_path_retry_expired` runtime полів доводить, що код NAV-OPT-17 у цьому запущеному JAR. Звичайний файл **не містить** тексту Gradle build console чи сертифікованої TPS/GC профілізації.
+
+### 24.1. Результат експерименту NAV-OPT-17 (останній періодичний звіт о 23:00:46)
+
+| Метрика | Значення |
+|---|---:|
+| `no_path_failures` — фактичні завершення NO_PATH | **135** |
+| `no_path_cooldown` — придушені retry | **597** |
+| `no_path_backoff_level2 / level3` | **13 / 0** |
+| `no_path_reset_start` | **52** |
+| `no_path_reset_goal` | **34** |
+| `no_path_reset_movement` | **0** |
+| `no_path_reset_world` | **35** |
+| `no_path_reset_rewind` | **0** |
+| `no_path_reset_success` | **0** |
+| `no_path_retry_expired` | **13** |
+
+Загалом **121 reset зі start/goal/world**, із них **86 / 121 = 71.1% від зміни endpoint координат**, **35 / 121 = 28.9% world mutation**. **Головний результат:** поширена гіпотеза попереднього раунду «world mutation майже завжди збиває backoff» НЕ підтвердилася як домінантний фактор у цьому playtest. `RESET_START_CHANGED` = 52, `RESET_GOAL_CHANGED` = 34 сумарно важливіші, ніж `RESET_WORLD_MUTATED` = 35. У коді пріоритет подій start → goal → movement: якщо одночасно змінилися старт і ціль, реєструється **start**, не два resets. `RETRY_EXPIRED` окрема подія, НЕ reset і не додається до 121. `RESET_SUCCESS=0` не означає, що немає успішних маршрутів узагалі: натомість не було зафіксовано успіху **після ще активної failure streak того самого planner**, бо request change міг її вже обнулити.
+
+**Важлива межа останнього звіту:** при прямому підрахунку всього файлу є **150** `NAV-OPT-COOLDOWN action=NO_PATH`, з них **136 level=1, 14 level=2, 0 level=3**. Останній `NAV-OPT-STATS` закінчується о 23:00:46 із `135/13`; ще **15 NO_PATH** з'являються до завершення гри й не ввійшли в періодичну агреговану статистику. Тому для міжсесійного порівняння вживати **135/530 с**, а для повного лог-файлу — **150 явних повідомлень** (не змішувати ці два базиси).
+
+### 24.2. Новий очевидний hotspot: moving-goal replan storm
+
+**Сценарій B, 23:00:40–23:00:50:**
+- Повторюваний **start `[48|66|608]`**, який дав **44** явні NO_PATH за всю сесію (**43 рівня 1, 1 рівня 2**), більшість у самому кінці.
+- У межах **11 с** (23:00:40–23:00:50) було **41** NO_PATH з цим start. Goal монотонно пересувався по траєкторії приблизно `[45|66|607]` → `[45|66|600]` → `[42|66|599]` → `[38|66|596]` → `[38|66|583]`. Це видно в послідовності `NAV-OPT-COOLDOWN`, інколи кілька різних goal на секунду. Кожен новий exact endpoint запускає новий A*/JPS і скидає рівень backoff — **за задумом NAV-OPT-16 (нові цілі мають право перепланувати шлях)**. Однак така швидкість перепланування під час безуспішного переслідування рухомої цілі може спричиняти зайві дорогі обчислення.
+- **НЕ визначено достовірно actor / semantic goal**, тому що `NAV-OPT-COOLDOWN` зараз логить `null` замість NPC identity/goal. За сусідніми записами `NAV-CHOICE` не можна безпечно встановити, якому саме NPC належить послідовність. Наступний інструмент має додати в log `actorId / entityName / semanticGoal / strategy` у вузькому місці, без перегину обсягу логу.
+- Останнє 10-сек вікно звітів `23:00:36 → 23:00:46`: **+27 фактичних failures**, **+94 suppressed retry**, `no_path_reset_goal +21`, `no_path_reset_start +1`, `no_path_reset_world +6`; `queue_wait_window_avg_ms=0.052`. Це **швидкий рухомий target loop**, але **не обов'язково тривалий bottleneck черги** в цьому конкретному вікні: очікування тут майже нульове, хоча кількість запитів велика.
+
+**Сценарій A, 22:52:54–22:53:03:**
+- Загалом **53** явних NO_PATH у ці ~10 секунд для **багатьох** різних NPC/routes, переважно повтори стабільних пар, наприклад `[25|68|649]→[29|66|660]` **16** і `[32|66|551]→[0|65|544]` **15** у цілому лог-файлі (обидві парні серії інтенсивні в 22:52:54–22:53:04). Є level2, але згодом багато resets.
+- За інтервал `22:52:51 → 22:53:01`: **+45 NO_PATH**, **+363 suppressed retry**, **+6 start resets**, **+4 goal resets**, **+15 world resets**, **+11 retry expiries**. `queue_wait_window_avg_ms=124.190`, `jps_s=9.90`, `astar_s=8.90`, `no_path_failures_s=4.50`. На відміну від сценарію B, тут **справді високий queue wait**. Не підвищувати без доказів 2-worker queue, бо більше конкурентних searches може навпаки підсилити CPU contention.
+
+Два burst-сценарії мають **94 / 150 = 62.7%** усіх явних NO_PATH. Саме вони є пріоритетом подальшої діагностики й контролю частоти перепланувань, **не** випадкове глобальне збільшення всіх cooldown.
+
+### 24.3. Порівняння з playtest NAV-OPT-16 (§22), неконтрольований workload
+
+Останній звіт NAV-OPT-16 мав вікно **513 с** (22:27:29→22:36:02), новий **530 с**, тож порівнювати більш коректно нормалізовані rates:
+
+| Показник | NAV-OPT-16 | NAV-OPT-17 | Інтерпретація |
+|---|---:|---:|---|
+| JPS avg | 26.772 ms | **27.081 ms** | +1.2%, близько |
+| A* avg | 20.250 ms | **22.672 ms** | +12.0% |
+| queue wait avg | 8.978 ms | **18.992 ms** | +111.5%, переважно burst навантаження |
+| queue wait max | 820.106 ms | **922.335 ms** | сплески залишаються |
+| фактичні NO_PATH / звітний час | 48/513с = **5.6/хв** | 135/530с = **15.3/хв** | ~2.7×, але різні tasks |
+| snapshot avg | 0.356 ms | **0.388 ms** | +9.0% |
+| flat memo hit ratio | 78.8% | **78.7%** | стабільно |
+
+Висновок: NAV-OPT-17 **суто діагностичний етап**, змінив облік причин reset, **не** механіку A*/JPS/backoff. Збільшення черги та NO_PATH саме в цій сесії не слід називати доведеною регресією реалізації: активність NPC та рухомі цілі різні. Наприкінці звіту `jps searches=3022 avg=27.081ms`, `astar searches=1727 avg=22.672ms`, `snapshot count=2945 avg=0.388ms`, `queue_started=4749 rejected=0`, `cache_hit=277 cache_miss=7149`, `inflight_joined=0`, `copied_sections=974322`, `snapshot_shared_sections=53483 (5.2%)`, `snapshot_non_latest_reused=16`, `snapshot_known_sections_invalidated=5700`, `snapshot_poisoned_bypasses=75`, `snapshot_mutation_race_rejected=0`, `swept_checks=3627969 avg=0.003ms`, `flat_column_memo_hit=10913518 / miss=2960496` = **78.66%**.
+
+### 24.4. Проблеми руху лишаються окремими
+
+- `NAV-TELEPORT stock recovery` **43** за всю сесію: Anatolios Zaridis **12**, Niompe Prinkips **12**, Elena Prinkips **6**, Lizas Raoul **4**, Arminios Prinkips **3**. Попередня сесія — 25. Це НЕ доводить погіршення навігаційного алгоритму, бо NPC/route geometry різні, але це сильний показник непокритих фізичних блокувань.
+- `DOOR-BLOCKED` **149**: `NO_VISIBLE_DOOR_CANDIDATE=120`, `STOP_MOVING=15`, `AT_WAYPOINT=12`, `NO_DESTINATION=2`. Найчастіший проблемний door `(68,67,544)` (**36**), також `(234,74,662)` 15 і `(2,68,629)` 14. Залишити двері іншій моделі.
+- `LADDER-ASSIST` **103**: вверх `direction=1: 51`, вниз `direction=-1: 46`, neutral 6. Тепер **4** справжні записи `contact=true` (3 спроби спуску у Zenovios Mourtzouplos біля `(3,67,561)`, 1 підйом Anatolios Zaridis біля `(26,62,655)`), на відміну від попередньої сесії, де всі 46 мали contact=false. `LADDER-EXIT` **4**, але всі вони від **Eftokios Prinkips** у *тому самому* виході `lastRung=(26,67,655) exit=(26,68,654)` о 22:55:02, 22:55:42, 22:58:18, 23:00:11. Це **не доводить** 4 незалежних успішних спуски.
+- `NAV-OPT-REVERSE` **62**: `chosen NONE=30, FORWARD=23, REVERSED=9`; `ENDPOINT_MISMATCH=30`, `NO_REVERSE_PATH=11`. Старий topology/tolerance caveat живий, не змішувати із NAV-OPT-17.
+- Один `Can't keep up! Running 3215ms or 64 ticks behind` при вході 22:51:56; **других не було**. Немає `Exception`, `FATAL`, `OutOfMemory` чи аварійного завершення. Є старі 5 unknown config warnings і broken texture refs, але це не нові pathing errors.
+
+### 24.5. Наступна безпечна ітерація NAV-OPT-18
+
+**Рекомендований пріоритет**: додати **причинну actor-aware діагностику** до `NO_PATH`, включно з actual NPC ID, behavior goal, координатами, семантикою рухомої цілі та числом task restarts. Зараз writer `NAV-OPT-COOLDOWN` у `AStarPathPlannerJPS.deliver()` передає `MillLog.major(null,...)` і цим **втрачає actor**. Без id не можна приписувати start `[48|66|608]` певному NPC, лише координатному hotspot.
+
+Далі, лише за підтвердженим патерном одного NPC з рухомою ціллю, розглянути обмежене **replan minimum interval** для того самого semantic goal/actor з постійним exact-start NO_PATH, але з такими інваріантами:
+- зміна типу поведінки/цілі/permission має обходити throttle;
+- зміна світу, яке може відкрити раніше закритий шлях, має будити або throttle має жорсткий малий cap;
+- не глушити запити до **нової доступної** цілі, не змінювати collision geometry;
+- якщо NPC фізично рухається або change is > bounded target movement threshold, дозволити негайний пошук;
+- не ігнорувати `Y` або зливати різні конфігурації `NavigationRequestKey`;
+- порівняти total A*/JPS search count, NO_PATH/хв, queue wait (особливо hot bursts) і фактичне досягнення цілей до й після.
+
+Для сценарію A спочатку потрібен actor mapping і перевірка, чи одночасні NPC створюють незалежні, законні запити. Не створювати глобальний cross-NPC no-path blacklist: це може блокувати різні розміри NPC/permission, світові правки й альтернативні доступні шляхи.
+
+**Статус NAV-OPT-17 після цього логу:** лише аналіз і audit, **жодного нового source patch не внесено**. Тільки робоча гілка; `main` лишити недоторканою. Двері, драбини, slabs/stairs headroom та `ENDPOINT_MISMATCH` навмисно лишаються для спеціалізованої сильнішої моделі.
