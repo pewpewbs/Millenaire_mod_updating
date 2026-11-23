@@ -213,7 +213,8 @@ public final class NavigationMetrics {
                     SECTIONS.sum(), CACHE_HIT.sum(), CACHE_MISS.sum(),
                     CACHE_STALE.sum(), NO_PATH_COOLDOWN.sum(), NO_PATH_FAILURES.sum(),
                     CACHE_REPLAN_DEFERRED.sum(), INFLIGHT_JOINED.sum(),
-                    queue[5], queue[6], LADDER_SCANS.sum(), LADDER_PROBES.sum()));
+                    queue[5], queue[6], LADDER_SCANS.sum(), LADDER_PROBES.sum(),
+                    SEARCH_PREEMPTED.sum(), MOVING_GOAL_REQUESTS.sum(), MOVING_GOAL_BURSTS.sum()));
     }
     public static void reset(){
         for(int i=0;i<2;i++){
