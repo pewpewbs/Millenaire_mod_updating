@@ -69,6 +69,37 @@ extends AStarWorker {
         return foundpath;
     }
 
+    /**
+     * JPS jumps over many intermediate blocks. Before accepting a route,
+     * expand it and verify every adjacent move using the same physical
+     * clearance rules as classic A*. Rejecting an invalid JPS solution
+     * causes AStarPathPlannerJPS to retry with its classic worker.
+     */
+    private ArrayList<AStarNode> validatedBackTrace(AStarNode start)
+            throws ThreadSafeUtilities.ChunkAccessException {
+        ArrayList<AStarNode> path = this.backTrace(start);
+        if (path == null) return null;
+        // backTrace is ordered target -> start.
+        for (int i = path.size() - 1; i > 0; i--) {
+            AStarNode from = path.get(i);
+            AStarNode to = path.get(i - 1);
+            if (!AStarStatic.isViable(this.world, to, 0, this.config)
+                    || !AStarStatic.isTransitionViable(this.world, from, to, this.config)) {
+                return null;
+            }
+            // translateAStarPathtoPathEntity inserts an orthogonal corner
+            // for same-height diagonals. Verify that a real safe corner exists.
+            if (!this.config.canTakeDiagonals && from.y == to.y
+                    && Math.abs(from.x - to.x) == 1
+                    && Math.abs(from.z - to.z) == 1
+                    && AStarStatic.findSafeOrthogonalCorner(
+                            this.world, from, to, this.config) == null) {
+                return null;
+            }
+        }
+        return path;
+    }
+
     private ArrayList<AStarNode> findNeighbours(AStarNode node) throws ThreadSafeUtilities.ChunkAccessException {
         ArrayList<AStarNode> r;
         block11: {
@@ -201,7 +232,7 @@ extends AStarWorker {
             this.closedNodes.add(this.currentNode);
             this.closedIndex.put(AStarOpenSet.Position.of(this.currentNode), this.currentNode);
             if (this.isNodeEnd(this.currentNode, end) || this.identifySuccessors(this.currentNode, nbLoop)) {
-                return this.backTrace(start);
+                return this.validatedBackTrace(start);
             }
             ++nbLoop;
         }
