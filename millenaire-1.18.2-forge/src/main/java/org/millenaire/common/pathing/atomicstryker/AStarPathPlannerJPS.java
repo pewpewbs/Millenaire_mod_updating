@@ -48,21 +48,41 @@ public class AStarPathPlannerJPS {
         return cost;
     }
 
+    /**
+     * Detect ladders near a plausible vertical route, not only around start
+     * and end. The earlier endpoint-only test missed quarry shafts midway
+     * between a villager and a job target.
+     *
+     * The number of samples is strictly bounded; we read only detached
+     * snapshot palettes and never ask the live Level to load a chunk.
+     */
     private boolean nearbyLadderOnVerticalRoute() {
         if (this.snapshot == null || this.lastStart == null || this.lastEnd == null) return false;
         int deltaY = Math.abs(this.lastStart.y - this.lastEnd.y);
         if (deltaY < 3 || deltaY > 48) return false;
-        int dx = this.lastStart.x - this.lastEnd.x, dz = this.lastStart.z - this.lastEnd.z;
+        int dx = this.lastEnd.x - this.lastStart.x;
+        int dz = this.lastEnd.z - this.lastStart.z;
         if (dx * dx + dz * dz > 96 * 96) return false;
+
         int floor = Math.max(this.snapshot.getMinBuildHeight(),
-            Math.min(this.lastStart.y, this.lastEnd.y) - 2);
+                Math.min(this.lastStart.y, this.lastEnd.y) - 2);
         int ceiling = Math.min(this.snapshot.getMaxBuildHeight() - 1,
-            Math.max(this.lastStart.y, this.lastEnd.y) + 2);
-        // Only sample two endpoint neighborhoods, never scan or load chunks.
-        for (AStarNode near : new AStarNode[] {this.lastStart, this.lastEnd}) {
-            for (int x = near.x - 3; x <= near.x + 3; x++) {
-                for (int z = near.z - 3; z <= near.z + 3; z++) {
-                    for (int y = floor; y <= ceiling; y++) {
+                Math.max(this.lastStart.y, this.lastEnd.y) + 2);
+        if (ceiling <= floor) return false;
+
+        // A sample every ~4 horizontal blocks, always including endpoints.
+        // Within each sample only a 9x9 column neighborhood is considered.
+        int steps = Math.max(1, Math.min(24,
+                (int) Math.ceil(Math.sqrt((double)dx * dx + (double)dz * dz) / 4.0D)));
+        int ySamples = Math.min(12, ceiling - floor + 1);
+        for (int step = 0; step <= steps; step++) {
+            int midX = this.lastStart.x + (int) Math.round((double) dx * step / steps);
+            int midZ = this.lastStart.z + (int) Math.round((double) dz * step / steps);
+            for (int x = midX - 4; x <= midX + 4; x++) {
+                for (int z = midZ - 4; z <= midZ + 4; z++) {
+                    for (int k = 0; k < ySamples; k++) {
+                        int y = floor + (int) Math.round((double) (ceiling - floor) * k
+                                / Math.max(1, ySamples - 1));
                         if (this.snapshot.getBlockState(new net.minecraft.core.BlockPos(x, y, z))
                                 .is(net.minecraft.world.level.block.Blocks.LADDER)) return true;
                     }
@@ -71,6 +91,7 @@ public class AStarPathPlannerJPS {
         }
         return false;
     }
+
     protected net.minecraft.world.level.BlockGetter captureWorld(AStarNode start, AStarNode end) {
         if (!(this.world instanceof net.minecraft.server.level.ServerLevel server)) return null;
         return org.millenaire.common.pathing.PathWorldSnapshot.capture(server, start, end);
