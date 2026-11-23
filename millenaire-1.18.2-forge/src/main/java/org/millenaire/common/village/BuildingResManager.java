@@ -409,10 +409,40 @@ public class BuildingResManager {
         return this.getSellingPos();
     }
 
+    /** Acacia seedlings cannot become trees under low roofs or a dense solid canopy. */
+    private boolean hasAcaciaGrowthRoom(Point plantingPoint) {
+        net.minecraft.core.BlockPos pos = plantingPoint.getBlockPos();
+        Level level = this.building.world;
+        if (!Blocks.ACACIA_SAPLING.defaultBlockState().canSurvive(level, pos)) return false;
+
+        // Acacia needs a clear vertical trunk and room for the spreading
+        // crown. Leaves and replaceable plants may be displaced by worldgen,
+        // but solid roof/wood/stone blocks prevent even bonemeal growth.
+        for (int dy = 1; dy <= 6; dy++) {
+            int radius = dy <= 2 ? 0 : 2;
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    net.minecraft.core.BlockPos check = pos.offset(dx, dy, dz);
+                    if (level.isOutsideBuildHeight(check) || !level.hasChunkAt(check)) return false;
+                    BlockState above = level.getBlockState(check);
+                    if (!above.isAir() && !above.is(net.minecraft.tags.BlockTags.LEAVES)
+                            && !above.getMaterial().isReplaceable()) return false;
+                }
+            }
+        }
+        return true;
+    }
+
     public Point getPlantingLocation() {
         for (Point p : this.woodspawn) {
             Block block = WorldUtilities.getBlock(this.building.world, p);
-            if (block != Blocks.AIR && block != Blocks.SNOW && (!BlockItemUtilities.isBlockDecorativePlant(block) || block instanceof SaplingBlock || block instanceof BlockMillSapling)) continue;
+            if (block != Blocks.AIR && block != Blocks.SNOW
+                    && (!BlockItemUtilities.isBlockDecorativePlant(block)
+                            || block instanceof SaplingBlock || block instanceof BlockMillSapling)) continue;
+            // Prefer other designated grove points over placing acacia on a
+            // marker where the vanilla tree will never grow, even with bonemeal.
+            if ("acaciaspawn".equals(this.woodspawnTypes.get(p))
+                    && !hasAcaciaGrowthRoom(p)) continue;
             return p;
         }
         return null;
