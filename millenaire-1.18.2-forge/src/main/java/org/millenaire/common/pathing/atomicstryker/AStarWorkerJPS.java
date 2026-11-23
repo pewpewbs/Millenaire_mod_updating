@@ -81,6 +81,8 @@ extends AStarWorker {
         if (path == null) return null;
         // backTrace is ordered target -> start.
         for (int i = path.size() - 1; i > 0; i--) {
+            // Validation shares the worker's 150 ms deadline with JPS search.
+            if (this.shouldInterrupt()) return null;
             AStarNode from = path.get(i);
             AStarNode to = path.get(i - 1);
             if (!AStarStatic.isViable(this.world, to, 0, this.config)
