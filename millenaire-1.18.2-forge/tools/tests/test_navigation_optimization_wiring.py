@@ -62,6 +62,16 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("this.failedRetryTick = this.world.getGameTime() + 20L", PLANNER)
         self.assertIn("this.failedStart = null;", PLANNER)
 
+    def test_identical_cached_routes_are_throttled_without_blocking_new_goals(self):
+        self.assertIn("this.lastStart.equals(this.recentCacheStart)", PLANNER)
+        self.assertIn("this.lastEnd.equals(this.recentCacheEnd)", PLANNER)
+        self.assertIn("routeOptions(this.config) == this.recentCacheOptions", PLANNER)
+        self.assertIn("tick - this.recentCacheTick < 10L", PLANNER)
+        self.assertIn("this.deferred = true;", PLANNER)
+        self.assertIn("NavigationMetrics.cacheReplanDeferred()", PLANNER)
+        self.assertIn("this.recentCacheTick = tick;", PLANNER)
+        self.assertIn("cache_replan_deferred=", METRICS)
+
     def test_reverse_diagnostics_distinguish_no_route_from_reversed(self):
         self.assertIn('chosen == null ? "NONE"', WORKER)
         self.assertIn('"ENDPOINT_MISMATCH actualStart="', WORKER)
