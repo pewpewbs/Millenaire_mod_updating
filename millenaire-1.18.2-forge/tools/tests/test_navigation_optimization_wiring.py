@@ -321,7 +321,7 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("rememberSimpleFlatColumn(int x, int y, int z, boolean simple)", SNAPSHOT)
         self.assertIn("BlockPos.asLong(x, y, z)", SNAPSHOT)
         self.assertIn("AtomicReferenceArray<Entry>", COLUMN_MEMO)
-        self.assertIn("hit.position() == key", COLUMN_MEMO)
+        self.assertIn("hit.position() != key", COLUMN_MEMO)
         self.assertIn("Boolean get(long key)", COLUMN_MEMO)
         self.assertIn("void remember(long key, boolean simple)", COLUMN_MEMO)
         self.assertIn("new Entry(key, simple)", COLUMN_MEMO)
