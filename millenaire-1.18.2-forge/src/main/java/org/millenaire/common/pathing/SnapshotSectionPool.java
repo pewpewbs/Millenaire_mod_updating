@@ -1,7 +1,9 @@
 package org.millenaire.common.pathing;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 
 /**
@@ -19,6 +21,12 @@ public final class SnapshotSectionPool<T> {
     private final int maxChunkVisits;
     private final int maxCopies;
     private final Map<Long, Entry<T>> sections = new HashMap<>();
+    // A Forge event can fire BEFORE a block is actually modified. Eviction
+    // alone is insufficient: a subsequent capture might cache the OLD value.
+    // Suppress re-sharing of such sections until the next server tick.
+    private final Set<Long> poisonedSections = new HashSet<>();
+    private boolean poisonedWorld;
+    private long revision;
     private long tick = Long.MIN_VALUE;
     private int snapshots, chunkVisits, copies, hits;
 
@@ -49,6 +57,7 @@ public final class SnapshotSectionPool<T> {
     public synchronized T get(long nowTick, long sectionKey, Object currentSource) {
         resetIfNewTick(nowTick);
         Objects.requireNonNull(currentSource, "source");
+        if (poisonedWorld || poisonedSections.contains(sectionKey)) return null;
         Entry<T> entry = sections.get(sectionKey);
         if (entry == null) return null;
         if (entry.source() != currentSource) {
@@ -73,7 +82,11 @@ public final class SnapshotSectionPool<T> {
         Objects.requireNonNull(currentSource, "source");
         Objects.requireNonNull(detached, "detached copy");
         if (copies >= maxCopies) throw new IllegalStateException("Section copy budget exhausted");
-        sections.put(sectionKey, new Entry<>(currentSource, detached));
+        // Always charge actual allocations to the budget; never cache copies
+        // of a section with an outstanding pre-mutation notification.
+        if (!poisonedWorld && !poisonedSections.contains(sectionKey)) {
+            sections.put(sectionKey, new Entry<>(currentSource, detached));
+        }
         copies++;
     }
 
@@ -84,7 +97,19 @@ public final class SnapshotSectionPool<T> {
      */
     public synchronized boolean invalidateSection(long nowTick, long sectionKey) {
         resetIfNewTick(nowTick);
-        return sections.remove(sectionKey) != null;
+        boolean evicted = sections.remove(sectionKey) != null;
+        revision++;
+        if (!poisonedWorld) {
+            // Bounded memory even when very many blocks change in a tick.
+            if (poisonedSections.size() >= maxCopies) {
+                poisonedWorld = true;
+                poisonedSections.clear();
+                sections.clear();
+            } else {
+                poisonedSections.add(sectionKey);
+            }
+        }
+        return evicted;
     }
 
     /**
@@ -94,8 +119,28 @@ public final class SnapshotSectionPool<T> {
     public synchronized int invalidateAll(long nowTick) {
         resetIfNewTick(nowTick);
         int discarded = sections.size();
+        revision++;
+        poisonedWorld = true;
+        poisonedSections.clear();
         sections.clear();
         return discarded;
+    }
+
+    /** Do not reuse a completed superset snapshot after ANY known mutation. */
+    public synchronized boolean mayReuseSnapshots(long nowTick) {
+        resetIfNewTick(nowTick);
+        return !poisonedWorld && poisonedSections.isEmpty();
+    }
+
+    public synchronized boolean isPoisoned(long nowTick, long sectionKey) {
+        resetIfNewTick(nowTick);
+        return poisonedWorld || poisonedSections.contains(sectionKey);
+    }
+
+    /** Detect known mutations that raced with a snapshot's palette copying. */
+    public synchronized long revision(long nowTick) {
+        resetIfNewTick(nowTick);
+        return revision;
     }
 
     public synchronized int usedCopies() { return copies; }
@@ -106,6 +151,9 @@ public final class SnapshotSectionPool<T> {
         if (tick != nowTick) {
             // Keep no references to live palette containers across ticks.
             sections.clear();
+            poisonedSections.clear();
+            poisonedWorld = false;
+            revision = 0L;
             snapshots = 0;
             chunkVisits = 0;
             copies = 0;
