@@ -248,3 +248,53 @@ py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_optimization_wiring.
 **Фактичний результат:** `Ran 9 tests in 0.001s` / `OK`. Усі дев'ять позначено `ok`, включно з новим `test_identical_cached_routes_are_throttled_without_blocking_new_goals`, перевірками лімітів кешу, зворотних маршрутів, поточного світу, відкладених запитів, метрик та snapshot reuse.
 
 **Межі підтвердження:** це Python source-level wiring-тести. Немає наданого завершального виводу `BUILD SUCCESSFUL` для NAV-OPT-07 та немає нового Minecraft `latest.log` після цього патча. Наступний етап: завершення `Update-Millenaire.bat`, перевірка фактичного встановлення JAR та 3–5 хвилин гри; у журналі очікується поле `cache_replan_deferred`, зіставити повтори `NAV-OPT-CACHE`, `DOOR-BLOCKED`, `NAV-TELEPORT` і `LADDER-ASSIST direction=-1`.
+
+## 11. NAV-OPT-07 — ігрова перевірка latest(20261123-183456).log
+
+**Джерело:** завантажений користувачем `latest(20261123-183456).log` (4 584 рядки, 1 018 085 байт, 19:30:39–19:34:44), Minecraft 1.18.2 / Forge 40.3.0 / Millénaire 8.1.2. Початок серверної сесії близько 19:31:38. Виявлено `cache_replan_deferred=` — це **фактичний runtime-тест** NAV-OPT-07 у Minecraft, але немає окремого виводу Gradle `BUILD SUCCESSFUL` для цієї збірки.
+
+### 11.1. Останній накопичувальний NAV-OPT-STATS: 19:34:32
+
+| Метрика | Значення |
+|---|---:|
+| JPS | 973 searches, avg **34.809ms**, max 164.806ms, expanded 208702 |
+| classic A* | 459 searches, avg **33.848ms**, max 150.749ms, expanded 632321 |
+| Vanilla native | 676 calls, avg **5.090ms**, max 317.768ms |
+| Snapshot | 951 captures, avg **0.414ms**, max 4.226ms, copied_sections 322329 |
+| Snapshot reuse | **23** |
+| Deferred capture/search | **347** |
+| Failed-path cooldown suppressed | **190** |
+| Same cached-route replay deferred | **101** |
+| Cache hit / reverse cache | **69 / 20** |
+| Cache miss / invalidated / stored | **4016 / 47 / 574** |
+| Reverse A* attempts / chosen | **7 / 3** |
+| Active workers / queue / rejected | **0 / 0 / 0** у момент цього звіту |
+
+В останній частині файлу є ще одна зворотна спроба (після останнього `NAV-OPT-STATS`): загалом **8** `NAV-OPT-REVERSE` записів і **3** `chosen=REVERSED` у всьому файлі. Одне відхилення зворотного маршруту: `ENDPOINT_MISMATCH actualStart=128,63,697 actualGoal=130,69,676` для `from=[126|62|695] to=[130|69|676]`. Наявність `chosen=NONE` тепер коректно відображає відсутність обох маршрутів.
+
+### 11.2. Чи спрацювало NAV-OPT-07
+
+**Так:** `cache_replan_deferred=101` — доведено, що ідентичні повторні кеш-запити фізично відкладалися. Гаряча пара координат `[6|68|631]→[1|68|627]` тепер має **7** `NAV-OPT-CACHE action=HIT` між 19:32:25–19:32:28 (Niompe Prinkips), тоді як у попередньому лог-файлі схожий цикл видав **105** cache-hits за 5 секунд. Це різні сесії й NPC, тому **не** стверджувати буквальне прискорення 15×. Ідентичний кеш-виклик все ще може траплятися після закінчення 10-тікового cooldown. Причина фізичного застрягання біля дверей залишається.
+
+**Але:** `no_path_cooldown` швидко зріс до **190** у межах 19:32:21–19:32:31; `cache_invalidated` до **47** між 19:32:21–19:32:41. З одним лише агрегованим лічильником **неможливо** визначити NPC/ребро, які спричинили велику кількість невдалих спроб чи інвалідацій. `cache_miss=4016` частково включає запити, які не мали відповідного збереженого маршруту, і не є доказом 4016 пошкоджених кешів.
+
+**Важлива обережність у порівнянні продуктивності:** останній NAV-OPT-STATS цього тесту нараховує 973 JPS та 459 A* проти 715/392 у попередньому `latest(10).log`. Тривалість спостереження подібна (~171 с vs ~163 с від першого до останнього NAV-OPT-STATS), але розподіл цілей NPC і світу різний. У новому тесті абсолютна кількість пошуків **більша**; не заявляти про загальне прискорення без контрольованого A/B, TPS, CPU та незалежних вибірок.
+
+### 11.3. Драбини, двері та відновлення руху
+
+- `LADDER-ASSIST=15`, **усі `direction=1`**, `LADDER-EXIT=1`. Спуск (`direction=-1`) досі **не підтверджений** цією сесією. `Anatolios Zaridis` багаторазово стоїть біля шахти `(27,60–61,655)` із `next=(26,61,655)`, `aligned=false contact=false`; NPC не завжди вдало заходить на вертикальну колонку. `Eftokios Prinkips` має `LADDER-EXIT` о 19:32:19 і справді виходить угору.
+- `DOOR-BLOCKED=25`: **21 NO_VISIBLE_DOOR_CANDIDATE**, **4 AT_WAYPOINT**; `DOOR-APPROACH=1742`, `DOOR-WAYPOINT=168`. `selected=null` сам по собі не означає дефект.
+- `NAV-TELEPORT=14` (Anatolios Zaridis 4, Niompe Prinkips 4, Lizas Raoul 2, інші по 1). Це stock recovery; не гарантує, що це всі можливі телепортації в моді.
+- Один `Can't keep up!` на завантаженні (4062ms / 81 ticks behind), без серії сталих лагів у логах. Не слід робити висновок про фактичний TPS у грі.
+- Java Exception stack traces під час гри не виявлено; присутні стартові конфігураційні WARN/ERROR і попередження ресурсів.
+
+### 11.4. Зміни після цього логу — NAV-OPT-08 (не перевірені грою)
+
+Головна мета — з'ясувати причини 47 інвалідацій і 190 відкладених повторів невдалого пошуку, **без зміни логіки вибору маршруту**.
+
+- `AStarPathPlannerJPS.reusePath`: для кожного `cache_invalidated` додається `NAV-OPT-CACHE action=INVALIDATE reason=...`, напрямок `reverse=`, пара `from/to`, конкретне `rejectedEdge=` із причин `NON_ADJACENT_EDGE`, `BLOCKED_NODE`, `BLOCKED_TRANSITION`, `NO_ORTHOGONAL_CORNER`, `CHUNK_UNAVAILABLE`, `ENDPOINT_MISMATCH`. Колізії не обчислюються вдруге лише заради журналу. При перевищенні 2ms `validationDeadline` кеш **не** інвалідується і новий rejection log не видається, як і раніше.
+- При `NO_PATH` запис `NAV-OPT-COOLDOWN action=NO_PATH from=... to=... retryTick=...` — **один раз на реальну невдачу**, а не на кожен придушений повтор. Це дозволить зв'язати spike `no_path_cooldown` із фактичними маршрутами.
+- Додано source-level regression у `tools/tests/test_navigation_optimization_wiring.py`; після Pull очікується **10** Python-тестів `OK`.
+- GitHub-коміти: `d9e2ac7` (причина cache invalidation), `700aa82` (NO_PATH debug), `30b1f08` (регресійна перевірка). Всі у `fix/villager-door-access-and-village-territory`, не у `main`.
+
+**Статус:** код у гілці, але **немає нового Gradle compile / Minecraft playtest** для NAV-OPT-08. Наступний запуск `Update-Millenaire.bat`, source-level тест 10/10, тоді 3–5 хв ігрової сесії з `logpathing=minor`. Новий `latest.log` допоможе відокремити справжні змінені блоки від багів у валідаторі та виявити точні координати проходу. Не змінювати door/ladder geometry навмання без цієї діагностики.
