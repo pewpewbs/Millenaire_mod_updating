@@ -56,7 +56,10 @@ extends Goal {
         ArrayList<Point> buildingp = new ArrayList<Point>();
         for (Building grove : villager.getTownHall().getBuildingsWithTag("grove")) {
             Point p;
-            if (grove.getWoodCount() <= 4 || (p = grove.getWoodLocation()) == null) continue;
+            // A damaged or partially harvested acacia may have fewer than five
+            // remaining logs. Leaving it unselected forever prevents the grove
+            // from recovering, even though a valid log is still present.
+            if ((p = grove.getWoodLocation()) == null) continue;
             woodPos.add(p);
             buildingp.add(grove.getPos());
             if (MillConfigValues.LogLumberman < 3) continue;
