@@ -77,7 +77,16 @@ public final class VillageDoorAccess {
             }
             trace(level, pos, "OPENED" + origin);
         } else if (level.getGameTime() % 100L == 0L) {
-            trace(level, pos, "RENEWED");
+            // With only the door position, we cannot distinguish a resident
+            // legitimately crossing it from one that renews indefinitely
+            // while stalled. Keep actor/source at the sampled renewal tick.
+            String origin = " source=" + source;
+            if (actor != null) {
+                origin += " actorId=" + actor.getId()
+                        + " actorName=" + actor.getName().getString()
+                        + " actorFeet=" + actor.blockPosition();
+            }
+            trace(level, pos, "RENEWED" + origin);
         }
     }
 
@@ -161,7 +170,7 @@ public final class VillageDoorAccess {
                 ((DoorBlock) state.getBlock()).setOpen(null, level, state, pos, true);
                 if (level.getBlockState(pos).getValue(DoorBlock.OPEN)) remember(level, pos, actor, source);
             } else if (registered != null && registered.containsKey(pos)) {
-                remember(level, pos);
+                remember(level, pos, actor, source);
             }
         } else if (state.getBlock() instanceof FenceGateBlock) {
             if (state.getValue(FenceGateBlock.POWERED)) return;
@@ -169,7 +178,7 @@ public final class VillageDoorAccess {
                 level.setBlock(pos, state.setValue(FenceGateBlock.OPEN, true), 3);
                 if (level.getBlockState(pos).getValue(FenceGateBlock.OPEN)) remember(level, pos, actor, source);
             } else if (registered != null && registered.containsKey(pos)) {
-                remember(level, pos);
+                remember(level, pos, actor, source);
             }
         }
     }
