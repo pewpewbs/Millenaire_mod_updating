@@ -773,3 +773,70 @@ git pull --ff-only origin fix/villager-door-access-and-village-territory
 Потрібно побачити реальний `BUILD SUCCESSFUL` та `SUCCESS! Millenaire installed.`. **Не заявляти**, що після коментарних фіксів Gradle build уже пройшов: наразі його користувач ще не запускав повторно. Можливі наступні Java compile errors (Forge event APIs, signatures, інші інтеграції) після виправлення перших 9, бо javac міг не дійти до їх аналізу. Якщо `BUILD FAILED` повториться, потрібні `error:` рядки вище фінального summary або повний `millenaire-build.log`. Не пропонувати користувачу встановлювати старий артефакт як новий.
 
 Після компіляції — збережені source/Java smoke тести й Minecraft playtest з розділу 18.4; геометрію дверей/драбин не чіпати, `main` не змінювати.
+
+
+## 20. Перший підтверджений Minecraft playtest NAV-OPT-09–15
+
+**Джерело:** користувач завантажив `latest(20261123-210746).log`, 7 693 рядки / 1 809 186 байтів. Початок запуску **21:59:34**, integrated server почався **22:00:47**, першій NAV-OPT-STATS о **22:00:57**, останній з 32 звітів **22:06:16**, нормальне закриття **22:06:27**. Завантажено Forge **40.3.0**, Minecraft **1.18.2**, `millenaire-8.1.2-port.0.jar`. Наявність усіх нових метрик (NAV-OPT-09–15) показує, що **нова збірка запущена в грі** після попереднього синтаксичного фіксу `A*/JPS`; втім сам текст `BUILD SUCCESSFUL` не вкладений у цей файл. Немає `Exception` stack traces / crash / FATAL; 5 `CLIENT ERROR` під час завантаження — старі невідомі config keys, плюс ресурсні warnings. Один `Can't keep up!` при вході у світ **22:00:57, 4422ms / 88 ticks behind**, далі аналогічних попереджень немає. Реальний TPS зі звичайного логу точно не вимірюється.
+
+### 20.1. Останній накопичений NAV-OPT-STATS о 22:06:16
+
+| Показник | Значення |
+|---|---:|
+| Vanilla native | **1 631**, avg **4.766ms**, max 162.992ms |
+| Immutable snapshot | **1 214**, avg **0.403ms**, max 6.230ms |
+| JPS | **1 279** пошуків, avg **39.852ms**, max 156.500ms, expanded 492958 |
+| Classic A* | **852** пошуки, avg **24.147ms**, max 202.357ms, expanded 1199016 |
+| copied_sections | **417 065** |
+| snapshot_shared_sections / snapshot_section_reuse_pct | **32 968 / 7.3%** |
+| snapshot_reused / snapshot_non_latest_reused | **65 / 29** |
+| snapshot_additional_captures | **174** |
+| snapshot_tick_budget_deferred / snapshot_section_rejected / area_rejected | **91 / 132 / 0**; разом deferred=223 |
+| snapshot_known_sections_invalidated / captures_invalidated | **4732 / 18** |
+| snapshot_poisoned_bypasses / mutation_race_rejected | **22 / 0** |
+| flat_column_memo_hit / miss | **5 965 632 / 1 614 472**; **78.70%** hit rate |
+| swept_checks / swept_blocked | **1 957 155 / 2 850** |
+| swept_avg_ms / swept_max_ms | **0.003ms / 5.623ms** |
+| no_path_cooldown / cache_replan_deferred | **1 140 / 576** |
+| inflight_joined | **0** — NAV-OPT-09 request coalescing **не активувалося** у цій сесії, отже його виграш не підтверджено |
+| cache_hit / cache_reverse / cache_miss / cache_invalidated | **146 / 9 / 4243 / 0** |
+| routes_stored | **821** |
+| reverse_tried / reverse_found | **40 / 7** |
+| queue_started / rejected / active / queued | **2131 / 0 / 0 / 0** у момент останнього звіту |
+| queue_wait_avg_ms / queue_wait_max_ms | **41.567 / 893.374** |
+| ladder_scans / ladder_probes / ladder_hits | **54 / 229 808 / 11** |
+| ladder_scan_avg_ms | **0.335ms** |
+
+### 20.2. Що фактично підтверджено NAV-OPT-09–15
+
+- **NAV-OPT-15 (simple-flat memo):** 5.966 млн hit проти 1.614 млн miss (~78.7%). Реальні memo hits є, memo працює у runtime. Частка hit **не є** відсотком прискорення Minecraft; потрібен controlled A/B, TPS, JVM GC та CPU.
+- **NAV-OPT-14 (non-latest index):** `snapshot_non_latest_reused=29` із 65 total full-snapshot reuse. Це фактичне підтвердження, що повернення до ранішого superset snapshot використовується.
+- **NAV-OPT-11 (shared palettes):** `snapshot_shared_sections=32968` / `snapshot_section_reuse_pct=7.3`; `snapshot_additional_captures=174`. Копії справді розділяються в одному тіку, але економія за загальною CPU не виміряна.
+- **NAV-OPT-12/13 known mutation hints:** `snapshot_known_sections_invalidated=4732`, `snapshot_known_captures_invalidated=18`, `snapshot_poisoned_bypasses=22`, `snapshot_mutation_race_rejected=0`. Є реальна інвалідація й poisoned обходи; 0 mutation_race **не** означає, що невідомі зміни неможливі. Більшість масових секційних інвалідацій (2916) припадає на перші ~11 с спостереження, імовірно chunk lifecycle на завантаженні (гіпотеза, події не залоговані по типу).
+- **NAV-OPT-07 захист cache replay:** `cache_replan_deferred=576`, тому відкладення повторів працює.
+- **NAV-OPT-06 захист невдалих пошуків:** `no_path_cooldown=1140`; реальних `NAV-OPT-COOLDOWN action=NO_PATH` у всьому файлі **93**. Велика кількість придушених повторів **не свідчить** про нові успішні маршрути: фізичні блокування залишаються.
+- **NAV-OPT-09:** `inflight_joined=0`. Немає доказу runtime виграшу або багу; просто не трапилося ідентичного незавершеного запиту.
+
+### 20.3. Виявлена проблема — burst невдалих пошуків і черга
+
+**22:05:22 → 22:05:36** (звітне вікно ~14.05 с, звіти запускаються кожні >=200 game ticks при активних запитах):
+- `no_path_cooldown` збільшився з **158** до **900**, тобто на **742**; далі до **1113** о 22:05:46 (+213), разом **955** придушених повторів за ~24 с.
+- У вікні `22:05:22–22:05:36` `failed_retry_deferred_s=52.81`, `queue_wait_window_avg_ms=217.869`, `jps_s=6.76`, `astar_s=6.12`, `snapshots_s=5.12`. Відбувся сплеск одночасних дорогих запитів і затримок, але із самого файлу не доведено причинність щодо TPS.
+- 93 початкові `NO_PATH` усього; 63 із них у хвилині **22:05**, багато повторюваних pairs: `[32|66|552]→[24|66|551]` 11 разів, `[25|68|648]→[0|65|544]` 10, `[32|66|551]→[0|65|544]` 10, `[26|71|647]→[28|66|660]` 9, `[25|68|649]→[70|68|627]` 9; ще `[225|71|669]→[224|131|675]` 4 і `[229|71|667]→[232|131|672]` 4 із незвичною різницею Y ~60, потребують перевірки реальності цілі, але не змінювати без візуальної геометрії.
+- Максимальне очікування фонового пошуку в черзі **893.374 мс**. У кінцевому звіті active=queued=rejected=0, тому черга не зависла перманентно.
+- Не варто збільшувати `PathSearchExecutor` із 2 worker threads / 64 bounded queue, поки CPU профіль і TPS не доведуть, що це вигідно. Безконтрольне збільшення створить ризик лагів.
+
+### 20.4. Відкладені проблеми іншій моделі — нові факти
+
+- `DOOR-BLOCKED` **75**: `NO_VISIBLE_DOOR_CANDIDATE=68`, `STOP_MOVING=4`, `AT_WAYPOINT=2`, `NO_DESTINATION=1`. `DOOR-WAYPOINT=537`, `DOOR-APPROACH=3125`; не кожне `selected=null` дорівнює помилці.
+- `NAV-TELEPORT` **20** (stock recovery), зокрема Anatolios Zaridis **6** разів, Niompe Prinkips **6**, решта. Фізичні застрягання в близьких координатах повторюються, наприклад Anatolios `(18,67,633)` до `(18,67,630)` та Niompe `(6,67,631)` до `(1,68,627)`. Не доведено загальне покращення реальної навігації дверима.
+- `LADDER-ASSIST` **29**: `direction=-1` **13** (вперше в серії), `direction=1` **12**, `direction=0` **4**; **всі 29 мають `contact=false`**, `LADDER-EXIT=0`. Для NPC **Giannis Mourtzouplos** близько `(3,68,562)` → `(3,67,561)`, `direction=-1` багато разів з **22:05:25 до 22:06:20**, але contact=false і рух не підтверджений. Є одна подія `aligned=true` при `feet=(3,68,561)`, `next=(3,66,561)`, exactY=68.12, contact=false. Це конкретний кейс для наступної моделі.
+- `NAV-OPT-REVERSE` 40 записів, `chosen=REVERSED` **7**, `FORWARD` **18**, `NONE` **15**. **13 ENDPOINT_MISMATCH**. Особливо `from=[26|71|647] to=[28|66|660]` має `actualStart=28,68,648 actualGoal=28,66,660`, відхилявся **9 разів** у 22:05:24–22:05:38. Інший повтор — `from=[190|71|675] to=[191|66|680]`, `actualStart=190,66,677`, `actualGoal=191,66,680`, 4 рази.
+- Реальних `NAV-OPT-CACHE action=INVALIDATE` **0**, `cache_invalidated=0`; це не гарантує, що всі шляхи у світі правильні, і не доводить, що проблема попередніх 47 invalidations остаточно зникла — умови сесій різні.
+- Залишати ці проблеми геометрії та endpoint tolerance для призначеної користувачем іншої потужнішої моделі. **У цій фазі жодного нового source patch після playtest не внесено**, лише documentation.
+
+### 20.5. Висновок / дії
+
+Збірка NAV-OPT-09–15 підтверджена **runtime у Minecraft**, без crash. Економія повторних роботи кешу й snapshot відбувається, але **немає доказів збільшення TPS, зменшення загального CPU або вирішення navigation geometry**. Основна нова задача general optimization — контроль burst `NO_PATH` і `queue_wait_window_avg_ms`, з діагностикою по NPC/job/goal, а не зміною рухових правил. Наступна ітерація може додати aggregate no-path hotspot summaries або event-based per-request telemetry з rate limit і тестами, але лише після аналізу семантики `MillVillager` (щоб не блокувати нові цілі). Не змінювати фізику дверей/драбин на основі статистики.
+
+Із цього файлу відомо, що Minecraft принаймні стартував і відпрацював до штатного завершення. Окремі Python 28/Java 8 smoke, `Gradle BUILD SUCCESSFUL` console artifact і контрольований TPS profiler залишаються **NOT PROVIDED**, навіть якщо Minecraft runtime підтверджує встановлений JAR. `main` не змінювати.
