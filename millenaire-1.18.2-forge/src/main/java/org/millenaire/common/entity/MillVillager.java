@@ -1583,6 +1583,20 @@ IAStarPathedEntity {
      * powered/hinged door states. Called only when LogPathing >= 2 and bounded
      * to once every 100 ticks per resident.
      */
+    private boolean doorScannerHoldExpired(net.minecraft.core.BlockPos door,
+            Point destination, long now) {
+        double movedX = this.getX() - this.lastScannerDoorX;
+        double movedZ = this.getZ() - this.lastScannerDoorZ;
+        boolean sameDoor = door.equals(this.lastScannerOpenedDoor);
+        boolean sameGoal = java.util.Objects.equals(this.goalKey, this.lastScannerDoorGoal)
+                && java.util.Objects.equals(
+                    destination == null ? null : destination.getBlockPos(),
+                    this.lastScannerDoorDestination);
+        return org.millenaire.common.pathing.DoorApproachRules.expiredStationaryScannerHold(
+                sameDoor, sameGoal, movedX * movedX + movedZ * movedZ,
+                now - this.lastScannerDoorTick);
+    }
+
     private String doorRoutePreview(Path route) {
         if (route == null) return "none";
         StringBuilder result = new StringBuilder();
@@ -1937,12 +1951,15 @@ IAStarPathedEntity {
                     }
 
                     if (!closed) {
-                        // Renew only while approaching the original CLOSED
-                        // door plane from the forward route direction.
-                        // A passed door must now time out and close normally.
-                        // openForResident leaves manually opened doors alone.
-                        org.millenaire.common.pathing.VillageDoorAccess.openForResident(
-                                this.level, door, this, "SCANNER-RENEW");
+                        // Opened door: only keep renewing a stalled scanner
+                        // interaction for the first 120 ticks without progress.
+                        // Otherwise the door may remain open forever while
+                        // the resident cannot move. This is for scanner
+                        // leases, NOT explicit route-node opening.
+                        if (!woodenDoor || !this.doorScannerHoldExpired(door, destination, now)) {
+                            org.millenaire.common.pathing.VillageDoorAccess.openForResident(
+                                    this.level, door, this, "SCANNER-RENEW");
+                        }
                     } else if (score < bestScore) {
                         bestScore = score;
                         best = door.immutable();
@@ -1975,25 +1992,27 @@ IAStarPathedEntity {
                     && org.millenaire.common.pathing.DoorApproachRules.suppressStationaryScannerReopen(
                         sameDoor, sameGoalAndDestination,
                         movedX * movedX + movedZ * movedZ, elapsed);
-            // This only limits SCANNER retries with zero progress for a
-            // particular resident and door. Active-route door opening and
-            // the manager's occupancy-based closing remain unchanged.
-            if (repeatedWithoutProgress) {
+            // DOOR-11 suppressed opening for 120 ticks after a resident
+            // stalled; that left the very door they needed CLOSED. Instead
+            // keep it open while attempting passage, and end the lease
+            // after 120 ticks without progress so it will auto-close.
+            boolean holdExpired = woodenCandidate
+                    && this.doorScannerHoldExpired(best, destination, now);
+            if (holdExpired) {
                 if (MillConfigValues.LogPathing >= 2
                         && (now + this.getVillagerId()) % 100L == 0L) {
-                    MillLog.major(this, "DOOR-SCANNER-SUPPRESSED door=" + best
+                    MillLog.major(this, "DOOR-SCANNER-HOLD-EXPIRED door=" + best
                             + " ticksSinceOpen=" + elapsed
                             + " feet=" + this.blockPosition()
-                            + " goal=" + this.goalKey
                             + " path=" + (route == null ? "none"
-                              : route.getNextNodeIndex() + "/" + route.getNodeCount())
-                            + " next=" + this.doorRoutePreview(route));
+                                : route.getNextNodeIndex() + "/" + route.getNodeCount()));
                 }
             } else {
                 org.millenaire.common.pathing.VillageDoorAccess.openForResident(
-                        this.level, best, this, "SCANNER-OPEN");
+                        this.level, best, this, repeatedWithoutProgress
+                                ? "SCANNER-HOLD" : "SCANNER-OPEN");
                 var openedState = this.level.getBlockState(best);
-                if (BlockItemUtilities.isWoodenDoor(openedState.getBlock())
+                if (!repeatedWithoutProgress && woodenCandidate
                         && openedState.getValue(net.minecraft.world.level.block.DoorBlock.OPEN)) {
                     this.lastScannerOpenedDoor = best.immutable();
                     this.lastScannerDoorDestination =
