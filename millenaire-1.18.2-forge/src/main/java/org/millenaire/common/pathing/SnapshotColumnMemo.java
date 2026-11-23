@@ -38,7 +38,8 @@ public final class SnapshotColumnMemo {
     /** Null means not present; FALSE is a valid, cached negative result. */
     public Boolean get(long key) {
         Entry hit = slots.get(index(key));
-        return hit != null && hit.position() == key ? hit.simple() : null;
+        if (hit == null || hit.position() != key) return null;
+        return Boolean.valueOf(hit.simple());
     }
 
     public void remember(long key, boolean simple) {
