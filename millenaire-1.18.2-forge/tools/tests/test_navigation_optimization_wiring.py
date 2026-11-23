@@ -164,6 +164,18 @@ class OptimizationWiring(unittest.TestCase):
                      "ladder_scan_avg_ms=", "ladderScan(int probes"):
             self.assertIn(name, METRICS)
 
+    def test_oversized_snapshot_does_not_consume_per_tick_capture_budget(self):
+        capture = SNAPSHOT.split("public static PathWorldSnapshot capture(", 1)[1]
+        area = capture.index("if ((long) (maxX - minX + 1)")
+        reserve = capture.index("synchronized(LAST_CAPTURE)")
+        self.assertLess(area, reserve)
+        self.assertIn("NavigationMetrics.snapshotAreaRejected()", capture)
+        self.assertIn("NavigationMetrics.snapshotBudgetDeferred()", capture)
+        self.assertIn("NavigationMetrics.snapshotSectionRejected()", capture)
+        self.assertIn("snapshot_area_rejected=", METRICS)
+        self.assertIn("snapshot_tick_budget_deferred=", METRICS)
+        self.assertIn("snapshot_section_rejected=", METRICS)
+
     def test_snapshot_reuse_only_same_tick(self):
         self.assertIn("previous.tick()==tick", SNAPSHOT)
         self.assertIn("minX>=previous.minX()", SNAPSHOT)
