@@ -18,6 +18,11 @@ public final class NavigationMetrics {
     private static final LongAdder NO_PATH_COOLDOWN = new LongAdder();
     private static final LongAdder CACHE_REPLAN_DEFERRED = new LongAdder();
     private static final LongAdder INFLIGHT_JOINED = new LongAdder();
+    private static final LongAdder LADDER_SCANS = new LongAdder();
+    private static final LongAdder LADDER_PROBES = new LongAdder();
+    private static final LongAdder LADDER_HITS = new LongAdder();
+    private static final LongAdder LADDER_NANOS = new LongAdder();
+    private static final NavigationRateWindow RATE_WINDOW = new NavigationRateWindow();
     private NavigationMetrics() {}
     public static void record(int kind,long nanos){COUNT[kind].increment();NANOS[kind].add(nanos);MAX[kind].accumulateAndGet(nanos,Math::max);}
     public static void sections(int count){SECTIONS.add(count);}
@@ -41,6 +46,12 @@ public final class NavigationMetrics {
     public static void noPathCooldown() { NO_PATH_COOLDOWN.increment(); }
     public static void cacheReplanDeferred() { CACHE_REPLAN_DEFERRED.increment(); }
     public static void inflightJoined() { INFLIGHT_JOINED.increment(); }
+    public static void ladderScan(int probes, boolean found, long nanos) {
+        LADDER_SCANS.increment();
+        LADDER_PROBES.add(Math.max(0, probes));
+        if (found) LADDER_HITS.increment();
+        LADDER_NANOS.add(Math.max(0L, nanos));
+    }
     public static void reverseTried() { REVERSE_TRIED.increment(); }
     public static void reverseFound() { REVERSE_FOUND.increment(); }
     public static String report(){
@@ -68,7 +79,18 @@ public final class NavigationMetrics {
             +" queue_started="+queue[5]
             +String.format(java.util.Locale.ROOT, " queue_wait_avg_ms=%.3f queue_wait_max_ms=%.3f",
                     queue[5]==0 ? 0.0D : queue[6]/1.0E6D/queue[5],
-                    queue[7]/1.0E6D);
+                    queue[7]/1.0E6D)
+            +" ladder_scans="+LADDER_SCANS.sum()
+            +" ladder_probes="+LADDER_PROBES.sum()
+            +" ladder_hits="+LADDER_HITS.sum()
+            +String.format(java.util.Locale.ROOT, " ladder_scan_avg_ms=%.3f",
+                    LADDER_SCANS.sum()==0 ? 0.0D : LADDER_NANOS.sum()/1.0E6D/LADDER_SCANS.sum())
+            +" "+RATE_WINDOW.sample(System.nanoTime(), new NavigationRateWindow.Counts(
+                    SEARCH_COUNT[0].sum(), SEARCH_COUNT[1].sum(), COUNT[1].sum(),
+                    SECTIONS.sum(), CACHE_HIT.sum(), CACHE_MISS.sum(),
+                    CACHE_STALE.sum(), NO_PATH_COOLDOWN.sum(),
+                    CACHE_REPLAN_DEFERRED.sum(), INFLIGHT_JOINED.sum(),
+                    queue[5], queue[6], LADDER_SCANS.sum(), LADDER_PROBES.sum()));
     }
     public static void reset(){
         for(int i=0;i<2;i++){
@@ -79,5 +101,7 @@ public final class NavigationMetrics {
         SECTIONS.reset();DEFERRED.reset();STALE.reset();
         CACHE_HIT.reset();CACHE_REVERSE.reset();CACHE_MISS.reset();CACHE_STALE.reset();
         ROUTES_STORED.reset();REVERSE_TRIED.reset();REVERSE_FOUND.reset();SNAPSHOT_REUSED.reset();NO_PATH_COOLDOWN.reset();CACHE_REPLAN_DEFERRED.reset();INFLIGHT_JOINED.reset();
+        LADDER_SCANS.reset();LADDER_PROBES.reset();LADDER_HITS.reset();LADDER_NANOS.reset();
+        RATE_WINDOW.reset();
     }
 }
