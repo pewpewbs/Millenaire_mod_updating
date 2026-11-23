@@ -64,6 +64,10 @@ public class AStarPathPlannerJPS {
     private AStarNode recentCacheStart, recentCacheEnd;
     private int recentCacheOptions;
     private long recentCacheTick = -1L;
+    // Only remember cache searches with ZERO candidates. An existing route
+    // rejected by the validation deadline must always remain retryable.
+    private org.millenaire.common.pathing.NavigationRequestKey emptyCacheRequest;
+    private long emptyCacheRevision;
     private static final java.util.Map<Level, org.millenaire.common.pathing.RouteMemory> ROUTES =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
     private static final java.util.Map<Level, Long> REPORT_TICKS =
@@ -124,8 +128,17 @@ public class AStarPathPlannerJPS {
     private ArrayList<AStarNode> reusePath(AStarNode start, AStarNode end) {
         if (this.world == null || this.world.isClientSide) return null;
         var memory = routes(this.world);
-        var alternatives = memory.candidates(this.world.getGameTime(),
+        var snapshot = memory.candidatesWithRevision(this.world.getGameTime(),
                 routeOptions(this.config), cell(start), cell(end));
+        var alternatives = snapshot.matches();
+        if (alternatives.isEmpty()) {
+            this.emptyCacheRequest = requestKey(start, end, this.config);
+            this.emptyCacheRevision = snapshot.revision();
+        } else {
+            // A rejection from expensive shape validation, or a 2ms time
+            // budget, is NOT a proven empty-cache miss.
+            this.emptyCacheRequest = null;
+        }
         ArrayList<AStarNode> best = null;
         boolean bestReversed = false;
         double bestCost = Double.POSITIVE_INFINITY;
@@ -366,7 +379,19 @@ public class AStarPathPlannerJPS {
             org.millenaire.common.pathing.NavigationMetrics.cacheReplanDeferred();
             return;
         }
-        ArrayList<AStarNode> cached = reusePath(this.lastStart, this.lastEnd);
+        ArrayList<AStarNode> cached;
+        if (this.world != null && !this.world.isClientSide
+                && requested.equals(this.emptyCacheRequest)
+                && routes(this.world).revision() == this.emptyCacheRevision) {
+            // No other planner has added/forgotten a route since the last
+            // empty lookup. Preserve cache-miss diagnostics without repeating
+            // two map probes and candidate-list allocations every NPC tick.
+            cached = null;
+            org.millenaire.common.pathing.NavigationMetrics.cacheMiss();
+            org.millenaire.common.pathing.NavigationMetrics.cacheEmptyLookupSkipped();
+        } else {
+            cached = reusePath(this.lastStart, this.lastEnd);
+        }
         if (cached != null) {
             this.recentCacheStart = copy(this.lastStart);
             this.recentCacheEnd = copy(this.lastEnd);
