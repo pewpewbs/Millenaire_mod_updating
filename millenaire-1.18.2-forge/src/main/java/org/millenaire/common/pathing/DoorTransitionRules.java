@@ -8,15 +8,16 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.millenaire.common.utilities.BlockItemUtilities;
 
 /**
- * Prevents pathfinders from planning a crossing along a wooden door's leaf.
+ * Matches wooden-door transitions to the PHYSICAL block state.
  *
- * A wooden door's FACING defines the axis through its CLOSED panel. When
- * opened, its collision shape swings onto the perpendicular edge of the
- * block. Treating that whole block as WALKABLE in every direction causes
- * mobs to repeatedly collide with the OPEN leaf on sideways routes.
+ * Normal crossings require opening the door. Sideways travel across the
+ * middle of the SAME block may be passable while the leaf is CLOSED, but
+ * becomes blocked when it swings across that sideways lane. DOOR-13
+ * mistakenly rejected such traversals regardless of state, making NPCs
+ * walk around entrances rather than using otherwise passable corridors.
  *
- * This test is deliberately per-EDGE, not per-node: the block remains
- * reachable from both correct sides, and double doors remain traversable.
+ * The interaction controller must not automatically OPEN a door when the
+ * route specifically relies on the CLOSED leaf for a sideways passage.
  * Fence gates, ladders and non-door blocks are untouched.
  */
 public final class DoorTransitionRules {
@@ -26,7 +27,26 @@ public final class DoorTransitionRules {
         if (!BlockItemUtilities.isWoodenDoor(state.getBlock())) return true;
         boolean eastWestFacing =
                 state.getValue(DoorBlock.FACING).getAxis() == Direction.Axis.X;
-        return DoorApproachRules.followsDoorNormal(dx, dz, eastWestFacing);
+        if (DoorApproachRules.followsDoorNormal(dx, dz, eastWestFacing)) return true;
+        // A closed door occupies one block edge; its center lane along
+        // the panel may be clear. The OPEN leaf swings 90 degrees and
+        // physically blocks that lane. Do not prohibit all sideways routes:
+        // only prohibit crossing sideways WHEN the leaf is actually open.
+        boolean sideways = eastWestFacing ? dx == 0 && dz != 0
+                                           : dz == 0 && dx != 0;
+        return sideways && !state.getValue(DoorBlock.OPEN);
+    }
+
+    /**
+     * Path-node lookahead must only OPEN a wooden door when it intends
+     * to cross the closed panel. Opening a closed sideways-passable door
+     * would swing the leaf directly into the resident's planned lane.
+     */
+    public static boolean needsOpeningForEdge(BlockState state, int stepX, int stepZ) {
+        if (!BlockItemUtilities.isWoodenDoor(state.getBlock())) return true;
+        boolean eastWestFacing =
+                state.getValue(DoorBlock.FACING).getAxis() == Direction.Axis.X;
+        return DoorApproachRules.followsDoorNormal(stepX, stepZ, eastWestFacing);
     }
 
     public static boolean allowsEdge(BlockGetter world,
