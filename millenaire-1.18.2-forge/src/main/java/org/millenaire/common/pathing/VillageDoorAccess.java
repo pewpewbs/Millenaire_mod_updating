@@ -14,6 +14,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -30,7 +31,12 @@ public final class VillageDoorAccess {
     // clear. A route follower refreshes the lease while still approaching.
     private static final long GATE_IDLE_TICKS = 10L;
     private static final long DOOR_IDLE_TICKS = 10L;
+    // A manual door/gate interaction takes precedence over NPC leases.
+    // Keep a short grace period for players who close a door as well, so a
+    // nearby resident cannot instantly undo their interaction.
+    private static final long PLAYER_CONTROL_TICKS = 100L;
     private static final Map<ServerLevel, Map<BlockPos, Long>> OPENED = new WeakHashMap<>();
+    private static final Map<ServerLevel, Map<BlockPos, Long>> PLAYER_CONTROL = new WeakHashMap<>();
 
     private VillageDoorAccess() {}
 
@@ -47,12 +53,52 @@ public final class VillageDoorAccess {
             .put(pos.immutable(), level.getGameTime());
     }
 
+    private static boolean isPlayerControlled(ServerLevel level, BlockPos pos) {
+        Map<BlockPos, Long> overrides = PLAYER_CONTROL.get(level);
+        if (overrides == null) return false;
+        Long until = overrides.get(pos);
+        if (until == null) return false;
+        if (level.getGameTime() < until) return true;
+        overrides.remove(pos);
+        if (overrides.isEmpty()) PLAYER_CONTROL.remove(level);
+        return false;
+    }
+
+    /**
+     * Players can take control of wooden doors and gates without competing
+     * with an old NPC closing lease. This event precedes the vanilla toggle;
+     * it does not cancel or perform that toggle itself.
+     */
+    @SubscribeEvent
+    public static void onPlayerUseDoor(PlayerInteractEvent.RightClickBlock event) {
+        if (event.isCanceled() || !(event.getWorld() instanceof ServerLevel level)) return;
+        BlockPos raw = event.getPos();
+        if (!level.hasChunkAt(raw)) return;
+        BlockState sample = level.getBlockState(raw);
+        BlockPos pos = canonical(level, raw, sample);
+        BlockState state = level.getBlockState(pos);
+        boolean wooden = BlockItemUtilities.isWoodenDoor(state.getBlock());
+        boolean gate = state.getBlock() instanceof FenceGateBlock;
+        if (!wooden && !gate) return;
+
+        // Remove the NPC's lease BEFORE the player's click changes OPEN.
+        // Otherwise the shared world-tick closer would override the player.
+        Map<BlockPos, Long> opened = OPENED.get(level);
+        if (opened != null) {
+            opened.remove(pos);
+            if (opened.isEmpty()) OPENED.remove(level);
+        }
+        PLAYER_CONTROL.computeIfAbsent(level, ignored -> new HashMap<>())
+            .put(pos.immutable(), level.getGameTime() + PLAYER_CONTROL_TICKS);
+    }
+
     /** Adopt an old saved door-to-close hint after upgrading from per-villager handling. */
     public static void adoptLegacy(Level world, BlockPos raw) {
         if (!(world instanceof ServerLevel level) || !level.hasChunkAt(raw)) return;
         BlockState sample = level.getBlockState(raw);
         BlockPos pos = canonical(level, raw, sample);
         BlockState state = level.getBlockState(pos);
+        if (isPlayerControlled(level, pos)) return;
         if (BlockItemUtilities.isWoodenDoor(state.getBlock())
                 && state.getValue(DoorBlock.OPEN) && !state.getValue(DoorBlock.POWERED)) {
             remember(level, pos);
@@ -68,6 +114,7 @@ public final class VillageDoorAccess {
         BlockState sample = level.getBlockState(raw);
         BlockPos pos = canonical(level, raw, sample);
         BlockState state = level.getBlockState(pos);
+        if (isPlayerControlled(level, pos)) return;
         Map<BlockPos, Long> registered = OPENED.get(level);
 
         if (BlockItemUtilities.isWoodenDoor(state.getBlock())) {
@@ -102,6 +149,11 @@ public final class VillageDoorAccess {
             BlockPos pos = entry.getKey();
             if (!level.hasChunkAt(pos)) {
                 iterator.remove(); // Never force a chunk load just to close a door.
+                continue;
+            }
+            // Another mod or player may have taken control after this lease.
+            if (isPlayerControlled(level, pos)) {
+                iterator.remove();
                 continue;
             }
             BlockState state = level.getBlockState(pos);
@@ -139,6 +191,9 @@ public final class VillageDoorAccess {
 
     @SubscribeEvent
     public static void onWorldUnload(WorldEvent.Unload event) {
-        if (event.getWorld() instanceof ServerLevel level) OPENED.remove(level);
+        if (event.getWorld() instanceof ServerLevel level) {
+            OPENED.remove(level);
+            PLAYER_CONTROL.remove(level);
+        }
     }
 }
