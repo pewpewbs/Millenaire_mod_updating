@@ -12,6 +12,7 @@ public final class NavigationMetrics {
     private static final LongAdder[] EXPANDED = {new LongAdder(), new LongAdder()};
     private static final LongAdder CACHE_HIT = new LongAdder(), CACHE_REVERSE = new LongAdder();
     private static final LongAdder CACHE_MISS = new LongAdder(), CACHE_STALE = new LongAdder();
+    private static final LongAdder CACHE_EMPTY_LOOKUP_SKIPPED = new LongAdder();
     private static final LongAdder REVERSE_TRIED = new LongAdder(), REVERSE_FOUND = new LongAdder();
     private static final LongAdder ROUTES_STORED = new LongAdder();
     private static final LongAdder SNAPSHOT_REUSED = new LongAdder();
@@ -103,6 +104,7 @@ public final class NavigationMetrics {
         if (reverse) CACHE_REVERSE.increment();
     }
     public static void cacheMiss() { CACHE_MISS.increment(); }
+    public static void cacheEmptyLookupSkipped() { CACHE_EMPTY_LOOKUP_SKIPPED.increment(); }
     public static void cacheStale() { CACHE_STALE.increment(); }
     public static void routeStored() { ROUTES_STORED.increment(); }
     public static void snapshotReused() { SNAPSHOT_REUSED.increment(); }
@@ -196,6 +198,7 @@ public final class NavigationMetrics {
             +" moving_goal_bursts="+MOVING_GOAL_BURSTS.sum()
             +" cache_hit="+CACHE_HIT.sum()
             +" cache_reverse="+CACHE_REVERSE.sum()+" cache_miss="+CACHE_MISS.sum()
+            +" cache_empty_lookup_skipped="+CACHE_EMPTY_LOOKUP_SKIPPED.sum()
             +" cache_invalidated="+CACHE_STALE.sum()+" routes_stored="+ROUTES_STORED.sum()
             +" reverse_tried="+REVERSE_TRIED.sum()+" reverse_found="+REVERSE_FOUND.sum()
             +" active="+queue[2]+" queued="+queue[3]+" rejected="+queue[1]
@@ -223,7 +226,7 @@ public final class NavigationMetrics {
             SEARCH_MAX[i].set(0);EXPANDED[i].reset();
         }
         SECTIONS.reset();DEFERRED.reset();STALE.reset();
-        CACHE_HIT.reset();CACHE_REVERSE.reset();CACHE_MISS.reset();CACHE_STALE.reset();
+        CACHE_HIT.reset();CACHE_REVERSE.reset();CACHE_MISS.reset();CACHE_EMPTY_LOOKUP_SKIPPED.reset();CACHE_STALE.reset();
         ROUTES_STORED.reset();REVERSE_TRIED.reset();REVERSE_FOUND.reset();SNAPSHOT_REUSED.reset();NO_PATH_COOLDOWN.reset();NO_PATH_FAILURES.reset();NO_PATH_BACKOFF_LEVEL2.reset();NO_PATH_BACKOFF_LEVEL3.reset();CACHE_REPLAN_DEFERRED.reset();INFLIGHT_JOINED.reset();
         SEARCH_PREEMPTED.reset();SEARCH_PREEMPTED_START.reset();SEARCH_PREEMPTED_GOAL.reset();SEARCH_PREEMPTED_MOVEMENT.reset();
         MOVING_GOAL_REQUESTS.reset();MOVING_GOAL_BURSTS.reset();
