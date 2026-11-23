@@ -238,6 +238,42 @@ class OptimizationWiring(unittest.TestCase):
         # A finite set of Forge hooks must never enable cross-tick reuse.
         self.assertIn("if (tick != nowTick)", SECTION_POOL)
 
+    def test_prechange_events_poison_sections_before_first_capture(self):
+        self.assertIn("private final Set<Long> poisonedSections", SECTION_POOL)
+        self.assertIn("private boolean poisonedWorld;", SECTION_POOL)
+        self.assertIn("poisonedSections.add(sectionKey)", SECTION_POOL)
+        self.assertIn("poisonedWorld = true;", SECTION_POOL)
+        self.assertIn("if (poisonedWorld || poisonedSections.contains(sectionKey)) return null;", SECTION_POOL)
+        self.assertIn("if (!poisonedWorld && !poisonedSections.contains(sectionKey))", SECTION_POOL)
+        self.assertIn("poisonedSections.clear();", SECTION_POOL)
+        self.assertIn("poisonedWorld = false;", SECTION_POOL)
+        self.assertIn("public synchronized boolean mayReuseSnapshots(long nowTick)", SECTION_POOL)
+        # Even if no snapshot was previously created, pre-change hints must
+        # initialize a poison ledger for this server world.
+        mutation = SNAPSHOT.split("public static void onKnownBlockMutation(", 1)[1]
+        mutation = mutation.split("public static void onKnownWorldMutation(", 1)[0]
+        self.assertIn("SECTION_POOLS.computeIfAbsent(", mutation)
+        capture = SNAPSHOT.split("public static PathWorldSnapshot capture(", 1)[1]
+        capture = capture.split("public static void onKnownBlockMutation(", 1)[0]
+        self.assertLess(capture.index("pool.mayReuseSnapshots(tick)"),
+                        capture.index("pool.begin(tick,chunkVisits)"))
+        self.assertIn("pool.isPoisoned(tick,key)", capture)
+        self.assertIn("snapshot_poisoned_bypasses=", METRICS)
+
+    def test_snapshot_publication_rejects_observed_mutation_races(self):
+        self.assertIn("public synchronized long revision(long nowTick)", SECTION_POOL)
+        self.assertIn("revision++;", SECTION_POOL)
+        capture = SNAPSHOT.split("public static PathWorldSnapshot capture(", 1)[1]
+        capture = capture.split("public static void onKnownBlockMutation(", 1)[0]
+        self.assertIn("captureRevision = pool.revision(tick);", capture)
+        self.assertIn("if(pool.revision(tick)!=captureRevision)", capture)
+        self.assertIn("NavigationMetrics.snapshotMutationRaceRejected()", capture)
+        self.assertIn("snapshot_mutation_race_rejected=", METRICS)
+        self.assertLess(capture.index("if(pool.revision(tick)!=captureRevision)"),
+                        capture.index("new WeakReference<>(result)"))
+        # A conservative epoch check must not create a new no-limits cache.
+        self.assertIn("MAX_SECTION_COPIES_PER_TICK = 1024", SNAPSHOT)
+
     def test_snapshot_reuse_only_same_tick(self):
         self.assertIn("previous.tick()==tick", SNAPSHOT)
         self.assertIn("minX>=previous.minX()", SNAPSHOT)
