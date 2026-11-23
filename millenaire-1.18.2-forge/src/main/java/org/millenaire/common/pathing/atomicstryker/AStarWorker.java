@@ -58,14 +58,16 @@ implements Runnable {
      */
     private void checkPossibleLadder(AStarNode node) throws ThreadSafeUtilities.ChunkAccessException {
         final int x = node.x, y = node.y, z = node.z;
-        if (!AStarStatic.isLadder(this.world,
-                ThreadSafeUtilities.getBlock(this.world, x, y, z), x, y, z)) return;
+        // Only vanilla ladder blocks are supported by the matching movement
+        // controller. CLIMBABLE also contains vines, which this controller
+        // must not accidentally treat as a vertical ladder route.
+        if (ThreadSafeUtilities.getBlock(this.world, x, y, z)
+                != net.minecraft.world.level.block.Blocks.LADDER) return;
         for (int direction : new int[] {1, -1}) {
             final int nextY = y + direction;
             if (nextY <= this.world.getMinBuildHeight()) continue;
-            if (!AStarStatic.isLadder(this.world,
-                    ThreadSafeUtilities.getBlock(this.world, x, nextY, z),
-                    x, nextY, z)) continue;
+            if (ThreadSafeUtilities.getBlock(this.world, x, nextY, z)
+                    != net.minecraft.world.level.block.Blocks.LADDER) continue;
             // Both feet and head must be clear. No climbing through solid ceilings.
             boolean feetClear = AStarStatic.isPassableBlock(this.world, x, nextY, z, this.config);
             boolean headClear = AStarStatic.isPassableBlock(this.world, x, nextY + 1, z, this.config);
