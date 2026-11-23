@@ -27,6 +27,22 @@ public final class PathWorldSnapshot implements BlockGetter {
             CAPTURE_INDICES = new java.util.WeakHashMap<>();
     private static final Map<ServerLevel, SnapshotSectionPool<PalettedContainer<BlockState>>>
             SECTION_POOLS = new java.util.WeakHashMap<>();
+    // Signals from KNOWN mutation callbacks only; not a universal world
+    // block-revision stream. Used to wake failed-route retries early.
+    private static final Map<ServerLevel, Long> KNOWN_MUTATION_EPOCHS =
+            new java.util.WeakHashMap<>();
+
+    public static long knownMutationEpoch(ServerLevel level) {
+        if (level == null) return 0L;
+        synchronized (SNAPSHOT_LOCK) {
+            return KNOWN_MUTATION_EPOCHS.getOrDefault(level, 0L);
+        }
+    }
+
+    private static void advanceKnownMutation(ServerLevel level) {
+        KNOWN_MUTATION_EPOCHS.put(level,
+                KNOWN_MUTATION_EPOCHS.getOrDefault(level, 0L) + 1L);
+    }
     // Max four snapshots in a tick, but never more than 256 chunk visits or
     // 1024 section copies in total. These are process-local, per-world caps.
     private static final int MAX_SNAPSHOTS_PER_TICK = 4;
@@ -161,6 +177,7 @@ public final class PathWorldSnapshot implements BlockGetter {
         int chunkX = pos.getX() >> 4, chunkZ = pos.getZ() >> 4;
         long key = SectionPos.asLong(chunkX, pos.getY() >> 4, chunkZ);
         synchronized (SNAPSHOT_LOCK) {
+            advanceKnownMutation(level);
             SnapshotSectionPool<PalettedContainer<BlockState>> pool = SECTION_POOLS.computeIfAbsent(
                     level, unused -> new SnapshotSectionPool<>(
                             MAX_SNAPSHOTS_PER_TICK, MAX_CHUNK_VISITS_PER_TICK,
@@ -186,6 +203,7 @@ public final class PathWorldSnapshot implements BlockGetter {
         if (level == null) return;
         long tick = level.getGameTime();
         synchronized (SNAPSHOT_LOCK) {
+            advanceKnownMutation(level);
             SnapshotSectionPool<PalettedContainer<BlockState>> pool = SECTION_POOLS.computeIfAbsent(
                     level, unused -> new SnapshotSectionPool<>(
                             MAX_SNAPSHOTS_PER_TICK, MAX_CHUNK_VISITS_PER_TICK,
@@ -204,6 +222,7 @@ public final class PathWorldSnapshot implements BlockGetter {
         synchronized (SNAPSHOT_LOCK) {
             CAPTURE_INDICES.remove(level);
             SECTION_POOLS.remove(level);
+            KNOWN_MUTATION_EPOCHS.remove(level);
         }
     }
 
