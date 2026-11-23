@@ -1801,13 +1801,17 @@ IAStarPathedEntity {
                     // This preserves side symmetry even for hinged double doors.
                     double panelX = door.getX() + 0.5D;
                     double panelZ = door.getZ() + 0.5D;
-                    if (BlockItemUtilities.isWoodenDoor(doorState.getBlock())) {
+                    double panelMidX = panelX, panelMidZ = panelZ;
+                    boolean woodenDoor = BlockItemUtilities.isWoodenDoor(doorState.getBlock());
+                    if (woodenDoor) {
                         var shutState = doorState.setValue(net.minecraft.world.level.block.DoorBlock.OPEN, false);
                         var panel = shutState.getCollisionShape(this.level, door).bounds();
                         panelX = org.millenaire.common.pathing.DoorApproachRules.closestPanelCoordinate(
                                 this.getX(), door.getX() + panel.minX, door.getX() + panel.maxX);
                         panelZ = org.millenaire.common.pathing.DoorApproachRules.closestPanelCoordinate(
                                 this.getZ(), door.getZ() + panel.minZ, door.getZ() + panel.maxZ);
+                        panelMidX = door.getX() + (panel.minX + panel.maxX) * 0.5D;
+                        panelMidZ = door.getZ() + (panel.minZ + panel.maxZ) * 0.5D;
                     }
                     double ox = panelX - this.getX();
                     double oz = panelZ - this.getZ();
@@ -1846,7 +1850,23 @@ IAStarPathedEntity {
                     boolean hitBlock = hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK;
                     boolean hitDoor = hit.getBlockPos().equals(door)
                             || hit.getBlockPos().equals(door.above());
-                    if (!org.millenaire.common.pathing.DoorApproachRules.clearSight(hitBlock, hitDoor)) continue;
+                    if (!org.millenaire.common.pathing.DoorApproachRules.clearSight(hitBlock, hitDoor)) {
+                        // A ray to the nearest panel corner may graze a solid
+                        // door frame. Test the MIDDLE of the actual door panel
+                        // as a second sight line. A wall blocks both; do not
+                        // apply this relaxation to fence gates.
+                        if (!woodenDoor) continue;
+                        Vec3 panelMiddle = new Vec3(panelMidX, door.getY() + 0.9D, panelMidZ);
+                        var centerHit = this.level.clip(new net.minecraft.world.level.ClipContext(
+                                from, panelMiddle,
+                                net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                                net.minecraft.world.level.ClipContext.Fluid.NONE, this));
+                        boolean centerBlocked = centerHit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK;
+                        boolean centerOnDoor = centerHit.getBlockPos().equals(door)
+                                || centerHit.getBlockPos().equals(door.above());
+                        if (!org.millenaire.common.pathing.DoorApproachRules.clearSight(
+                                centerBlocked, centerOnDoor)) continue;
+                    }
 
                     if (!closed) {
                         // Renew only while approaching the original CLOSED
