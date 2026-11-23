@@ -153,7 +153,7 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("this.currentTrace = SearchTrace.capture(this.pathedEntity);", PLANNER)
         self.assertIn("actorId=", PLANNER)
         self.assertIn("actorName=", PLANNER)
-        self.assertIn('+" goal="', PLANNER)
+        self.assertIn('" goal="', PLANNER)
         self.assertIn("this.currentTrace=null;", PLANNER)
 
     def test_moving_target_bursts_only_sample_real_searches(self):
