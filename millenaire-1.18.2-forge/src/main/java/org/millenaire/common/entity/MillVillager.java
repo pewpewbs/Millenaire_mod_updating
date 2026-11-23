@@ -859,14 +859,17 @@ IAStarPathedEntity {
     private List<Node> computeNewPath(Point dest) {
         this.pathCalculatedSinceLastTick = null;
         this.pathFailedSincelastTick = false;
-        if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
+        // NAV-OPT-09: do not cancel a still-running route before checking
+        // whether the request is IDENTICAL. The planner owns that decision.
         block9: {
             if (this.getPos().sameBlock(dest)) {
+                if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
                 return null;
             }
             try {
                 Goal goal;
                 if (this.goalKey != null && Goal.goals.containsKey(this.goalKey) && (goal = Goal.goals.get(this.goalKey)).isWithinActionRange(this, this.getPathDestPoint())) {
+                    if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
                     return null;
                 }
                 // PRIMARY: try the Millenaire snapshot-based A*/JPS route first.
@@ -899,7 +902,8 @@ IAStarPathedEntity {
                     }
                     this.pathPlannerJPS.getPath(this.doubleToInt(this.getX()), this.doubleToInt(this.getY()), this.doubleToInt(this.getZ()), destNode.x, destNode.y, destNode.z, this.getPathingConfig());
                     if (this.pathPlannerJPS.isBusy()) {
-                        this.logRouteDecision("ASTAR-SEARCH", dest);
+                        this.logRouteDecision(this.pathPlannerJPS.hadJoinedSearch()
+                                ? "ASTAR-JOIN" : "ASTAR-SEARCH", dest);
                     } else if (this.pathPlannerJPS.hadImmediatePath()) {
                         // A validated cached route has been delivered without
                         // submitting another expensive worker search.
@@ -914,11 +918,13 @@ IAStarPathedEntity {
                         this.onNoPathAvailable();
                     }
                 } else {
+                    if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
                     this.logRouteDecision("ASTAR-NO-ACCESS", dest);
                     this.onNoPathAvailable();
                 }
             }
             catch (ThreadSafeUtilities.ChunkAccessException e) {
+                if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
                 this.onNoPathAvailable();
                 if (MillConfigValues.LogChunkLoader >= 2) {
                     MillLog.minor(this, "Chunk access violation while calculating path.");
