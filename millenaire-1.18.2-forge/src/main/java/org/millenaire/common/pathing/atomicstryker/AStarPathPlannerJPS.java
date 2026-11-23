@@ -395,6 +395,13 @@ public class AStarPathPlannerJPS {
             this.failedOptions = routeOptions(this.config);
             this.failedRetryTick = this.world.getGameTime() + 20L
                     + Math.floorMod(System.identityHashCode(this), 7);
+            if (MillConfigValues.LogPathing >= 2) {
+                // Report once when a real NO_PATH is observed, rather than
+                // logging each of its suppressed retries.
+                MillLog.major(null, "NAV-OPT-COOLDOWN action=NO_PATH"
+                        + " from=" + this.failedStart + " to=" + this.failedEnd
+                        + " retryTick=" + this.failedRetryTick);
+            }
         }
         if(this.pathedEntity!=null) {
             if(result==null)this.pathedEntity.onNoPathAvailable();
