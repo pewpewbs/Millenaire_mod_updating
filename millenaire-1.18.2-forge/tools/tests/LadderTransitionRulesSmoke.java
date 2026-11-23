@@ -48,6 +48,54 @@ public final class LadderTransitionRulesSmoke {
                 "negative approach bounded");
         test(Math.abs(LadderTransitionRules.approachSpeed(0.0D)) < 0.0001D,
                 "no unwanted horizontal drift at ladder");
-        System.out.println("PASS: ladder edges and vertical climb assistance");
+        // LADDER-03 reproduction: the current rung lies below the villager
+        // after a small overshoot, but the next rung is still ABOVE it.
+        test(LadderTransitionRules.routeDirection(61, true, 62, 63, true) == 1,
+                "ascending despite negative local dy to rung 62");
+        test(LadderTransitionRules.routeDirection(63, true, 62, 61, true) == -1,
+                "descending through consecutive rungs");
+        test(LadderTransitionRules.routeDirection(61, true, 62, 62, false) == 1,
+                "last ascent rung before the platform");
+        test(LadderTransitionRules.routeDirection(63, true, 62, 62, false) == -1,
+                "last descent rung");
+        test(LadderTransitionRules.routeDirection(62, false, 62, 62, false) == 0,
+                "unconnected ladder node must not invent a climb direction");
+        test(LadderTransitionRules.routeDirection(61, true, 62, 61, true) == -1,
+                "upcoming rung takes precedence at a route reversal");
+
+        test(LadderTransitionRules.reachedRung(1, 62.31D, 62, 0.04D),
+                "upward rung reached after slight overshoot");
+        test(!LadderTransitionRules.reachedRung(1, 61.90D, 62, 0.04D),
+                "do not advance upward before actual height reached");
+        test(LadderTransitionRules.reachedRung(-1, 62.50D, 62, 0.04D),
+                "descending rung reached at its safe midpoint");
+        test(!LadderTransitionRules.reachedRung(-1, 62.70D, 62, 0.04D),
+                "do not advance descending rung too early");
+        test(!LadderTransitionRules.reachedRung(1, 62.31D, 62, 0.40D),
+                "off-center body may not skip rung");
+
+        test(LadderTransitionRules.shouldClimb(1, true, true, false, 0.03D),
+                "upward movement comes from positive route direction");
+        test(LadderTransitionRules.shouldClimb(-1, true, true, false, 0.03D),
+                "downward movement only on descending route");
+        test(!LadderTransitionRules.shouldClimb(1, true, true, true, 0.03D),
+                "do not over-climb an already reached rung");
+        test(!LadderTransitionRules.shouldClimb(1, false, true, false, 0.03D),
+                "do not lift from off-shaft position");
+        test(!LadderTransitionRules.shouldClimb(1, true, false, false, 0.03D),
+                "do not lift without actual ladder contact");
+
+        test(LadderTransitionRules.needsTopOut(true, true, 67, 68, 67.30D, 0.05D),
+                "climb the last block to upper landing");
+        test(!LadderTransitionRules.needsTopOut(true, true, 67, 68, 68.10D, 0.05D),
+                "hand back control after clearing the upper lip");
+        test(!LadderTransitionRules.needsTopOut(true, false, 67, 68, 67.30D, 0.05D),
+                "do not float above a ladder after contact is lost");
+        test(!LadderTransitionRules.needsTopOut(true, true, 67, 66, 66.30D, 0.05D),
+                "do not top-out a downward exit");
+        test(!LadderTransitionRules.needsTopOut(false, true, 67, 68, 67.30D, 0.05D),
+                "ordinary path must not trigger ladder exit assist");
+
+        System.out.println("PASS: ladder route direction, rung progression, exit and contact");
     }
 }
