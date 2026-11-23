@@ -17,6 +17,7 @@ WORKER = read("pathing/atomicstryker/AStarWorker.java")
 VILLAGER = read("entity/MillVillager.java")
 SNAPSHOT = read("pathing/PathWorldSnapshot.java")
 SECTION_POOL = read("pathing/SnapshotSectionPool.java")
+EVENTS = read("forge/MillEventController.java")
 METRICS = read("pathing/NavigationMetrics.java")
 MEMORY = read("pathing/RouteMemory.java")
 REQUEST = read("pathing/NavigationRequestKey.java")
@@ -206,6 +207,36 @@ class OptimizationWiring(unittest.TestCase):
         self.assertNotIn("palette.copy()", ctor)
         self.assertIn("snapshot_shared_sections=", METRICS)
         self.assertIn("snapshot_additional_captures=", METRICS)
+
+    def test_known_world_changes_invalidate_same_tick_sections_without_refunding_quota(self):
+        self.assertIn("public synchronized boolean invalidateSection(long nowTick, long sectionKey)", SECTION_POOL)
+        self.assertIn("public synchronized int invalidateAll(long nowTick)", SECTION_POOL)
+        self.assertIn("sections.remove(sectionKey)", SECTION_POOL)
+        self.assertIn("sections.clear();", SECTION_POOL)
+        invalid = SECTION_POOL.split("public synchronized int invalidateAll(", 1)[1]
+        invalid = invalid.split("public synchronized int usedCopies()", 1)[0]
+        self.assertNotIn("copies = 0;", invalid)
+        self.assertNotIn("snapshots = 0;", invalid)
+        self.assertIn("public static void onKnownBlockMutation(ServerLevel level, BlockPos pos)", SNAPSHOT)
+        self.assertIn("public static void onKnownWorldMutation(ServerLevel level)", SNAPSHOT)
+        self.assertIn("pool.invalidateSection(tick, key)", SNAPSHOT)
+        self.assertIn("pool.invalidateAll(tick)", SNAPSHOT)
+        self.assertIn("new WeakReference<>(null)", SNAPSHOT)
+
+    def test_forge_mutation_hooks_are_registered_and_diagnostic(self):
+        for kind in ("BlockEvent.EntityPlaceEvent", "BlockEvent.BreakEvent",
+                     "BlockEvent.FluidPlaceBlockEvent", "BlockEvent.CropGrowEvent.Post",
+                     "PistonEvent.Post", "ChunkEvent.Load", "ChunkEvent.Unload",
+                     "WorldEvent.Unload"):
+            self.assertIn(kind, EVENTS)
+        self.assertIn("PathWorldSnapshot.onKnownBlockMutation", EVENTS)
+        self.assertIn("PathWorldSnapshot.onKnownWorldMutation", EVENTS)
+        self.assertIn("PathWorldSnapshot.onWorldUnload", EVENTS)
+        self.assertIn("snapshot_known_sections_invalidated=", METRICS)
+        self.assertIn("snapshot_known_captures_invalidated=", METRICS)
+        self.assertIn("onWorldUnload(ServerLevel level)", SNAPSHOT)
+        # A finite set of Forge hooks must never enable cross-tick reuse.
+        self.assertIn("if (tick != nowTick)", SECTION_POOL)
 
     def test_snapshot_reuse_only_same_tick(self):
         self.assertIn("previous.tick()==tick", SNAPSHOT)
