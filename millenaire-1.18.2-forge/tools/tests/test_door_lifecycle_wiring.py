@@ -59,5 +59,17 @@ class DoorLifecycleWiring(unittest.TestCase):
 
 
 
+    def test_stuck_wooden_door_scanner_has_bounded_retry(self):
+        self.assertIn("DoorApproachRules.suppressStationaryScannerReopen(", VILLAGER)
+        self.assertIn("boolean woodenCandidate =", VILLAGER)
+        self.assertIn("boolean repeatedWithoutProgress = woodenCandidate", VILLAGER)
+        self.assertIn('DOOR-SCANNER-SUPPRESSED door=', VILLAGER)
+
+    def test_stall_diagnostics_show_route_nodes(self):
+        self.assertIn("private String doorRoutePreview(Path route)", VILLAGER)
+        self.assertIn('" next=" + this.doorRoutePreview(route)', VILLAGER)
+
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
