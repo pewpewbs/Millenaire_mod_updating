@@ -25,13 +25,24 @@ public final class PathWorldSnapshot implements BlockGetter {
     private record Capture(long tick, int minX, int maxX, int minZ, int maxZ,
                            WeakReference<PathWorldSnapshot> snapshot) {}
     private static final Map<ServerLevel, Capture> LAST_CAPTURE = new java.util.WeakHashMap<>();
+    private static final Map<ServerLevel, SnapshotSectionPool<PalettedContainer<BlockState>>>
+            SECTION_POOLS = new java.util.WeakHashMap<>();
+    // Max four snapshots in a tick, but never more than 256 chunk visits or
+    // 1024 section copies in total. These are process-local, per-world caps.
+    private static final int MAX_SNAPSHOTS_PER_TICK = 4;
+    private static final int MAX_CHUNK_VISITS_PER_TICK = 256;
+    private static final int MAX_SECTION_COPIES_PER_TICK = 1024;
     private final Map<Long, PalettedContainer<BlockState>> sections;
     private final Set<Long> chunks;
     private final int minHeight, height;
-    PathWorldSnapshot(Map<Long, PalettedContainer<BlockState>> source, Set<Long> loaded, int min, int height) {
-        Map<Long, PalettedContainer<BlockState>> copied = new HashMap<>();
-        source.forEach((key, palette) -> copied.put(key, palette.copy()));
-        this.sections = Map.copyOf(copied); this.chunks = Set.copyOf(loaded);
+    /**
+     * Values are ALREADY detached copies created on the server thread. Never
+     * copy again here: several snapshots may share these read-only palettes.
+     * No worker mutates the palettes.
+     */
+    PathWorldSnapshot(Map<Long, PalettedContainer<BlockState>> detached,
+                      Set<Long> loaded, int min, int height) {
+        this.sections = Map.copyOf(detached); this.chunks = Set.copyOf(loaded);
         this.minHeight = min; this.height = height;
     }
     public static PathWorldSnapshot capture(ServerLevel level, AStarNode start, AStarNode end) {
@@ -48,34 +59,64 @@ public final class PathWorldSnapshot implements BlockGetter {
             NavigationMetrics.deferred();
             return null;
         }
+        int chunkVisits = (maxX - minX + 1) * (maxZ - minZ + 1);
+        SnapshotSectionPool<PalettedContainer<BlockState>> pool;
+        boolean secondSnapshotInTick;
         synchronized(LAST_CAPTURE) {
             Capture previous=LAST_CAPTURE.get(level);
-            if(previous!=null && previous.tick()==tick) {
+            secondSnapshotInTick = previous!=null && previous.tick()==tick;
+            if(secondSnapshotInTick) {
                 PathWorldSnapshot shared=previous.snapshot().get();
                 if(shared!=null && minX>=previous.minX() && maxX<=previous.maxX()
                         && minZ>=previous.minZ() && maxZ<=previous.maxZ()) {
                     NavigationMetrics.snapshotReused();
                     return shared;
                 }
+            }
+            pool = SECTION_POOLS.computeIfAbsent(level, unused -> new SnapshotSectionPool<>(
+                    MAX_SNAPSHOTS_PER_TICK, MAX_CHUNK_VISITS_PER_TICK,
+                    MAX_SECTION_COPIES_PER_TICK));
+            if(!pool.begin(tick,chunkVisits)) {
                 NavigationMetrics.snapshotBudgetDeferred();
                 return null;
             }
             LAST_CAPTURE.put(level,new Capture(tick,minX,maxX,minZ,maxZ,
                     new WeakReference<>(null)));
         }
-        Map<Long, PalettedContainer<BlockState>> source = new HashMap<>();
+        Map<Long, PalettedContainer<BlockState>> detached = new HashMap<>();
         Set<Long> loaded = new HashSet<>();
+        int reusedSections = 0;
+        int copiedSections = 0;
         for(int x=minX;x<=maxX;x++) for(int z=minZ;z<=maxZ;z++) {
             var chunk = level.getChunkSource().getChunkNow(x,z);
             if(chunk==null) continue; // Never load/generate a chunk for a background search.
             loaded.add(ChunkPos.asLong(x,z));
             var sections=chunk.getSections();
             for(int i=0;i<sections.length;i++) if(!sections[i].hasOnlyAir()) {
-                if(source.size()>=1024){NavigationMetrics.snapshotSectionRejected();NavigationMetrics.deferred();return null;}
-                source.put(SectionPos.asLong(x,level.getSectionYFromSectionIndex(i),z),sections[i].getStates());
+                if(detached.size()>=1024) {
+                    NavigationMetrics.snapshotSectionRejected();
+                    NavigationMetrics.deferred();
+                    return null;
+                }
+                long key = SectionPos.asLong(x,level.getSectionYFromSectionIndex(i),z);
+                PalettedContainer<BlockState> source = sections[i].getStates();
+                PalettedContainer<BlockState> copy = pool.get(tick,key,source);
+                if(copy==null) {
+                    if(!pool.canCopy(tick)) {
+                        NavigationMetrics.snapshotSectionRejected();
+                        NavigationMetrics.deferred();
+                        return null;
+                    }
+                    copy = source.copy();  // exactly once per section per tick
+                    pool.remember(tick,key,source,copy);
+                    copiedSections++;
+                } else {
+                    reusedSections++;
+                }
+                detached.put(key,copy);
             }
         }
-        var result=new PathWorldSnapshot(source,loaded,level.getMinBuildHeight(),level.getHeight());
+        var result=new PathWorldSnapshot(detached,loaded,level.getMinBuildHeight(),level.getHeight());
         synchronized(LAST_CAPTURE) {
             Capture pending=LAST_CAPTURE.get(level);
             if(pending!=null && pending.tick()==tick) {
@@ -83,7 +124,10 @@ public final class PathWorldSnapshot implements BlockGetter {
                         new WeakReference<>(result)));
             }
         }
-        NavigationMetrics.sections(source.size());NavigationMetrics.record(1,System.nanoTime()-began);
+        NavigationMetrics.sections(copiedSections);
+        NavigationMetrics.snapshotSectionsReused(reusedSections);
+        if(secondSnapshotInTick) NavigationMetrics.snapshotAdditionalCaptured();
+        NavigationMetrics.record(1,System.nanoTime()-began);
         return result;
     }
     /**
