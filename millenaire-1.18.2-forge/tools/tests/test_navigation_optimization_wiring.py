@@ -86,6 +86,8 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("no_path_failures=", METRICS)
         self.assertIn("no_path_backoff_level2=", METRICS)
         self.assertIn("no_path_backoff_level3=", METRICS)
+        self.assertIn("no_path_failures_s=", WINDOW)
+        self.assertIn("NO_PATH_FAILURES.sum(),", METRICS)
 
     def test_no_path_wakeup_uses_known_world_mutation_epochs(self):
         self.assertIn("knownMutationEpoch(ServerLevel level)", SNAPSHOT)
