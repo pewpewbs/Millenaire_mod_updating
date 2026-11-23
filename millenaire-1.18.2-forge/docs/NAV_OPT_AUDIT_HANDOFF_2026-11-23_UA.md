@@ -976,3 +976,66 @@ Whole-file explicit counts: `NAV-OPT-COOLDOWN action=NO_PATH` **48**; 47 `level=
 
 **Статус змін після цього логу:** лише аналіз і запис аудиту; програмний код NAV-OPT-16 ще не змінено. Повна Gradle консоль, Python wiring tests/Java smoke й профіль TPS від користувача не надані. Якщо користувач просить продовжувати оптимізацію, застосовувати зміни лише в робочій гілці, документувати тестування й залишити геометрію для іншої моделі.
 
+
+
+## 23. NAV-OPT-17 — причини скидання NO_PATH backoff, без зміни політики руху
+
+**Дата:** 23.11.2026. Після двох Minecraft playtest (розділи 20, 22) користувач запитав «що далі?», і наступним пріоритетом призначено **діагностику reset causes**, а НЕ інтенсивніше обмеження NPC. Зміни тільки у гілці `fix/villager-door-access-and-village-territory`; `main` НЕ змінено. Проблеми фізичної геометрії дверей, сходинок, плит, спусків по драбині, `ENDPOINT_MISMATCH` відкладені для окремої сильнішої моделі.
+
+### 23.1. Доказ із останнього playtest NAV-OPT-16
+
+У `latest(20261123-213627).log` (~8 хв 33 с, див. §22) зафіксовано `no_path_failures=48`, `no_path_backoff_level2=1`, `no_path_backoff_level3=0`, `no_path_cooldown=60`. Фактичні причини reset **НЕ** можна дістати з цього логу: `FailedRouteBackoff` до NAV-OPT-17 мав один `clear()` на різні ситуації. Нова логіка NAV-OPT-16 обмежує backoff до 80–86 game ticks; якщо `KNOWN_MUTATION_EPOCHS` змінюється у **будь-якій** частині світу, усі recorded failures цього світу можуть скинутися. Це **гіпотеза** про малу кількість level2/3, не доведена причина. Зміна стартової координати, параметрів руху, справжній success або просто завершення retry timer також мають відмінні семантики.
+
+### 23.2. Що реалізовано
+
+1. **`FailedRouteBackoff.java`**: збережено `BASE_DELAY_TICKS=20`, `MAX_DELAY_TICKS=80`, `MAX_LEVEL=3`, той самий jitter 0–6, повне порівняння `NavigationRequestKey(start,goal,movement)`, bypass для нової цілі та для known mutation, reset на tick rewind і на success. Додано **опціонального `Consumer<Event>` observer** (стандартний конструктор — no-op) та `enum Event`:
+   - `RESET_START_CHANGED` — змінився start, навіть якщо goal теж змінився (пріоритет категорій: start → goal → movement);
+   - `RESET_GOAL_CHANGED` — start той самий, але інший goal;
+   - `RESET_MOVEMENT_CHANGED` — обидві координати ті самі, але інша політика / tolerance;
+   - `RESET_WORLD_MUTATED` — змінилася відома per-world mutation epoch, у `shouldDefer` АБО між worker search і `onFailed`;
+   - `RESET_TICK_REWIND` — game time повернувся перед `failureTick`;
+   - `RESET_SUCCESS` — реальний маршрут успішно знайдено, **лише** коли існувала recorded failure;
+   - `RETRY_EXPIRED` — **не reset**, а один запис про факт закінчення backoff timer (один раз на кожен recorded failure, за `expiryReported`).
+2. `reset(Event)` інкрементує observer **лише при `lastFailure != null`**. Інакше на багато звичайних успішних пошуків та `clear()` приходили б хибні reset counters. `onFailed` перевіряє ті самі причини (different key, rewind, mutation), бо світ може змінитися, поки worker був у черзі, тобто `shouldDefer` міг НЕ викликатися між двома failures. Обробник `onRequest` скидає failure **до** нового work, не затримує нову задачу.
+3. `AStarPathPlannerJPS` створює `new FailedRouteBackoff(NavigationMetrics::noPathBackoffEvent)` і на успішне отримання `result != null` викликає `onSuccess()`, замість неінструментованого `clear()`. Це **лише observability**, A* / JPS геометрія і порядок fallback НЕ змінені.
+4. `NavigationMetrics` має 7 `LongAdder` у bounded array, індексованому `FailedRouteBackoff.Event.ordinal()`, із diagnostics:
+   - `no_path_reset_start`
+   - `no_path_reset_goal`
+   - `no_path_reset_movement`
+   - `no_path_reset_world`
+   - `no_path_reset_rewind`
+   - `no_path_reset_success`
+   - `no_path_retry_expired`
+
+   Вони виводяться у звичайному `NAV-OPT-STATS` раз на ~200 game ticks при наявності активних запитів; не генерують додатковий per-tick spam. `NavigationMetrics.reset()` обнуляє весь новий набір.
+5. **Тести:** новий `tools/tests/FailedRouteBackoffEventsSmoke.java` (event-only tests: not resetting before first failure, exact start/goal/movement reason, world mutation під час tick і під час іншої busy search, rewind, success, одноразовий expiry, відсутність змін backoff level), існуючий `FailedRouteBackoffSmoke.java` збережено сумісним за API. `tools/tests/test_navigation_optimization_wiring.py` приведено до нового `onSuccess`, observer і семантики окремих `if`, додано **3** структурні guard-тести, загалом **33**.
+
+### 23.3. Перевірки на момент збереження
+
+Через GitHub connector після змін перечитано всі зазначені файли та виконано **18 окремих статичних source-consistency перевірок**, усі **PASS** (enum, bounded backoff, consumer no-op/default, observer інкрементує лише після failure, one-shot timer expiry, distinct reset paths, planner wiring, всі 7 report fields, metrics reset, backward API compatibility, Java smoke presence, 33 source tests). **Це НЕ є** виконаний `javac`/Gradle/Python/Minecraft тест. Навігаційний профіль і actual speedup від NAV-OPT-17 не заявляти; цей етап принципово діагностичний.
+
+**Коміти:**
+- `76410dc` — `FailedRouteBackoff`: reset causes і expiry counter;
+- `dff32a2` — `AStarPathPlannerJPS`: collector callback і onSuccess;
+- `8012371` — `NavigationMetrics`: 7 counters у runtime stats;
+- `715e66f` — `FailedRouteBackoffEventsSmoke.java`;
+- `210ee01` — 33 Python source regression tests.
+
+### 23.4. Наступна реальна перевірка
+
+З кореня `Millenaire_mod_updating`:
+```powershell
+git pull --ff-only origin fix/villager-door-access-and-village-territory
+.\Update-Millenaire.bat
+py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_optimization_wiring.py
+cd .\millenaire-1.18.2-forge
+javac --release 17 -d build/nav-failure-events-smoke src/main/java/org/millenaire/common/pathing/NavigationRequestKey.java src/main/java/org/millenaire/common/pathing/FailedRouteBackoff.java tools/tests/FailedRouteBackoffEventsSmoke.java
+java -cp build/nav-failure-events-smoke FailedRouteBackoffEventsSmoke
+```
+
+Рекомендується реальна гра 5–10 хв у активному поселенні, той самий світ і подібні NPC tasks. У новому `latest.log` зіставити **`no_path_reset_world`** із `no_path_reset_start/goal/movement`, `no_path_reset_success`, `no_path_retry_expired`, кількістю `no_path_failures`, `no_path_backoff_level2/level3`, `no_path_failures_s`, JPS/A* time та queue average. `RESET_WORLD_MUTATED` може приходити від далекого блоку чи chunk event; до отримання статистики **не** вводити spatial filtering за start/goal, бо далека зміна може відкрити новий шлях. `RETRY_EXPIRED` — дозвіл на новий пошук, не reset; рівень не скидається. Умови світу в сесіях різні, тому фіксувати кореляції, а не стверджувати прискорення на %.
+
+### 23.5. Що досліджувати далі після NAV-OPT-17
+
+Якщо `no_path_reset_world` домінує, потрібні **безпечно обмежені просторові mutation evidence** (bounding rectangles / chunk corridor, unloaded chunks and epoch) із гарантією, що мутації за межами corridor не відкривають альтернативний маршрут. Без такої гарантії коректніше обмежити cooldown і лишити слабший hit rate. Якщо домінує `no_path_reset_start`, причина може бути коливання start node через рух/Vanilla fallback, а не world changes; тоді зміни стосуються правил визначення stable start, **але не** грубого об'єднання координат або ігнорування висоти. Якщо часті `RESET_GOAL_CHANGED`, розібрати scheduler tasks та resource delivery. Якщо `RETRY_EXPIRED` є, але level2/3 нема, потрібна перевірка черги, успішного fallback й переривань. Геометричні проблеми іншої моделі і `main` залишити недоторканими.
+
