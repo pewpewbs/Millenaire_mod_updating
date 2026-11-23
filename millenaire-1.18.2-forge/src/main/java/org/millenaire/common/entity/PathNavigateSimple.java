@@ -5,6 +5,7 @@ import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 public class PathNavigateSimple extends GroundPathNavigation {
     private org.millenaire.common.pathing.DetourPathFinder detourPathFinder;
+    private long nextLadderTraceTick;
     public PathNavigateSimple(Mob mob, Level level) {
         super(mob, level);
         setCanOpenDoors(true);
@@ -82,6 +83,19 @@ public class PathNavigateSimple extends GroundPathNavigation {
         }
         this.mob.setDeltaMovement(vx, vy, vz);
         this.mob.hasImpulse = true;
+        // Log only when requested and at most once per 100 ticks for this
+        // navigator. Distinguishes route-selection failures from failed
+        // physical climbing in the Minecraft playtest log.
+        if (org.millenaire.common.config.MillConfigValues.LogPathing >= 2
+                && this.mob.level.getGameTime() >= this.nextLadderTraceTick) {
+            this.nextLadderTraceTick = this.mob.level.getGameTime() + 100L;
+            org.millenaire.common.utilities.MillLog.major(this.mob,
+                    "LADDER-ASSIST next=" + rung + " feet=" + feet
+                    + " dy=" + String.format(java.util.Locale.ROOT, "%.2f", dy)
+                    + " sameColumn=" + sameColumn
+                    + " contact=" + ladderContact
+                    + " velocityY=" + String.format(java.util.Locale.ROOT, "%.2f", vy));
+        }
     }
 
     @Override public boolean moveTo(Path requested, double speed) {
