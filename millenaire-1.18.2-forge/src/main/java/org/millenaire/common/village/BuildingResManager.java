@@ -415,6 +415,24 @@ public class BuildingResManager {
         Level level = this.building.world;
         if (!Blocks.ACACIA_SAPLING.defaultBlockState().canSurvive(level, pos)) return false;
 
+        // Legacy Byzantine groves place saplings only four blocks apart.
+        // A surviving neighbour can obstruct the next tree's trunk or crown.
+        // Check only recorded planting markers (bounded per grove), avoiding a
+        // costly cubic scan or any changes to player-placed blocks.
+        for (Point other : this.woodspawn) {
+            if (other.equals(plantingPoint)
+                    || !"acaciaspawn".equals(this.woodspawnTypes.get(other))) continue;
+            int dx = other.getiX() - plantingPoint.getiX();
+            int dz = other.getiZ() - plantingPoint.getiZ();
+            if (dx * dx + dz * dz >= 25
+                    || Math.abs(other.getiY() - plantingPoint.getiY()) > 2) continue;
+            net.minecraft.core.BlockPos otherPos = other.getBlockPos();
+            if (!level.hasChunkAt(otherPos)) return false;
+            Block neighbour = level.getBlockState(otherPos).getBlock();
+            if (neighbour == Blocks.ACACIA_SAPLING || neighbour == Blocks.ACACIA_LOG
+                    || neighbour == Blocks.ACACIA_WOOD) return false;
+        }
+
         // Acacia needs a clear vertical trunk and room for the spreading
         // crown. Leaves and replaceable plants may be displaced by worldgen,
         // but solid roof/wood/stone blocks prevent even bonemeal growth.
