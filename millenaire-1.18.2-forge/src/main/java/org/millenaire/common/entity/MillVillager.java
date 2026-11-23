@@ -711,6 +711,12 @@ IAStarPathedEntity {
                 MillLog.minor(this, "Goal destination: " + this.getGoalDestPoint() + "/" + this.getGoalDestEntity());
             }
         } else if (goal.isWithinActionRange(this, target)) {
+            // tick() resets stopMoving before checkGoals(). Preserve the
+            // construction pause on EVERY active work tick, not only the
+            // first one, otherwise builders continue paddling in water.
+            if (goal == Goal.construction && this.actionStart != 0L) {
+                this.stopMoving = goal.stopMovingWhileWorking();
+            }
             if (this.actionStart == 0L) {
                 this.stopMoving = goal.stopMovingWhileWorking();
                 this.actionStart = this.level.getGameTime();
