@@ -95,7 +95,7 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("NavigationMetrics.noPathCooldown()", PLANNER)
         self.assertIn("this.failedRouteBackoff.onFailed(failed,", PLANNER)
         self.assertIn("this.failedRouteBackoff.onSuccess();", PLANNER)
-        self.assertIn("new NavigationRequestKey", REQUEST)
+        self.assertIn("record NavigationRequestKey(", REQUEST)
 
     def test_adaptive_no_path_backoff_is_capped_and_policy_sensitive(self):
         self.assertIn("private static final long BASE_DELAY_TICKS = 20L;", FAILED_BACKOFF)
