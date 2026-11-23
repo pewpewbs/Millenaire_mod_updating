@@ -18,6 +18,8 @@ VILLAGER = read("entity/MillVillager.java")
 SNAPSHOT = read("pathing/PathWorldSnapshot.java")
 METRICS = read("pathing/NavigationMetrics.java")
 MEMORY = read("pathing/RouteMemory.java")
+REQUEST = read("pathing/NavigationRequestKey.java")
+EXECUTOR = read("pathing/atomicstryker/PathSearchExecutor.java")
 
 class OptimizationWiring(unittest.TestCase):
     def test_route_cache_always_checks_current_world(self):
@@ -88,6 +90,44 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("rejectedFrom = from;", cache)
         self.assertIn("if (!timedOut)", cache)
         self.assertIn('"NAV-OPT-COOLDOWN action=NO_PATH"', PLANNER)
+
+    def test_inflight_identical_work_is_not_canceled(self):
+        method = PLANNER.split("public synchronized void getPath(AStarNode start,AStarNode end,AStarConfig settings)", 1)[1]
+        method = method.split("private void submit(boolean classic)", 1)[0]
+        same = method.index("requested.equals(this.activeRequest)")
+        cancel = method.index("stopPathSearch(true);")
+        self.assertLess(same, cancel)
+        self.assertIn("this.busy && requested.equals(this.activeRequest)", method)
+        self.assertIn("NavigationMetrics.inflightJoined()", method)
+        self.assertIn("this.joinedSearch = true", method)
+        self.assertIn("this.activeRequest = requested", method)
+        self.assertIn("this.activeRequest=null", PLANNER)
+        self.assertIn("this.activeRequest = null;", PLANNER)
+        self.assertIn("inflight_joined=", METRICS)
+
+    def test_villager_does_not_preempt_coalescing_but_cancels_no_goal(self):
+        start = VILLAGER.index("private List<Node> computeNewPath(Point dest)")
+        body = VILLAGER[start:VILLAGER.index("public int countInv(Block block", start)]
+        self.assertIn('this.pathPlannerJPS.hadJoinedSearch()', body)
+        self.assertIn('"ASTAR-JOIN"', body)
+        # No unconditional cancellation before the planner compares requests.
+        prelude = body.split("block9: {",1)[0]
+        self.assertNotIn("stopPathSearch(true)", prelude)
+        # A destination already reached, goal action range, or no-access
+        # still cancels a pending, now-obsolete worker.
+        self.assertGreaterEqual(body.count("stopPathSearch(true)"), 4)
+
+    def test_background_queue_metrics_and_bounded_fifo_unchanged(self):
+        self.assertIn("new ArrayBlockingQueue<>(64)", EXECUTOR)
+        self.assertIn("new ThreadPoolExecutor(", EXECUTOR)
+        self.assertIn("2, 2, 30, TimeUnit.SECONDS", EXECUTOR)
+        self.assertIn("queueWaitNanos", EXECUTOR)
+        self.assertIn("maxQueueWaitNanos", EXECUTOR)
+        self.assertIn("POOL.remove(future)", EXECUTOR)
+        self.assertIn("queue_wait_avg_ms=", METRICS)
+        self.assertIn("queue_wait_max_ms=", METRICS)
+        self.assertIn("record NavigationRequestKey(", REQUEST)
+        self.assertIn("record Movement(", REQUEST)
 
     def test_snapshot_reuse_only_same_tick(self):
         self.assertIn("previous.tick()==tick", SNAPSHOT)
