@@ -236,3 +236,15 @@ py -3 tools/tests/test_navigation_optimization_wiring.py
 4. Зібрати `latest.log` і порівняти прирости лічильників за **однакові 60 с**, а не тільки підсумки різної довжини сесій; вимірювання TPS потрібне окремо.
 5. Двері `DOOR-BLOCKED` і телепортації залишаються окремим незакритим напрямком `DOOR-15`; жоден з NAV-OPT-07 не змінює обробник дверей.
 
+
+## 10.4. NAV-OPT-07: локальна перевірка 9/9
+
+**Джерело:** скриншот PowerShell, наданий користувачем 23.11.2026. Команда виконана з кореня репозиторію з явним шляхом до тесту:
+
+```powershell
+py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_optimization_wiring.py
+```
+
+**Фактичний результат:** `Ran 9 tests in 0.001s` / `OK`. Усі дев'ять позначено `ok`, включно з новим `test_identical_cached_routes_are_throttled_without_blocking_new_goals`, перевірками лімітів кешу, зворотних маршрутів, поточного світу, відкладених запитів, метрик та snapshot reuse.
+
+**Межі підтвердження:** це Python source-level wiring-тести. Немає наданого завершального виводу `BUILD SUCCESSFUL` для NAV-OPT-07 та немає нового Minecraft `latest.log` після цього патча. Наступний етап: завершення `Update-Millenaire.bat`, перевірка фактичного встановлення JAR та 3–5 хвилин гри; у журналі очікується поле `cache_replan_deferred`, зіставити повтори `NAV-OPT-CACHE`, `DOOR-BLOCKED`, `NAV-TELEPORT` і `LADDER-ASSIST direction=-1`.
