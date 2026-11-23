@@ -253,6 +253,13 @@ IAStarPathedEntity {
     // which can remain nonzero while a mob presses into a closed door.
     private long doorStationarySince = -1L;
     private double doorStationaryX, doorStationaryZ;
+    // Per-resident, per-door emergency-scan throttle. A route-node opening
+    // bypasses it, and changing goals / actually moving immediately resets it.
+    private net.minecraft.core.BlockPos lastScannerOpenedDoor;
+    private net.minecraft.core.BlockPos lastScannerDoorDestination;
+    private String lastScannerDoorGoal;
+    private long lastScannerDoorTick = -1L;
+    private double lastScannerDoorX, lastScannerDoorZ;
     private final org.millenaire.common.pathing.MovementWatchdog movementWatchdog = new org.millenaire.common.pathing.MovementWatchdog();
     private long nextPathFailureDiagnostic = 0L;
     private final PathFailureRecovery pathFailureRecovery = new PathFailureRecovery();
@@ -1576,6 +1583,19 @@ IAStarPathedEntity {
      * powered/hinged door states. Called only when LogPathing >= 2 and bounded
      * to once every 100 ticks per resident.
      */
+    private String doorRoutePreview(Path route) {
+        if (route == null) return "none";
+        StringBuilder result = new StringBuilder();
+        int start = Math.max(0, route.getNextNodeIndex());
+        for (int i = start; i < Math.min(route.getNodeCount(), start + 5); i++) {
+            var node = route.getNode(i);
+            if (node == null) continue;
+            if (result.length() > 0) result.append(">");
+            result.append(node.asBlockPos());
+        }
+        return result.toString();
+    }
+
     private void logNearbyClosedDoor(String reason, Path route) {
         if (MillConfigValues.LogPathing < 2
                 || (this.level.getGameTime() + this.getVillagerId()) % 100L != 0L) return;
@@ -1615,7 +1635,8 @@ IAStarPathedEntity {
                 + " feet=" + feet + " stopMoving=" + this.stopMoving
                 + " goal=" + this.goalKey + " dest=" + this.getPathDestPoint()
                 + " path=" + (route == null ? "none"
-                    : route.getNextNodeIndex() + "/" + route.getNodeCount()));
+                    : route.getNextNodeIndex() + "/" + route.getNodeCount())
+                + " next=" + this.doorRoutePreview(route));
     }
 
     private void handleDoorsAndFenceGates() {
@@ -1889,11 +1910,52 @@ IAStarPathedEntity {
                     + this.blockPosition() + " target=" + destination
                     + " stalled=" + physicallyStalled
                     + " path=" + (route == null ? "none" : route.getNextNodeIndex()
-                    + "/" + route.getNodeCount()));
+                    + "/" + route.getNodeCount())
+                    + " next=" + (physicallyStalled ? this.doorRoutePreview(route) : "-"));
         }
         if (best != null) {
-            org.millenaire.common.pathing.VillageDoorAccess.openForResident(
-                    this.level, best, this, "SCANNER-OPEN");
+            double movedX = this.getX() - this.lastScannerDoorX;
+            double movedZ = this.getZ() - this.lastScannerDoorZ;
+            boolean sameDoor = best.equals(this.lastScannerOpenedDoor);
+            boolean sameGoalAndDestination = java.util.Objects.equals(
+                    this.goalKey, this.lastScannerDoorGoal)
+                    && java.util.Objects.equals(
+                        destination == null ? null : destination.getBlockPos(),
+                        this.lastScannerDoorDestination);
+            long elapsed = now - this.lastScannerDoorTick;
+            boolean repeatedWithoutProgress =
+                    org.millenaire.common.pathing.DoorApproachRules.suppressStationaryScannerReopen(
+                        sameDoor, sameGoalAndDestination,
+                        movedX * movedX + movedZ * movedZ, elapsed);
+            // This only limits SCANNER retries with zero progress for a
+            // particular resident and door. Active-route door opening and
+            // the manager's occupancy-based closing remain unchanged.
+            if (repeatedWithoutProgress) {
+                if (MillConfigValues.LogPathing >= 2
+                        && (now + this.getVillagerId()) % 100L == 0L) {
+                    MillLog.major(this, "DOOR-SCANNER-SUPPRESSED door=" + best
+                            + " ticksSinceOpen=" + elapsed
+                            + " feet=" + this.blockPosition()
+                            + " goal=" + this.goalKey
+                            + " path=" + (route == null ? "none"
+                              : route.getNextNodeIndex() + "/" + route.getNodeCount())
+                            + " next=" + this.doorRoutePreview(route));
+                }
+            } else {
+                org.millenaire.common.pathing.VillageDoorAccess.openForResident(
+                        this.level, best, this, "SCANNER-OPEN");
+                var openedState = this.level.getBlockState(best);
+                if (BlockItemUtilities.isWoodenDoor(openedState.getBlock())
+                        && openedState.getValue(net.minecraft.world.level.block.DoorBlock.OPEN)) {
+                    this.lastScannerOpenedDoor = best.immutable();
+                    this.lastScannerDoorDestination =
+                            destination == null ? null : destination.getBlockPos().immutable();
+                    this.lastScannerDoorGoal = this.goalKey;
+                    this.lastScannerDoorTick = now;
+                    this.lastScannerDoorX = this.getX();
+                    this.lastScannerDoorZ = this.getZ();
+                }
+            }
         } else {
             this.logNearbyClosedDoor("NO_VISIBLE_DOOR_CANDIDATE", route);
         }
