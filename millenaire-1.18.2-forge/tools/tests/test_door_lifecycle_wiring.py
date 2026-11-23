@@ -45,5 +45,19 @@ class DoorLifecycleWiring(unittest.TestCase):
         self.assertIn('NO_VISIBLE_DOOR_CANDIDATE', VILLAGER)
 
 
+    def test_opener_traces_actor_and_reason_on_actual_transition(self):
+        self.assertIn("LivingEntity actor, String source", DOORS)
+        self.assertIn('"OPENED" + origin', DOORS)
+        self.assertIn('" actorId=" + actor.getId()', DOORS)
+        self.assertIn('" actorFeet=" + actor.blockPosition()', DOORS)
+        self.assertIn("remember(level, pos, actor, source)", DOORS)
+
+    def test_route_and_scanner_sources_are_distinct(self):
+        self.assertIn('this.level, pos, this, "ROUTE"', VILLAGER)
+        self.assertIn('this.level, door, this, "SCANNER-RENEW"', VILLAGER)
+        self.assertIn('this.level, best, this, "SCANNER-OPEN"', VILLAGER)
+
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
