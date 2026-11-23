@@ -1905,15 +1905,6 @@ IAStarPathedEntity {
                         boolean eastWestDoor = doorState.getValue(
                                 net.minecraft.world.level.block.DoorBlock.FACING).getAxis()
                                 == net.minecraft.core.Direction.Axis.X;
-                        // In the sideways lane, a CLOSED door can be
-                        // physically passable. Do not OPEN its leaf into
-                        // the path or keep an already-open leaf leased.
-                        // The emergency scanner is only for approaches to
-                        // the actual closed panel from either normal side.
-                        if (!org.millenaire.common.pathing.DoorApproachRules.facingDoorPanel(
-                                this.getX(), this.getZ(),
-                                door.getX() + 0.5D, door.getZ() + 0.5D,
-                                eastWestDoor)) continue;
                         var shutState = doorState.setValue(net.minecraft.world.level.block.DoorBlock.OPEN, false);
                         var panel = shutState.getCollisionShape(this.level, door).bounds();
                         panelX = org.millenaire.common.pathing.DoorApproachRules.closestPanelCoordinate(
@@ -1922,6 +1913,13 @@ IAStarPathedEntity {
                                 this.getZ(), door.getZ() + panel.minZ, door.getZ() + panel.maxZ);
                         panelMidX = door.getX() + (panel.minX + panel.maxX) * 0.5D;
                         panelMidZ = door.getZ() + (panel.minZ + panel.maxZ) * 0.5D;
+                        // The closed panel may be at either EDGE of this
+                        // block. Measure approach to the actual panel, not
+                        // the block center, which would reject a resident
+                        // already standing in the door block itself.
+                        if (!org.millenaire.common.pathing.DoorApproachRules.facingDoorPanel(
+                                this.getX(), this.getZ(),
+                                panelMidX, panelMidZ, eastWestDoor)) continue;
                     }
                     double ox = panelX - this.getX();
                     double oz = panelZ - this.getZ();
