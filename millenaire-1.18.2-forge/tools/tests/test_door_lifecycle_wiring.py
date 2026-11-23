@@ -1,10 +1,10 @@
-"""Source-level regression guards for two separate wooden-door mechanisms.
+"""Static regression guards for DOOR-15 controlled baseline rollback.
 
 Run from millenaire-1.18.2-forge with:
     py -3 tools/tests/test_door_lifecycle_wiring.py
 
-These checks cannot compile Minecraft/Forge or simulate actual NPC movement.
-In-game DOOR-BLOCKED and DOOR-LEASE logs are required to confirm success.
+These tests inspect actual source wiring, but do NOT compile Forge and
+do NOT prove that a resident can physically pass through a door.
 """
 from pathlib import Path
 import unittest
@@ -13,114 +13,60 @@ ROOT = Path(__file__).resolve().parents[2] / "src/main/java/org/millenaire/commo
 VILLAGER = (ROOT / "entity/MillVillager.java").read_text(encoding="utf-8")
 DOORS = (ROOT / "pathing/VillageDoorAccess.java").read_text(encoding="utf-8")
 NAVIGATOR = (ROOT / "entity/PathNavigateSimple.java").read_text(encoding="utf-8")
-DOOR_EDGES = (ROOT / "pathing/DoorTransitionRules.java").read_text(encoding="utf-8")
-WALK_EVALUATOR = (ROOT / "pathing/VillagerWalkNodeEvaluator.java").read_text(encoding="utf-8")
-CLASSIC_ASTAR = (ROOT / "pathing/atomicstryker/AStarWorker.java").read_text(encoding="utf-8")
+WALK = (ROOT / "pathing/VillagerWalkNodeEvaluator.java").read_text(encoding="utf-8")
+CLASSIC = (ROOT / "pathing/atomicstryker/AStarWorker.java").read_text(encoding="utf-8")
 JPS = (ROOT / "pathing/atomicstryker/AStarWorkerJPS.java").read_text(encoding="utf-8")
+
+DOOR_HANDLER = VILLAGER.split("private void handleDoorsAndFenceGates()", 1)[1].split(
+    "private void handleLeaveClearing()", 1)[0]
 
 
 class DoorLifecycleWiring(unittest.TestCase):
-    def test_door_occupancy_uses_closed_physical_panel(self):
-        self.assertIn("BlockState closed = state.setValue(DoorBlock.OPEN, false)", DOORS)
-        self.assertIn("closed.getCollisionShape(level, pos)", DOORS)
-        self.assertIn(".move(pos.getX(), pos.getY(), pos.getZ())", DOORS)
-        self.assertIn(".inflate(0.10D, 0.85D, 0.10D)", DOORS)
+    def test_route_opener_is_back_to_simple_node_lookahead(self):
+        self.assertIn("Path route = this.navigation.getPath()", DOOR_HANDLER)
+        self.assertIn("route.getNextNodeIndex() + 3", DOOR_HANDLER)
+        self.assertIn('this.level, pos, this, "ROUTE"', DOOR_HANDLER)
+        self.assertIn("isWoodenDoor(state.getBlock())", DOOR_HANDLER)
+        self.assertNotIn("matchedDoorNode && !routeCrossesPanel", DOOR_HANDLER)
+        self.assertNotIn("DoorApproachRules.passedPanel(", DOOR_HANDLER)
 
-    def test_fence_gate_geometry_remains_unchanged(self):
-        self.assertIn("} else {\n                portal = new AABB(pos).inflate(0.12D, 0.75D, 0.12D);", DOORS)
+    def test_stationary_wooden_door_scanner_is_inactive(self):
+        self.assertIn("if (BlockItemUtilities.isWoodenDoor(block)) continue;", DOOR_HANDLER)
+        self.assertIn("block instanceof net.minecraft.world.level.block.FenceGateBlock", DOOR_HANDLER)
+        # All current door scanner behavior remains downstream of the skip,
+        # preserving the gate scanner, but not the experimental wooden scan.
+        a = DOOR_HANDLER.index("if (BlockItemUtilities.isWoodenDoor(block)) continue;")
+        b = DOOR_HANDLER.index("boolean woodenDoor = BlockItemUtilities.isWoodenDoor(doorState.getBlock());")
+        self.assertLess(a, b)
 
-    def test_closer_still_checks_living_occupants(self):
+    def test_all_pathfinders_use_original_neighbor_expansion(self):
+        self.assertNotIn("DoorTransitionRules.allowsEdge(", WALK)
+        self.assertNotIn("DoorTransitionRules.allowsEdge(", CLASSIC)
+        self.assertNotIn("DoorTransitionRules.allowsEdge(", JPS)
+        self.assertIn("super.getBlockPathType(world, x, y, z)", WALK)
+
+    def test_world_lease_retains_player_priority_and_occupancy(self):
+        self.assertIn("if (isPlayerControlled(level, pos))", DOORS)
         self.assertIn("getEntitiesOfClass(LivingEntity.class, portal,", DOORS)
         self.assertIn("LivingEntity::isAlive", DOORS)
         self.assertIn('trace(level, pos, "CLOSING state="', DOORS)
 
-    def test_opening_uses_real_closed_panel_not_block_center(self):
-        self.assertIn("doorState.setValue(net.minecraft.world.level.block.DoorBlock.OPEN, false)", VILLAGER)
-        self.assertIn("getCollisionShape(this.level, door).bounds()", VILLAGER)
-        self.assertIn("DoorApproachRules.closestPanelCoordinate", VILLAGER)
+    def test_gate_collision_logic_is_unchanged(self):
+        self.assertIn("} else {\n                portal = new AABB(pos).inflate(0.12D, 0.75D, 0.12D);", DOORS)
+        self.assertIn("FenceGateBlock", DOOR_HANDLER)
 
-    def test_opening_has_second_real_panel_sightline(self):
-        self.assertIn("if (!woodenDoor) continue;", VILLAGER)
-        self.assertIn("Vec3 panelMiddle = new Vec3(panelMidX", VILLAGER)
-        self.assertIn("centerHit = this.level.clip(", VILLAGER)
-
-    def test_rejection_has_bounded_debug_diagnostics(self):
-        self.assertIn('DOOR-BLOCKED reason=', VILLAGER)
-        self.assertIn('this.level.getGameTime() + this.getVillagerId()) % 100L', VILLAGER)
-        self.assertIn('NO_VISIBLE_DOOR_CANDIDATE', VILLAGER)
-
-
-    def test_opener_traces_actor_and_reason_on_actual_transition(self):
-        self.assertIn("LivingEntity actor, String source", DOORS)
-        self.assertIn('"OPENED" + origin', DOORS)
-        self.assertIn('" actorId=" + actor.getId()', DOORS)
-        self.assertIn('" actorFeet=" + actor.blockPosition()', DOORS)
-        self.assertIn("remember(level, pos, actor, source)", DOORS)
-
-    def test_route_and_scanner_sources_are_distinct(self):
-        self.assertIn('this.level, pos, this, "ROUTE"', VILLAGER)
-        self.assertIn('this.level, door, this, "SCANNER-RENEW"', VILLAGER)
-        self.assertIn('? "SCANNER-HOLD" : "SCANNER-OPEN"', VILLAGER)
-
-
-
-    def test_stuck_wooden_door_scanner_keeps_passage_open_then_releases(self):
-        self.assertIn("DoorApproachRules.suppressStationaryScannerReopen(", VILLAGER)
-        self.assertIn("DoorApproachRules.expiredStationaryScannerHold(", VILLAGER)
-        self.assertIn("boolean woodenCandidate =", VILLAGER)
-        self.assertIn("boolean repeatedWithoutProgress = woodenCandidate", VILLAGER)
-        self.assertIn('DOOR-SCANNER-HOLD-EXPIRED door=', VILLAGER)
-        self.assertIn('this.noteScannerDoorProgress(door, destination, now)', VILLAGER)
-
-    def test_stall_diagnostics_show_route_nodes(self):
-        self.assertIn("private String doorRoutePreview(Path route)", VILLAGER)
-        self.assertIn('" next=" + this.doorRoutePreview(route)', VILLAGER)
-
-
-
-    def test_renewal_diagnostics_preserve_actor_source(self):
+    def test_actor_open_and_renew_logs_retained(self):
+        self.assertIn('trace(level, pos, "OPENED" + origin)', DOORS)
         self.assertIn('trace(level, pos, "RENEWED" + origin)', DOORS)
-        self.assertIn('remember(level, pos, actor, source)', DOORS)
-        # Applies to both the wooden-door branch and the gate branch.
-        self.assertEqual(DOORS.count('remember(level, pos, actor, source);'), 4)
 
-    def test_navigator_traces_door_waypoint_without_changing_movement(self):
+    def test_door_waypoint_collision_diagnostics_retained(self):
         self.assertIn('"DOOR-WAYPOINT next=" + rung', NAVIGATOR)
-        self.assertIn('" collision=" + this.mob.horizontalCollision', NAVIGATOR)
-        self.assertIn('this.mob.getDeltaMovement()', NAVIGATOR)
-        self.assertIn('now + 40L', NAVIGATOR)
+        self.assertIn("this.mob.horizontalCollision", NAVIGATOR)
+        self.assertIn("this.mob.getDeltaMovement()", NAVIGATOR)
+
+    def test_ladder_assist_remains_present(self):
         self.assertIn('if (!state.is(net.minecraft.world.level.block.Blocks.LADDER)) return;', NAVIGATOR)
-
-
-
-    def test_door_transitions_check_both_ends_of_edge(self):
-        self.assertIn("private static boolean allows(BlockState state, int dx, int dz)", DOOR_EDGES)
-        self.assertIn("if (!allows(from, dx, dz)) return false;", DOOR_EDGES)
-        self.assertIn("return allows(to, dx, dz);", DOOR_EDGES)
-        self.assertIn("DoorApproachRules.followsDoorNormal(dx, dz, eastWestFacing)", DOOR_EDGES)
-
-    def test_vanilla_pathfinder_respects_door_transition(self):
-        self.assertIn("public int getNeighbors(", WALK_EVALUATOR)
-        self.assertIn("DoorTransitionRules.allowsEdge(this.level,", WALK_EVALUATOR)
-
-    def test_both_astar_workers_respect_door_transition(self):
-        self.assertIn("DoorTransitionRules.allowsEdge(", CLASSIC_ASTAR)
-        self.assertIn("DoorTransitionRules.allowsEdge(", JPS)
-        self.assertIn("this.world, px, py, pz, nextX, nextY, nextZ", JPS)
-
-
-
-    def test_closed_sideways_doors_are_not_forced_into_detours(self):
-        self.assertIn("DoorApproachRules.canTraverseDoorEdge(dx, dz, eastWestFacing,", DOOR_EDGES)
-        self.assertIn("state.getValue(DoorBlock.OPEN)", DOOR_EDGES)
-        self.assertIn("DoorTransitionRules.needsOpeningForEdge(", VILLAGER)
-        self.assertIn("matchedDoorNode && !routeCrossesPanel", VILLAGER)
-
-    def test_scanner_avoids_opening_sideways_passage(self):
-        self.assertIn("DoorApproachRules.facingDoorPanel(", VILLAGER)
-        self.assertIn("if (woodenDoor)", VILLAGER)
-        self.assertIn("panelMidX, panelMidZ, eastWestDoor", VILLAGER)
-
+        self.assertIn("LADDER-ASSIST next=", NAVIGATOR)
 
 
 if __name__ == "__main__":
