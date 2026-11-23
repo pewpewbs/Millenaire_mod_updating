@@ -168,7 +168,7 @@ public final class NavigationMetrics {
             +" "+RATE_WINDOW.sample(System.nanoTime(), new NavigationRateWindow.Counts(
                     SEARCH_COUNT[0].sum(), SEARCH_COUNT[1].sum(), COUNT[1].sum(),
                     SECTIONS.sum(), CACHE_HIT.sum(), CACHE_MISS.sum(),
-                    CACHE_STALE.sum(), NO_PATH_COOLDOWN.sum(),
+                    CACHE_STALE.sum(), NO_PATH_COOLDOWN.sum(), NO_PATH_FAILURES.sum(),
                     CACHE_REPLAN_DEFERRED.sum(), INFLIGHT_JOINED.sum(),
                     queue[5], queue[6], LADDER_SCANS.sum(), LADDER_PROBES.sum()));
     }
