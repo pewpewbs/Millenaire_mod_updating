@@ -32,6 +32,26 @@ public final class DoorApproachRulesSmoke {
                 "ray actually touching door is valid");
         test(!DoorApproachRules.clearSight(true, false),
                 "solid wall before doorway must block opening");
+        double offsetDoorWalking = DoorApproachRules.recoveryScore(
+                1, 0, 0.7, 1.1, 0.0, false);
+        double offsetDoorStalled = DoorApproachRules.recoveryScore(
+                1, 0, 0.7, 1.1, 0.0, true);
+        test(!Double.isFinite(offsetDoorWalking),
+                "offset door must stay closed while resident moves normally");
+        test(Double.isFinite(offsetDoorStalled),
+                "physically stalled villager may recover an offset nearby door");
+        test(!Double.isFinite(DoorApproachRules.recoveryScore(
+                1, 0, -1.2, 0, 0, true)),
+                "even a stalled resident must not open a door behind it");
+        test(!Double.isFinite(DoorApproachRules.recoveryScore(
+                1, 0, 1.2, 1.7, 0, true)),
+                "recovery must not open a distant sideways door");
+        test(!Double.isFinite(DoorApproachRules.recoveryScore(
+                1, 0, 0.8, 1, 2.0, true)),
+                "recovery must not reach a different floor");
+        test(Double.isFinite(DoorApproachRules.recoveryScore(
+                1, 0, 1.2, 0, 0, false)),
+                "ordinary forward door still opens without stalling");
         System.out.println("PASS: emergency front-door geometry");
     }
 }
