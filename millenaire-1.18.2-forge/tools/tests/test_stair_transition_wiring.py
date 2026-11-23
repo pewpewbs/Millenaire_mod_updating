@@ -12,6 +12,7 @@ STATIC = (ASTAR / "AStarStatic.java").read_text(encoding="utf-8")
 CLASSIC = (ASTAR / "AStarWorker.java").read_text(encoding="utf-8")
 JPS = (ASTAR / "AStarWorkerJPS.java").read_text(encoding="utf-8")
 GEOMETRY = (ASTAR / "TransitionClearanceRules.java").read_text(encoding="utf-8")
+VILLAGER = (ROOT / "src/main/java/org/millenaire/common/entity/MillVillager.java").read_text(encoding="utf-8")
 
 
 class TransitionWiring(unittest.TestCase):
@@ -40,6 +41,13 @@ class TransitionWiring(unittest.TestCase):
         self.assertIn("feetY + STEP_UP", GEOMETRY)
         self.assertIn("feetY + 1.0D", GEOMETRY)
         self.assertIn("SAMPLES = 8", GEOMETRY)
+
+    def test_live_snapshot_application_rechecks_transitions(self):
+        method = VILLAGER.split("private void applyPathCalculatedSinceLastTick()", 1)[1]
+        method = method.split("public boolean attackEntity(", 1)[0]
+        self.assertIn("isViable(this.level, node.x", method)
+        self.assertIn("isTransitionViable(this.level, from, to", method)
+        self.assertIn("NavigationMetrics.stale()", method)
 
     def test_elbow_is_not_invented_without_clear_edges(self):
         self.assertIn("newNode = findSafeOrthogonalCorner(", STATIC)
