@@ -48,6 +48,14 @@ public final class TransitionClearanceRulesSmoke {
         expect(route(64, 64, stairHalf), true, "stair face with open headroom");
         expect(route(64, 64, stairHalf, topSlab), false,
                 "stair step below 2.5-block ceiling must not be selected");
+        boolean reverseUnderSlab = TransitionClearanceRules.canTraverse(
+                1, 64, 0, 0, 64, 0,
+                (x, y, z) -> clear(List.of(stairHalf, topSlab), x, y, z));
+        expect(reverseUnderSlab, false, "reverse passage past the same covered stair");
+        boolean reverseInOpenAir = TransitionClearanceRules.canTraverse(
+                1, 64, 0, 0, 64, 0,
+                (x, y, z) -> clear(List.of(stairHalf), x, y, z));
+        expect(reverseInOpenAir, true, "reverse stair crossing in open headroom");
         expect(route(64, 64, solid), false,
                 "full solid block cannot masquerade as a half-height step");
         expect(route(64, 65, solid), true, "one-block jump with open headroom");
