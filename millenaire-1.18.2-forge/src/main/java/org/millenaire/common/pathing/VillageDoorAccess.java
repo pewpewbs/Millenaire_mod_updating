@@ -58,10 +58,24 @@ public final class VillageDoorAccess {
     }
 
     private static void remember(ServerLevel level, BlockPos pos) {
+        remember(level, pos, null, "LEGACY");
+    }
+
+    private static void remember(ServerLevel level, BlockPos pos,
+            LivingEntity actor, String source) {
         Long previous = OPENED.computeIfAbsent(level, ignored -> new HashMap<>())
             .put(pos.immutable(), level.getGameTime());
         if (previous == null) {
-            trace(level, pos, "OPENED");
+            // OPENED only happens on a real block transition or adoption.
+            // Identify which specific NPC and route type causes re-opening
+            // after the manager just closed this same doorway.
+            String origin = " source=" + source;
+            if (actor != null) {
+                origin += " actorId=" + actor.getId()
+                        + " actorName=" + actor.getName().getString()
+                        + " actorFeet=" + actor.blockPosition();
+            }
+            trace(level, pos, "OPENED" + origin);
         } else if (level.getGameTime() % 100L == 0L) {
             trace(level, pos, "RENEWED");
         }
@@ -125,6 +139,12 @@ public final class VillageDoorAccess {
 
     /** Only the server may change world blocks. Call for nodes near the actual route. */
     public static void openForResident(Level world, BlockPos raw) {
+        openForResident(world, raw, null, "UNKNOWN");
+    }
+
+    /** Actor and reason are recorded ONLY on successful first opening. */
+    public static void openForResident(Level world, BlockPos raw,
+            LivingEntity actor, String source) {
         if (!(world instanceof ServerLevel level) || !level.hasChunkAt(raw)) return;
         BlockState sample = level.getBlockState(raw);
         BlockPos pos = canonical(level, raw, sample);
@@ -139,7 +159,7 @@ public final class VillageDoorAccess {
             if (state.getValue(DoorBlock.POWERED)) return;
             if (!state.getValue(DoorBlock.OPEN)) {
                 ((DoorBlock) state.getBlock()).setOpen(null, level, state, pos, true);
-                if (level.getBlockState(pos).getValue(DoorBlock.OPEN)) remember(level, pos);
+                if (level.getBlockState(pos).getValue(DoorBlock.OPEN)) remember(level, pos, actor, source);
             } else if (registered != null && registered.containsKey(pos)) {
                 remember(level, pos);
             }
@@ -147,7 +167,7 @@ public final class VillageDoorAccess {
             if (state.getValue(FenceGateBlock.POWERED)) return;
             if (!state.getValue(FenceGateBlock.OPEN)) {
                 level.setBlock(pos, state.setValue(FenceGateBlock.OPEN, true), 3);
-                if (level.getBlockState(pos).getValue(FenceGateBlock.OPEN)) remember(level, pos);
+                if (level.getBlockState(pos).getValue(FenceGateBlock.OPEN)) remember(level, pos, actor, source);
             } else if (registered != null && registered.containsKey(pos)) {
                 remember(level, pos);
             }
