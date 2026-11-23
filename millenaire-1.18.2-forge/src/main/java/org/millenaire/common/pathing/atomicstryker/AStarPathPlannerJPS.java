@@ -251,20 +251,37 @@ public class AStarPathPlannerJPS {
         int steps = Math.max(1, Math.min(24,
                 (int) Math.ceil(Math.sqrt((double)dx * dx + (double)dz * dz) / 4.0D)));
         int ySamples = Math.min(12, ceiling - floor + 1);
+        // Same sample coordinates and scan order as before NAV-OPT-10.
+        // Precompute heights once and reuse one mutable position to avoid
+        // allocating up to ~24,300 short-lived BlockPos objects per scan.
+        int[] sampledHeights = new int[ySamples];
+        for (int k = 0; k < ySamples; k++) {
+            sampledHeights[k] = floor + (int) Math.round((double) (ceiling - floor) * k
+                    / Math.max(1, ySamples - 1));
+        }
+        net.minecraft.core.BlockPos.MutableBlockPos probe = new net.minecraft.core.BlockPos.MutableBlockPos();
+        long scanStarted = System.nanoTime();
+        int probes = 0;
         for (int step = 0; step <= steps; step++) {
             int midX = this.lastStart.x + (int) Math.round((double) dx * step / steps);
             int midZ = this.lastStart.z + (int) Math.round((double) dz * step / steps);
             for (int x = midX - 4; x <= midX + 4; x++) {
                 for (int z = midZ - 4; z <= midZ + 4; z++) {
-                    for (int k = 0; k < ySamples; k++) {
-                        int y = floor + (int) Math.round((double) (ceiling - floor) * k
-                                / Math.max(1, ySamples - 1));
-                        if (this.snapshot.getBlockState(new net.minecraft.core.BlockPos(x, y, z))
-                                .is(net.minecraft.world.level.block.Blocks.LADDER)) return true;
+                    for (int y : sampledHeights) {
+                        probe.set(x, y, z);
+                        probes++;
+                        if (this.snapshot.getBlockState(probe)
+                                .is(net.minecraft.world.level.block.Blocks.LADDER)) {
+                            org.millenaire.common.pathing.NavigationMetrics.ladderScan(
+                                    probes, true, System.nanoTime() - scanStarted);
+                            return true;
+                        }
                     }
                 }
             }
         }
+        org.millenaire.common.pathing.NavigationMetrics.ladderScan(
+                probes, false, System.nanoTime() - scanStarted);
         return false;
     }
 
