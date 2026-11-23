@@ -8,6 +8,13 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: [`a1cde6e6`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/a1cde6e6b47bd40a04af19909d46230081b16258). На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### Оновлення від 2026-11-23 — коректний стан дверей і ручне керування
+
+- **Виправлено (очікує Forge-компіляції й ігрового тесту):** у `PathNavigateSimple.createPathFinder` тепер налаштовано **обидва прапорці** `VillagerWalkNodeEvaluator`: `setCanOpenDoors(true)` та `setCanPassDoors(true)`. Це дозволяє pathfinder планувати шлях через зачинені дерев'яні двері, а не розраховувати лише на випадковий резервний скан поруч із NPC ([`f2f41145`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/f2f411451cf70cf19a67ff7fd6b5fb6c676c1832)).
+- **Виправлено (очікує Forge-компіляції й ігрового тесту):** серверний `VillageDoorAccess` реагує на правий клік гравця по дерев'яних дверях/хвіртках, скидає попередню auto-close lease NPC і тимчасово надає гравцеві пріоритет на **100 тіків (5 секунд)**. Коли гравець відчиняє двері, NPC не закриває їх через стару lease; коли гравець закриває їх, NPC не відкриває відразу. Облік ведеться за нижньою половиною двоблокових дверей, час життя даних обмежено. Сигнал redstone та інші сторонні моди не переназначалися ([`0a73f7fc`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/0a73f7fc56a71b23c61cb370acd8bb982620077e), [`eceefa3e`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/eceefa3e1a8c63ff1746732f9542fa5d84a1148b)).
+- **Додано перевірки:** сценарій `DOOR-04` у [`PLAYTEST_ISSUES_2026-11-23_UA.md`](millenaire-1.18.2-forge/docs/PLAYTEST_ISSUES_2026-11-23_UA.md) — обидва боки дверей, upper/lower, відкриття та закриття гравцем, часове блокування, тварини, redstone, кілька NPC ([`5e84e4c`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/5e84e4c4b9cce2382b124043ca2244514a953f1d)).
+- **Статус:** зміни збережено в тестовій гілці, але **успішної Forge-компіляції та тесту Minecraft ще немає**; `main` не змінено.
+
 ### Оновлення від 2026-11-23 — двері та будівництво у воді
 
 - **Виправлено (потребує тесту в Minecraft):** у `MillVillager.handleDoorsAndFenceGates` попередній вузол дверей/хвіртки підтримується відкритим, лише доки **bounding box NPC фізично перетинає його область**. Не повертаємо безумовну перевірку попереднього вузла, яка колись спричиняла повторне відкривання дверей позаду жителів. Час утримання дверей і хвірток після виходу не збільшено ([`749488e`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/749488e275a143e1d32a9e45f7a8a8ab82c33052)).
