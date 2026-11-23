@@ -47,6 +47,14 @@ extends Goal {
     }
 
     @Override
+    public boolean isWithinActionRange(MillVillager villager,
+            org.millenaire.common.utilities.Point destination) {
+        // A builder must reach the town hall's actual stock position, not
+        // claim supplies from a pit or from the other side of a wall.
+        return WorkAccess.canAccessStock(villager, destination, this.range(villager));
+    }
+
+    @Override
     public boolean isPossibleSpecific(MillVillager villager) {
         return this.getDoableConstructionIP(villager) != null;
     }
@@ -74,6 +82,7 @@ extends Goal {
 
     @Override
     public boolean performAction(MillVillager villager) {
+        if (!this.isWithinActionRange(villager, villager.getGoalDestPoint())) return false;
         ConstructionIP cip = villager.getCurrentConstruction();
         if (cip == null) {
             return true;
