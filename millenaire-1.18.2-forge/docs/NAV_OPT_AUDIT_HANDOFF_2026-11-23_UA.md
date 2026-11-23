@@ -201,3 +201,38 @@ py -3 tools/tests/test_navigation_optimization_wiring.py
 **Реальний результат: `Ran 8 tests in 0.002s — OK`.** Вісім перевірок: `test_cache_world_isolated_and_bounded`, `test_deferred_is_not_mistaken_for_missing_path`, `test_diagnostic_counter_names`, `test_failed_search_cooldown_preserves_new_goals`, `test_reverse_diagnostics_distinguish_no_route_from_reversed`, `test_reverse_search_is_bounded_and_validated_directionally`, `test_route_cache_always_checks_current_world`, `test_snapshot_reuse_only_same_tick`.
 
 Тести перевіряють **текстове зв'язування коду**, а не компіляцію Forge чи поведінку в Minecraft. Скриншот початку `Update-Millenaire.bat` підтверджує `git pull` і запуск Gradle, але поки що **не** містить завершального `BUILD SUCCESSFUL` — користувач його ще не надав. Наступна перевірка: завершення збірки + повторний `latest.log` для діагностики `no_path_cooldown`, `ENDPOINT_MISMATCH actualStart/actualGoal` і спуску по драбині.
+
+## 10. NAV-OPT-06 повторний playtest: `latest(10).log` (23.11.2026)
+
+**Джерело:** повний наданий користувачем `latest(10).log`, 4 254 рядки, ~929 KiB. Запуск клієнта: 19:11:13; у світі 19:12:37–19:15:37 (приблизно 3 хв). Forge 40.3.0, Minecraft 1.18.2, мод `millenaire-8.1.2-port.0.jar`. Наявність `no_path_cooldown` та `reason=ENDPOINT_MISMATCH actualStart/actualGoal` у живих логах підтверджує, що в грі використовується код NAV-OPT-06. Публікація ігрового логу **не** надає окремого Gradle `BUILD SUCCESSFUL`.
+
+### 10.1. Результати та порівняння з `latest(9).log`
+
+- Останній накопичувальний `NAV-OPT-STATS` о **19:15:23**: `jps searches=715 avg=36.724ms max=150.320ms expanded=174750`, `astar searches=392 avg=31.027ms max=150.695ms expanded=513009`; `native count=415 avg=4.919ms max=112.796ms`; `snapshot count=687 avg=0.427ms max=3.235ms`, `copied_sections=239411`.
+- У тому самому звіті `deferred=209`, `snapshot_reused=28`, `no_path_cooldown=25`, `cache_hit=150`, `cache_reverse=13`, `cache_miss=2299`, `cache_invalidated=0`, `routes_stored=529`, `reverse_tried=9`, `reverse_found=4`, `active=0 queued=0 rejected=0`. Це накопичені лічильники на 19:15:23; до кінця сесії журнал містить **152** повідомлення `NAV-OPT-CACHE` (із них **15** `reverse=true`) і **10** `NAV-OPT-REVERSE` (із них **5** `chosen=REVERSED`).
+- Десять зворотних спроб: **6** `candidateValid=true`; **3** `ENDPOINT_MISMATCH`; **1** `NO_REVERSE_PATH`; кінцевий вибір: **5** `REVERSED`, **4** `FORWARD`, **1** `NONE`. Попередній масовий цикл сотень зворотних пошуків шахтаря в цьому тесті не повторився, однак відрізняються тривалість сесії, цілі, поведінка NPC, і немає доказів, що саме cooldown повністю усунув причину.
+- При `ENDPOINT_MISMATCH` виявилися реальні розходження: `from=[190|71|675]`, `to=[190|65|681]` → `actualStart=189,65,677`, `actualGoal=190,65,681`; та двічі `from=[188|71|673]`, `to=[191|67|679]` → `actualStart=190,71,675`, `actualGoal=191,67,679`. Гіпотеза — tolerance/дострокове завершення досягнення цілі в A*: **потрібен окремий аудит умови завершення, не можна просто вважати такий шлях еквівалентним точному**.
+- Від шахтаря `Eftokios Prinkips`: `from=[30|65|658]` → `to=[26|68|648]` п'ять разів отримував `forwardCost=29.70`, `reverseCost=23.24`, `chosen=REVERSED`: мінус **~21,8% розрахункової довжини/вартості**, але не вимір фактичного часу проходження.
+- `LADDER-ASSIST=9`, **усі direction=1** (є повідомлення `aligned=false contact=false` під час підходу), `LADDER-EXIT=1` для Eftokios о 19:13:49. `direction=-1` **немає**: фактичний спуск по драбині окремо ще не підтверджено. NPC також переміщалися зі схилів/сходів на нижчі рівні, але це не доказ руху вниз саме по драбині.
+- `DOOR-BLOCKED=23` (20 `NO_VISIBLE_DOOR_CANDIDATE`, 2 `AT_WAYPOINT`, 1 `NO_DESTINATION`). `NAV-TELEPORT=14` (Anatolios Zaridis 4, Lizas Raoul 2, Arminios Prinkips 2, Nkiolanta Maliasenos 2, Niompe Prinkips 2, Theotota Mourtzouplos 1, Elena Prinkips 1). `DOOR-APPROACH=1655` і `DOOR-WAYPOINT=164`; `selected=null` сам по собі не є помилкою.
+- Зафіксовано один `Can't keep up!` на початку завантаження світу (3 009 мс, 60 ticks behind), немає доказів сталої деградації TPS. Справжніх crash stack traces у цьому файлі немає, присутні конфігураційні й ресурсні попередження.
+
+### 10.2. Нова знайдена проблема NAV-OPT-07: гарячий цикл успішних cache-hit
+
+Між 19:14:23 та 19:14:28 NPC `Nkiolanta Maliasenos` повторювала **105** разів `NAV-OPT-CACHE action=HIT reverse=false from=[6|68|631] to=[1|68|627]` (дорога до `deliverresourcesshop`). NPC фактично перебувала близько `(6,67,631)`, з `DOOR-WAYPOINT ... collision=true` для наступного вузла `(5,68,631)`. Одна й та сама успішна кеш-відповідь перезапитувалася майже щотіку, іноді кілька разів за секунду. **Це не CPU-керований повторний A*, але кожен cache-hit проходить перевірку live-world колізій і повторно видає маршрут**. Понад дві третини всіх `NAV-OPT-CACHE` повідомлень цього тесту спричинені одним NPC — отже, необроблений `cache_hit` є завищеною оцінкою *корисного* повторного використання маршрутів.
+
+**Патч після цього логу (не перевірений у ньому):**
+- `NAV-OPT-07`: `AStarPathPlannerJPS` запам'ятовує тільки останній **успішно виданий із кешу** start/goal/options + серверний tick. Повторний ідентичний запит протягом **10 тіків** одержує `deferred=true`, без повторної live-колізійної перевірки. Початок/мета/конфігурація змінилися — негайний звичайний пошук, без затримки. Ця зміна **не вирішує саму колізію дверного проходу**.
+- `NavigationMetrics`: додає `cache_replan_deferred` у `NAV-OPT-STATS` — лічильник відсічених повторних запитів.
+- `tools/tests/test_navigation_optimization_wiring.py`: додано source-level тест, отже очікується **9** перевірок після оновлення гілки.
+- Коміти: `ae5c585` (planner), `3f917b6` (лічильник), `eb4f92a` (регресійний тест).
+- **Безпечність до перевірки Forge:** відкладений запит зберігає попередню навігацію. Справжня зміна start/goal/options не відкладається. При відсутності маршруту можливий додатковий час очікування до 10 тіків — треба тестувати в Minecraft.
+
+### 10.3. Наступне тестування
+
+1. Оновити робочу гілку `fix/villager-door-access-and-village-territory`, виконати `py -3 tools/tests/test_navigation_optimization_wiring.py` (очікується **9 OK**), потім `Update-Millenaire.bat` і перевірити **BUILD SUCCESSFUL**; не зливати у `main`.
+2. Зробити backup світу. Повторити рух до складу біля `(6,67–68,631)`. Очікується менша кількість однакових `NAV-OPT-CACHE`, але `cache_replan_deferred > 0`. Перевірити, що NPC не почав чекати за відсутності перешкоди.
+3. Окремо шахтаря перевірити на драбині **зверху вниз**: `LADDER-ASSIST direction=-1` + фізичне переміщення вниз без `NAV-TELEPORT`.
+4. Зібрати `latest.log` і порівняти прирости лічильників за **однакові 60 с**, а не тільки підсумки різної довжини сесій; вимірювання TPS потрібне окремо.
+5. Двері `DOOR-BLOCKED` і телепортації залишаються окремим незакритим напрямком `DOOR-15`; жоден з NAV-OPT-07 не змінює обробник дверей.
+
