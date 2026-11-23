@@ -119,7 +119,7 @@ class DoorLifecycleWiring(unittest.TestCase):
     def test_scanner_avoids_opening_sideways_passage(self):
         self.assertIn("DoorApproachRules.facingDoorPanel(", VILLAGER)
         self.assertIn("if (woodenDoor)", VILLAGER)
-        self.assertIn("door.getX() + 0.5D, door.getZ() + 0.5D", VILLAGER)
+        self.assertIn("panelMidX, panelMidZ, eastWestDoor", VILLAGER)
 
 
 
