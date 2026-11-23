@@ -189,3 +189,15 @@
 4. За приблизно 10 хвилин отримати кілька `NAV-OPT-STATS`, порівняти `no_path_cooldown`, `reverse_tried`, `deferred`, `cache_miss` та JPS/A* searches/sec із попереднім логом.
 5. Для дверей окремий тикет: `DOOR-BLOCKED reason=NO_VISIBLE_DOOR_CANDIDATE` та stock teleports; не змішувати з NAV-OPT-06 і не робити необґрунтованих змін без геометрії конкретних дверей.
 
+
+### 9.3. Повторна локальна перевірка NAV-OPT-06 (PowerShell, 23.11.2026)
+
+Користувач після запуску `Update-Millenaire.bat` і оновлення репозиторію виконав із папки `millenaire-1.18.2-forge`:
+
+```powershell
+py -3 tools/tests/test_navigation_optimization_wiring.py
+```
+
+**Реальний результат: `Ran 8 tests in 0.002s — OK`.** Вісім перевірок: `test_cache_world_isolated_and_bounded`, `test_deferred_is_not_mistaken_for_missing_path`, `test_diagnostic_counter_names`, `test_failed_search_cooldown_preserves_new_goals`, `test_reverse_diagnostics_distinguish_no_route_from_reversed`, `test_reverse_search_is_bounded_and_validated_directionally`, `test_route_cache_always_checks_current_world`, `test_snapshot_reuse_only_same_tick`.
+
+Тести перевіряють **текстове зв'язування коду**, а не компіляцію Forge чи поведінку в Minecraft. Скриншот початку `Update-Millenaire.bat` підтверджує `git pull` і запуск Gradle, але поки що **не** містить завершального `BUILD SUCCESSFUL` — користувач його ще не надав. Наступна перевірка: завершення збірки + повторний `latest.log` для діагностики `no_path_cooldown`, `ENDPOINT_MISMATCH actualStart/actualGoal` і спуску по драбині.
