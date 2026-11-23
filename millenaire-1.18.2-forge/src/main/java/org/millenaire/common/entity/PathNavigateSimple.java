@@ -36,37 +36,51 @@ public class PathNavigateSimple extends GroundPathNavigation {
         finally { org.millenaire.common.pathing.NavigationMetrics.record(0, System.nanoTime()-began); }
     }
     /**
-     * GroundPathNavigation can follow horizontal paths, but its MoveControl
-     * does not reliably supply vertical motion for consecutive ladder nodes.
-     * The classic A* ladder edges use the same X/Z with changing Y.
-     * Assist ONLY that segment, on an actual ladder, without teleportation.
+     * GroundPathNavigation does not reliably drive a mob onto a ladder's thin
+     * collision plane or actively climb vertically once a node is reached.
+     * Assist only when the current path targets an actual vanilla ladder rung.
+     * All motion is velocity-based and still uses Minecraft collision checks.
      */
     @Override public void tick() {
         super.tick();
         if (this.mob.level.isClientSide || this.path == null || this.path.isDone()) return;
         net.minecraft.world.level.pathfinder.Node next = this.path.getNextNode();
         if (next == null) return;
+
+        net.minecraft.core.BlockPos rung = new net.minecraft.core.BlockPos(next.x, next.y, next.z);
+        if (!this.mob.level.hasChunkAt(rung)) return;
+        net.minecraft.world.level.block.state.BlockState state = this.mob.level.getBlockState(rung);
+        if (!state.is(net.minecraft.world.level.block.Blocks.LADDER)) return;
+
+        // An entity must press into the back face of a ladder to engage the
+        // climbing surface. The rung's center (0.5, 0.5) can be too far from
+        // that surface, leaving the entity jumping but not actually climbing.
+        net.minecraft.core.Direction wall = state.getValue(
+                net.minecraft.world.level.block.LadderBlock.FACING).getOpposite();
+        double targetX = next.x + 0.5D + wall.getStepX() * 0.12D;
+        double targetZ = next.z + 0.5D + wall.getStepZ() * 0.12D;
+        double ex = targetX - this.mob.getX();
+        double ez = targetZ - this.mob.getZ();
+        double horizontalErrorSquared = ex * ex + ez * ez;
+        if (!org.millenaire.common.pathing.LadderTransitionRules.shouldApproach(
+                true, horizontalErrorSquared)) return;
+
+        net.minecraft.world.phys.Vec3 velocity = this.mob.getDeltaMovement();
+        // Even before its feet enter the rung block, nudge the mob into the
+        // column. Do NOT start vertical lift while it is still off-column.
+        double vx = org.millenaire.common.pathing.LadderTransitionRules.approachSpeed(ex);
+        double vz = org.millenaire.common.pathing.LadderTransitionRules.approachSpeed(ez);
+        double vy = velocity.y;
         net.minecraft.core.BlockPos feet = this.mob.blockPosition();
         boolean sameColumn = next.x == feet.getX() && next.z == feet.getZ();
-        net.minecraft.core.BlockPos rung = new net.minecraft.core.BlockPos(next.x, next.y, next.z);
-        boolean ladderContact = this.mob.level.getBlockState(feet).is(net.minecraft.world.level.block.Blocks.LADDER)
-                || this.mob.level.getBlockState(feet.below()).is(net.minecraft.world.level.block.Blocks.LADDER)
-                || this.mob.level.getBlockState(rung).is(net.minecraft.world.level.block.Blocks.LADDER);
+        boolean ladderContact = this.mob.onClimbable()
+                || this.mob.level.getBlockState(feet).is(net.minecraft.world.level.block.Blocks.LADDER);
         double dy = next.y - this.mob.getY();
-        double centerX = next.x + 0.5D;
-        double centerZ = next.z + 0.5D;
-        double xError = centerX - this.mob.getX();
-        double zError = centerZ - this.mob.getZ();
-        if (!org.millenaire.common.pathing.LadderTransitionRules.shouldAssist(
-                sameColumn, ladderContact, dy, xError * xError + zError * zError)) return;
-        net.minecraft.world.phys.Vec3 velocity = this.mob.getDeltaMovement();
-        double lift = dy > 0 ? Math.max(0.20D, velocity.y) : Math.min(-0.12D, velocity.y);
-        // Keep close to the shaft centre and let the usual movement/collision
-        // system validate every step; do not change positions directly.
-        this.mob.setDeltaMovement(
-                velocity.x * 0.5D + xError * 0.12D,
-                lift,
-                velocity.z * 0.5D + zError * 0.12D);
+        if (org.millenaire.common.pathing.LadderTransitionRules.shouldAssist(
+                sameColumn, ladderContact, dy, horizontalErrorSquared)) {
+            vy = dy > 0 ? Math.max(0.20D, velocity.y) : Math.min(-0.12D, velocity.y);
+        }
+        this.mob.setDeltaMovement(vx, vy, vz);
         this.mob.hasImpulse = true;
     }
 
