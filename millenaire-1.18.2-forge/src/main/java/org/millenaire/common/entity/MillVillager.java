@@ -1714,97 +1714,19 @@ IAStarPathedEntity {
                 candidates.add(pos.below());
                 candidates.add(pos.above());
             }
-            // The active path may keep a door's BLOCK as the next waypoint
-            // even after the entity has already crossed its thin panel.
-            // Derive path direction from adjacent nodes, not from which
-            // side of the block center the resident happens to stand on.
-            int idx = route.getNextNodeIndex();
-            var currentNode = route.getNextNode();
-            var previousNode = idx > 0 ? route.getNode(idx - 1) : null;
-            var followingNode = idx + 1 < route.getNodeCount() ? route.getNode(idx + 1) : null;
-            double pathDx = currentNode == null || previousNode == null
-                    ? 0.0D : currentNode.x - previousNode.x;
-            double pathDz = currentNode == null || previousNode == null
-                    ? 0.0D : currentNode.z - previousNode.z;
-            if (pathDx * pathDx + pathDz * pathDz < 0.01D && followingNode != null
-                    && currentNode != null) {
-                pathDx = followingNode.x - currentNode.x;
-                pathDz = followingNode.z - currentNode.z;
-            }
-            if (pathDx * pathDx + pathDz * pathDz < 0.01D && currentNode != null) {
-                pathDx = currentNode.x + 0.5D - this.getX();
-                pathDz = currentNode.z + 0.5D - this.getZ();
-            }
+            // DOOR-15 regression isolation: return to the older route-node
+            // opener. The later panel-orientation and passed-panel heuristics
+            // can incorrectly withhold access to a legitimate wooden door.
+            // Preserve the existing gate path and the shared close lease.
             for (var pos : candidates) {
-                double distanceSquared = this.position().distanceToSqr(Vec3.atCenterOf(pos));
-                if (distanceSquared > 8.0D) continue;
-                if (this.level.hasChunkAt(pos)) {
-                    var state = this.level.getBlockState(pos);
-                    if (BlockItemUtilities.isWoodenDoor(state.getBlock())) {
-                        var door = state.getValue(net.minecraft.world.level.block.DoorBlock.HALF)
-                                == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER
-                                ? pos.below() : pos;
-                        if (!this.level.hasChunkAt(door)) continue;
-                        var lower = this.level.getBlockState(door);
-                        // A sideways route through this block can actually
-                        // need the door to remain CLOSED: OPEN swings the panel
-                        // into that lane. DOOR-13 ruled out this entire route,
-                        // forcing residents to go around instead of using it.
-                        // Check the immediate edges around each matched path
-                        // node, not only the global goal heading.
-                        boolean matchedDoorNode = false;
-                        boolean routeCrossesPanel = false;
-                        for (int j = Math.max(0, idx - 1);
-                                j < Math.min(route.getNodeCount(), idx + 4); j++) {
-                            var at = route.getNode(j);
-                            if (at == null || at.x != door.getX() || at.z != door.getZ()
-                                    || Math.abs(at.y - door.getY()) > 1) continue;
-                            matchedDoorNode = true;
-                            for (int delta : new int[] {-1, 1}) {
-                                int neighborIndex = j + delta;
-                                if (neighborIndex < 0 || neighborIndex >= route.getNodeCount()) continue;
-                                var neighbor = route.getNode(neighborIndex);
-                                if (neighbor == null) continue;
-                                int edgeX = neighbor.x - at.x;
-                                int edgeZ = neighbor.z - at.z;
-                                if (org.millenaire.common.pathing.DoorTransitionRules.needsOpeningForEdge(
-                                        lower, edgeX, edgeZ)) {
-                                    routeCrossesPanel = true;
-                                }
-                            }
-                        }
-                        if (matchedDoorNode && !routeCrossesPanel) {
-                            // This is a real door NODE but the intended
-                            // traversal runs along the CLOSED panel, so
-                            // opening it would create the very collision
-                            // reported by DOOR-WAYPOINT in the earlier log.
-                            if (MillConfigValues.LogPathing >= 2
-                                    && (!door.equals(this.lastSideDoorTrace)
-                                        || this.level.getGameTime() >= this.nextSideDoorTraceTick)) {
-                                this.lastSideDoorTrace = door.immutable();
-                                this.nextSideDoorTraceTick = this.level.getGameTime() + 100L;
-                                MillLog.major(this, "DOOR-SIDE-PASS door=" + door
-                                        + " open=" + lower.getValue(
-                                                net.minecraft.world.level.block.DoorBlock.OPEN)
-                                        + " feet=" + this.blockPosition()
-                                        + " path=" + idx + "/" + route.getNodeCount());
-                            }
-                            continue;
-                        }
-                        var shut = lower.setValue(net.minecraft.world.level.block.DoorBlock.OPEN, false);
-                        var panel = shut.getCollisionShape(this.level, door).bounds();
-                        double panelX = org.millenaire.common.pathing.DoorApproachRules.closestPanelCoordinate(
-                                this.getX(), door.getX() + panel.minX, door.getX() + panel.maxX);
-                        double panelZ = org.millenaire.common.pathing.DoorApproachRules.closestPanelCoordinate(
-                                this.getZ(), door.getZ() + panel.minZ, door.getZ() + panel.maxZ);
-                        if (org.millenaire.common.pathing.DoorApproachRules.passedPanel(
-                                pathDx, pathDz, panelX - this.getX(), panelZ - this.getZ()))
-                            continue;
-                    }
+                if (this.position().distanceToSqr(Vec3.atCenterOf(pos)) > 8.0D) continue;
+                if (!this.level.hasChunkAt(pos)) continue;
+                var state = this.level.getBlockState(pos);
+                if (BlockItemUtilities.isWoodenDoor(state.getBlock())
+                        || state.getBlock() instanceof net.minecraft.world.level.block.FenceGateBlock) {
+                    org.millenaire.common.pathing.VillageDoorAccess.openForResident(
+                            this.level, pos, this, "ROUTE");
                 }
-                // Fence gates deliberately keep their existing behavior.
-                org.millenaire.common.pathing.VillageDoorAccess.openForResident(
-                        this.level, pos, this, "ROUTE");
             }
         }
 
@@ -1879,6 +1801,11 @@ IAStarPathedEntity {
                     if (!this.level.hasChunkAt(samplePos)) continue;
                     var blockState = this.level.getBlockState(samplePos);
                     var block = blockState.getBlock();
+                    // DOOR-15: revert speculative wooden-door scanner.
+                    // The scanner repeatedly opened and reclosed a door for
+                    // the same stationary NPC (confirmed in latest(6).log).
+                    // KEEP its established fence-gate handling unchanged.
+                    if (BlockItemUtilities.isWoodenDoor(block)) continue;
                     if (!(block instanceof net.minecraft.world.level.block.FenceGateBlock)
                             && !BlockItemUtilities.isWoodenDoor(block)) continue;
                     var door = block instanceof net.minecraft.world.level.block.DoorBlock
