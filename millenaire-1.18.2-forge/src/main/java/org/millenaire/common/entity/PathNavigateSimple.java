@@ -16,6 +16,10 @@ public class PathNavigateSimple extends GroundPathNavigation {
     }
     @Override protected net.minecraft.world.level.pathfinder.PathFinder createPathFinder(int maxVisitedNodes) {
         this.nodeEvaluator = new org.millenaire.common.pathing.VillagerWalkNodeEvaluator();
+        // The pathfinder is built with its own evaluator. Configure BOTH flags
+        // here: allowing passage alone does not classify a closed wooden door
+        // as a traversable/openable node when planning a route.
+        this.nodeEvaluator.setCanOpenDoors(true);
         this.nodeEvaluator.setCanPassDoors(true);
         this.detourPathFinder = new org.millenaire.common.pathing.DetourPathFinder(this.nodeEvaluator, maxVisitedNodes);
         return this.detourPathFinder;
