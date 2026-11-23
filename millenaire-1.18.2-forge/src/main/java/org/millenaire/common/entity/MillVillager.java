@@ -1681,9 +1681,10 @@ IAStarPathedEntity {
                     // block, so a ray aimed at the block CENTER may legitimately
                     // miss the closed panel. MISS means the door is unobstructed;
                     // reject only if a DIFFERENT solid block occludes the ray.
-                    if (hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK
-                            && !hit.getBlockPos().equals(door)
-                            && !hit.getBlockPos().equals(door.above())) continue;
+                    boolean hitBlock = hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK;
+                    boolean hitDoor = hit.getBlockPos().equals(door)
+                            || hit.getBlockPos().equals(door.above());
+                    if (!org.millenaire.common.pathing.DoorApproachRules.clearSight(hitBlock, hitDoor)) continue;
 
                     if (score < bestScore) {
                         bestScore = score;
