@@ -1117,3 +1117,73 @@ java -cp build/nav-failure-events-smoke FailedRouteBackoffEventsSmoke
 Для сценарію A спочатку потрібен actor mapping і перевірка, чи одночасні NPC створюють незалежні, законні запити. Не створювати глобальний cross-NPC no-path blacklist: це може блокувати різні розміри NPC/permission, світові правки й альтернативні доступні шляхи.
 
 **Статус NAV-OPT-17 після цього логу:** лише аналіз і audit, **жодного нового source patch не внесено**. Тільки робоча гілка; `main` лишити недоторканою. Двері, драбини, slabs/stairs headroom та `ENDPOINT_MISMATCH` навмисно лишаються для спеціалізованої сильнішої моделі.
+
+
+## 25. Закриття етапу 1: NAV-OPT-18/19 — actor-aware діагностика та revision-aware empty-cache
+
+**Дата:** 23.11.2026. Користувач попросив «завершуй перший етап тоді до кінця». Перший етап у глобальному плані = **контроль, діагностика та обережна оптимізація навантаження запитів на шляхи**, до змін фізичної геометрії NPC. Цей розділ **фіксує реалізований обсяг і тестовий gate**, а не стверджує, що всі нові зміни вже скомпільовано або перевірено у грі. Код тільки в `fix/villager-door-access-and-village-territory`, `main` не змінено.
+
+### 25.1. NAV-OPT-18 — причиновий зв'язок невдалого запиту з конкретним NPC
+
+**Залишений без відповіді доказ (§24):** 44 `NO_PATH` з `start=(48,66,608)`, здебільшого за 11 с, ціль активно переміщується; у старих `NAV-OPT-COOLDOWN` немає actorId і semanticGoal. Глобальне `no_path_reset_goal=34` не може показати, чи це один NPC, чи кілька незалежних NPC.
+
+**Реалізація:**
+- `IAStarPathedEntity` отримав **default** методи `navigationActorId()`, `navigationActorName()`, `navigationBehaviorKey()`. Default забезпечує сумісність невілладжерних реалізацій інтерфейсу; методи тільки для diagnostics.
+- `MillVillager` повертає `getId()`, `func_70005_c_()` (ім'я NPC) і поточний `goalKey`. У `AStarPathPlannerJPS.getPath()` створюється **immutable `SearchTrace` на момент ПОДАЧІ запиту**, а не в майбутньому async completion. Це критично, бо до `deliver()` NPC може перейти до іншого goal; generation gating як і раніше відкидає старі callback після скасування. `stopPathSearch` очищує trace.
+- Старий лог `NAV-OPT-COOLDOWN action=NO_PATH` лишається сумісним із пошуком по префіксу, але тепер містить **`actorId=...`, `actorName=...`, `goal=...`, `from=...`, `to=...`, `retryTick=...`, `level=...`**; друк лише для **справжнього** failed worker, при `LogPathing >= 2`.
+- `NavigationGoalDriftWindow.java` — standalone bounded **per planner**, window=**20 game ticks**; за незмінного **start, movement policy і semanticGoal** рахує зміни **різних** goal endpoints тільки серед справді **submitted** first-search requests (не серед кожної спроби `getPath` і не серед JPS→A* followups). Перша подія з **5 target changes** дає один `NAV-OPT-MOVING-GOAL actorId=... actorName=... goal=... start=... firstTarget=... currentTarget=... changes=... windowTicks=20` та `moving_goal_bursts`. На наступних змінах цього самого 20-tick window лог НЕ дублюється. Нова поведінка, стартова координата, movement config, нове вікно або time rewind скидають лічильник. **Лише діагностика; це не throttle або blacklist.**
+- `AStarPathPlannerJPS` перед скасуванням вже busy запиту з іншими endpoints/options рахує `search_preempted` і окремі незалежні прапорці `search_preempted_start`, `search_preempted_goal`, `search_preempted_movement`. Якщо змінилося start І goal, **обидва** detailed flags зростають — їхня сума не зобов'язана дорівнювати total preempted. Для однакових in-flight запитів як і раніше `inflight_joined`, скасування немає.
+- `NavigationMetrics` додає накопичувальні `moving_goal_requests` і `moving_goal_bursts`; `NavigationRateWindow` додає `search_preempted_s`, `moving_goal_requests_s`, `moving_goal_bursts_s` за реальним monotonic wall-clock elapsed. Це дозволить побачити hotspots не лише з total since launch.
+- Джерело identity — **Minecraft entity runtime ID**, не `villagerId` із save; порівнювати ID тільки **в межах однієї ігрової сесії**. Відсутність `NAV-OPT-MOVING-GOAL` не доводить, що NPC не переслідує ціль: детектор обмежений одним незмінним start протягом 20 ticks і лише >=5 різними targets.
+
+**Коміти NAV-OPT-18:**
+`9a2314b` (interface),
+`bf931c0` (MillVillager tag),
+`3ac2dc5` (drift detector),
+`c25bbb1` (planner trace/preemptions/burst),
+`0cb4ca5` (metrics),
+`be0cbf4` (window),
+`abe9d29` (window counts wiring),
+`68be3ae` (window Java smoke),
+`e3c3189` (drift Java smoke),
+`8a56120` (Python guards).
+Додатковий source-test correction: `24de3ec` (whitespace-independent assertion for goal field).
+
+### 25.2. NAV-OPT-19 — пропуск тільки доведено порожніх пошуків у кеші
+
+**Проблема:** `AStarPathPlannerJPS.getPath()` викликав `reusePath()` до відкладення exact `NO_PATH` запиту. Навіть коли per-world `RouteMemory` не мав жодного candidate до цих конкретних start/goal/options, кожен подавлений повтор знову робив два map lookup, створював key/candidate list і лічив cache miss. Переставити `NO_PATH cooldown` перед усім кешем небезпечно: інший NPC міг уже зберегти відповідний свіжий маршрут, який слід доставити негайно.
+
+**Впроваджено, без зміни правил маршрутів:**
+- `RouteMemory` має synchronized `revision`; кожен справжній `remember` збільшує її, `forget` збільшує лише якщо entry існувала, expiration при `find` також збільшує. Повторне відхилення absent key НЕ збільшує. Максимальна кількість кешованих маршрутів та їх TTL/LRU/reverse semantics залишилися незмінними.
+- `RouteMemory.candidatesWithRevision()` повертає `CandidatesSnapshot(matches, revision)` **під одним monitor**; це не два окремі несинхронізовані читання, між якими інший NPC може додати маршрут. Звичайні `candidates()` і `lookup()` лишаються для інших користувачів.
+- `AStarPathPlannerJPS.reusePath` запам'ятовує exact `NavigationRequestKey` та ревізію тільки якщо `matches.isEmpty()` — **0 candidate**, а не випадок `BLOCKED_NODE`, `BLOCKED_TRANSITION` або `validationDeadline` timeout, де candidate існував, але поки не пройшов перевірку. Для не порожнього candidate список negative-cache memo очищується.
+- Подальший `getPath` для **точно того самого** key і незмінного `RouteMemory.revision()` пропускає тільки перевірку кандидата, **не** пошук A*/JPS і **не** live-world validation у випадку кандидата, бо його в цьому revision нема. Якщо інший NPC зберіг/забув маршрут або entry expired, revision змінюється — повний lookup повертається. При зміні start/end/movement options нічого не пропускається.
+- `cache_miss` залишається сумісним із попередньою статистикою (кожна спроба cache reuse, навіть shortcut, усе ще miss). Нова метрика `cache_empty_lookup_skipped` окремо рахує **економію map probes**. Без A/B і JVM allocation profiling не стверджувати % прискорення; нова `CandidatesSnapshot` має невелику allocation overhead на повних lookup.
+
+**Коміти NAV-OPT-19:** `e5b05e9` (`RouteMemory`), `36ca90c` (planner), `51afe1c` (metrics), `35b67ac` (RouteMemorySmoke), `3271cd3` (source regression). Окремо полагоджено давній некоректний Python assertion про `NavigationRequestKey`: `f2183a1` (`record NavigationRequestKey` замість `new NavigationRequestKey`).
+
+### 25.3. Закритий перелік першого етапу — те, що вже реалізовано в коді
+
+- **NAV-OPT-06–17:** exact failed-route cooldown, cooldown cached-route replans, background request coalescing, bounded executor (2 workers + queue 64), snapshot primitive reads, same-tick pool shared sections, world-event invalidations and poison race guards, non-latest full snapshot reuse, per-snapshot column memo, costly collision instrumentation, capped adaptive no-path backoff, world mutation wakeup, reason-specific reset telemetry. Попередні playtest NAV-OPT-15,16,17 пройшли у Minecraft без fatal Java crashes; вони підтвердили runtime кешів, але НЕ контрольоване підвищення TPS.
+- **NAV-OPT-18:** причинна прив'язка NO_PATH до actor + семантичного goal; bounded goal-drift detector та in-flight preemption metrics. Жодного алгоритмічного обмеження нових цілей не внесено, бо доказів для безпечного throttle поки недостатньо.
+- **NAV-OPT-19:** revision-aware безпечне відсікання повторних **порожніх** перевірок route cache.
+- **Перевірки підготовлено:** загалом **37** Python source-level `test_navigation_optimization_wiring.py`, **9** Python `test_navigation_priority.py` (не змінювалися), **11** standalone Java 17 smoke класів. Додано **`tools/tests/Run-NavigationPhase1.ps1`** — одна команда для всіх 11 Java + обох Python suites; необов'язковий `-BuildForge` запускає і Gradle через окремий powershell. Коміт `26d9c31`.
+- **Source review у GitHub:** перечитано 18 пов'язаних Java source files; 37 підготовлених Python тест-методів; **213 простих literal `assertIn/assertNotIn`** статично зіставлено з фактичними файлами (0 пропущених позитивних, 0 порушених негативних), окремо перевірено ключові ordering/immutability/version invariants. **Це НЕ виконання Python/Java/Gradle**, й інші dynamic assertions в цих 37 методах потребують реального запуску. Змінювалися лише дозволені source/tests/docs у feature branch, `main` не зачеплено.
+
+### 25.4. Однокнопкова перевірка та Minecraft acceptance gate
+
+1. Із кореня `Millenaire_mod_updating`:
+```powershell
+git switch fix/villager-door-access-and-village-territory
+git pull --ff-only origin fix/villager-door-access-and-village-territory
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\millenaire-1.18.2-forge\tools\tests\Run-NavigationPhase1.ps1 -BuildForge
+.\Update-Millenaire.bat
+```
+Перша команда smoke тесту виконує 11 dependency-free javac + 2 Python suites + Forge build (із `-BuildForge`), остання повторно збирає й встановлює JAR в ATLauncher (можна згодом зробити install-only для уникнення дублювання). **Якщо будь-яка перевірка failed, зупинити інсталяцію й передати перший error.** Script не встановлює JAR, це робить лише `Update-Millenaire.bat`.
+2. Повторити Minecraft playtest 5–10 хв на тому самому світі, довкола реальних NPC/shops, дверей і активної будови. Перевірити **`NAV-OPT-COOLDOWN actorId/goal`**, події `NAV-OPT-MOVING-GOAL`, `search_preempted(_start/_goal/_movement)`, `moving_goal_requests/bursts`, `cache_empty_lookup_skipped`, `no_path_failures_s`, JPS/A* search/s, snapshot & section reuse, `queue_wait_window_avg_ms`, `rejected=0` та рух NPC. Не змішувати різні сесії як контрольований A/B benchmark; потрібне зіставне навантаження. Немає нових crash, fatal exception чи істотної регресії поведінки.
+3. **Формальний acceptance щодо TPS/GC/CPU та повної Forge compilation залишається PENDING.** Останній отриманий лог NAV-OPT-17, а зміни NAV-OPT-18/19 ще НЕ зібрані й не запускалися локально. Не писати «перший етап пройшов усі тести» до результату користувача. Немає підстав казати, що він прискорився на X%. Цей аудит означає: **реалізацію етапу 1 завершено та заморожено перед тестуванням**, а не що гіпотези вже підтверджені у всіх сценаріях.
+
+### 25.5. Що НЕ робити в етапі 1 і наступна фаза
+
+Не впроваджувати глобальний cross-NPC `NO_PATH` blacklist, не об'єднувати endpoints із різними висотами, не нехтувати молодими новими цілями заради красивого зменшення `no_path_failures`, не масштабувати безконтрольно worker threads. Після acceptance завершити діагностичний цикл і перейти до **етапу 2 — physical transition viability**: перевірка всього руху з точки A у точку B для Minecraft 1.18.2 hitboxes, stairs/slabs/headroom/jump/fall, door/gate transitions, ladder descent/top-out, `ENDPOINT_MISMATCH`. Це має робити окремо призначена користувачем сильніша модель з тестами геометрії. Важливі координати та логи збережено в §§20–24. Після цього буде сенс повторно профілювати JPS/A* і розглядати HPA* або node-heap/closed-index GC оптимізацію на реальних hot paths.
+
