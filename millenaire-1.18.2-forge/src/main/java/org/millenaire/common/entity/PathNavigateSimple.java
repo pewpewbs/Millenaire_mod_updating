@@ -7,6 +7,11 @@ public class PathNavigateSimple extends GroundPathNavigation {
     private org.millenaire.common.pathing.DetourPathFinder detourPathFinder;
     private long nextLadderTraceTick;
     private long nextDoorWaypointTraceTick;
+    // Diagnostic only: separate real floor/collision height from integer
+    // stair waypoint height; do not alter movement until gameplay evidence.
+    private long nextStairTraceTick;
+    private long stairStationarySince = -1L;
+    private double stairLastX, stairLastZ;
     public PathNavigateSimple(Mob mob, Level level) {
         super(mob, level);
         setCanOpenDoors(true);
@@ -52,6 +57,7 @@ public class PathNavigateSimple extends GroundPathNavigation {
         net.minecraft.core.BlockPos rung = new net.minecraft.core.BlockPos(next.x, next.y, next.z);
         if (!this.mob.level.hasChunkAt(rung)) return;
         net.minecraft.world.level.block.state.BlockState state = this.mob.level.getBlockState(rung);
+        this.traceNearbyStair(rung);
         // A path can have the OPEN door block as its next node for many ticks
         // while a villager remains stationary in front of it. Distinguish
         // collision, bad waypoint height, and absent physical movement before
@@ -120,6 +126,91 @@ public class PathNavigateSimple extends GroundPathNavigation {
                     + " contact=" + ladderContact
                     + " velocityY=" + String.format(java.util.Locale.ROOT, "%.2f", vy));
         }
+    }
+
+    /**
+     * STAIR-01 instrumentation. Integer A*/JPS nodes don't describe the
+     * physical stair collision height (slab portion + full-height portion).
+     * This only logs a limited sample near a real stair so a report can
+     * distinguish unreachable planned node, ceiling collision, and a mob
+     * that never moves horizontally. It does NOT change pathing or physics.
+     */
+    private void traceNearbyStair(net.minecraft.core.BlockPos next) {
+        if (org.millenaire.common.config.MillConfigValues.LogPathing < 2) return;
+        long now = this.mob.level.getGameTime();
+        if (this.stairStationarySince < 0L || now < this.stairStationarySince
+                || (this.mob.getX() - this.stairLastX) * (this.mob.getX() - this.stairLastX)
+                 + (this.mob.getZ() - this.stairLastZ) * (this.mob.getZ() - this.stairLastZ)
+                    >= 0.16D) {
+            this.stairStationarySince = now;
+            this.stairLastX = this.mob.getX();
+            this.stairLastZ = this.mob.getZ();
+        }
+        if (now < this.nextStairTraceTick) return;
+        net.minecraft.core.BlockPos stair = null;
+        var level = this.mob.level;
+        // Stair below the NEXT node is normal when the planner counts it
+        // as a whole block and routes the feet to y+1. Also detect a stair
+        // at the node itself (potential half-height shape misclassification).
+        for (var sample : new net.minecraft.core.BlockPos[] {next, next.below()}) {
+            if (level.hasChunkAt(sample)
+                    && level.getBlockState(sample).getBlock()
+                            instanceof net.minecraft.world.level.block.StairBlock) {
+                stair = sample;
+                break;
+            }
+        }
+        // If the route deliberately goes AROUND stairs, instrument them
+        // only while the NPC has been stationary with an active path.
+        boolean stalled = now - this.stairStationarySince >= 40L;
+        if (stair == null && stalled) {
+            var feet = this.mob.blockPosition();
+            outer: for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    for (int dy = -1; dy <= 0; dy++) {
+                        var candidate = feet.offset(dx, dy, dz);
+                        if (!level.hasChunkAt(candidate)) continue;
+                        if (level.getBlockState(candidate).getBlock()
+                                instanceof net.minecraft.world.level.block.StairBlock) {
+                            stair = candidate;
+                            break outer;
+                        }
+                    }
+                }
+            }
+        }
+        if (stair == null) return;
+        double ox = stair.getX() + 0.5D - this.mob.getX();
+        double oz = stair.getZ() + 0.5D - this.mob.getZ();
+        if (ox * ox + oz * oz > 6.25D) return;
+        this.nextStairTraceTick = now + 60L;
+        var shapeState = level.getBlockState(stair);
+        var shape = shapeState.getCollisionShape(level, stair);
+        var targetBox = this.mob.getBoundingBox().move(
+                next.getX() + 0.5D - this.mob.getX(),
+                next.getY() - this.mob.getY(),
+                next.getZ() + 0.5D - this.mob.getZ());
+        org.millenaire.common.utilities.MillLog.major(this.mob,
+                "STAIR-WAYPOINT stair=" + stair
+                + " facing=" + shapeState.getValue(
+                        net.minecraft.world.level.block.StairBlock.FACING)
+                + " half=" + shapeState.getValue(
+                        net.minecraft.world.level.block.StairBlock.HALF)
+                + " shape=" + shapeState.getValue(
+                        net.minecraft.world.level.block.StairBlock.SHAPE)
+                + " collisionTop=" + (shape.isEmpty() ? "none"
+                    : String.format(java.util.Locale.ROOT, "%.2f", shape.bounds().maxY))
+                + " feet=" + this.mob.blockPosition()
+                + " exactY=" + String.format(java.util.Locale.ROOT, "%.2f", this.mob.getY())
+                + " next=" + next
+                + " nextHead=" + level.getBlockState(next.above()).getBlock()
+                + " atNextClear=" + level.noCollision(this.mob, targetBox)
+                + " mobHeight=" + String.format(java.util.Locale.ROOT, "%.2f",
+                        this.mob.getBbHeight())
+                + " horizontalCollision=" + this.mob.horizontalCollision
+                + " velocity=" + this.mob.getDeltaMovement()
+                + " stationaryTicks=" + (now - this.stairStationarySince)
+                + " path=" + this.path.getNextNodeIndex() + "/" + this.path.getNodeCount());
     }
 
     @Override public boolean moveTo(Path requested, double speed) {
