@@ -845,6 +845,20 @@ IAStarPathedEntity {
         return this.vtype.health;
     }
 
+    // These values are sampled when a path-search REQUEST starts, rather
+    // than when its asynchronous callback completes. A changed task must not
+    // be mistaken for the cause of the previous request's failure.
+    @Override
+    public long navigationActorId() { return this.getId(); }
+
+    @Override
+    public String navigationActorName() { return this.func_70005_c_(); }
+
+    @Override
+    public String navigationBehaviorKey() {
+        return this.goalKey == null ? "unknown" : this.goalKey;
+    }
+
     /** Optional, rate-limited route selection diagnostics for real playtests. */
     private void logRouteDecision(String mode, Point destination) {
         if (MillConfigValues.LogPathing < 2) return;
