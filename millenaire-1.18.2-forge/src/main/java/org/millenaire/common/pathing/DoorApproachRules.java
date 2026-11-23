@@ -70,7 +70,7 @@ public final class DoorApproachRules {
         double nz = Math.abs(centerZ - residentZ);
         double towardNormal = eastWestFacing ? nx : nz;
         double sideways = eastWestFacing ? nz : nx;
-        return towardNormal >= 0.30D && towardNormal >= sideways * 0.75D;
+        return towardNormal >= 0.30D && towardNormal >= sideways;
     }
 
     /**
