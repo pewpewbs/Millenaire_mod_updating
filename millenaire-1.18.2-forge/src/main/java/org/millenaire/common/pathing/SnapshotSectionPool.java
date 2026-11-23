@@ -77,6 +77,27 @@ public final class SnapshotSectionPool<T> {
         copies++;
     }
 
+    /**
+     * A known block-change notification invalidates exactly one section in
+     * this tick. Already-admitted copy/scan work remains charged to the budget
+     * so repeated edits cannot evade the CPU / allocation ceiling.
+     */
+    public boolean invalidateSection(long nowTick, long sectionKey) {
+        resetIfNewTick(nowTick);
+        return sections.remove(sectionKey) != null;
+    }
+
+    /**
+     * Conservative reaction to an entire chunk reload, piston movement or
+     * world lifecycle event. Does NOT reset the admission quotas.
+     */
+    public int invalidateAll(long nowTick) {
+        resetIfNewTick(nowTick);
+        int discarded = sections.size();
+        sections.clear();
+        return discarded;
+    }
+
     public int usedCopies() { return copies; }
     public int reusedCopies() { return hits; }
     public int usedChunkVisits() { return chunkVisits; }
