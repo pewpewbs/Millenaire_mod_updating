@@ -260,6 +260,8 @@ IAStarPathedEntity {
     private String lastScannerDoorGoal;
     private long lastScannerDoorTick = -1L;
     private double lastScannerDoorX, lastScannerDoorZ;
+    private net.minecraft.core.BlockPos lastSideDoorTrace;
+    private long nextSideDoorTraceTick;
     private final org.millenaire.common.pathing.MovementWatchdog movementWatchdog = new org.millenaire.common.pathing.MovementWatchdog();
     private long nextPathFailureDiagnostic = 0L;
     private final PathFailureRecovery pathFailureRecovery = new PathFailureRecovery();
@@ -1776,6 +1778,17 @@ IAStarPathedEntity {
                             // traversal runs along the CLOSED panel, so
                             // opening it would create the very collision
                             // reported by DOOR-WAYPOINT in the earlier log.
+                            if (MillConfigValues.LogPathing >= 2
+                                    && (!door.equals(this.lastSideDoorTrace)
+                                        || this.level.getGameTime() >= this.nextSideDoorTraceTick)) {
+                                this.lastSideDoorTrace = door.immutable();
+                                this.nextSideDoorTraceTick = this.level.getGameTime() + 100L;
+                                MillLog.major(this, "DOOR-SIDE-PASS door=" + door
+                                        + " open=" + lower.getValue(
+                                                net.minecraft.world.level.block.DoorBlock.OPEN)
+                                        + " feet=" + this.blockPosition()
+                                        + " path=" + idx + "/" + route.getNodeCount());
+                            }
                             continue;
                         }
                         var shut = lower.setValue(net.minecraft.world.level.block.DoorBlock.OPEN, false);
