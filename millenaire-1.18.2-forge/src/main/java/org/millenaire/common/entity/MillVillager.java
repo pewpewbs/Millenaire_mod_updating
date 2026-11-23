@@ -1715,6 +1715,40 @@ IAStarPathedEntity {
                                 ? pos.below() : pos;
                         if (!this.level.hasChunkAt(door)) continue;
                         var lower = this.level.getBlockState(door);
+                        // A sideways route through this block can actually
+                        // need the door to remain CLOSED: OPEN swings the panel
+                        // into that lane. DOOR-13 ruled out this entire route,
+                        // forcing residents to go around instead of using it.
+                        // Check the immediate edges around each matched path
+                        // node, not only the global goal heading.
+                        boolean matchedDoorNode = false;
+                        boolean routeCrossesPanel = false;
+                        for (int j = Math.max(0, idx - 1);
+                                j < Math.min(route.getNodeCount(), idx + 4); j++) {
+                            var at = route.getNode(j);
+                            if (at == null || at.x != door.getX() || at.z != door.getZ()
+                                    || Math.abs(at.y - door.getY()) > 1) continue;
+                            matchedDoorNode = true;
+                            for (int delta : new int[] {-1, 1}) {
+                                int neighborIndex = j + delta;
+                                if (neighborIndex < 0 || neighborIndex >= route.getNodeCount()) continue;
+                                var neighbor = route.getNode(neighborIndex);
+                                if (neighbor == null) continue;
+                                int edgeX = neighbor.x - at.x;
+                                int edgeZ = neighbor.z - at.z;
+                                if (org.millenaire.common.pathing.DoorTransitionRules.needsOpeningForEdge(
+                                        lower, edgeX, edgeZ)) {
+                                    routeCrossesPanel = true;
+                                }
+                            }
+                        }
+                        if (matchedDoorNode && !routeCrossesPanel) {
+                            // This is a real door NODE but the intended
+                            // traversal runs along the CLOSED panel, so
+                            // opening it would create the very collision
+                            // reported by DOOR-WAYPOINT in the earlier log.
+                            continue;
+                        }
                         var shut = lower.setValue(net.minecraft.world.level.block.DoorBlock.OPEN, false);
                         var panel = shut.getCollisionShape(this.level, door).bounds();
                         double panelX = org.millenaire.common.pathing.DoorApproachRules.closestPanelCoordinate(
