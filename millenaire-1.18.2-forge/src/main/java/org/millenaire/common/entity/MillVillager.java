@@ -465,6 +465,10 @@ IAStarPathedEntity {
         }
         catch (Exception e) {
             MillLog.printException("Exception when finding JPS path:", e);
+            // A stale/unusable physical route must not silently leave the
+            // villager without movement. Reuse the existing Vanilla fallback.
+            this.pathFailedSincelastTick = true;
+            this.nextVanillaPathAttempt = 0L;
         }
         finally { this.pathCalculatedSinceLastTick = null; }
     }
