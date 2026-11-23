@@ -1923,8 +1923,10 @@ IAStarPathedEntity {
                         destination == null ? null : destination.getBlockPos(),
                         this.lastScannerDoorDestination);
             long elapsed = now - this.lastScannerDoorTick;
-            boolean repeatedWithoutProgress =
-                    org.millenaire.common.pathing.DoorApproachRules.suppressStationaryScannerReopen(
+            boolean woodenCandidate =
+                    BlockItemUtilities.isWoodenDoor(this.level.getBlockState(best).getBlock());
+            boolean repeatedWithoutProgress = woodenCandidate
+                    && org.millenaire.common.pathing.DoorApproachRules.suppressStationaryScannerReopen(
                         sameDoor, sameGoalAndDestination,
                         movedX * movedX + movedZ * movedZ, elapsed);
             // This only limits SCANNER retries with zero progress for a
