@@ -52,6 +52,21 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("NavigationMetrics.reverseFound()", reverse)
         self.assertIn('"NAV-OPT-REVERSE from="', reverse)
 
+    def test_failed_search_cooldown_preserves_new_goals(self):
+        self.assertIn("this.lastStart.equals(this.failedStart)", PLANNER)
+        self.assertIn("this.lastEnd.equals(this.failedEnd)", PLANNER)
+        self.assertIn("routeOptions(this.config) == this.failedOptions", PLANNER)
+        self.assertIn("this.world.getGameTime() < this.failedRetryTick", PLANNER)
+        self.assertIn("this.deferred = true;", PLANNER)
+        self.assertIn("NavigationMetrics.noPathCooldown()", PLANNER)
+        self.assertIn("this.failedRetryTick = this.world.getGameTime() + 20L", PLANNER)
+        self.assertIn("this.failedStart = null;", PLANNER)
+
+    def test_reverse_diagnostics_distinguish_no_route_from_reversed(self):
+        self.assertIn('chosen == null ? "NONE"', WORKER)
+        self.assertIn('"ENDPOINT_MISMATCH actualStart="', WORKER)
+        self.assertIn('" actualGoal="', WORKER)
+
     def test_snapshot_reuse_only_same_tick(self):
         self.assertIn("previous.tick()==tick", SNAPSHOT)
         self.assertIn("minX>=previous.minX()", SNAPSHOT)
