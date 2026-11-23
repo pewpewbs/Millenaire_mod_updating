@@ -30,12 +30,15 @@ class PrimaryRouteWiring(unittest.TestCase):
         self.assertIn("this.pathPlannerJPS.getPath(", primary)
         self.assertNotIn("this.tryGroundRoute(dest)", primary)
 
-    def test_deferred_primary_schedules_fallback(self):
+    def test_deferred_primary_is_not_treated_as_impossible_path(self):
         primary = section(VILLAGER, "private List<Node> computeNewPath(Point dest)",
                           "public int countInv(Block block")
         self.assertIn("if (this.pathPlannerJPS.isBusy())", primary)
-        self.assertIn("this.logRouteDecision(\"ASTAR-DEFERRED\", dest)", primary)
-        self.assertIn("this.onNoPathAvailable();", primary)
+        self.assertIn("this.pathPlannerJPS.hadImmediatePath()", primary)
+        self.assertIn("this.pathPlannerJPS.wasDeferred()", primary)
+        self.assertIn('this.logRouteDecision("ASTAR-NO-WORKER", dest)', primary)
+        deferred = primary.split("this.pathPlannerJPS.wasDeferred()", 1)[1].split("} else {", 1)[0]
+        self.assertNotIn("this.onNoPathAvailable()", deferred)
         self.assertIn("catch (ThreadSafeUtilities.ChunkAccessException e)", primary)
 
     def test_primary_failure_uses_vanilla_and_retains_working_route(self):
