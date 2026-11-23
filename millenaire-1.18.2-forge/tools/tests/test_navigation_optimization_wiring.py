@@ -63,14 +63,14 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn('"NAV-OPT-REVERSE from="', reverse)
 
     def test_failed_search_cooldown_preserves_new_goals(self):
-        self.assertIn("new org.millenaire.common.pathing.FailedRouteBackoff()", PLANNER)
+        self.assertIn("new org.millenaire.common.pathing.FailedRouteBackoff(", PLANNER)
         self.assertIn("this.failedRouteBackoff.onRequest(requested)", PLANNER)
         self.assertIn("this.failedRouteBackoff.shouldDefer(", PLANNER)
         self.assertIn("requested, tick, knownWorldMutationEpoch()", PLANNER)
         self.assertIn("this.deferred = true;", PLANNER)
         self.assertIn("NavigationMetrics.noPathCooldown()", PLANNER)
         self.assertIn("this.failedRouteBackoff.onFailed(failed,", PLANNER)
-        self.assertIn("this.failedRouteBackoff.clear();", PLANNER)
+        self.assertIn("this.failedRouteBackoff.onSuccess();", PLANNER)
         self.assertIn("new NavigationRequestKey", REQUEST)
 
     def test_adaptive_no_path_backoff_is_capped_and_policy_sensitive(self):
@@ -81,7 +81,7 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("currentEpoch != mutationEpoch", FAILED_BACKOFF)
         self.assertIn("tick < failureTick", FAILED_BACKOFF)
         self.assertIn("Math.min(MAX_LEVEL, level + 1)", FAILED_BACKOFF)
-        self.assertIn("if (lastFailure != null && !lastFailure.equals(requested)) clear();", FAILED_BACKOFF)
+        self.assertIn("resetForChangedRequest(requested);", FAILED_BACKOFF)
         self.assertIn("NavigationMetrics.noPathFailure(level)", PLANNER)
         self.assertIn("no_path_failures=", METRICS)
         self.assertIn("no_path_backoff_level2=", METRICS)
@@ -101,7 +101,44 @@ class OptimizationWiring(unittest.TestCase):
         world = SNAPSHOT.split("public static void onKnownWorldMutation(", 1)[1]
         world = world.split("public static void onWorldUnload(", 1)[0]
         self.assertIn("advanceKnownMutation(level)", world)
-        self.assertIn("if (tick < failureTick || currentEpoch != mutationEpoch)", FAILED_BACKOFF)
+        self.assertIn("reset(Event.RESET_WORLD_MUTATED);", FAILED_BACKOFF)
+        self.assertIn("reset(Event.RESET_TICK_REWIND);", FAILED_BACKOFF)
+
+    def test_navopt17_reset_causes_are_distinct_and_diagnostic_only(self):
+        for event in ("RESET_START_CHANGED", "RESET_GOAL_CHANGED",
+                      "RESET_MOVEMENT_CHANGED", "RESET_WORLD_MUTATED",
+                      "RESET_TICK_REWIND", "RESET_SUCCESS", "RETRY_EXPIRED"):
+            self.assertIn(event, FAILED_BACKOFF)
+        self.assertIn("lastFailure.start().equals(requested.start())", FAILED_BACKOFF)
+        self.assertIn("lastFailure.goal().equals(requested.goal())", FAILED_BACKOFF)
+        self.assertIn("Consumer<Event> observer", FAILED_BACKOFF)
+        self.assertIn("this(event -> {});", FAILED_BACKOFF)
+        self.assertIn("private void reset(Event event)", FAILED_BACKOFF)
+        self.assertIn("if (lastFailure != null) observer.accept(event);", FAILED_BACKOFF)
+        self.assertIn("public void onSuccess()", FAILED_BACKOFF)
+        self.assertIn("reset(Event.RESET_SUCCESS);", FAILED_BACKOFF)
+
+    def test_navopt17_backoff_expiry_reports_only_once_and_preserves_streak(self):
+        self.assertIn("private boolean expiryReported;", FAILED_BACKOFF)
+        self.assertIn("if (!expiryReported)", FAILED_BACKOFF)
+        self.assertIn("observer.accept(Event.RETRY_EXPIRED);", FAILED_BACKOFF)
+        self.assertIn("expiryReported = true;", FAILED_BACKOFF)
+        self.assertIn("expiryReported = false;", FAILED_BACKOFF)
+        self.assertIn("if (tick >= retryTick)", FAILED_BACKOFF)
+        self.assertIn("return false;", FAILED_BACKOFF)
+        self.assertIn("Math.min(MAX_LEVEL, level + 1)", FAILED_BACKOFF)
+
+    def test_navopt17_reset_telemetry_is_not_path_decision_input(self):
+        self.assertIn("NavigationMetrics::noPathBackoffEvent", PLANNER)
+        self.assertIn("void noPathBackoffEvent(FailedRouteBackoff.Event event)", METRICS)
+        self.assertIn("NO_PATH_BACKOFF_EVENTS[event.ordinal()].increment()", METRICS)
+        self.assertIn("for (LongAdder transition : NO_PATH_BACKOFF_EVENTS) transition.reset();", METRICS)
+        for field in ("no_path_reset_start=", "no_path_reset_goal=",
+                      "no_path_reset_movement=", "no_path_reset_world=",
+                      "no_path_reset_rewind=", "no_path_reset_success=",
+                      "no_path_retry_expired="):
+            self.assertIn(field, METRICS)
+        self.assertIn("this.failedRouteBackoff.onSuccess()", PLANNER)
 
     def test_identical_cached_routes_are_throttled_without_blocking_new_goals(self):
         self.assertIn("this.lastStart.equals(this.recentCacheStart)", PLANNER)
