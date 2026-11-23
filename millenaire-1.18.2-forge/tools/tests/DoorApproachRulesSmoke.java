@@ -202,6 +202,14 @@ public final class DoorApproachRulesSmoke {
         test(!DoorApproachRules.expiredStationaryScannerHold(
                 false, true, 0.0D, 120L),
                 "different door does not inherit old expired window");
+        test(DoorApproachRules.facingDoorPanel(10.5, 10.5, 10.90625, 10.5, true),
+                "resident already in block can operate its EAST edge panel");
+        test(DoorApproachRules.facingDoorPanel(10.5, 10.5, 10.09375, 10.5, true),
+                "resident already in block can operate its WEST edge panel");
+        test(!DoorApproachRules.facingDoorPanel(10.5, 10.0, 10.90625, 10.5, true),
+                "sideways approach must not swing EAST edge panel into corridor");
+        test(!DoorApproachRules.facingDoorPanel(10.5, 11.0, 10.09375, 10.5, true),
+                "sideways approach must not swing WEST edge panel into corridor");
         System.out.println("PASS: emergency front-door geometry");
     }
 }
