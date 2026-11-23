@@ -77,6 +77,18 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn('"ENDPOINT_MISMATCH actualStart="', WORKER)
         self.assertIn('" actualGoal="', WORKER)
 
+    def test_cache_invalidation_and_failure_cooldown_have_actionable_logs(self):
+        cache = PLANNER.split("private ArrayList<AStarNode> reusePath(", 1)[1]
+        cache = cache.split("private void rememberPath(", 1)[0]
+        self.assertIn('"NAV-OPT-CACHE action=INVALIDATE reason="', cache)
+        self.assertIn('rejection = "BLOCKED_NODE"', cache)
+        self.assertIn('rejection = "BLOCKED_TRANSITION"', cache)
+        self.assertIn('rejection = "NO_ORTHOGONAL_CORNER"', cache)
+        self.assertIn('rejection = "CHUNK_UNAVAILABLE"', cache)
+        self.assertIn("rejectedFrom = from;", cache)
+        self.assertIn("if (!timedOut)", cache)
+        self.assertIn('"NAV-OPT-COOLDOWN action=NO_PATH"', PLANNER)
+
     def test_snapshot_reuse_only_same_tick(self):
         self.assertIn("previous.tick()==tick", SNAPSHOT)
         self.assertIn("minX>=previous.minX()", SNAPSHOT)
