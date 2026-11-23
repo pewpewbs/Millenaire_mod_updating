@@ -30,7 +30,21 @@ public class AStarPathPlannerJPS {
     private boolean busy;
     private AStarNode lastStart,lastEnd;
     private org.millenaire.common.pathing.NavigationRequestKey activeRequest;
+
     private boolean joinedSearch;
+    // Immutable actor/task context as of submission; callbacks arrive later,
+    // after the villager may have changed jobs or goals.
+    private record SearchTrace(long actorId, String name, String goal) {
+        private static SearchTrace capture(IAStarPathedEntity entity) {
+            return entity == null
+                    ? new SearchTrace(-1L, "unknown", "unknown")
+                    : new SearchTrace(entity.navigationActorId(),
+                            entity.navigationActorName(), entity.navigationBehaviorKey());
+        }
+    }
+    private SearchTrace currentTrace;
+    private final org.millenaire.common.pathing.NavigationGoalDriftWindow goalDrift =
+            new org.millenaire.common.pathing.NavigationGoalDriftWindow();
     public AStarConfig config;
     private net.minecraft.world.level.BlockGetter snapshot;
     private long nextSnapshotAttempt;
@@ -322,7 +336,15 @@ public class AStarPathPlannerJPS {
         }
         // A new destination, starting block, or movement policy really does
         // supersede the old search. Generation gating drops old callbacks.
+        // Count this decision before clearing the previous request identity.
+        if (this.busy && this.activeRequest != null) {
+            org.millenaire.common.pathing.NavigationMetrics.searchPreempted(
+                    !this.activeRequest.start().equals(requested.start()),
+                    !this.activeRequest.goal().equals(requested.goal()),
+                    !this.activeRequest.movement().equals(requested.movement()));
+        }
         stopPathSearch(true);
+        this.currentTrace = SearchTrace.capture(this.pathedEntity);
         this.activeRequest = requested;
         this.immediatePath = false;
         this.deferred = false;
@@ -375,6 +397,26 @@ public class AStarPathPlannerJPS {
             return;
         }
         submit(false);
+        if (this.future != null && this.busy) {
+            // Diagnostic only. Count ACTUAL submitted searches, not repeated
+            // getPath calls suppressed by cache, cooldown or snapshot budget.
+            var sample = this.goalDrift.onSearch(tick, requested, this.currentTrace.goal());
+            if (sample.goalChanged())
+                org.millenaire.common.pathing.NavigationMetrics.movingGoalRequest();
+            if (sample.burstStarted()) {
+                org.millenaire.common.pathing.NavigationMetrics.movingGoalBurst();
+                if (MillConfigValues.LogPathing >= 2) {
+                    MillLog.major(null, "NAV-OPT-MOVING-GOAL actorId="
+                            + this.currentTrace.actorId() + " actorName="
+                            + this.currentTrace.name() + " goal=" + this.currentTrace.goal()
+                            + " start=" + requested.start()
+                            + " firstTarget=" + this.goalDrift.firstGoal()
+                            + " currentTarget=" + this.goalDrift.lastGoal()
+                            + " changes=" + sample.changes()
+                            + " windowTicks=20");
+                }
+            }
+        }
     }
     private void submit(boolean classic) {
         AStarWorker next=createWorker(classic);this.worker=next;this.busy=true;
@@ -446,6 +488,9 @@ public class AStarPathPlannerJPS {
                 // Report once per actual failed search, not on suppressed
                 // attempts. The increasing level pinpoints persistent stalls.
                 MillLog.major(null, "NAV-OPT-COOLDOWN action=NO_PATH"
+                        + " actorId=" + (this.currentTrace == null ? -1L : this.currentTrace.actorId())
+                        + " actorName=" + (this.currentTrace == null ? "unknown" : this.currentTrace.name())
+                        + " goal=" + (this.currentTrace == null ? "unknown" : this.currentTrace.goal())
                         + " from=" + this.lastStart + " to=" + this.lastEnd
                         + " retryTick=" + this.failedRouteBackoff.retryTick()
                         + " level=" + level);
@@ -457,7 +502,7 @@ public class AStarPathPlannerJPS {
         }
     }
     public synchronized void stopPathSearch(boolean interrupted) {
-        ++this.generation;PathSearchExecutor.cancel(this.future);this.future=null;this.worker=null;this.busy=false;this.snapshot=null;this.jpsCandidate=null;this.activeRequest=null;this.joinedSearch=false;
+        ++this.generation;PathSearchExecutor.cancel(this.future);this.future=null;this.worker=null;this.busy=false;this.snapshot=null;this.jpsCandidate=null;this.activeRequest=null;this.joinedSearch=false;this.currentTrace=null;
         if(!interrupted&&this.pathedEntity!=null)this.pathedEntity.onNoPathAvailable();
     }
 }
