@@ -29,6 +29,12 @@ public final class NavigationMetrics {
     }
     private static final LongAdder CACHE_REPLAN_DEFERRED = new LongAdder();
     private static final LongAdder INFLIGHT_JOINED = new LongAdder();
+    private static final LongAdder SEARCH_PREEMPTED = new LongAdder();
+    private static final LongAdder SEARCH_PREEMPTED_START = new LongAdder();
+    private static final LongAdder SEARCH_PREEMPTED_GOAL = new LongAdder();
+    private static final LongAdder SEARCH_PREEMPTED_MOVEMENT = new LongAdder();
+    private static final LongAdder MOVING_GOAL_REQUESTS = new LongAdder();
+    private static final LongAdder MOVING_GOAL_BURSTS = new LongAdder();
     private static final LongAdder LADDER_SCANS = new LongAdder();
     private static final LongAdder LADDER_PROBES = new LongAdder();
     private static final LongAdder LADDER_HITS = new LongAdder();
@@ -114,6 +120,16 @@ public final class NavigationMetrics {
     }
     public static void cacheReplanDeferred() { CACHE_REPLAN_DEFERRED.increment(); }
     public static void inflightJoined() { INFLIGHT_JOINED.increment(); }
+    /** Flags may co-occur: start and target can both change in one preemption. */
+    public static void searchPreempted(boolean startChanged, boolean goalChanged,
+                                       boolean movementChanged) {
+        SEARCH_PREEMPTED.increment();
+        if (startChanged) SEARCH_PREEMPTED_START.increment();
+        if (goalChanged) SEARCH_PREEMPTED_GOAL.increment();
+        if (movementChanged) SEARCH_PREEMPTED_MOVEMENT.increment();
+    }
+    public static void movingGoalRequest() { MOVING_GOAL_REQUESTS.increment(); }
+    public static void movingGoalBurst() { MOVING_GOAL_BURSTS.increment(); }
     public static void ladderScan(int probes, boolean found, long nanos) {
         LADDER_SCANS.increment();
         LADDER_PROBES.add(Math.max(0, probes));
@@ -172,6 +188,12 @@ public final class NavigationMetrics {
             +" no_path_retry_expired="+noPathBackoffEventCount(FailedRouteBackoff.Event.RETRY_EXPIRED)
             +" cache_replan_deferred="+CACHE_REPLAN_DEFERRED.sum()
             +" inflight_joined="+INFLIGHT_JOINED.sum()
+            +" search_preempted="+SEARCH_PREEMPTED.sum()
+            +" search_preempted_start="+SEARCH_PREEMPTED_START.sum()
+            +" search_preempted_goal="+SEARCH_PREEMPTED_GOAL.sum()
+            +" search_preempted_movement="+SEARCH_PREEMPTED_MOVEMENT.sum()
+            +" moving_goal_requests="+MOVING_GOAL_REQUESTS.sum()
+            +" moving_goal_bursts="+MOVING_GOAL_BURSTS.sum()
             +" cache_hit="+CACHE_HIT.sum()
             +" cache_reverse="+CACHE_REVERSE.sum()+" cache_miss="+CACHE_MISS.sum()
             +" cache_invalidated="+CACHE_STALE.sum()+" routes_stored="+ROUTES_STORED.sum()
@@ -202,6 +224,8 @@ public final class NavigationMetrics {
         SECTIONS.reset();DEFERRED.reset();STALE.reset();
         CACHE_HIT.reset();CACHE_REVERSE.reset();CACHE_MISS.reset();CACHE_STALE.reset();
         ROUTES_STORED.reset();REVERSE_TRIED.reset();REVERSE_FOUND.reset();SNAPSHOT_REUSED.reset();NO_PATH_COOLDOWN.reset();NO_PATH_FAILURES.reset();NO_PATH_BACKOFF_LEVEL2.reset();NO_PATH_BACKOFF_LEVEL3.reset();CACHE_REPLAN_DEFERRED.reset();INFLIGHT_JOINED.reset();
+        SEARCH_PREEMPTED.reset();SEARCH_PREEMPTED_START.reset();SEARCH_PREEMPTED_GOAL.reset();SEARCH_PREEMPTED_MOVEMENT.reset();
+        MOVING_GOAL_REQUESTS.reset();MOVING_GOAL_BURSTS.reset();
         for (LongAdder transition : NO_PATH_BACKOFF_EVENTS) transition.reset();
         LADDER_SCANS.reset();LADDER_PROBES.reset();LADDER_HITS.reset();LADDER_NANOS.reset();
         SNAPSHOT_AREA_REJECTED.reset();SNAPSHOT_TICK_BUDGET.reset();SNAPSHOT_SECTION_LIMIT.reset();
