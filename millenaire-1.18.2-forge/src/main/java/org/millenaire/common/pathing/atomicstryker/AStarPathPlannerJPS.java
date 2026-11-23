@@ -29,6 +29,8 @@ public class AStarPathPlannerJPS {
     private long generation;
     private boolean busy;
     private AStarNode lastStart,lastEnd;
+    private org.millenaire.common.pathing.NavigationRequestKey activeRequest;
+    private boolean joinedSearch;
     public AStarConfig config;
     private net.minecraft.world.level.BlockGetter snapshot;
     private long nextSnapshotAttempt;
@@ -58,6 +60,17 @@ public class AStarPathPlannerJPS {
             return ROUTES.computeIfAbsent(world,
                     ignored -> new org.millenaire.common.pathing.RouteMemory(96, 96, 200L));
         }
+    }
+
+    private static org.millenaire.common.pathing.NavigationRequestKey requestKey(
+            AStarNode start, AStarNode goal, AStarConfig cfg) {
+        return new org.millenaire.common.pathing.NavigationRequestKey(
+                new org.millenaire.common.pathing.NavigationRequestKey.Endpoint(start.x, start.y, start.z),
+                new org.millenaire.common.pathing.NavigationRequestKey.Endpoint(goal.x, goal.y, goal.z),
+                new org.millenaire.common.pathing.NavigationRequestKey.Movement(
+                        cfg.canUseDoors, cfg.canTakeDiagonals, cfg.allowDropping,
+                        cfg.canSwim, cfg.canClearLeaves, cfg.tolerance,
+                        cfg.toleranceHorizontal, cfg.toleranceVertical));
     }
 
     private static int routeOptions(AStarConfig cfg) {
@@ -275,9 +288,21 @@ public class AStarPathPlannerJPS {
         result.tolerance=source.tolerance;result.toleranceHorizontal=source.toleranceHorizontal;result.toleranceVertical=source.toleranceVertical;return result;
     }
     public synchronized void getPath(AStarNode start,AStarNode end,AStarConfig settings) {
+        var requested = requestKey(start, end, settings);
+        if (this.busy && requested.equals(this.activeRequest)) {
+            // The same NPC asked for an already running or queued A*/JPS
+            // search. Do NOT cancel/restart that expensive computation.
+            this.joinedSearch = true;
+            org.millenaire.common.pathing.NavigationMetrics.inflightJoined();
+            return;
+        }
+        // A new destination, starting block, or movement policy really does
+        // supersede the old search. Generation gating drops old callbacks.
         stopPathSearch(true);
+        this.activeRequest = requested;
         this.immediatePath = false;
         this.deferred = false;
+        this.joinedSearch = false;
         this.jpsCandidate = null;
         this.lastStart = copy(start);
         this.lastEnd = copy(end);
@@ -336,6 +361,7 @@ public class AStarPathPlannerJPS {
         this.future=PathSearchExecutor.submit(next);
         if (this.future == null) {
             this.busy = false;
+            this.activeRequest = null;
             this.worker = null;
             this.snapshot = null;
             this.deferred = true;
@@ -359,6 +385,7 @@ public class AStarPathPlannerJPS {
     }
     public synchronized boolean isBusy() { return this.busy; }
     public synchronized boolean hadImmediatePath() { return this.immediatePath; }
+    public synchronized boolean hadJoinedSearch() { return this.joinedSearch; }
     public synchronized boolean wasDeferred() { return this.deferred; }
     public void completed(AStarWorker source,ArrayList<AStarNode> result) {
         dispatch(()->deliver(source,result));
@@ -382,6 +409,8 @@ public class AStarPathPlannerJPS {
         }
         this.jpsCandidate=null;
         this.snapshot=null;
+        this.activeRequest = null;
+        this.joinedSearch = false;
         if (result != null) {
             this.failedStart = null;
             this.failedEnd = null;
@@ -409,7 +438,7 @@ public class AStarPathPlannerJPS {
         }
     }
     public synchronized void stopPathSearch(boolean interrupted) {
-        ++this.generation;PathSearchExecutor.cancel(this.future);this.future=null;this.worker=null;this.busy=false;this.snapshot=null;this.jpsCandidate=null;
+        ++this.generation;PathSearchExecutor.cancel(this.future);this.future=null;this.worker=null;this.busy=false;this.snapshot=null;this.jpsCandidate=null;this.activeRequest=null;this.joinedSearch=false;
         if(!interrupted&&this.pathedEntity!=null)this.pathedEntity.onNoPathAvailable();
     }
 }
