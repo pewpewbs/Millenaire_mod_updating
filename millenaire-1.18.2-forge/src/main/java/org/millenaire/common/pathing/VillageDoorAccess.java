@@ -19,6 +19,8 @@ import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.millenaire.common.utilities.BlockItemUtilities;
+import org.millenaire.common.config.MillConfigValues;
+import org.millenaire.common.utilities.MillLog;
 
 /**
  * A shared, server-only lease for doors and fence gates opened by Millenaire residents.
@@ -40,6 +42,13 @@ public final class VillageDoorAccess {
 
     private VillageDoorAccess() {}
 
+    private static void trace(ServerLevel level, BlockPos pos, String reason) {
+        if (MillConfigValues.LogPathing >= 2) {
+            MillLog.major("VillageDoorAccess", "DOOR-LEASE " + reason
+                    + " pos=" + pos + " tick=" + level.getGameTime());
+        }
+    }
+
     private static BlockPos canonical(ServerLevel level, BlockPos pos, BlockState state) {
         if (state.getBlock() instanceof DoorBlock
                 && state.getValue(DoorBlock.HALF) == DoubleBlockHalf.UPPER) {
@@ -49,8 +58,13 @@ public final class VillageDoorAccess {
     }
 
     private static void remember(ServerLevel level, BlockPos pos) {
-        OPENED.computeIfAbsent(level, ignored -> new HashMap<>())
+        Long previous = OPENED.computeIfAbsent(level, ignored -> new HashMap<>())
             .put(pos.immutable(), level.getGameTime());
+        if (previous == null) {
+            trace(level, pos, "OPENED");
+        } else if (level.getGameTime() % 100L == 0L) {
+            trace(level, pos, "RENEWED");
+        }
     }
 
     private static boolean isPlayerControlled(ServerLevel level, BlockPos pos) {
@@ -90,6 +104,7 @@ public final class VillageDoorAccess {
         }
         PLAYER_CONTROL.computeIfAbsent(level, ignored -> new HashMap<>())
             .put(pos.immutable(), level.getGameTime() + PLAYER_CONTROL_TICKS);
+        trace(level, pos, "PLAYER-OVERRIDE state=" + state);
     }
 
     /** Adopt an old saved door-to-close hint after upgrading from per-villager handling. */
@@ -114,7 +129,10 @@ public final class VillageDoorAccess {
         BlockState sample = level.getBlockState(raw);
         BlockPos pos = canonical(level, raw, sample);
         BlockState state = level.getBlockState(pos);
-        if (isPlayerControlled(level, pos)) return;
+        if (isPlayerControlled(level, pos)) {
+            if (level.getGameTime() % 100L == 0L) trace(level, pos, "PLAYER-OVERRIDE-SKIP");
+            return;
+        }
         Map<BlockPos, Long> registered = OPENED.get(level);
 
         if (BlockItemUtilities.isWoodenDoor(state.getBlock())) {
@@ -183,8 +201,12 @@ public final class VillageDoorAccess {
             // must not hold an entrance open for multiple seconds.
             AABB portal = new AABB(pos).inflate(0.12D, 0.75D, 0.12D);
             if (!level.getEntitiesOfClass(LivingEntity.class, portal,
-                    LivingEntity::isAlive).isEmpty()) continue;
+                    LivingEntity::isAlive).isEmpty()) {
+                if (level.getGameTime() % 100L == 0L) trace(level, pos, "OCCUPIED");
+                continue;
+            }
 
+            trace(level, pos, "CLOSING state=" + state);
             if (wooden) {
                 ((DoorBlock) state.getBlock()).setOpen(null, level, state, pos, false);
             } else {
