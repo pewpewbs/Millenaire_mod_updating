@@ -6,6 +6,7 @@ import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 public class PathNavigateSimple extends GroundPathNavigation {
     private org.millenaire.common.pathing.DetourPathFinder detourPathFinder;
     private long nextLadderTraceTick;
+    private long nextDoorWaypointTraceTick;
     public PathNavigateSimple(Mob mob, Level level) {
         super(mob, level);
         setCanOpenDoors(true);
@@ -51,6 +52,29 @@ public class PathNavigateSimple extends GroundPathNavigation {
         net.minecraft.core.BlockPos rung = new net.minecraft.core.BlockPos(next.x, next.y, next.z);
         if (!this.mob.level.hasChunkAt(rung)) return;
         net.minecraft.world.level.block.state.BlockState state = this.mob.level.getBlockState(rung);
+        // A path can have the OPEN door block as its next node for many ticks
+        // while a villager remains stationary in front of it. Distinguish
+        // collision, bad waypoint height, and absent physical movement before
+        // changing movement physics. Emit only near a DOOR node (not gates).
+        if (org.millenaire.common.utilities.BlockItemUtilities.isWoodenDoor(state.getBlock())) {
+            double ex = rung.getX() + 0.5D - this.mob.getX();
+            double ez = rung.getZ() + 0.5D - this.mob.getZ();
+            long now = this.mob.level.getGameTime();
+            if (ex * ex + ez * ez <= 6.25D
+                    && org.millenaire.common.config.MillConfigValues.LogPathing >= 2
+                    && now >= this.nextDoorWaypointTraceTick) {
+                this.nextDoorWaypointTraceTick = now + 40L;
+                org.millenaire.common.utilities.MillLog.major(this.mob,
+                        "DOOR-WAYPOINT next=" + rung
+                        + " open=" + state.getValue(net.minecraft.world.level.block.DoorBlock.OPEN)
+                        + " facing=" + state.getValue(net.minecraft.world.level.block.DoorBlock.FACING)
+                        + " feet=" + this.mob.blockPosition()
+                        + " exactY=" + String.format(java.util.Locale.ROOT, "%.2f", this.mob.getY())
+                        + " collision=" + this.mob.horizontalCollision
+                        + " velocity=" + this.mob.getDeltaMovement()
+                        + " waypoint=" + this.path.getNextNodeIndex() + "/" + this.path.getNodeCount());
+            }
+        }
         if (!state.is(net.minecraft.world.level.block.Blocks.LADDER)) return;
 
         // An entity must press into the back face of a ladder to engage the
