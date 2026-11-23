@@ -13,6 +13,22 @@ public final class DoorApproachRules {
     }
 
     /**
+     * Stop an emergency SCANNER from reopening the same wooden door every
+     * 10-15 ticks while the same resident is stuck at the same coordinates.
+     * This does NOT affect path-node opening, gates, other residents, or a
+     * resident that has actually advanced through the doorway.
+     *
+     * The bounded 120-tick cooldown allows a later retry rather than
+     * permanently blocking a resident whose navigation is still stuck.
+     */
+    public static boolean suppressStationaryScannerReopen(
+            boolean sameDoor, boolean sameGoalAndDestination,
+            double movedSquared, long ticksSinceOpen) {
+        return sameDoor && sameGoalAndDestination && ticksSinceOpen >= 0L
+                && ticksSinceOpen < 120L && movedSquared < 0.25D;
+    }
+
+    /**
      * The physical closed panel sits along one edge of the door BLOCK.
      * Use the closest point on its horizontal collision bounds instead of
      * the block center: both sides of the same door must work symmetrically.
