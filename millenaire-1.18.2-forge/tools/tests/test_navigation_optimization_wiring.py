@@ -16,6 +16,8 @@ PLANNER = read("pathing/atomicstryker/AStarPathPlannerJPS.java")
 WORKER = read("pathing/atomicstryker/AStarWorker.java")
 VILLAGER = read("entity/MillVillager.java")
 SNAPSHOT = read("pathing/PathWorldSnapshot.java")
+COLUMN_MEMO = read("pathing/SnapshotColumnMemo.java")
+ASTAR_STATIC = read("pathing/atomicstryker/AStarStatic.java")
 SECTION_POOL = read("pathing/SnapshotSectionPool.java")
 CAPTURE_INDEX = read("pathing/SnapshotCaptureIndex.java")
 EVENTS = read("forge/MillEventController.java")
@@ -312,6 +314,56 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("if (tick != nowTick)", CAPTURE_INDEX)
         self.assertIn("entries.clear();", CAPTURE_INDEX)
         self.assertIn("new WeakReference<>(snapshot)", CAPTURE_INDEX)
+
+    def test_collision_column_cache_is_snapshot_local_and_bounded(self):
+        self.assertIn("new SnapshotColumnMemo(2048)", SNAPSHOT)
+        self.assertIn("getSimpleFlatColumn(int x, int y, int z)", SNAPSHOT)
+        self.assertIn("rememberSimpleFlatColumn(int x, int y, int z, boolean simple)", SNAPSHOT)
+        self.assertIn("BlockPos.asLong(x, y, z)", SNAPSHOT)
+        self.assertIn("AtomicReferenceArray<Entry>", COLUMN_MEMO)
+        self.assertIn("hit.position() == key", COLUMN_MEMO)
+        self.assertIn("Boolean get(long key)", COLUMN_MEMO)
+        self.assertIn("void remember(long key, boolean simple)", COLUMN_MEMO)
+        self.assertIn("new Entry(key, simple)", COLUMN_MEMO)
+        self.assertIn("snapshot.getSimpleFlatColumn(node.x, node.y, node.z)", ASTAR_STATIC)
+        self.assertIn("if (memoized != null)", ASTAR_STATIC)
+        self.assertIn("snapshot.rememberSimpleFlatColumn(node.x, node.y, node.z, simple)", ASTAR_STATIC)
+
+    def test_collision_shape_sampling_reuses_mutable_position_without_geometry_changes(self):
+        simple = ASTAR_STATIC.split("private static boolean isSimpleFlatColumn(", 1)[1]
+        simple = simple.split("private static boolean isBodyCollisionFree(", 1)[0]
+        self.assertIn("world.getBlockState(pos).isAir()", simple)
+        self.assertIn("pos.set(node.x, node.y + 1, node.z)", simple)
+        self.assertIn("pos.set(node.x, node.y - 1, node.z)", simple)
+        self.assertIn("Block.isShapeFullBlock(", simple)
+        self.assertIn(".getCollisionShape(world, pos)", simple)
+        body = ASTAR_STATIC.split("private static boolean isBodyCollisionFree(", 1)[1]
+        body = body.split("public static AStarNode findSafeOrthogonalCorner(", 1)[0]
+        self.assertIn("BlockPos.MutableBlockPos pos =", body)
+        self.assertIn("pos.set(bx, by, bz);", body)
+        self.assertIn("level.hasChunkAt(pos)", body)
+        self.assertIn("state.getCollisionShape(world, pos)", body)
+        self.assertIn("body.intersects(part.move(bx, by, bz))", body)
+        self.assertNotIn("new BlockPos(bx, by, bz)", body)
+
+    def test_passability_avoids_repeated_below_reads_and_reports_sweep_cost(self):
+        part = ASTAR_STATIC.split("public static boolean isPassableBlock(", 1)[1]
+        part = part.split("public static boolean isViable(", 1)[0]
+        self.assertIn("BlockState belowState =", part)
+        self.assertEqual(part.count("ThreadSafeUtilities.getBlockState(world, ix, iy - 1, iz)"), 1)
+        self.assertNotIn("ThreadSafeUtilities.getBlock(world, ix, iy - 1, iz)", part)
+        self.assertIn("BarrierPathRules.blocksStepAbove(belowState)", part)
+        self.assertIn("ChestPathRules.isChest(belowBlock)", part)
+        self.assertIn("BlockItemUtilities.isFence(belowBlock)", part)
+        access = ASTAR_STATIC.split("public static AStarNode[] getAccessNodesSorted(", 1)[1]
+        access = access.split("public static double getDistanceBetweenCoords(", 1)[0]
+        self.assertIn("Collections.sort(resultList);", access)
+        self.assertIn("resultList.toArray(new AStarNode[0])", access)
+        self.assertNotIn("resultList.remove(0)", access)
+        self.assertIn("NavigationMetrics.sweptTransition(", ASTAR_STATIC)
+        for name in ("flat_column_memo_hit=", "flat_column_memo_miss=",
+                     "swept_checks=", "swept_blocked=", "swept_avg_ms="):
+            self.assertIn(name, METRICS)
 
     def test_diagnostic_counter_names(self):
         self.assertIn('"NAV-OPT-STATS world="', PLANNER)
