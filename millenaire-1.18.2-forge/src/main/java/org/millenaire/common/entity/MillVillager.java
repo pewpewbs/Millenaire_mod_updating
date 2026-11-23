@@ -430,6 +430,9 @@ IAStarPathedEntity {
                 Node node = path.getNode(i);
                 if (!AStarStatic.isViable(this.level, node.x, node.y, node.z, 0, this.getPathingConfig())) {
                     org.millenaire.common.pathing.NavigationMetrics.stale();
+                    // Rejecting a stale primary route is a primary failure.
+                    // Schedule the same Vanilla fallback used on failed A*/JPS.
+                    this.pathFailedSincelastTick = true;
                     this.nextVanillaPathAttempt = 0L;
                     return;
                 }
@@ -827,10 +830,9 @@ IAStarPathedEntity {
                 if (this.goalKey != null && Goal.goals.containsKey(this.goalKey) && (goal = Goal.goals.get(this.goalKey)).isWithinActionRange(this, this.getPathDestPoint())) {
                     return null;
                 }
-                if (this.tryGroundRoute(dest)) return null;
-                if (this.pathPlannerJPS.isBusy()) {
-                    this.pathPlannerJPS.stopPathSearch(true);
-                }
+                // PRIMARY: try the Millenaire snapshot-based A*/JPS route first.
+                // Vanilla GroundPathNavigation is reserved for failed, deferred
+                // or physically stuck primary paths, never an early success exit.
                 AStarNode destNode = null;
                 if (this.goalKey != null && (Goal.goals.get(this.goalKey) == Goal.construction
                         || Goal.goals.get(this.goalKey) instanceof org.millenaire.common.goal.GoalLumbermanChopTrees)) {
@@ -2236,19 +2238,22 @@ IAStarPathedEntity {
         var action = this.movementWatchdog.sample(this.level.getGameTime(),
                 dest.getBlockPos(), this.getX(), this.getY(), this.getZ(), this.onClimbable());
         if (action == org.millenaire.common.pathing.MovementWatchdog.Action.NONE) return;
-        // At eight seconds of no physical progress, spend one bounded wider
-        // A* search rather than repeating the same short path yet again.
-        if (action == org.millenaire.common.pathing.MovementWatchdog.Action.DETOUR
-                && this.navigation instanceof PathNavigateSimple groundNavigation) {
-            groundNavigation.requestRecoveryDetour();
-        }
+        // At eight seconds of no progress, switch once to the independent
+        // Vanilla algorithm. A*/JPS remains the primary for normal requests.
+        // Leave navigation's own detour work to its fallback route planner.
         if (MillConfigValues.LogPathing >= 1 && this.extraLog) {
             MillLog.major(this, "NAV-STALLED action=" + action + " goal=" + this.goalKey
                     + " position=" + this.blockPosition() + " target=" + dest);
         }
         this.navigation.stop();
         this.pathEntity = null;
-        this.nextVanillaPathAttempt = 0L;
+        // A stalled A*/JPS route is not considered successful just because a
+        // list of nodes exists. At the second watchdog stage, attempt an
+        // independent Vanilla route before falling back to the primary search.
+        if (action == org.millenaire.common.pathing.MovementWatchdog.Action.DETOUR) {
+            this.nextVanillaPathAttempt = 0L;
+            if (this.tryGroundRoute(dest)) return;
+        }
         if (action == org.millenaire.common.pathing.MovementWatchdog.Action.RECOVER
                 && this.vtype != null && (!this.vtype.noTeleport
                     || this.getRecord() != null && this.getRecord().raidingVillage)) {
