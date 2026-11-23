@@ -710,6 +710,7 @@ java -cp build/nav-snapshot-protocol-smoke SnapshotReuseProtocolSmoke
 - `0c364cd` — wiring suite до 28;
 - `aaac858` — фіксація невдалих assertions із worker threads;
 - `33d2e5f` — явний `Boolean` у lookup.
+- `b1b4ec8` — виправлено source-level guard на explicit `hit.position() != key` у `SnapshotColumnMemo.get`, щоб очікування тесту відповідало фактичному fail-closed коду.
 
 ### 18.3. Обмеження, ризики й метрики
 
