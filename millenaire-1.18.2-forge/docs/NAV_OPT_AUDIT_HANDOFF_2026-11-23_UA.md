@@ -118,6 +118,17 @@
 - На сходах і драбині можливі асиметричні переходи, тому зворотний маршрут може бути відхилений; це нормально і безпечніше за телепортацію крізь блок.
 - HPA* / глобальний hierarchical graph, інкрементальний міжтіковий versioned snapshot cache, пріоритезована черга та повне інкрементальне перепланування **ЩЕ НЕ РЕАЛІЗОВАНІ**. Вони потребують профілів реального навантаження і окремих тестів.
 
+## 5.1. Результати тестів на комп'ютері користувача — 23.11.2026, 18:17 (Europe/Berlin)
+
+**Джерело:** користувач надіслав повний вивід Windows PowerShell із запущеними тестами з папки `millenaire-1.18.2-forge`. Нижченаведені результати — його фактичні логи, а не оцінки асистента.
+
+- **Середовище:** Eclipse Temurin OpenJDK `17.0.21.1`, компілятор `javac 17.0.21.1` (попередньо використовувалася Java 8 без доступного `javac`; встановлення JDK 17 та `PATH` виправлено).
+- **Реальна компіляція точних локальних вихідних файлів і запуск:** `javac --release 17 -d build/route-cache-smoke src/main/java/org/millenaire/common/pathing/RouteMemory.java tools/tests/RouteMemorySmoke.java` — без помилок; `java -cp build/route-cache-smoke RouteMemorySmoke` → `PASS: forward/reverse lookup, independent directions, TTL, config, LRU and isolation`.
+- **Python source-level перевірка:** `py -3 tools/tests/test_navigation_optimization_wiring.py` → **6/6 OK**; назви тестів: `test_cache_world_isolated_and_bounded`, `test_deferred_is_not_mistaken_for_missing_path`, `test_diagnostic_counter_names`, `test_reverse_search_is_bounded_and_validated_directionally`, `test_route_cache_always_checks_current_world`, `test_snapshot_reuse_only_same_tick`.
+- **Python source-level перевірка:** `py -3 tools/tests/test_navigation_priority.py` → **9/9 OK**; включно з `test_vertical_edges_require_two_real_ladder_rungs`, `test_primary_path_never_begins_with_vanilla`, `test_physical_stall_can_try_vanilla` та іншими перевірками інтеграції.
+- **Сумарно:** один Java smoke PASS + 15 Python перевірок OK. Це **не** Forge-компіляція моду та **не** підтвердження працездатності алгоритмів у Minecraft.
+- **Поточний блокер:** ще немає результату `gradlew.bat compileJava` або `Update-Millenaire.bat` і нового `latest.log` зі зворотними спусками. Наступний крок — збірка, потім тест з верхньої площадки драбини.
+
 ## 6. Як протестувати локально (Windows)
 
 1. GitHub Desktop: `Fetch origin` → `Pull origin`, гілка `fix/villager-door-access-and-village-territory`. Зробити backup Minecraft світу.
