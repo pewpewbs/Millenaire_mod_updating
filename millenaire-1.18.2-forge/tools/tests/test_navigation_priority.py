@@ -14,6 +14,7 @@ JAVA = ROOT / "src/main/java/org/millenaire/common"
 VILLAGER = (JAVA / "entity/MillVillager.java").read_text(encoding="utf-8")
 PLANNER = (JAVA / "pathing/atomicstryker/AStarPathPlannerJPS.java").read_text(encoding="utf-8")
 NAVIGATION = (JAVA / "entity/PathNavigateSimple.java").read_text(encoding="utf-8")
+ASTAR_STATIC = (JAVA / "pathing/atomicstryker/AStarStatic.java").read_text(encoding="utf-8")
 
 
 def section(source: str, beginning: str, after: str) -> str:
@@ -69,6 +70,13 @@ class PrimaryRouteWiring(unittest.TestCase):
                          "public void getPath(int x,int y,int z")
         self.assertIn("if (classic && this.jpsCandidate != null)", submit)
         self.assertIn("this.pathedEntity.onFoundPath(available)", submit)
+
+    def test_vertical_edges_require_two_real_ladder_rungs(self):
+        vertical = section(ASTAR_STATIC, "if (dx == 0 && dz == 0) {",
+                           "if (dx > 1 || dz > 1) return false;")
+        self.assertIn("getBlock(world, from.x, from.y, from.z) == Blocks.LADDER", vertical)
+        self.assertIn("getBlock(world, to.x, to.y, to.z) == Blocks.LADDER", vertical)
+        self.assertIn("isPassableBlock(world, to.x, to.y + 1, to.z", vertical)
 
     def test_executor_still_uses_minecraft_movement_controller(self):
         self.assertIn("extends GroundPathNavigation", NAVIGATION)
