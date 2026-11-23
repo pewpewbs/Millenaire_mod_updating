@@ -29,6 +29,12 @@ public final class DetourPathFinder extends PathFinder {
 
     private final PathFinder detours;
     private long nextDetourTick = Long.MIN_VALUE;
+    private boolean expandNextPath;
+
+    /** Request one wider search after a resident repeatedly fails to move. */
+    public void requestRecoveryDetour() {
+        this.expandNextPath = true;
+    }
 
     public DetourPathFinder(NodeEvaluator evaluator, int normalBudget) {
         super(evaluator, normalBudget);
@@ -74,14 +80,16 @@ public final class DetourPathFinder extends PathFinder {
     @Override
     public Path findPath(PathNavigationRegion region, Mob mob, Set<BlockPos> targets,
             float range, int accuracy, float multiplier) {
+        boolean forceExpansion = this.expandNextPath;
+        this.expandNextPath = false;
         Path normal = super.findPath(region, mob, targets, range, accuracy, multiplier);
         double normalCost = traversalCost(normal);
-        if (!worthComparing(mob, normal, normalCost)) return normal;
+        if (!forceExpansion && !worthComparing(mob, normal, normalCost)) return normal;
 
         long tick = mob.level.getGameTime();
-        if (tick < this.nextDetourTick) return normal;
-        // No more than one expensive attempt per world every five ticks, and
-        // once per pathfinder/actor per six seconds to control TPS cost.
+        if (!forceExpansion && tick < this.nextDetourTick) return normal;
+        // Even explicit stall recovery respects the per-world CPU budget.
+        // Normal quality searches also use the per-actor cooldown.
         synchronized (LAST_EXPANDED_TICK) {
             Long previous = LAST_EXPANDED_TICK.get(mob.level);
             if (previous != null && tick - previous < MIN_WORLD_RETRY_TICKS) {
