@@ -29,6 +29,20 @@ public final class DoorApproachRules {
     }
 
     /**
+     * After giving a stationary resident 120 ticks of CONTINUOUS access,
+     * release its scanner lease so the shared manager can auto-close.
+     * A new goal, a genuinely moved resident or a different door resets
+     * this bound. This is separate from the period within which the
+     * door should be KEPT open rather than suppressed while needed.
+     */
+    public static boolean expiredStationaryScannerHold(
+            boolean sameDoor, boolean sameGoalAndDestination,
+            double movedSquared, long ticksSinceOpen) {
+        return sameDoor && sameGoalAndDestination && ticksSinceOpen >= 120L
+                && movedSquared < 0.25D;
+    }
+
+    /**
      * Actual physical traversability of a door BLOCK. The closed door
      * panel occupies one edge. Crossing the middle of the block parallel
      * to the closed panel can be possible; opening swings that panel into
