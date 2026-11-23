@@ -12,6 +12,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2] / "src/main/java/org/millenaire/common"
 VILLAGER = (ROOT / "entity/MillVillager.java").read_text(encoding="utf-8")
 DOORS = (ROOT / "pathing/VillageDoorAccess.java").read_text(encoding="utf-8")
+NAVIGATOR = (ROOT / "entity/PathNavigateSimple.java").read_text(encoding="utf-8")
 
 
 class DoorLifecycleWiring(unittest.TestCase):
@@ -68,6 +69,21 @@ class DoorLifecycleWiring(unittest.TestCase):
     def test_stall_diagnostics_show_route_nodes(self):
         self.assertIn("private String doorRoutePreview(Path route)", VILLAGER)
         self.assertIn('" next=" + this.doorRoutePreview(route)', VILLAGER)
+
+
+
+    def test_renewal_diagnostics_preserve_actor_source(self):
+        self.assertIn('trace(level, pos, "RENEWED" + origin)', DOORS)
+        self.assertIn('remember(level, pos, actor, source)', DOORS)
+        # Applies to both the wooden-door branch and the gate branch.
+        self.assertEqual(DOORS.count('remember(level, pos, actor, source);'), 4)
+
+    def test_navigator_traces_door_waypoint_without_changing_movement(self):
+        self.assertIn('"DOOR-WAYPOINT next=" + rung', NAVIGATOR)
+        self.assertIn('" collision=" + this.mob.horizontalCollision', NAVIGATOR)
+        self.assertIn('this.mob.getDeltaMovement()', NAVIGATOR)
+        self.assertIn('now + 40L', NAVIGATOR)
+        self.assertIn('if (!state.is(net.minecraft.world.level.block.Blocks.LADDER)) return;', NAVIGATOR)
 
 
 
