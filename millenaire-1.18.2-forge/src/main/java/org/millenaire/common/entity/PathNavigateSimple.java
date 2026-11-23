@@ -81,50 +81,183 @@ public class PathNavigateSimple extends GroundPathNavigation {
                         + " waypoint=" + this.path.getNextNodeIndex() + "/" + this.path.getNodeCount());
             }
         }
-        if (!state.is(net.minecraft.world.level.block.Blocks.LADDER)) return;
+        if (!state.is(net.minecraft.world.level.block.Blocks.LADDER)) {
+            this.assistLeavingLadder(next);
+            return;
+        }
+        this.assistLadderRung(next, state);
+    }
 
-        // An entity must press into the back face of a ladder to engage the
-        // climbing surface. The rung's center (0.5, 0.5) can be too far from
-        // that surface, leaving the entity jumping but not actually climbing.
-        net.minecraft.core.Direction wall = state.getValue(
-                net.minecraft.world.level.block.LadderBlock.FACING).getOpposite();
-        double targetX = next.x + 0.5D + wall.getStepX() * 0.12D;
-        double targetZ = next.z + 0.5D + wall.getStepZ() * 0.12D;
+    /** A route node is a real, loaded vanilla ladder (not vines/scaffolding). */
+    private boolean isLadderNode(net.minecraft.world.level.pathfinder.Node node) {
+        if (node == null) return false;
+        net.minecraft.core.BlockPos at = new net.minecraft.core.BlockPos(node.x, node.y, node.z);
+        return this.mob.level.hasChunkAt(at)
+                && this.mob.level.getBlockState(at).is(net.minecraft.world.level.block.Blocks.LADDER);
+    }
+
+    private boolean touchesLadder() {
+        net.minecraft.core.BlockPos feet = this.mob.blockPosition();
+        return this.mob.onClimbable()
+                || (this.mob.level.hasChunkAt(feet)
+                    && this.mob.level.getBlockState(feet).is(net.minecraft.world.level.block.Blocks.LADDER));
+    }
+
+    private static boolean sameColumn(net.minecraft.world.level.pathfinder.Node a,
+                                      net.minecraft.world.level.pathfinder.Node b) {
+        return a != null && b != null && a.x == b.x && a.z == b.z;
+    }
+
+    private int ladderRouteDirection(net.minecraft.world.level.pathfinder.Node rung) {
+        int index = this.path.getNextNodeIndex();
+        net.minecraft.world.level.pathfinder.Node previous = index > 0
+                ? this.path.getNode(index - 1) : null;
+        net.minecraft.world.level.pathfinder.Node following = index + 1 < this.path.getNodeCount()
+                ? this.path.getNode(index + 1) : null;
+        return org.millenaire.common.pathing.LadderTransitionRules.routeDirection(
+                previous == null ? rung.y : previous.y,
+                sameColumn(previous, rung) && this.isLadderNode(previous),
+                rung.y,
+                following == null ? rung.y : following.y,
+                sameColumn(following, rung) && this.isLadderNode(following));
+    }
+
+    private static double ladderTargetX(net.minecraft.world.level.pathfinder.Node rung,
+                                        net.minecraft.world.level.block.state.BlockState state) {
+        net.minecraft.core.Direction wall =
+                state.getValue(net.minecraft.world.level.block.LadderBlock.FACING).getOpposite();
+        return rung.x + 0.5D + wall.getStepX() * 0.12D;
+    }
+
+    private static double ladderTargetZ(net.minecraft.world.level.pathfinder.Node rung,
+                                        net.minecraft.world.level.block.state.BlockState state) {
+        net.minecraft.core.Direction wall =
+                state.getValue(net.minecraft.world.level.block.LadderBlock.FACING).getOpposite();
+        return rung.z + 0.5D + wall.getStepZ() * 0.12D;
+    }
+
+    private boolean canRiseInsideLadder() {
+        // No bypassing an obstructed top exit or a low ceiling.
+        return this.mob.level.noCollision(
+                this.mob, this.mob.getBoundingBox().move(0.0D, 0.18D, 0.0D));
+    }
+
+    private void assistLadderRung(net.minecraft.world.level.pathfinder.Node next,
+                                  net.minecraft.world.level.block.state.BlockState state) {
+        double targetX = ladderTargetX(next, state);
+        double targetZ = ladderTargetZ(next, state);
         double ex = targetX - this.mob.getX();
         double ez = targetZ - this.mob.getZ();
         double horizontalErrorSquared = ex * ex + ez * ez;
         if (!org.millenaire.common.pathing.LadderTransitionRules.shouldApproach(
                 true, horizontalErrorSquared)) return;
 
-        net.minecraft.world.phys.Vec3 velocity = this.mob.getDeltaMovement();
-        // Even before its feet enter the rung block, nudge the mob into the
-        // column. Do NOT start vertical lift while it is still off-column.
-        double vx = org.millenaire.common.pathing.LadderTransitionRules.approachSpeed(ex);
-        double vz = org.millenaire.common.pathing.LadderTransitionRules.approachSpeed(ez);
-        double vy = velocity.y;
         net.minecraft.core.BlockPos feet = this.mob.blockPosition();
         boolean sameColumn = next.x == feet.getX() && next.z == feet.getZ();
-        boolean ladderContact = this.mob.onClimbable()
-                || this.mob.level.getBlockState(feet).is(net.minecraft.world.level.block.Blocks.LADDER);
-        double dy = next.y - this.mob.getY();
-        if (org.millenaire.common.pathing.LadderTransitionRules.shouldAssist(
-                sameColumn, ladderContact, dy, horizontalErrorSquared)) {
-            vy = dy > 0 ? Math.max(0.20D, velocity.y) : Math.min(-0.12D, velocity.y);
+        boolean contact = this.touchesLadder();
+        int direction = this.ladderRouteDirection(next);
+        boolean reached = org.millenaire.common.pathing.LadderTransitionRules.reachedRung(
+                direction, this.mob.getY(), next.y, horizontalErrorSquared);
+
+        // GroundPathNavigation considers close-by Y coordinates "reached"
+        // even when there is another vertical rung to go. Conversely it can
+        // lag one rung and its negative dy would push an ascending mob DOWN.
+        // Advance only a rung that the mob really climbed/descended past.
+        if (contact && sameColumn && reached) {
+            this.path.advance();
+            if (this.path.isDone()) return;
+            next = this.path.getNextNode();
+            if (!this.isLadderNode(next)) {
+                this.assistLeavingLadder(next);
+                return;
+            }
+            net.minecraft.core.BlockPos target = new net.minecraft.core.BlockPos(
+                    next.x, next.y, next.z);
+            state = this.mob.level.getBlockState(target);
+            targetX = ladderTargetX(next, state);
+            targetZ = ladderTargetZ(next, state);
+            ex = targetX - this.mob.getX();
+            ez = targetZ - this.mob.getZ();
+            horizontalErrorSquared = ex * ex + ez * ez;
+            sameColumn = next.x == feet.getX() && next.z == feet.getZ();
+            direction = this.ladderRouteDirection(next);
+            reached = org.millenaire.common.pathing.LadderTransitionRules.reachedRung(
+                    direction, this.mob.getY(), next.y, horizontalErrorSquared);
         }
-        this.mob.setDeltaMovement(vx, vy, vz);
+
+        net.minecraft.world.phys.Vec3 velocity = this.mob.getDeltaMovement();
+        double vy = velocity.y;
+        if (org.millenaire.common.pathing.LadderTransitionRules.shouldClimb(
+                direction, sameColumn, contact, reached, horizontalErrorSquared)) {
+            if (direction > 0) {
+                if (this.canRiseInsideLadder()) vy = Math.max(0.20D, velocity.y);
+            } else {
+                vy = Math.min(-0.12D, velocity.y);
+            }
+        }
+        // Approach the surface even before feet reach the ladder. Apply no
+        // upward/downward force until contact and column alignment are real.
+        this.mob.setDeltaMovement(
+                org.millenaire.common.pathing.LadderTransitionRules.approachSpeed(ex),
+                vy,
+                org.millenaire.common.pathing.LadderTransitionRules.approachSpeed(ez));
         this.mob.hasImpulse = true;
-        // Log only when requested and at most once per 100 ticks for this
-        // navigator. Distinguishes route-selection failures from failed
-        // physical climbing in the Minecraft playtest log.
         if (org.millenaire.common.config.MillConfigValues.LogPathing >= 2
                 && this.mob.level.getGameTime() >= this.nextLadderTraceTick) {
-            this.nextLadderTraceTick = this.mob.level.getGameTime() + 100L;
+            this.nextLadderTraceTick = this.mob.level.getGameTime() + 40L;
             org.millenaire.common.utilities.MillLog.major(this.mob,
-                    "LADDER-ASSIST next=" + rung + " feet=" + feet
-                    + " dy=" + String.format(java.util.Locale.ROOT, "%.2f", dy)
-                    + " sameColumn=" + sameColumn
-                    + " contact=" + ladderContact
-                    + " velocityY=" + String.format(java.util.Locale.ROOT, "%.2f", vy));
+                    "LADDER-ASSIST next=" + next.asBlockPos()
+                    + " feet=" + feet
+                    + " exactY=" + String.format(java.util.Locale.ROOT, "%.2f", this.mob.getY())
+                    + " direction=" + direction
+                    + " aligned=" + sameColumn
+                    + " contact=" + contact
+                    + " reached=" + reached
+                    + " dy=" + String.format(java.util.Locale.ROOT, "%.2f", next.y - this.mob.getY())
+                    + " velocityY=" + String.format(java.util.Locale.ROOT, "%.2f", vy)
+                    + " path=" + this.path.getNextNodeIndex() + "/" + this.path.getNodeCount());
+        }
+    }
+
+    /**
+     * The last rung may be below the solid lip of the upper landing. Vanilla
+     * navigation starts moving horizontally too soon and collides with it.
+     * Stay on the shaft and climb to platform height, then hand control back
+     * to vanilla movement. Never lift without touching a real ladder.
+     */
+    private void assistLeavingLadder(net.minecraft.world.level.pathfinder.Node exit) {
+        int index = this.path.getNextNodeIndex();
+        if (index <= 0 || exit == null) return;
+        net.minecraft.world.level.pathfinder.Node previous = this.path.getNode(index - 1);
+        if (!this.isLadderNode(previous)) return;
+        int dx = exit.x - previous.x, dz = exit.z - previous.z;
+        if (Math.abs(dx) > 1 || Math.abs(dz) > 1 || (dx == 0 && dz == 0)) return;
+        net.minecraft.core.BlockPos shaft = new net.minecraft.core.BlockPos(
+                previous.x, previous.y, previous.z);
+        net.minecraft.world.level.block.state.BlockState state = this.mob.level.getBlockState(shaft);
+        double ex = ladderTargetX(previous, state) - this.mob.getX();
+        double ez = ladderTargetZ(previous, state) - this.mob.getZ();
+        double distanceSquared = ex * ex + ez * ez;
+        if (!org.millenaire.common.pathing.LadderTransitionRules.needsTopOut(
+                true, this.touchesLadder(), previous.y, exit.y,
+                this.mob.getY(), distanceSquared)) return;
+        if (!this.canRiseInsideLadder()) return;
+        net.minecraft.world.phys.Vec3 velocity = this.mob.getDeltaMovement();
+        this.mob.setDeltaMovement(
+                org.millenaire.common.pathing.LadderTransitionRules.approachSpeed(ex),
+                Math.max(0.20D, velocity.y),
+                org.millenaire.common.pathing.LadderTransitionRules.approachSpeed(ez));
+        this.mob.hasImpulse = true;
+        if (org.millenaire.common.config.MillConfigValues.LogPathing >= 2
+                && this.mob.level.getGameTime() >= this.nextLadderTraceTick) {
+            this.nextLadderTraceTick = this.mob.level.getGameTime() + 40L;
+            org.millenaire.common.utilities.MillLog.major(this.mob,
+                    "LADDER-EXIT lastRung=" + shaft
+                    + " exit=" + exit.asBlockPos()
+                    + " feet=" + this.mob.blockPosition()
+                    + " exactY=" + String.format(java.util.Locale.ROOT, "%.2f", this.mob.getY())
+                    + " velocityY=" + String.format(java.util.Locale.ROOT, "%.2f",
+                            this.mob.getDeltaMovement().y));
         }
     }
 
