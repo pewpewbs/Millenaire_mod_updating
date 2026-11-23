@@ -1,6 +1,5 @@
 package org.millenaire.common.pathing;
 
-import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -19,12 +18,13 @@ import org.millenaire.common.pathing.atomicstryker.AStarNode;
 
 /** Private copies of block palettes. Retains no Level, chunk or block entity. */
 public final class PathWorldSnapshot implements BlockGetter {
-    // One snapshot may be shared by searches whose bounding rectangles fit
-    // inside it during the SAME game tick. Never reuse across ticks: buildings,
-    // doors and player edits can change collision states between ticks.
-    private record Capture(long tick, int minX, int maxX, int minZ, int maxZ,
-                           WeakReference<PathWorldSnapshot> snapshot) {}
-    private static final Map<ServerLevel, Capture> LAST_CAPTURE = new java.util.WeakHashMap<>();
+    // Up to four distinct detached snapshots may be recalled within the SAME
+    // game tick. No references or copies survive into subsequent ticks.
+    // Both maps are accessed only under SNAPSHOT_LOCK; callback invalidations
+    // and server-thread captures are serialized at this boundary.
+    private static final Object SNAPSHOT_LOCK = new Object();
+    private static final Map<ServerLevel, SnapshotCaptureIndex<PathWorldSnapshot>>
+            CAPTURE_INDICES = new java.util.WeakHashMap<>();
     private static final Map<ServerLevel, SnapshotSectionPool<PalettedContainer<BlockState>>>
             SECTION_POOLS = new java.util.WeakHashMap<>();
     // Max four snapshots in a tick, but never more than 256 chunk visits or
@@ -61,31 +61,31 @@ public final class PathWorldSnapshot implements BlockGetter {
         }
         int chunkVisits = (maxX - minX + 1) * (maxZ - minZ + 1);
         SnapshotSectionPool<PalettedContainer<BlockState>> pool;
-        boolean secondSnapshotInTick;
+        SnapshotCaptureIndex<PathWorldSnapshot> index;
+        boolean additionalSnapshotInTick;
         long captureRevision;
-        synchronized(LAST_CAPTURE) {
-            // Get the poison ledger before considering an old full snapshot:
-            // a PRE-mutation event could otherwise allow stale reuse.
+        synchronized(SNAPSHOT_LOCK) {
+            // Consult poison BEFORE reusing any snapshot. Known PRE-change
+            // notifications disable full-snapshot sharing for the tick.
             pool = SECTION_POOLS.computeIfAbsent(level, unused -> new SnapshotSectionPool<>(
                     MAX_SNAPSHOTS_PER_TICK, MAX_CHUNK_VISITS_PER_TICK,
                     MAX_SECTION_COPIES_PER_TICK));
-            Capture previous=LAST_CAPTURE.get(level);
-            secondSnapshotInTick = previous!=null && previous.tick()==tick;
-            if(secondSnapshotInTick && pool.mayReuseSnapshots(tick)) {
-                PathWorldSnapshot shared=previous.snapshot().get();
-                if(shared!=null && minX>=previous.minX() && maxX<=previous.maxX()
-                        && minZ>=previous.minZ() && maxZ<=previous.maxZ()) {
+            index = CAPTURE_INDICES.computeIfAbsent(level,
+                    unused -> new SnapshotCaptureIndex<>(MAX_SNAPSHOTS_PER_TICK));
+            if (pool.mayReuseSnapshots(tick)) {
+                var match = index.find(tick, minX, maxX, minZ, maxZ);
+                if (match != null) {
                     NavigationMetrics.snapshotReused();
-                    return shared;
+                    if (match.nonLatest()) NavigationMetrics.snapshotNonLatestReused();
+                    return match.snapshot();
                 }
             }
-            if(!pool.begin(tick,chunkVisits)) {
+            if (!pool.begin(tick,chunkVisits)) {
                 NavigationMetrics.snapshotBudgetDeferred();
                 return null;
             }
+            additionalSnapshotInTick = pool.usedSnapshots() > 1;
             captureRevision = pool.revision(tick);
-            LAST_CAPTURE.put(level,new Capture(tick,minX,maxX,minZ,maxZ,
-                    new WeakReference<>(null)));
         }
         Map<Long, PalettedContainer<BlockState>> detached = new HashMap<>();
         Set<Long> loaded = new HashSet<>();
@@ -124,7 +124,7 @@ public final class PathWorldSnapshot implements BlockGetter {
             }
         }
         var result=new PathWorldSnapshot(detached,loaded,level.getMinBuildHeight(),level.getHeight());
-        synchronized(LAST_CAPTURE) {
+        synchronized(SNAPSHOT_LOCK) {
             // Known events can be raised off the normal snapshot call path.
             // Never publish a copy built across an observed invalidation.
             if(pool.revision(tick)!=captureRevision) {
@@ -132,15 +132,15 @@ public final class PathWorldSnapshot implements BlockGetter {
                 NavigationMetrics.deferred();
                 return null;
             }
-            Capture pending=LAST_CAPTURE.get(level);
-            if(pending!=null && pending.tick()==tick) {
-                LAST_CAPTURE.put(level,new Capture(tick,minX,maxX,minZ,maxZ,
-                        new WeakReference<>(result)));
+            // After any known mutation in this tick, a new snapshot may still
+            // be used by its own search, but must NOT enter the shared index.
+            if (pool.mayReuseSnapshots(tick)) {
+                index.remember(tick, minX, maxX, minZ, maxZ, result);
             }
         }
         NavigationMetrics.sections(copiedSections);
         NavigationMetrics.snapshotSectionsReused(reusedSections);
-        if(secondSnapshotInTick) NavigationMetrics.snapshotAdditionalCaptured();
+        if(additionalSnapshotInTick) NavigationMetrics.snapshotAdditionalCaptured();
         NavigationMetrics.record(1,System.nanoTime()-began);
         return result;
     }
@@ -157,7 +157,7 @@ public final class PathWorldSnapshot implements BlockGetter {
         long tick = level.getGameTime();
         int chunkX = pos.getX() >> 4, chunkZ = pos.getZ() >> 4;
         long key = SectionPos.asLong(chunkX, pos.getY() >> 4, chunkZ);
-        synchronized (LAST_CAPTURE) {
+        synchronized (SNAPSHOT_LOCK) {
             SnapshotSectionPool<PalettedContainer<BlockState>> pool = SECTION_POOLS.computeIfAbsent(
                     level, unused -> new SnapshotSectionPool<>(
                             MAX_SNAPSHOTS_PER_TICK, MAX_CHUNK_VISITS_PER_TICK,
@@ -165,13 +165,11 @@ public final class PathWorldSnapshot implements BlockGetter {
             if (pool.invalidateSection(tick, key)) {
                 NavigationMetrics.snapshotKnownSectionInvalidated();
             }
-            Capture previous = LAST_CAPTURE.get(level);
-            if (previous != null && previous.tick() == tick
-                    && chunkX >= previous.minX() && chunkX <= previous.maxX()
-                    && chunkZ >= previous.minZ() && chunkZ <= previous.maxZ()) {
-                LAST_CAPTURE.put(level, new Capture(tick, previous.minX(), previous.maxX(),
-                        previous.minZ(), previous.maxZ(), new WeakReference<>(null)));
-                NavigationMetrics.snapshotKnownCaptureInvalidated();
+            // Clear the entire bounded index, including earlier supersets.
+            // This is conservative even if the edited chunk is outside them.
+            SnapshotCaptureIndex<PathWorldSnapshot> index = CAPTURE_INDICES.get(level);
+            if (index != null) {
+                NavigationMetrics.snapshotKnownCapturesInvalidated(index.invalidate(tick));
             }
         }
     }
@@ -184,17 +182,15 @@ public final class PathWorldSnapshot implements BlockGetter {
     public static void onKnownWorldMutation(ServerLevel level) {
         if (level == null) return;
         long tick = level.getGameTime();
-        synchronized (LAST_CAPTURE) {
+        synchronized (SNAPSHOT_LOCK) {
             SnapshotSectionPool<PalettedContainer<BlockState>> pool = SECTION_POOLS.computeIfAbsent(
                     level, unused -> new SnapshotSectionPool<>(
                             MAX_SNAPSHOTS_PER_TICK, MAX_CHUNK_VISITS_PER_TICK,
                             MAX_SECTION_COPIES_PER_TICK));
             NavigationMetrics.snapshotKnownSectionsInvalidated(pool.invalidateAll(tick));
-            Capture previous = LAST_CAPTURE.get(level);
-            if (previous != null && previous.tick() == tick) {
-                LAST_CAPTURE.put(level, new Capture(tick, previous.minX(), previous.maxX(),
-                        previous.minZ(), previous.maxZ(), new WeakReference<>(null)));
-                NavigationMetrics.snapshotKnownCaptureInvalidated();
+            SnapshotCaptureIndex<PathWorldSnapshot> index = CAPTURE_INDICES.get(level);
+            if (index != null) {
+                NavigationMetrics.snapshotKnownCapturesInvalidated(index.invalidate(tick));
             }
         }
     }
@@ -202,8 +198,8 @@ public final class PathWorldSnapshot implements BlockGetter {
     /** Do not retain old palettes when a server world is closed. */
     public static void onWorldUnload(ServerLevel level) {
         if (level == null) return;
-        synchronized (LAST_CAPTURE) {
-            LAST_CAPTURE.remove(level);
+        synchronized (SNAPSHOT_LOCK) {
+            CAPTURE_INDICES.remove(level);
             SECTION_POOLS.remove(level);
         }
     }
