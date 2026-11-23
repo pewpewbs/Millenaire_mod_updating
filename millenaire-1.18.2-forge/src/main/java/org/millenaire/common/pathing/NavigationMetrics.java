@@ -14,6 +14,7 @@ public final class NavigationMetrics {
     private static final LongAdder CACHE_MISS = new LongAdder(), CACHE_STALE = new LongAdder();
     private static final LongAdder REVERSE_TRIED = new LongAdder(), REVERSE_FOUND = new LongAdder();
     private static final LongAdder ROUTES_STORED = new LongAdder();
+    private static final LongAdder SNAPSHOT_REUSED = new LongAdder();
     private NavigationMetrics() {}
     public static void record(int kind,long nanos){COUNT[kind].increment();NANOS[kind].add(nanos);MAX[kind].accumulateAndGet(nanos,Math::max);}
     public static void sections(int count){SECTIONS.add(count);}
@@ -33,6 +34,7 @@ public final class NavigationMetrics {
     public static void cacheMiss() { CACHE_MISS.increment(); }
     public static void cacheStale() { CACHE_STALE.increment(); }
     public static void routeStored() { ROUTES_STORED.increment(); }
+    public static void snapshotReused() { SNAPSHOT_REUSED.increment(); }
     public static void reverseTried() { REVERSE_TRIED.increment(); }
     public static void reverseFound() { REVERSE_FOUND.increment(); }
     public static String report(){
@@ -48,7 +50,8 @@ public final class NavigationMetrics {
                     EXPANDED[i].sum()));
         }
         return text+"copied_sections="+SECTIONS.sum()+" deferred="+DEFERRED.sum()
-            +" stale_routes="+STALE.sum()+" cache_hit="+CACHE_HIT.sum()
+            +" stale_routes="+STALE.sum()+" snapshot_reused="+SNAPSHOT_REUSED.sum()
+            +" cache_hit="+CACHE_HIT.sum()
             +" cache_reverse="+CACHE_REVERSE.sum()+" cache_miss="+CACHE_MISS.sum()
             +" cache_invalidated="+CACHE_STALE.sum()+" routes_stored="+ROUTES_STORED.sum()
             +" reverse_tried="+REVERSE_TRIED.sum()+" reverse_found="+REVERSE_FOUND.sum()
@@ -62,6 +65,6 @@ public final class NavigationMetrics {
         }
         SECTIONS.reset();DEFERRED.reset();STALE.reset();
         CACHE_HIT.reset();CACHE_REVERSE.reset();CACHE_MISS.reset();CACHE_STALE.reset();
-        ROUTES_STORED.reset();REVERSE_TRIED.reset();REVERSE_FOUND.reset();
+        ROUTES_STORED.reset();REVERSE_TRIED.reset();REVERSE_FOUND.reset();SNAPSHOT_REUSED.reset();
     }
 }
