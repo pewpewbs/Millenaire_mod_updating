@@ -47,19 +47,18 @@ public class PathNavigateSimple extends GroundPathNavigation {
         net.minecraft.world.level.pathfinder.Node next = this.path.getNextNode();
         if (next == null) return;
         net.minecraft.core.BlockPos feet = this.mob.blockPosition();
-        if (next.x != feet.getX() || next.z != feet.getZ()) return;
+        boolean sameColumn = next.x == feet.getX() && next.z == feet.getZ();
         net.minecraft.core.BlockPos rung = new net.minecraft.core.BlockPos(next.x, next.y, next.z);
-        if (!this.mob.level.getBlockState(feet).is(net.minecraft.world.level.block.Blocks.LADDER)
-                && !this.mob.level.getBlockState(feet.below()).is(net.minecraft.world.level.block.Blocks.LADDER)
-                && !this.mob.level.getBlockState(rung).is(net.minecraft.world.level.block.Blocks.LADDER)) return;
-
+        boolean ladderContact = this.mob.level.getBlockState(feet).is(net.minecraft.world.level.block.Blocks.LADDER)
+                || this.mob.level.getBlockState(feet.below()).is(net.minecraft.world.level.block.Blocks.LADDER)
+                || this.mob.level.getBlockState(rung).is(net.minecraft.world.level.block.Blocks.LADDER);
         double dy = next.y - this.mob.getY();
-        if (Math.abs(dy) < 0.28D) return;
         double centerX = next.x + 0.5D;
         double centerZ = next.z + 0.5D;
         double xError = centerX - this.mob.getX();
         double zError = centerZ - this.mob.getZ();
-        if (xError * xError + zError * zError > 0.30D) return;
+        if (!org.millenaire.common.pathing.LadderTransitionRules.shouldAssist(
+                sameColumn, ladderContact, dy, xError * xError + zError * zError)) return;
         net.minecraft.world.phys.Vec3 velocity = this.mob.getDeltaMovement();
         double lift = dy > 0 ? Math.max(0.20D, velocity.y) : Math.min(-0.12D, velocity.y);
         // Keep close to the shaft centre and let the usual movement/collision
