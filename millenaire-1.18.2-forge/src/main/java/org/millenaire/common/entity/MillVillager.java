@@ -1677,9 +1677,13 @@ IAStarPathedEntity {
                     var hit = this.level.clip(new net.minecraft.world.level.ClipContext(from, to,
                             net.minecraft.world.level.ClipContext.Block.COLLIDER,
                             net.minecraft.world.level.ClipContext.Fluid.NONE, this));
-                    if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK
-                            || !hit.getBlockPos().equals(door)
-                                && !hit.getBlockPos().equals(door.above())) continue;
+                    // Doors are thin collision shapes at one edge of their
+                    // block, so a ray aimed at the block CENTER may legitimately
+                    // miss the closed panel. MISS means the door is unobstructed;
+                    // reject only if a DIFFERENT solid block occludes the ray.
+                    if (hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK
+                            && !hit.getBlockPos().equals(door)
+                            && !hit.getBlockPos().equals(door.above())) continue;
 
                     if (score < bestScore) {
                         bestScore = score;
