@@ -80,12 +80,24 @@ public final class PathWorldSnapshot implements BlockGetter {
         NavigationMetrics.sections(source.size());NavigationMetrics.record(1,System.nanoTime()-began);
         return result;
     }
-    @Override public BlockState getBlockState(BlockPos pos) {
-        if(pos.getY()<minHeight || pos.getY()>=minHeight+height
-                || !chunks.contains(ChunkPos.asLong(pos.getX()>>4,pos.getZ()>>4)))
+    /**
+     * Primitive fast path for hot A*/JPS block-state reads. Identical bounds
+     * and palette rules to BlockGetter.getBlockState(BlockPos), but avoids
+     * allocation of one BlockPos object per neighbor / occupancy check.
+     *
+     * Immutable detached palettes: this never loads or reads live chunks.
+     */
+    public BlockState getBlockState(int x, int y, int z) {
+        if (y < minHeight || y >= minHeight + height
+                || !chunks.contains(ChunkPos.asLong(x >> 4, z >> 4)))
             return Blocks.BEDROCK.defaultBlockState();
-        var palette=sections.get(SectionPos.asLong(pos.getX()>>4,pos.getY()>>4,pos.getZ()>>4));
-        return palette==null?Blocks.AIR.defaultBlockState():palette.get(pos.getX()&15,pos.getY()&15,pos.getZ()&15);
+        var palette = sections.get(SectionPos.asLong(x >> 4, y >> 4, z >> 4));
+        return palette == null ? Blocks.AIR.defaultBlockState()
+                : palette.get(x & 15, y & 15, z & 15);
+    }
+
+    @Override public BlockState getBlockState(BlockPos pos) {
+        return getBlockState(pos.getX(), pos.getY(), pos.getZ());
     }
     @Override public FluidState getFluidState(BlockPos pos) { return getBlockState(pos).getFluidState(); }
     @Override public BlockEntity getBlockEntity(BlockPos pos) { return null; }
