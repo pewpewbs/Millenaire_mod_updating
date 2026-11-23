@@ -1187,3 +1187,63 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\millenaire-1.18.2-forg
 
 Не впроваджувати глобальний cross-NPC `NO_PATH` blacklist, не об'єднувати endpoints із різними висотами, не нехтувати молодими новими цілями заради красивого зменшення `no_path_failures`, не масштабувати безконтрольно worker threads. Після acceptance завершити діагностичний цикл і перейти до **етапу 2 — physical transition viability**: перевірка всього руху з точки A у точку B для Minecraft 1.18.2 hitboxes, stairs/slabs/headroom/jump/fall, door/gate transitions, ladder descent/top-out, `ENDPOINT_MISMATCH`. Це має робити окремо призначена користувачем сильніша модель з тестами геометрії. Важливі координати та логи збережено в §§20–24. Після цього буде сенс повторно профілювати JPS/A* і розглядати HPA* або node-heap/closed-index GC оптимізацію на реальних hot paths.
 
+
+
+## 26. Фінальний playtest етапу 1 (NAV-OPT-18/19) та передача етапу 2 іншій моделі
+
+**Джерело:** `latest(20261123-223932).log`, 2 530 631 bytes, 10 824 рядки при читанні з диска. Minecraft 1.18.2 / Forge 40.3.0 / Java 17.0.15 / millenaire-8.1.2-port.0.jar. Integrated server стартував 23:32:54, перший звіт 23:33:07 (L91), останній 23:39:00 (L10356), 36 NAV-OPT-STATS, інтервал 353 с; штатна зупинка 23:39:08–12 (L10813–10824). Відсутні Exception/FATAL/OutOfMemory у повному файлі. Є один startup `Can't keep up` 3384ms/67 ticks о 23:33:03, старі 5 unknown config keys, 2 texture warnings. Наявність `cache_empty_lookup_skipped`, `search_preempted`, `moving_goal_requests` і actor-tagged NO_PATH підтверджує **runtime NAV-OPT-18/19**. Окремі результати Run-NavigationPhase1.ps1, Java/Python smoke, контрольований CPU/GC/TPS benchmark користувач не надав. Не приписувати успішність усіх тестів одному факту запуску гри.
+
+### 26.1. Фінальна метрика етапу 1 (останній звіт)
+
+| Метрика | NAV-OPT-17 (§24) | NAV-OPT-19 |
+|---|---:|---:|
+| JPS avg | 27.081ms | 25.711ms (2204 searches; expanded 575397; max 172.330ms) |
+| Classic A* avg | 22.672ms | 24.113ms (1021 searches; expanded 1475141; max 234.343ms) |
+| Snapshot avg | 0.388ms | 0.388ms (1866; max 11.118ms) |
+| Queue avg | 18.992ms | 18.998ms |
+| Queue max | 922.335ms | 736.472ms |
+| NO_PATH per minute | 135/530s ≈15.3 | 66/353s ≈11.2 |
+| Flat column hit pct | 78.66% | 78.47% (6844020 hit / 1877923 miss) |
+| Cache empty lookup skipped | — | **6101 / 9979 misses = 61.14%** |
+| Shared section reuse | 5.2% | **8.0%** (50333 shared / 580066 copied) |
+| Full snapshots reused / non-latest | — / 16 | 346 / 25 |
+| Queue rejected | 0 | 0 |
+
+Додатково: native count=2212 avg=5.364ms max=241.802ms; deferred=1081 (188 tick budget + 893 section rejected, area=0); additional captures=331; known sections/captures invalidated=6247/13; poisoned bypasses=75; mutation race rejected=0; swept_checks=2372637, blocked=2890, avg=0.003ms, max=46.978ms; cache_hit=156, cache_reverse=16, cache_miss=9979, routes_stored=1458, cache_invalidated=225; reverse_tried=49, reverse_found=7; queue_started=3225; active=queued=rejected=0; ladder_scans=552, probes=1180429, hits=22, avg=0.105ms. Результат NAV-OPT-19 — **підтверджене скорочення операцій пошуку порожніх candidate lists**, не відсоток прискорення гри. NAV-OPT-18: moving_goal_requests=18, moving_goal_bursts=0, search_preempted=0, inflight_joined=0; повний файл не має NAV-OPT-MOVING-GOAL. Цей сценарій не відтворив попередній moving-goal storm з §24; немає підстав уводити глобальний moving-target throttle. Сесії не контрольовані, CPU/GC/TPS causal speedup не виміряно.
+
+### 26.2. Actor-aware NO_PATH: відтепер точні джерела
+
+66 реальних NO_PATH і у фінальному звіті, і у повному файлі; 59 level=1, 7 level=2, 0 level=3. 389 suppressed retry; reset_start=27, goal=1, world=30, movement/rewind/success=0, retry_expired=8. **43 із 66 (65.2%)** належать двом NPC:
+- **Eftokios Prinkips**, actorId=235, goal=mineiron2, **21/21** з exact from=(25,68,649) до=(28,66,660), 23:35:50–23:36:00 (L4335–4581). Пов'язана шахта, не доводити точну фізичну причину без геометрії світу.
+- **Dzul Ak**, actorId=316, 22 NO_PATH: 17 gethousethresources (16 з (167,23,722) до (186,72,724), перепад Y=49) і 5 gosocialise. Дослідити, чи це падіння NPC, реальний підземний старт/відсутність маршруту або вибір некоректного access node; не вважати перепад Y доказом бага сам по собі.
+- Appa Zaridis actorId=168, makesandstoneworkshop: 3 рази (19,67,630)→(3,68,627).
+- Інші 20 NO_PATH розподілені між NPC/goal, не накладати cross-NPC blacklist.
+ActorId тут runtime ID; не зберігається як ідентифікатор між сесіями. Peak queue window avg=302.356ms о 23:35:47; це інше вікно, ніж нижче описаний cache churn. Жодного підтвердженого виграшу від preemption/coalescing у цій сесії.
+
+### 26.3. НОВИЙ ПРІОРИТЕТ етапу 2: невідповідність формату свіжого маршруту та cache replay
+
+За весь лог **281** NAV-OPT-CACHE action=INVALIDATE, **усі 281 reason=NON_ADJACENT_EDGE**, з 23:38:19 до 23:39:07; останній періодичний звіт має лише 225, решта після нього. Усі зосереджені у близьких координатах:
+- (68,67,593)→(70,70,599): 120
+- (68,67,593)→(71,71,598): 60
+- (68,67,593)→(71,70,599): 56
+- (67,67,593)→(70,70,599): 39
+- (72,70,599)→(69,67,593): 4
+- (67,67,592)→(70,70,599): 2.
+
+Перший приклад L8065: rejectedEdge=(71,68,593)→(72,70,594), delta=(1,2,1). Поряд L8066–8068 — Niketas Maliasenos (pastor_byzantine), goal=teach, ASTAR-SEARCH → ASTAR-RESULT, target=(71,71,599). Не ототожнювати кожен анонімний INVALIDATE з конкретним NPC лише через сусідні записи. Наприкінці також багато NPC біля цих сходів. Останнє вікно 23:39:00 jps_s=42.12, cache_invalidated_s=15.34, ladder_scans_s=39.36, ladder_probes_s=76215.88, queue_wait_window_avg_ms=0.309. Це повтори реальної роботи, не доведена проблема переповнення черги.
+
+**Перевірено вихідний код** `AStarPathPlannerJPS.java` на поточній гілці: `rememberPath` перевіряє лише null/size/exact endpoints і копіює всі cells у RouteMemory, але НЕ перевіряє adjacency. `reusePath` навпаки відхиляє кожен edge з abs(delta X/Y/Z)>1, видаляє відповідний cache entry і логує NON_ADJACENT_EDGE. Отже існує реальна структурна неузгодженість правил admission та replay. Серія повторних INVALIDATE та нових ASTAR-RESULT узгоджується з циклом повторного запису непідтримуваного cache edge. **Не доведено**, чи цей edge повинен бути розгорнутий як JPS jump-point macroedge, чи є помилкою генерації, чи допустимий іншим movement contract. Не послаблювати validation і не додавати сліпу інтерполяцію Y. Передача іншій моделі: розібратися у JPS expansion/reconstruction, classic path representation, AS_PathEntity/PathNavigateSimple consumer; уніфікувати формат, а не приховати повідомлення. До виправлення формату можна окремо розглянути admission guard, що не кешує шлях, який replay гарантовано відхиляє; це лише усуне cache churn, не виправить рух. **У цьому раунді код не змінювався.**
+
+### 26.4. Підтверджені фізичні сценарії для етапу 2
+
+- STAIR-WAYPOINT=172, у всіх atNextClear=true, у 9 horizontalCollision=true. Це прямий доказ, що clear-at-next-waypoint **не достатній** для правильного фізичного переходу. Наприклад Anatolios Zaridis L2907/L4150: feet=(27,68,647), exactY=68.50, next=(27,69,648), stair=(27,68,648), facing=south half=bottom shape=straight, mobHeight=1.80, head air, horizontalCollision=true; stationaryTicks=3/7. Другий приклад Ntaniel Prinkips L9523: feet=(71,70,599), next=(71,70,597), stationaryTicks=60, horizontalCollision=true, top-half stair=(70,69,598). Kassandra Prinkips L10451: feet=(72,70,599), next=(72,70,597), stationaryTicks=40, horizontalCollision=true; stair=(71,70,598) half=top. Перевірити whole swept AABB, fractional support height, допустимі напрямки та розгортання non-adjacent waypoint, а не лише head block.
+- DOOR-BLOCKED=98: NO_VISIBLE_DOOR_CANDIDATE 78, AT_WAYPOINT 11, STOP_MOVING 8, NO_DESTINATION 1. Hot doors (2,68,629) 19, (187,71,674) 16, (234,74,662) 11, (69,67,544) 10, (23,67,610) 7. Перевірити повний collision shape та фактичний підхід з обох боків, door lease.
+- NAV-TELEPORT=27 stock recovery: Niompe Prinkips 6, Anatolios Zaridis 6, Arminios Prinkips 4, Elena Prinkips 4, Lizas Raoul 3, Nkiolanta Maliasenos 3, інші 1. Часті at=(38,65,594) 7, (18,67,633) 5, (6,67,631) 3, (29,66,547) 3, (5,68,631) 3. Не вимикати recovery до виправлення причини.
+- LADDER-ASSIST=14, усі direction=+1, contact=false; LADDER-EXIT=0. У цій сесії **немає доказу успішного спуску або climbing contact**. Anatolios 6, Ah Tabai Chibirias 5, Eftokios 3. Попередні сценарії спуску у §§20–24, особливо Giannis біля (3,68,562) і Zenovios біля (3,67,561), не втрачені.
+- NAV-OPT-REVERSE=50 у всьому файлі (21 FORWARD, 21 NONE, 8 REVERSED), ENDPOINT_MISMATCH=26. Не автоматично інвертувати спрямовані вертикальні ребра.
+- Новий лог має 2426 ASTAR-RESULT та 142 VANILLA-FALLBACK **події логування**, а не точні search completion totals (rate-limited). ASTAR-RESULT сам по собі не є доказом досягнення NPC кінцевої мети.
+
+### 26.5. Статус та коротка інструкція для іншої моделі
+
+Користувач прямо сказав, що **етап 2 передає іншій розумнішій моделі**. Перший етап реалізації заморожено, ігровий запуск фінального коду підтверджено; формальна перевірка всіх підготовлених тестів і контрольована TPS/CPU/GC залишаються непідтвердженими. Повторне оптимізування за кількістю NO_PATH до виправлення фізичних причин зараз недоцільне. Поточний лог і аудит показують, що саме physical route validity/representation — наступний пріоритет. Не змінювати main. Зберегти всі оптимізації snapshots/cache/executor, directed validity і bounded work. Почати з повного читання §§20–26, актуального source і реальних переходів; перевірити контракт між `AStarStatic.isViable/isTransitionViable`, `AStarWorker`, `AStarWorkerJPS`, `AStarPathPlannerJPS`, `AS_PathEntity`, `PathNavigateSimple`, `MillVillager`. Створити контрольні геометричні fixtures (stair+slab+low ceiling; direction-specific jump/drop; door/gate; ladder ascent/descent/top-out; compressed JPS path vs edge-wise replay) із відповідністю до Minecraft 1.18.2 hitbox/collision shapes. Не ставити ціллю 0 NO_PATH для фізично недоступних цілей: коректна відмова має бути дозволеною. Спочатку correctness, потім контрольований performance profiling. У цьому раунді оновлено лише аудит, source не змінювався.
+
