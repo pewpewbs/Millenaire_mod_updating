@@ -231,7 +231,8 @@ public class PathNavigateSimple extends GroundPathNavigation {
         net.minecraft.world.level.pathfinder.Node previous = this.path.getNode(index - 1);
         if (!this.isLadderNode(previous)) return;
         int dx = exit.x - previous.x, dz = exit.z - previous.z;
-        if (Math.abs(dx) > 1 || Math.abs(dz) > 1 || (dx == 0 && dz == 0)) return;
+        if (Math.abs(dx) > 1 || Math.abs(dz) > 1 || (dx == 0 && dz == 0)
+                || Math.abs(exit.y - previous.y) > 1) return;
         net.minecraft.core.BlockPos shaft = new net.minecraft.core.BlockPos(
                 previous.x, previous.y, previous.z);
         net.minecraft.world.level.block.state.BlockState state = this.mob.level.getBlockState(shaft);
