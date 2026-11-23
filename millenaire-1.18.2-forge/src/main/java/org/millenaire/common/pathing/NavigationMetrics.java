@@ -32,6 +32,12 @@ public final class NavigationMetrics {
     private static final LongAdder SNAPSHOT_KNOWN_CAPTURES_INVALIDATED = new LongAdder();
     private static final LongAdder SNAPSHOT_POISONED_BYPASSES = new LongAdder();
     private static final LongAdder SNAPSHOT_MUTATION_RACE_REJECTED = new LongAdder();
+    private static final LongAdder FLAT_COLUMN_MEMO_HIT = new LongAdder();
+    private static final LongAdder FLAT_COLUMN_MEMO_MISS = new LongAdder();
+    private static final LongAdder SWEPT_TRANSITION_COUNT = new LongAdder();
+    private static final LongAdder SWEPT_TRANSITION_BLOCKED = new LongAdder();
+    private static final LongAdder SWEPT_TRANSITION_NANOS = new LongAdder();
+    private static final AtomicLong SWEPT_TRANSITION_MAX = new AtomicLong();
     private static final NavigationRateWindow RATE_WINDOW = new NavigationRateWindow();
     private NavigationMetrics() {}
     public static void record(int kind,long nanos){COUNT[kind].increment();NANOS[kind].add(nanos);MAX[kind].accumulateAndGet(nanos,Math::max);}
@@ -58,6 +64,15 @@ public final class NavigationMetrics {
     }
     public static void snapshotPoisonedBypass() { SNAPSHOT_POISONED_BYPASSES.increment(); }
     public static void snapshotMutationRaceRejected() { SNAPSHOT_MUTATION_RACE_REJECTED.increment(); }
+    public static void flatColumnMemoHit() { FLAT_COLUMN_MEMO_HIT.increment(); }
+    public static void flatColumnMemoMiss() { FLAT_COLUMN_MEMO_MISS.increment(); }
+    public static void sweptTransition(long nanos, boolean traversable) {
+        long duration = Math.max(0L, nanos);
+        SWEPT_TRANSITION_COUNT.increment();
+        if (!traversable) SWEPT_TRANSITION_BLOCKED.increment();
+        SWEPT_TRANSITION_NANOS.add(duration);
+        SWEPT_TRANSITION_MAX.accumulateAndGet(duration, Math::max);
+    }
     public static void stale(){STALE.increment();}
     /** kind: 0=JPS, 1=classic A*; includes search and validation time. */
     public static void search(int kind, long nanos, int expanded) {
@@ -109,6 +124,15 @@ public final class NavigationMetrics {
             +" snapshot_known_captures_invalidated="+SNAPSHOT_KNOWN_CAPTURES_INVALIDATED.sum()
             +" snapshot_poisoned_bypasses="+SNAPSHOT_POISONED_BYPASSES.sum()
             +" snapshot_mutation_race_rejected="+SNAPSHOT_MUTATION_RACE_REJECTED.sum()
+            +" flat_column_memo_hit="+FLAT_COLUMN_MEMO_HIT.sum()
+            +" flat_column_memo_miss="+FLAT_COLUMN_MEMO_MISS.sum()
+            +" swept_checks="+SWEPT_TRANSITION_COUNT.sum()
+            +" swept_blocked="+SWEPT_TRANSITION_BLOCKED.sum()
+            +String.format(java.util.Locale.ROOT,
+                    " swept_avg_ms=%.3f swept_max_ms=%.3f",
+                    SWEPT_TRANSITION_COUNT.sum()==0 ? 0.0D
+                            : SWEPT_TRANSITION_NANOS.sum()/1.0E6D/SWEPT_TRANSITION_COUNT.sum(),
+                    SWEPT_TRANSITION_MAX.get()/1.0E6D)
             +String.format(java.util.Locale.ROOT, " snapshot_section_reuse_pct=%.1f",
                     SECTIONS.sum()+SNAPSHOT_SHARED_SECTIONS.sum()==0 ? 0.0D
                     : SNAPSHOT_SHARED_SECTIONS.sum()*100.0D
@@ -151,6 +175,9 @@ public final class NavigationMetrics {
         SNAPSHOT_SHARED_SECTIONS.reset();SNAPSHOT_ADDITIONAL_CAPTURES.reset();SNAPSHOT_NON_LATEST_REUSED.reset();
         SNAPSHOT_KNOWN_SECTIONS_INVALIDATED.reset();SNAPSHOT_KNOWN_CAPTURES_INVALIDATED.reset();
         SNAPSHOT_POISONED_BYPASSES.reset();SNAPSHOT_MUTATION_RACE_REJECTED.reset();
+        FLAT_COLUMN_MEMO_HIT.reset();FLAT_COLUMN_MEMO_MISS.reset();
+        SWEPT_TRANSITION_COUNT.reset();SWEPT_TRANSITION_BLOCKED.reset();
+        SWEPT_TRANSITION_NANOS.reset();SWEPT_TRANSITION_MAX.set(0L);
         RATE_WINDOW.reset();
     }
 }
