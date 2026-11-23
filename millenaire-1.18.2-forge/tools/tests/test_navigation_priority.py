@@ -72,7 +72,11 @@ class PrimaryRouteWiring(unittest.TestCase):
 
     def test_executor_still_uses_minecraft_movement_controller(self):
         self.assertIn("extends GroundPathNavigation", NAVIGATION)
-        self.assertIn("LadderTransitionRules.shouldAssist", NAVIGATION)
+        self.assertIn("LadderTransitionRules.routeDirection", NAVIGATION)
+        self.assertIn("LadderTransitionRules.reachedRung", NAVIGATION)
+        self.assertIn("LadderTransitionRules.shouldClimb", NAVIGATION)
+        self.assertIn("LadderTransitionRules.needsTopOut", NAVIGATION)
+        self.assertIn("assistLeavingLadder", NAVIGATION)
 
 
 if __name__ == "__main__":
