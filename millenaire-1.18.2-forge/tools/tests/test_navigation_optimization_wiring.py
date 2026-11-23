@@ -41,6 +41,28 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("memory.forget(", cache)
         self.assertIn("cacheStale()", cache)
 
+    def test_navopt19_negative_route_cache_is_exact_and_revision_guarded(self):
+        self.assertIn("record CandidatesSnapshot(List<Lookup> matches, long revision)", MEMORY)
+        self.assertIn("public synchronized CandidatesSnapshot candidatesWithRevision(", MEMORY)
+        self.assertIn("new CandidatesSnapshot(candidates(tick, options, start, goal), revision)", MEMORY)
+        self.assertIn("public synchronized long revision() { return revision; }", MEMORY)
+        self.assertIn("++revision;", MEMORY)
+        self.assertIn("memory.candidatesWithRevision(", PLANNER)
+        self.assertIn("this.emptyCacheRequest = requestKey(start, end, this.config);", PLANNER)
+        self.assertIn("this.emptyCacheRevision = snapshot.revision();", PLANNER)
+        self.assertIn("this.emptyCacheRequest = null;", PLANNER)
+        self.assertIn("requested.equals(this.emptyCacheRequest)", PLANNER)
+        self.assertIn("routes(this.world).revision() == this.emptyCacheRevision", PLANNER)
+        self.assertIn("NavigationMetrics.cacheEmptyLookupSkipped()", PLANNER)
+        self.assertIn("NavigationMetrics.cacheMiss()", PLANNER)
+        self.assertIn("cache_empty_lookup_skipped=", METRICS)
+        self.assertIn("CACHE_EMPTY_LOOKUP_SKIPPED.reset();", METRICS)
+        # Existing candidate rejected for a time budget is never memoized as empty.
+        batch = PLANNER.split("var snapshot = memory.candidatesWithRevision(", 1)[1]
+        before_validation = batch.split("ArrayList<AStarNode> best = null;", 1)[0]
+        self.assertIn("if (alternatives.isEmpty())", before_validation)
+        self.assertIn("this.emptyCacheRequest = null;", before_validation)
+
     def test_cache_world_isolated_and_bounded(self):
         self.assertIn("new java.util.WeakHashMap<>()", PLANNER)
         self.assertIn("new org.millenaire.common.pathing.RouteMemory(96, 96, 200L)", PLANNER)
