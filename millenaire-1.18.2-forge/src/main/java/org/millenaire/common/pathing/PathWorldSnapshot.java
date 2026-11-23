@@ -217,7 +217,7 @@ public final class PathWorldSnapshot implements BlockGetter {
     }
 
     /**
-     * Primitive fast path for hot A*/JPS block-state reads. Identical bounds
+     * Primitive fast path for hot A-star and JPS block-state reads. Identical bounds
      * and palette rules to BlockGetter.getBlockState(BlockPos), but avoids
      * allocation of one BlockPos object per neighbor / occupancy check.
      *
