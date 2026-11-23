@@ -5,6 +5,14 @@ public final class DoorApproachRules {
     private DoorApproachRules() {}
 
     /**
+     * A door panel can be thinner than a ray's centerline. A MISS is therefore
+     * unobstructed; only a hit on a different solid block blocks access.
+     */
+    public static boolean clearSight(boolean hitBlock, boolean hitDoor) {
+        return !hitBlock || hitDoor;
+    }
+
+    /**
      * @param dx normalized intended horizontal movement on X
      * @param dz normalized intended horizontal movement on Z
      * @param ox horizontal door offset on X
