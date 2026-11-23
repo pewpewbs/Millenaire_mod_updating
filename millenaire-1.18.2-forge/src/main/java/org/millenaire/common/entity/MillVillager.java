@@ -1570,6 +1570,54 @@ IAStarPathedEntity {
         }
     }
 
+    /**
+     * Diagnostics for a door the navigator did not open. In particular this
+     * distinguishes a missing path, a goal with stopMoving=true, and actual
+     * powered/hinged door states. Called only when LogPathing >= 2 and bounded
+     * to once every 100 ticks per resident.
+     */
+    private void logNearbyClosedDoor(String reason, Path route) {
+        if (MillConfigValues.LogPathing < 2
+                || (this.level.getGameTime() + this.getVillagerId()) % 100L != 0L) return;
+        var feet = this.blockPosition();
+        net.minecraft.core.BlockPos nearest = null;
+        net.minecraft.world.level.block.state.BlockState nearestState = null;
+        double best = 6.25D;
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
+                for (int y = -1; y <= 1; y++) {
+                    var p = feet.offset(x, y, z);
+                    if (!this.level.hasChunkAt(p)) continue;
+                    var state = this.level.getBlockState(p);
+                    if (!BlockItemUtilities.isWoodenDoor(state.getBlock())) continue;
+                    if (state.getValue(net.minecraft.world.level.block.DoorBlock.OPEN)) continue;
+                    if (state.getValue(net.minecraft.world.level.block.DoorBlock.HALF)
+                            == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER)
+                        p = p.below();
+                    double dx = p.getX() + 0.5D - this.getX();
+                    double dz = p.getZ() + 0.5D - this.getZ();
+                    double distance = dx * dx + dz * dz;
+                    if (distance >= best) continue;
+                    best = distance;
+                    nearest = p.immutable();
+                    nearestState = this.level.getBlockState(p);
+                }
+            }
+        }
+        if (nearest == null) return;
+        var block = nearestState.getBlock();
+        MillLog.major(this, "DOOR-BLOCKED reason=" + reason
+                + " door=" + nearest
+                + " block=" + net.minecraft.core.Registry.BLOCK.getKey(block)
+                + " facing=" + nearestState.getValue(net.minecraft.world.level.block.DoorBlock.FACING)
+                + " hinge=" + nearestState.getValue(net.minecraft.world.level.block.DoorBlock.HINGE)
+                + " powered=" + nearestState.getValue(net.minecraft.world.level.block.DoorBlock.POWERED)
+                + " feet=" + feet + " stopMoving=" + this.stopMoving
+                + " goal=" + this.goalKey + " dest=" + this.getPathDestPoint()
+                + " path=" + (route == null ? "none"
+                    : route.getNextNodeIndex() + "/" + route.getNodeCount()));
+    }
+
     private void handleDoorsAndFenceGates() {
         if (this.level.isClientSide) return;
 
@@ -1670,6 +1718,8 @@ IAStarPathedEntity {
         Point destination = this.getPathDestPoint();
         boolean hasRoute = route != null && !route.isDone();
         if (this.stopMoving || this.getTarget() != null || (!hasRoute && destination == null)) {
+            this.logNearbyClosedDoor(this.stopMoving ? "STOP_MOVING"
+                    : this.getTarget() != null ? "COMBAT" : "NO_DESTINATION", route);
             this.doorStationarySince = -1L;
             return;
         }
@@ -1704,10 +1754,16 @@ IAStarPathedEntity {
         if (desired == null && destination != null) {
             desired = Vec3.atCenterOf(destination.getBlockPos());
         }
-        if (desired == null) return;
+        if (desired == null) {
+            this.logNearbyClosedDoor("NO_DIRECTION", route);
+            return;
+        }
         double dx = desired.x - this.getX(), dz = desired.z - this.getZ();
         double len = Math.sqrt(dx * dx + dz * dz);
-        if (len < 0.25D) return;
+        if (len < 0.25D) {
+            this.logNearbyClosedDoor("AT_WAYPOINT", route);
+            return;
+        }
         dx /= len;
         dz /= len;
         // Eyes are only a secondary hint after a *physical* stall, never a
@@ -1816,6 +1872,8 @@ IAStarPathedEntity {
         }
         if (best != null) {
             org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, best);
+        } else {
+            this.logNearbyClosedDoor("NO_VISIBLE_DOOR_CANDIDATE", route);
         }
     }
 
