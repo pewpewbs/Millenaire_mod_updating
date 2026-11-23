@@ -226,11 +226,6 @@ extends AStarWorker {
 
     private AStarNode jump(int nextX, int nextY, int nextZ, int px, int py, int pz) throws ThreadSafeUtilities.ChunkAccessException {
         if (this.shouldInterrupt()) return null;
-        // JPS compresses straight runs and can skip several door blocks.
-        // Validate every traversed EDGE before exploring the jump point,
-        // otherwise an OPEN door leaf may obstruct the emitted path.
-        if (!org.millenaire.common.pathing.DoorTransitionRules.allowsEdge(
-                this.world, px, py, pz, nextX, nextY, nextZ)) return null;
         int nzY;
         int x = nextX;
         int y = nextY;
