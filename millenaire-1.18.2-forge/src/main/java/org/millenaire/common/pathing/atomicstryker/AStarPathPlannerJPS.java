@@ -123,7 +123,21 @@ public class AStarPathPlannerJPS {
         next.setup(this.snapshot,copy(this.lastStart),copy(this.lastEnd),copy(this.config));
         next.requestGeneration=this.generation;next.classicAttempt=classic;
         this.future=PathSearchExecutor.submit(next);
-        if(this.future==null) { this.busy=false;this.worker=null;this.snapshot=null; } // Backpressure is not an unreachable destination.
+        if (this.future == null) {
+            this.busy = false;
+            this.worker = null;
+            this.snapshot = null;
+            // If the optional ladder-capable comparison could not be queued,
+            // retain JPS's already successful route. Never discard a real
+            // path simply because the executor is temporarily saturated.
+            if (classic && this.jpsCandidate != null) {
+                ArrayList<AStarNode> available = this.jpsCandidate;
+                this.jpsCandidate = null;
+                if (this.pathedEntity != null) this.pathedEntity.onFoundPath(available);
+            }
+            // For an initial rejection no task exists to call completed().
+            // The villager observes !isBusy() and schedules Vanilla fallback.
+        }
     }
     public void getPath(int x,int y,int z,int dx,int dy,int dz,AStarConfig settings) throws ThreadSafeUtilities.ChunkAccessException {
         if(!AStarStatic.isViable(this.world,x,y,z,0,settings))--y;
