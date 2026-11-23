@@ -13,6 +13,17 @@ public final class DoorApproachRules {
     }
 
     /**
+     * The physical closed panel sits along one edge of the door BLOCK.
+     * Use the closest point on its horizontal collision bounds instead of
+     * the block center: both sides of the same door must work symmetrically.
+     *
+     * min and max are world-space coordinates (block origin already added).
+     */
+    public static double closestPanelCoordinate(double resident, double min, double max) {
+        return Math.max(min, Math.min(max, resident));
+    }
+
+    /**
      * Doors are not guaranteed to be explicit path nodes: JPS can omit a door,
      * and a partial route may aim at an offset access node. Do not loosen the
      * approach rule for a walking resident. After prolonged PHYSICAL stalling,
