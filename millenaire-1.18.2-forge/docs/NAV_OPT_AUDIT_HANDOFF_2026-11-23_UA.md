@@ -482,3 +482,74 @@ java -cp build/nav-snapshot-pool-smoke SnapshotSectionPoolSmoke
 - Окремо залишилися двері, спуск/вихід із драбини, колізії й `ENDPOINT_MISMATCH`; користувач призначив їх іншій моделі.
 - Не зливати в `main` і не називати оптимізацію доведеною до повного Forge build, Java smoke та реальних замірів.
 
+
+
+## 15. NAV-OPT-12 — сигнали версій та інвалідація на відомі зміни блоків
+
+**Дата:** 23.11.2026. **Запит користувача:** продовжувати оптимізацію `PathWorldSnapshot`, без проміжного запуску Minecraft; тестувати всі етапи NAV-OPT-09/10/11/12 спільно. Користувач передасть окремий аудит геометрії дверей/драбин більш потужній моделі.
+
+### 15.1. Перевірені обмеження Forge 1.18.2
+
+У Forge 40.x є `LevelChunkSection.setBlockState(int,int,int,BlockState)`, який може змінювати `PalettedContainer<BlockState>` без заміни його Java-об'єкта. У `net.minecraftforge.event.world.BlockEvent` є конкретні події `BreakEvent`, `EntityPlaceEvent`, `FluidPlaceBlockEvent`, `CropGrowEvent.Post`, `PistonEvent.Post`; існують також `ChunkEvent.Load/Unload` і `WorldEvent.Unload`. Але **жодне джерело не підтверджує, що вони всі разом є універсальним post-mutation хукoм для будь-якого `LevelChunkSection.setBlockState`**.
+
+Джерела API:
+- [Forge 1.18.2 LevelChunkSection#setBlockState](https://nekoyue.github.io/ForgeJavaDocs-NG/javadoc/1.18.2/net/minecraft/world/level/chunk/LevelChunkSection.html)
+- [Forge 1.18.2 BlockEvent](https://nekoyue.github.io/ForgeJavaDocs-NG/javadoc/1.18.2/net/minecraftforge/event/world/BlockEvent.html)
+- [Forge 1.18.2 ChunkEvent](https://nekoyue.github.io/ForgeJavaDocs-NG/javadoc/1.18.2/net/minecraftforge/event/world/ChunkEvent.html)
+
+**Інженерне рішення:** не дозволяти кешування секцій між різними серверними тіками на підставі цих подій. Інкрементальні «версії» поки **лише недостовірні hints**. Без універсального mutation hook не можна вважати відсутність отриманих подій доказом незмінності. Залишити `SnapshotSectionPool.resetIfNewTick` як обов'язковий fail-closed механізм.
+
+### 15.2. Реалізовано NAV-OPT-12: найкраща доступна інвалідація всередині тіку
+
+1. `SnapshotSectionPool.java`:
+    - `invalidateSection(tick, sectionKey)` видаляє вже скопійовану секцію;
+    - `invalidateAll(tick)` очищає всі кешовані секції цього світу;
+    - ОБИДВА методи залишають поточний бюджет `snapshots`, `chunkVisits`, `copies` **без повернення витрачених квот**, щоб масова зміна блоків не могла викликати необмежену повторну алокацію;
+    - публічні методи пулу синхронізовано, оскільки деякі Forge-події, особливо chunk lifecycle, можуть викликатися поза очевидним серверним tick-кодом.
+2. `PathWorldSnapshot.java`:
+    - `onKnownBlockMutation(ServerLevel,BlockPos)` інвалідує **одну** секцію (`SectionPos`) та інвалідує weakref до останнього повного snapshot **лише якщо змінений чанк всередині його прямокутника**;
+    - `onKnownWorldMutation(ServerLevel)` інвалідує весь cached snapshot і пул при багатоблоковій зміні чи lifecycle чанка;
+    - `onWorldUnload(ServerLevel)` одразу прибирає pooled палетні копії і `LAST_CAPTURE` для світу;
+    - нові snapshot після інвалідації проходять звичайний `pool.begin()`, тобто **система не обходить старі ліміти**.
+3. `MillEventController.java` (цей клас **уже зареєстрований** у `Mill.Mill()` через `MinecraftForge.EVENT_BUS.register(new MillEventController())`):
+    - `BlockEvent.EntityPlaceEvent` — одинична секція; для `EntityMultiPlaceEvent` очищення всього світу;
+    - `BlockEvent.BreakEvent`, `FluidPlaceBlockEvent`, `CropGrowEvent.Post` — одинична секція;
+    - `PistonEvent.Post` — всі секції, бо рух поршня може змінити кілька чанків;
+    - `ChunkEvent.Load/Unload` — все поточне кешування світу;
+    - `WorldEvent.Unload` — забрати обидва кеші світу.
+4. `NavigationMetrics` тепер має `snapshot_known_sections_invalidated` і `snapshot_known_captures_invalidated` (накопичені за процес).
+5. `SnapshotSectionPoolSmoke.java` — доповнений smoke-тест: точкова інвалідація, збереження інших секцій, повне очищення без скидання copy/CPU бюджетів та новий тик.
+6. `test_navigation_optimization_wiring.py` — два додаткові structural tests: інвалідація й квоти та наявність зареєстрованих Forge-подій. Після NAV-OPT-12 очікується **21** тест.
+
+**Коміти в робочій гілці:**
+- `d237455` — інвалідація пулу без refund ресурсів;
+- `4b4120e` — точкова/world invalidation в PathWorldSnapshot;
+- `615f531` — метрики;
+- `13649de` — thread-safe пул;
+- `6e97bb9` — Forge event integration;
+- `06db9bf` — оновлення Java smoke;
+- `23f8dd0` — Python wiring, 21 tests.
+
+### 15.3. Конкретні межі гарантій
+
+- **Не універсально:** відсутні complete callbacks для кожного in-place `PalettedContainer` edit, сторонні моди можуть змінювати блоки без цих подій. In-flight snapshot вже зібраний до події лишається старою read-only копією, але поточна `MillVillager.applyPathCalculatedSinceLastTick` має фінальну live-world перевірку вузлів і спрямованих ребер.
+- `BlockEvent.BreakEvent` спрацьовує перед остаточним зламом і може бути скасований. Іноді інвалідація буде **зайвою**, але не дозволить повторно використати відому застарілу копію. Порядок слухачів та сторонні модові зміни не дають абсолютної гарантії.
+- `snapshot_known_sections_invalidated` і `snapshot_known_captures_invalidated` показують **тільки** інвалідації, спричинені обробленими відомими подіями; не означають «всі зміни світу» і не доводять неможливості stale snapshots.
+- Для міжтікового кешу потрібен гарантований mutation counter у `LevelChunkSection` або `PalettedContainer` (із безпечним version-check на server thread), окремі epoch при chunk unload/reload, тестування in-place mutation, piston, redstone, fluids і сторонніх модів, а також реальне вимірювання ціни нових hook-викликів.
+
+### 15.4. Наступна спільна перевірка (пізніше, не зараз)
+
+Після `Update-Millenaire.bat` (обов'язково `BUILD SUCCESSFUL`) з кореня репозиторію:
+
+```powershell
+py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_optimization_wiring.py
+py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_priority.py
+cd .\millenaire-1.18.2-forge
+javac --release 17 -d build/nav-snapshot-pool-smoke src/main/java/org/millenaire/common/pathing/SnapshotSectionPool.java tools/tests/SnapshotSectionPoolSmoke.java
+java -cp build/nav-snapshot-pool-smoke SnapshotSectionPoolSmoke
+```
+
+Також виконати всі чотири Java smoke з розділу 13.4. У Minecraft окремо поставити/зламати блок, активувати поршні, вилити воду та провести декілька NPC через перекривні області, перевіряючи `snapshot_shared_sections`, `snapshot_known_sections_invalidated`, `snapshot_known_captures_invalidated`, `snapshot_tick_budget_deferred`, `stale_routes` та частоту `snapshots_s`.
+
+**Статус:** GitHub source-level checks — очікуються наприкінці цього етапу; повна Forge compile, Java smoke, Minecraft лог NAV-OPT-12 — **NOT RUN** за рішенням користувача. `main` не чіпати; не обіцяти виміряне прискорення до A/B benchmarks.
+
