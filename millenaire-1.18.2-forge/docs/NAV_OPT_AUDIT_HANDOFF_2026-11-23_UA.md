@@ -743,3 +743,33 @@ java -cp build/nav-column-smoke SnapshotColumnMemoSmoke
 3. Не вмикати міжтіковий versioned snapshot cache, доки низькорівневий mutation hook, unload/reload epoch, correctness tests і A/B performance не підтверджені.
 4. Геометрія дверей/драбин/плит та `ENDPOINT_MISMATCH` — окремо для іншої потужнішої моделі; **не змінено**.
 
+
+
+## 19. NAV-OPT-15 — перша спільна Forge-компіляція: Javadoc syntax fix
+
+**Дата:** 23.11.2026. Користувач уперше після пакета NAV-OPT-09–15 запустив `Update-Millenaire.bat` (JDK Eclipse Adoptium **17.0.20.1**, Windows, Forge 40.3.0). `:compileJava` зупинилася через **9 синтаксичних помилок**, `BUILD FAILED in 14s`. `Update-Millenaire.ps1` повідомив `Gradle build failed (exit code 1). Installation cancelled.`, отже новий JAR **не був встановлений**; старий мод має залишитися на місці. Жодного Minecraft playtest нового пакета наразі немає.
+
+### 19.1. Фактична причина
+
+- `src/main/java/org/millenaire/common/pathing/PathWorldSnapshot.java:220`: Javadoc рядок `Primitive fast path for hot A*/JPS block-state reads`. Послідовність символів `*/` **закриває багаторядковий коментар** незалежно від того, що вона міститься у звичайному словосполученні `A*/JPS`. Наступні `*` рядки Java компілятор сприймав як вихідний код, тому видав 8 синтаксичних помилок `';' expected` / `<identifier> expected`.
+- `src/main/java/org/millenaire/common/pathing/SnapshotColumnMemo.java:13`: той самий шаблон `Fixed capacity avoids ... A*/JPS searches`, дев'ята синтаксична помилка `class, interface, enum, or record expected`.
+- Помилка обмежена текстом коментарів; **жодної зміни алгоритму, даних або API** для цього виправлення не було потрібно.
+
+**Виправлено в гілці `fix/villager-door-access-and-village-territory`:**
+1. `PathWorldSnapshot.java`: `A*/JPS` → `A-star and JPS` у Javadoc. Commit `d134371a47d9351727d7a635c0538f00a22275b9`.
+2. `SnapshotColumnMemo.java`: `A*/JPS` → `A-star and JPS` у Javadoc. Commit `379762855ecfd1408c6412dbd7096fa773cee51c`.
+
+Після запису перечитано 13 основних navigation source files із GitHub. Знайдено ще 3 літеральних `A*/` у `AStarStatic.java`, `AStarPathPlannerJPS.java`, `ThreadSafeUtilities.java`, **але всі три в однорядкових `//` коментарях**, тому не зумовлюють обриву багаторядкового Javadoc й не потребують зміни.
+
+### 19.2. Обов'язкова повторна перевірка
+
+Із кореня `Millenaire_mod_updating`:
+
+```powershell
+git pull --ff-only origin fix/villager-door-access-and-village-territory
+.\Update-Millenaire.bat
+```
+
+Потрібно побачити реальний `BUILD SUCCESSFUL` та `SUCCESS! Millenaire installed.`. **Не заявляти**, що після коментарних фіксів Gradle build уже пройшов: наразі його користувач ще не запускав повторно. Можливі наступні Java compile errors (Forge event APIs, signatures, інші інтеграції) після виправлення перших 9, бо javac міг не дійти до їх аналізу. Якщо `BUILD FAILED` повториться, потрібні `error:` рядки вище фінального summary або повний `millenaire-build.log`. Не пропонувати користувачу встановлювати старий артефакт як новий.
+
+Після компіляції — збережені source/Java smoke тести й Minecraft playtest з розділу 18.4; геометрію дверей/драбин не чіпати, `main` не змінювати.
