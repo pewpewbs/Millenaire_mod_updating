@@ -98,6 +98,29 @@ public final class DoorApproachRulesSmoke {
                 "stop lease after crossing northward");
         test(!DoorApproachRules.passedPanel(1, 0, 10.8125 - 10.5, 0),
                 "renew lease while approaching panel");
+        // Reproduces Giannis at (30,66,554): repeatedly reopening
+        // door (31,66,553) via SCANNER without moving along route 3/11.
+        test(DoorApproachRules.suppressStationaryScannerReopen(
+                true, true, 0.0D, 15L),
+                "same stuck resident must not reopen door every 15 ticks");
+        test(DoorApproachRules.suppressStationaryScannerReopen(
+                true, true, 0.01D, 119L),
+                "bounded retry cooldown holds even with tiny shuffling");
+        test(!DoorApproachRules.suppressStationaryScannerReopen(
+                true, true, 0.0D, 120L),
+                "genuinely stuck resident can try again after cooldown");
+        test(!DoorApproachRules.suppressStationaryScannerReopen(
+                true, true, 0.26D, 15L),
+                "actual movement resets scanner retry guard");
+        test(!DoorApproachRules.suppressStationaryScannerReopen(
+                true, false, 0.0D, 15L),
+                "new goal or destination resets scanner retry guard");
+        test(!DoorApproachRules.suppressStationaryScannerReopen(
+                false, true, 0.0D, 15L),
+                "another door can still be opened");
+        test(!DoorApproachRules.suppressStationaryScannerReopen(
+                true, true, 0.0D, -1L),
+                "negative elapsed ticks after reload do not suppress opening");
         System.out.println("PASS: emergency front-door geometry");
     }
 }
