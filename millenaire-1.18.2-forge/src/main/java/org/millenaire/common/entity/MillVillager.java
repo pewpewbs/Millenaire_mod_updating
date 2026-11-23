@@ -1860,6 +1860,18 @@ IAStarPathedEntity {
                     double panelMidX = panelX, panelMidZ = panelZ;
                     boolean woodenDoor = BlockItemUtilities.isWoodenDoor(doorState.getBlock());
                     if (woodenDoor) {
+                        boolean eastWestDoor = doorState.getValue(
+                                net.minecraft.world.level.block.DoorBlock.FACING).getAxis()
+                                == net.minecraft.core.Direction.Axis.X;
+                        // In the sideways lane, a CLOSED door can be
+                        // physically passable. Do not OPEN its leaf into
+                        // the path or keep an already-open leaf leased.
+                        // The emergency scanner is only for approaches to
+                        // the actual closed panel from either normal side.
+                        if (!org.millenaire.common.pathing.DoorApproachRules.facingDoorPanel(
+                                this.getX(), this.getZ(),
+                                door.getX() + 0.5D, door.getZ() + 0.5D,
+                                eastWestDoor)) continue;
                         var shutState = doorState.setValue(net.minecraft.world.level.block.DoorBlock.OPEN, false);
                         var panel = shutState.getCollisionShape(this.level, door).bounds();
                         panelX = org.millenaire.common.pathing.DoorApproachRules.closestPanelCoordinate(
