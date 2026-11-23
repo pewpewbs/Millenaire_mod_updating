@@ -27,14 +27,8 @@ public final class DoorTransitionRules {
         if (!BlockItemUtilities.isWoodenDoor(state.getBlock())) return true;
         boolean eastWestFacing =
                 state.getValue(DoorBlock.FACING).getAxis() == Direction.Axis.X;
-        if (DoorApproachRules.followsDoorNormal(dx, dz, eastWestFacing)) return true;
-        // A closed door occupies one block edge; its center lane along
-        // the panel may be clear. The OPEN leaf swings 90 degrees and
-        // physically blocks that lane. Do not prohibit all sideways routes:
-        // only prohibit crossing sideways WHEN the leaf is actually open.
-        boolean sideways = eastWestFacing ? dx == 0 && dz != 0
-                                           : dz == 0 && dx != 0;
-        return sideways && !state.getValue(DoorBlock.OPEN);
+        return DoorApproachRules.canTraverseDoorEdge(dx, dz, eastWestFacing,
+                state.getValue(DoorBlock.OPEN));
     }
 
     /**
@@ -44,6 +38,7 @@ public final class DoorTransitionRules {
      */
     public static boolean needsOpeningForEdge(BlockState state, int stepX, int stepZ) {
         if (!BlockItemUtilities.isWoodenDoor(state.getBlock())) return true;
+        if (stepX == 0 && stepZ == 0) return false;
         boolean eastWestFacing =
                 state.getValue(DoorBlock.FACING).getAxis() == Direction.Axis.X;
         return DoorApproachRules.followsDoorNormal(stepX, stepZ, eastWestFacing);
