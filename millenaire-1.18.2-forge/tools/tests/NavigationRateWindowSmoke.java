@@ -15,20 +15,22 @@ public final class NavigationRateWindowSmoke {
     private static NavigationRateWindow.Counts counts(long jps, long astar,
             long snapshots, long sections, long hits, long misses,
             long invalidations, long failed, long actualFailures, long cachedRetries, long joined,
-            long queueStarted, long queueWaitNanos, long ladderScans, long ladderProbes) {
+            long queueStarted, long queueWaitNanos, long ladderScans, long ladderProbes,
+            long preempted, long changedGoals, long bursts) {
         return new NavigationRateWindow.Counts(jps, astar, snapshots, sections,
                 hits, misses, invalidations, failed, actualFailures, cachedRetries, joined,
-                queueStarted, queueWaitNanos, ladderScans, ladderProbes);
+                queueStarted, queueWaitNanos, ladderScans, ladderProbes,
+                preempted, changedGoals, bursts);
     }
 
     public static void main(String[] args) {
         NavigationRateWindow window = new NavigationRateWindow();
         NavigationRateWindow.Counts zero =
-                counts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                counts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         check(window.sample(1_000L, zero).contains("window_state=warmup"),
                 "first report warms up");
         var baseline = counts(10, 6, 4, 100, 5, 15, 2, 4, 2, 3, 8,
-                2, 8_000_000L, 3, 100);
+                2, 8_000_000L, 3, 100, 10, 5, 2);
         check(window.sample(2_000_001_000L, baseline).contains("jps_s=5.00"),
                 "rates must divide count deltas by elapsed wall seconds");
         window.reset();
@@ -37,7 +39,7 @@ public final class NavigationRateWindowSmoke {
         check(window.sample(500_000_100L, baseline).contains("window_state=pending"),
                 "short reporting interval retains old baseline");
         var next = counts(20, 12, 6, 120, 10, 30, 4, 5, 6, 4, 10,
-                4, 16_000_000L, 4, 160);
+                4, 16_000_000L, 4, 160, 14, 9, 4);
         String report = window.sample(2_000_000_100L, next);
         check(report.contains("jps_s=5.00"), "JPS rate since baseline");
         check(report.contains("astar_s=3.00"), "classic A* rate since baseline");
@@ -47,10 +49,13 @@ public final class NavigationRateWindowSmoke {
         check(report.contains("queue_wait_window_avg_ms=4.000"),
                 "queue wait must use interval samples, not lifetime average");
         check(report.contains("ladder_probes_s=30.00"), "ladder probe rate");
+        check(report.contains("search_preempted_s=2.00"), "only interval preemptions are counted");
+        check(report.contains("moving_goal_requests_s=2.00"), "interval goal drift rate");
+        check(report.contains("moving_goal_bursts_s=1.00"), "interval burst rate");
         check(report.contains("window_scope=process"), "global counters labeled accurately");
 
         String resetCounter = window.sample(4_000_000_100L,
-                counts(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+                counts(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
         check(resetCounter.contains("jps_s=0.50"), "counter reset must not make negative rate");
         check(!resetCounter.contains("NaN") && !resetCounter.contains("Infinity"),
                 "zero samples must be finite");
