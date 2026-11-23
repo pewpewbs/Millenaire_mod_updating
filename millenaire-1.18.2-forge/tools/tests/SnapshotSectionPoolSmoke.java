@@ -62,6 +62,24 @@ public final class SnapshotSectionPoolSmoke {
         try { oneCopy.remember(1, 2L, source1, "second"); }
         catch (IllegalStateException expected) { exhausted = true; }
         check(exhausted, "copy budget fail-closed");
-        System.out.println("PASS: snapshot same-tick overlap, quotas, source identity and tick isolation");
+        // NAV-OPT-12: known-mutation hints must evict stale copies without
+        // resetting per-tick CPU limits (otherwise edits could bypass caps).
+        var edits = new SnapshotSectionPool<String>(4, 8, 2);
+        check(edits.begin(200, 2), "mutation test snapshot admitted");
+        edits.remember(200, 10L, source1, "before");
+        edits.remember(200, 20L, source2, "other");
+        check(edits.invalidateSection(200, 10L), "specific section evicted");
+        check(edits.get(200, 10L, source1) == null, "dirty section must not be reused");
+        check(edits.get(200, 20L, source2).equals("other"), "untouched section kept");
+        check(edits.usedCopies() == 2 && !edits.canCopy(200),
+                "invalidation must not refund section-copy quota");
+        check(edits.invalidateAll(200) == 1, "whole pool evicts remaining copies");
+        check(edits.usedChunkVisits() == 2 && edits.usedCopies() == 2,
+                "whole-pool invalidation must preserve current-tick work budgets");
+        check(edits.begin(201, 2), "new tick resets budgets after mutation");
+        check(edits.canCopy(201) && edits.get(201, 20L, source2) == null,
+                "old copies are never used across tick boundaries");
+
+        System.out.println("PASS: snapshot same-tick overlap, quotas, mutations, source identity and tick isolation");
     }
 }
