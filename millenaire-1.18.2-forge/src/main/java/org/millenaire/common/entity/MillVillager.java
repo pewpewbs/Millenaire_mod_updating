@@ -2160,8 +2160,18 @@ IAStarPathedEntity {
             return;
         }
         var action = this.movementWatchdog.sample(this.level.getGameTime(),
-                dest.getBlockPos(), this.getX(), this.getY(), this.getZ());
+                dest.getBlockPos(), this.getX(), this.getY(), this.getZ(), this.onClimbable());
         if (action == org.millenaire.common.pathing.MovementWatchdog.Action.NONE) return;
+        // At eight seconds of no physical progress, spend one bounded wider
+        // A* search rather than repeating the same short path yet again.
+        if (action == org.millenaire.common.pathing.MovementWatchdog.Action.DETOUR
+                && this.navigation instanceof PathNavigateSimple groundNavigation) {
+            groundNavigation.requestRecoveryDetour();
+        }
+        if (MillConfigValues.LogPathing >= 1 && this.extraLog) {
+            MillLog.major(this, "NAV-STALLED action=" + action + " goal=" + this.goalKey
+                    + " position=" + this.blockPosition() + " target=" + dest);
+        }
         this.navigation.stop();
         this.pathEntity = null;
         this.nextVanillaPathAttempt = 0L;
