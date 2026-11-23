@@ -102,7 +102,8 @@ implements Runnable {
             try {
                 // Clearance must be checked BEFORE improving either an open
                 // or a closed node. A blocked transition is not a cheaper path.
-                if (!AStarStatic.isViable(this.world, check, c[i][1], this.config)) continue;
+                if (!AStarStatic.isViable(this.world, check, c[i][1], this.config)
+                        || !AStarStatic.isTransitionViable(this.world, parent, check, this.config)) continue;
                 AStarNode closed = this.closedIndex.get(AStarOpenSet.Position.of(check));
                 if (closed != null) {
                     // A better route to a previously expanded coordinate must
