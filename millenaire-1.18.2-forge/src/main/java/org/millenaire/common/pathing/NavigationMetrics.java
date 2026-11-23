@@ -19,6 +19,14 @@ public final class NavigationMetrics {
     private static final LongAdder NO_PATH_FAILURES = new LongAdder();
     private static final LongAdder NO_PATH_BACKOFF_LEVEL2 = new LongAdder();
     private static final LongAdder NO_PATH_BACKOFF_LEVEL3 = new LongAdder();
+    // Seven diagnostic-only transitions. Enum ordinals are private to this
+    // process, never persisted as part of a save or network packet.
+    private static final LongAdder[] NO_PATH_BACKOFF_EVENTS =
+            new LongAdder[FailedRouteBackoff.Event.values().length];
+    static {
+        for (int i = 0; i < NO_PATH_BACKOFF_EVENTS.length; i++)
+            NO_PATH_BACKOFF_EVENTS[i] = new LongAdder();
+    }
     private static final LongAdder CACHE_REPLAN_DEFERRED = new LongAdder();
     private static final LongAdder INFLIGHT_JOINED = new LongAdder();
     private static final LongAdder LADDER_SCANS = new LongAdder();
@@ -98,6 +106,12 @@ public final class NavigationMetrics {
         if (level == 2) NO_PATH_BACKOFF_LEVEL2.increment();
         if (level >= 3) NO_PATH_BACKOFF_LEVEL3.increment();
     }
+    public static void noPathBackoffEvent(FailedRouteBackoff.Event event) {
+        NO_PATH_BACKOFF_EVENTS[event.ordinal()].increment();
+    }
+    private static long noPathBackoffEventCount(FailedRouteBackoff.Event event) {
+        return NO_PATH_BACKOFF_EVENTS[event.ordinal()].sum();
+    }
     public static void cacheReplanDeferred() { CACHE_REPLAN_DEFERRED.increment(); }
     public static void inflightJoined() { INFLIGHT_JOINED.increment(); }
     public static void ladderScan(int probes, boolean found, long nanos) {
@@ -149,6 +163,13 @@ public final class NavigationMetrics {
             +" no_path_failures="+NO_PATH_FAILURES.sum()
             +" no_path_backoff_level2="+NO_PATH_BACKOFF_LEVEL2.sum()
             +" no_path_backoff_level3="+NO_PATH_BACKOFF_LEVEL3.sum()
+            +" no_path_reset_start="+noPathBackoffEventCount(FailedRouteBackoff.Event.RESET_START_CHANGED)
+            +" no_path_reset_goal="+noPathBackoffEventCount(FailedRouteBackoff.Event.RESET_GOAL_CHANGED)
+            +" no_path_reset_movement="+noPathBackoffEventCount(FailedRouteBackoff.Event.RESET_MOVEMENT_CHANGED)
+            +" no_path_reset_world="+noPathBackoffEventCount(FailedRouteBackoff.Event.RESET_WORLD_MUTATED)
+            +" no_path_reset_rewind="+noPathBackoffEventCount(FailedRouteBackoff.Event.RESET_TICK_REWIND)
+            +" no_path_reset_success="+noPathBackoffEventCount(FailedRouteBackoff.Event.RESET_SUCCESS)
+            +" no_path_retry_expired="+noPathBackoffEventCount(FailedRouteBackoff.Event.RETRY_EXPIRED)
             +" cache_replan_deferred="+CACHE_REPLAN_DEFERRED.sum()
             +" inflight_joined="+INFLIGHT_JOINED.sum()
             +" cache_hit="+CACHE_HIT.sum()
@@ -181,6 +202,7 @@ public final class NavigationMetrics {
         SECTIONS.reset();DEFERRED.reset();STALE.reset();
         CACHE_HIT.reset();CACHE_REVERSE.reset();CACHE_MISS.reset();CACHE_STALE.reset();
         ROUTES_STORED.reset();REVERSE_TRIED.reset();REVERSE_FOUND.reset();SNAPSHOT_REUSED.reset();NO_PATH_COOLDOWN.reset();NO_PATH_FAILURES.reset();NO_PATH_BACKOFF_LEVEL2.reset();NO_PATH_BACKOFF_LEVEL3.reset();CACHE_REPLAN_DEFERRED.reset();INFLIGHT_JOINED.reset();
+        for (LongAdder transition : NO_PATH_BACKOFF_EVENTS) transition.reset();
         LADDER_SCANS.reset();LADDER_PROBES.reset();LADDER_HITS.reset();LADDER_NANOS.reset();
         SNAPSHOT_AREA_REJECTED.reset();SNAPSHOT_TICK_BUDGET.reset();SNAPSHOT_SECTION_LIMIT.reset();
         SNAPSHOT_SHARED_SECTIONS.reset();SNAPSHOT_ADDITIONAL_CAPTURES.reset();SNAPSHOT_NON_LATEST_REUSED.reset();
