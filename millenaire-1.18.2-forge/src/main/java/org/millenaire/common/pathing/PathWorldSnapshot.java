@@ -40,6 +40,14 @@ public final class PathWorldSnapshot implements BlockGetter {
         long tick=level.getGameTime();
         int minX = (Math.min(start.x, end.x) >> 4) - 2, maxX = (Math.max(start.x, end.x) >> 4) + 2;
         int minZ = (Math.min(start.z, end.z) >> 4) - 2, maxZ = (Math.max(start.z, end.z) >> 4) + 2;
+        // Reject requests which can NEVER fit our bounded snapshot BEFORE
+        // reserving the world's one-capture-per-tick budget. Otherwise a
+        // distant impossible query starves nearby villagers in the same tick.
+        if ((long) (maxX - minX + 1) * (maxZ - minZ + 1) > 256L) {
+            NavigationMetrics.snapshotAreaRejected();
+            NavigationMetrics.deferred();
+            return null;
+        }
         synchronized(LAST_CAPTURE) {
             Capture previous=LAST_CAPTURE.get(level);
             if(previous!=null && previous.tick()==tick) {
@@ -49,14 +57,12 @@ public final class PathWorldSnapshot implements BlockGetter {
                     NavigationMetrics.snapshotReused();
                     return shared;
                 }
-                NavigationMetrics.deferred();
+                NavigationMetrics.snapshotBudgetDeferred();
                 return null;
             }
             LAST_CAPTURE.put(level,new Capture(tick,minX,maxX,minZ,maxZ,
                     new WeakReference<>(null)));
         }
-        // Extremely distant goals are approached by the native partial route first.
-        if ((long)(maxX-minX+1)*(maxZ-minZ+1)>256) {NavigationMetrics.deferred();return null;}
         Map<Long, PalettedContainer<BlockState>> source = new HashMap<>();
         Set<Long> loaded = new HashSet<>();
         for(int x=minX;x<=maxX;x++) for(int z=minZ;z<=maxZ;z++) {
@@ -65,7 +71,7 @@ public final class PathWorldSnapshot implements BlockGetter {
             loaded.add(ChunkPos.asLong(x,z));
             var sections=chunk.getSections();
             for(int i=0;i<sections.length;i++) if(!sections[i].hasOnlyAir()) {
-                if(source.size()>=1024){NavigationMetrics.deferred();return null;}
+                if(source.size()>=1024){NavigationMetrics.snapshotSectionRejected();NavigationMetrics.deferred();return null;}
                 source.put(SectionPos.asLong(x,level.getSectionYFromSectionIndex(i),z),sections[i].getStates());
             }
         }
