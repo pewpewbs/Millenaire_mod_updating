@@ -108,5 +108,18 @@ class DoorLifecycleWiring(unittest.TestCase):
 
 
 
+    def test_closed_sideways_doors_are_not_forced_into_detours(self):
+        self.assertIn("DoorApproachRules.canTraverseDoorEdge(dx, dz, eastWestFacing,", DOOR_EDGES)
+        self.assertIn("state.getValue(DoorBlock.OPEN)", DOOR_EDGES)
+        self.assertIn("DoorTransitionRules.needsOpeningForEdge(", VILLAGER)
+        self.assertIn("matchedDoorNode && !routeCrossesPanel", VILLAGER)
+
+    def test_scanner_avoids_opening_sideways_passage(self):
+        self.assertIn("DoorApproachRules.facingDoorPanel(", VILLAGER)
+        self.assertIn("if (woodenDoor)", VILLAGER)
+        self.assertIn("door.getX() + 0.5D, door.getZ() + 0.5D", VILLAGER)
+
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
