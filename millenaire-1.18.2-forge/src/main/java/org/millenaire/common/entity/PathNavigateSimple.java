@@ -129,7 +129,7 @@ public class PathNavigateSimple extends GroundPathNavigation {
     }
 
     /**
-     * STAIR-01 instrumentation. Integer A*/JPS nodes don't describe the
+     * STAIR-01 instrumentation. Integer A-star and JPS nodes do not describe the
      * physical stair collision height (slab portion + full-height portion).
      * This only logs a limited sample near a real stair so a report can
      * distinguish unreachable planned node, ceiling collision, and a mob
