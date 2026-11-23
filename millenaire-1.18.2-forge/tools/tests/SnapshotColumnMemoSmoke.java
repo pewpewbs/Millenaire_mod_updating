@@ -1,5 +1,6 @@
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.millenaire.common.pathing.SnapshotColumnMemo;
 
 /**
@@ -48,6 +49,7 @@ public final class SnapshotColumnMemoSmoke {
         // Two path workers can read/update the same detached snapshot.
         SnapshotColumnMemo concurrent = new SnapshotColumnMemo(256);
         CountDownLatch start = new CountDownLatch(1), finished = new CountDownLatch(2);
+        AtomicReference<Throwable> workerFailure = new AtomicReference<>();
         for (int worker = 0; worker < 2; worker++) {
             final int id = worker;
             new Thread(() -> {
@@ -64,7 +66,10 @@ public final class SnapshotColumnMemoSmoke {
                         }
                     }
                 } catch (InterruptedException e) {
+                    workerFailure.compareAndSet(null, e);
                     Thread.currentThread().interrupt();
+                } catch (Throwable error) {
+                    workerFailure.compareAndSet(null, error);
                 } finally {
                     finished.countDown();
                 }
@@ -72,6 +77,7 @@ public final class SnapshotColumnMemoSmoke {
         }
         start.countDown();
         check(finished.await(5, TimeUnit.SECONDS), "concurrent workers must finish");
+        check(workerFailure.get() == null, "concurrent worker raised " + workerFailure.get());
         boolean badCapacity = false;
         try { new SnapshotColumnMemo(3); }
         catch (IllegalArgumentException expected) { badCapacity = true; }
