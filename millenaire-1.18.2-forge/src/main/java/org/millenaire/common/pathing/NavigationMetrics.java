@@ -22,11 +22,22 @@ public final class NavigationMetrics {
     private static final LongAdder LADDER_PROBES = new LongAdder();
     private static final LongAdder LADDER_HITS = new LongAdder();
     private static final LongAdder LADDER_NANOS = new LongAdder();
+    private static final LongAdder SNAPSHOT_AREA_REJECTED = new LongAdder();
+    private static final LongAdder SNAPSHOT_TICK_BUDGET = new LongAdder();
+    private static final LongAdder SNAPSHOT_SECTION_LIMIT = new LongAdder();
     private static final NavigationRateWindow RATE_WINDOW = new NavigationRateWindow();
     private NavigationMetrics() {}
     public static void record(int kind,long nanos){COUNT[kind].increment();NANOS[kind].add(nanos);MAX[kind].accumulateAndGet(nanos,Math::max);}
     public static void sections(int count){SECTIONS.add(count);}
     public static void deferred(){DEFERRED.increment();}
+    /** Too large requests must not claim the single-tick snapshot budget. */
+    public static void snapshotAreaRejected(){SNAPSHOT_AREA_REJECTED.increment();}
+    /** A snapshot was already captured, or reserved, for this world and tick. */
+    public static void snapshotBudgetDeferred(){
+        SNAPSHOT_TICK_BUDGET.increment();
+        DEFERRED.increment();
+    }
+    public static void snapshotSectionRejected(){SNAPSHOT_SECTION_LIMIT.increment();}
     public static void stale(){STALE.increment();}
     /** kind: 0=JPS, 1=classic A*; includes search and validation time. */
     public static void search(int kind, long nanos, int expanded) {
@@ -68,6 +79,9 @@ public final class NavigationMetrics {
         }
         return text+"copied_sections="+SECTIONS.sum()+" deferred="+DEFERRED.sum()
             +" stale_routes="+STALE.sum()+" snapshot_reused="+SNAPSHOT_REUSED.sum()
+            +" snapshot_area_rejected="+SNAPSHOT_AREA_REJECTED.sum()
+            +" snapshot_tick_budget_deferred="+SNAPSHOT_TICK_BUDGET.sum()
+            +" snapshot_section_rejected="+SNAPSHOT_SECTION_LIMIT.sum()
             +" no_path_cooldown="+NO_PATH_COOLDOWN.sum()
             +" cache_replan_deferred="+CACHE_REPLAN_DEFERRED.sum()
             +" inflight_joined="+INFLIGHT_JOINED.sum()
@@ -102,6 +116,7 @@ public final class NavigationMetrics {
         CACHE_HIT.reset();CACHE_REVERSE.reset();CACHE_MISS.reset();CACHE_STALE.reset();
         ROUTES_STORED.reset();REVERSE_TRIED.reset();REVERSE_FOUND.reset();SNAPSHOT_REUSED.reset();NO_PATH_COOLDOWN.reset();CACHE_REPLAN_DEFERRED.reset();INFLIGHT_JOINED.reset();
         LADDER_SCANS.reset();LADDER_PROBES.reset();LADDER_HITS.reset();LADDER_NANOS.reset();
+        SNAPSHOT_AREA_REJECTED.reset();SNAPSHOT_TICK_BUDGET.reset();SNAPSHOT_SECTION_LIMIT.reset();
         RATE_WINDOW.reset();
     }
 }
