@@ -25,6 +25,8 @@ public final class NavigationMetrics {
     private static final LongAdder SNAPSHOT_AREA_REJECTED = new LongAdder();
     private static final LongAdder SNAPSHOT_TICK_BUDGET = new LongAdder();
     private static final LongAdder SNAPSHOT_SECTION_LIMIT = new LongAdder();
+    private static final LongAdder SNAPSHOT_SHARED_SECTIONS = new LongAdder();
+    private static final LongAdder SNAPSHOT_ADDITIONAL_CAPTURES = new LongAdder();
     private static final NavigationRateWindow RATE_WINDOW = new NavigationRateWindow();
     private NavigationMetrics() {}
     public static void record(int kind,long nanos){COUNT[kind].increment();NANOS[kind].add(nanos);MAX[kind].accumulateAndGet(nanos,Math::max);}
@@ -38,6 +40,8 @@ public final class NavigationMetrics {
         DEFERRED.increment();
     }
     public static void snapshotSectionRejected(){SNAPSHOT_SECTION_LIMIT.increment();}
+    public static void snapshotSectionsReused(int amount) { SNAPSHOT_SHARED_SECTIONS.add(Math.max(0, amount)); }
+    public static void snapshotAdditionalCaptured() { SNAPSHOT_ADDITIONAL_CAPTURES.increment(); }
     public static void stale(){STALE.increment();}
     /** kind: 0=JPS, 1=classic A*; includes search and validation time. */
     public static void search(int kind, long nanos, int expanded) {
@@ -82,6 +86,8 @@ public final class NavigationMetrics {
             +" snapshot_area_rejected="+SNAPSHOT_AREA_REJECTED.sum()
             +" snapshot_tick_budget_deferred="+SNAPSHOT_TICK_BUDGET.sum()
             +" snapshot_section_rejected="+SNAPSHOT_SECTION_LIMIT.sum()
+            +" snapshot_shared_sections="+SNAPSHOT_SHARED_SECTIONS.sum()
+            +" snapshot_additional_captures="+SNAPSHOT_ADDITIONAL_CAPTURES.sum()
             +" no_path_cooldown="+NO_PATH_COOLDOWN.sum()
             +" cache_replan_deferred="+CACHE_REPLAN_DEFERRED.sum()
             +" inflight_joined="+INFLIGHT_JOINED.sum()
@@ -117,6 +123,7 @@ public final class NavigationMetrics {
         ROUTES_STORED.reset();REVERSE_TRIED.reset();REVERSE_FOUND.reset();SNAPSHOT_REUSED.reset();NO_PATH_COOLDOWN.reset();CACHE_REPLAN_DEFERRED.reset();INFLIGHT_JOINED.reset();
         LADDER_SCANS.reset();LADDER_PROBES.reset();LADDER_HITS.reset();LADDER_NANOS.reset();
         SNAPSHOT_AREA_REJECTED.reset();SNAPSHOT_TICK_BUDGET.reset();SNAPSHOT_SECTION_LIMIT.reset();
+        SNAPSHOT_SHARED_SECTIONS.reset();SNAPSHOT_ADDITIONAL_CAPTURES.reset();
         RATE_WINDOW.reset();
     }
 }
