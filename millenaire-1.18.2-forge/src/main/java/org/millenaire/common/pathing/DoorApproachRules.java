@@ -29,6 +29,19 @@ public final class DoorApproachRules {
     }
 
     /**
+     * A door that FACES east/west has its closed panel in the Z plane,
+     * so crossing its doorway is along X; north/south doors cross along Z.
+     * When opened, the leaf swings onto a perpendicular edge of the same
+     * block. Traversing the door ALONG that leaf leads to real collisions.
+     * Ignore vertical-only steps here; the caller separately validates Y.
+     */
+    public static boolean followsDoorNormal(int stepX, int stepZ, boolean eastWestFacing) {
+        if (stepX == 0 && stepZ == 0) return true;
+        return eastWestFacing ? stepX != 0 && stepZ == 0
+                              : stepZ != 0 && stepX == 0;
+    }
+
+    /**
      * The physical closed panel sits along one edge of the door BLOCK.
      * Use the closest point on its horizontal collision bounds instead of
      * the block center: both sides of the same door must work symmetrically.
