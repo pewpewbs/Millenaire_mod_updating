@@ -17,6 +17,7 @@ WORKER = read("pathing/atomicstryker/AStarWorker.java")
 VILLAGER = read("entity/MillVillager.java")
 SNAPSHOT = read("pathing/PathWorldSnapshot.java")
 SECTION_POOL = read("pathing/SnapshotSectionPool.java")
+CAPTURE_INDEX = read("pathing/SnapshotCaptureIndex.java")
 EVENTS = read("forge/MillEventController.java")
 METRICS = read("pathing/NavigationMetrics.java")
 MEMORY = read("pathing/RouteMemory.java")
@@ -169,7 +170,7 @@ class OptimizationWiring(unittest.TestCase):
     def test_oversized_snapshot_does_not_consume_per_tick_capture_budget(self):
         capture = SNAPSHOT.split("public static PathWorldSnapshot capture(", 1)[1]
         area = capture.index("if ((long) (maxX - minX + 1)")
-        reserve = capture.index("synchronized(LAST_CAPTURE)")
+        reserve = capture.index("synchronized(SNAPSHOT_LOCK)")
         self.assertLess(area, reserve)
         self.assertIn("NavigationMetrics.snapshotAreaRejected()", capture)
         self.assertIn("NavigationMetrics.snapshotBudgetDeferred()", capture)
@@ -221,7 +222,7 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("public static void onKnownWorldMutation(ServerLevel level)", SNAPSHOT)
         self.assertIn("pool.invalidateSection(tick, key)", SNAPSHOT)
         self.assertIn("pool.invalidateAll(tick)", SNAPSHOT)
-        self.assertIn("new WeakReference<>(null)", SNAPSHOT)
+        self.assertIn("index.invalidate(tick)", SNAPSHOT)
 
     def test_forge_mutation_hooks_are_registered_and_diagnostic(self):
         for kind in ("BlockEvent.EntityPlaceEvent", "BlockEvent.BreakEvent",
@@ -270,15 +271,47 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("NavigationMetrics.snapshotMutationRaceRejected()", capture)
         self.assertIn("snapshot_mutation_race_rejected=", METRICS)
         self.assertLess(capture.index("if(pool.revision(tick)!=captureRevision)"),
-                        capture.index("new WeakReference<>(result)"))
+                        capture.index("index.remember(tick, minX, maxX, minZ, maxZ, result)"))
         # A conservative epoch check must not create a new no-limits cache.
         self.assertIn("MAX_SECTION_COPIES_PER_TICK = 1024", SNAPSHOT)
 
+    def test_bounded_snapshot_index_can_reuse_nonlatest_same_tick_supersets(self):
+        self.assertIn("class SnapshotCaptureIndex<T>", CAPTURE_INDEX)
+        self.assertIn("private final int capacity;", CAPTURE_INDEX)
+        self.assertIn("if (entries.size() >= capacity) entries.remove(0)", CAPTURE_INDEX)
+        self.assertIn("new WeakReference<>(snapshot)", CAPTURE_INDEX)
+        self.assertIn("if (tick != nowTick)", CAPTURE_INDEX)
+        self.assertIn("entries.clear();", CAPTURE_INDEX)
+        self.assertIn("minX < entry.minX() || maxX > entry.maxX()", CAPTURE_INDEX)
+        self.assertIn("minZ < entry.minZ() || maxZ > entry.maxZ()", CAPTURE_INDEX)
+        self.assertIn("long bestArea = Long.MAX_VALUE;", CAPTURE_INDEX)
+        self.assertIn("nonLatest = i < newest;", CAPTURE_INDEX)
+        self.assertIn("public synchronized int invalidate(long nowTick)", CAPTURE_INDEX)
+
+    def test_snapshot_index_honors_poison_and_capture_budgets(self):
+        self.assertIn("new SnapshotCaptureIndex<>(MAX_SNAPSHOTS_PER_TICK)", SNAPSHOT)
+        self.assertIn("CAPTURE_INDICES", SNAPSHOT)
+        self.assertIn("if (pool.mayReuseSnapshots(tick))", SNAPSHOT)
+        self.assertIn("index.find(tick, minX, maxX, minZ, maxZ)", SNAPSHOT)
+        self.assertIn("NavigationMetrics.snapshotNonLatestReused()", SNAPSHOT)
+        self.assertIn("index.remember(tick, minX, maxX, minZ, maxZ, result)", SNAPSHOT)
+        self.assertIn("index.invalidate(tick)", SNAPSHOT)
+        self.assertIn("pool.usedSnapshots() > 1", SNAPSHOT)
+        self.assertIn("snapshot_non_latest_reused=", METRICS)
+        self.assertIn("CAPTURE_INDICES.remove(level)", SNAPSHOT)
+        capture = SNAPSHOT.split("public static PathWorldSnapshot capture(", 1)[1]
+        capture = capture.split("public static void onKnownBlockMutation(", 1)[0]
+        self.assertLess(capture.index("index.find(tick, minX, maxX, minZ, maxZ)"),
+                        capture.index("pool.begin(tick,chunkVisits)"))
+        self.assertLess(capture.index("if(pool.revision(tick)!=captureRevision)"),
+                        capture.index("index.remember(tick, minX, maxX, minZ, maxZ, result)"))
+
     def test_snapshot_reuse_only_same_tick(self):
-        self.assertIn("previous.tick()==tick", SNAPSHOT)
-        self.assertIn("minX>=previous.minX()", SNAPSHOT)
-        self.assertIn("maxZ<=previous.maxZ()", SNAPSHOT)
-        self.assertIn("new WeakReference<>(result)", SNAPSHOT)
+        self.assertIn("index.find(tick, minX, maxX, minZ, maxZ)", SNAPSHOT)
+        self.assertIn("index.remember(tick, minX, maxX, minZ, maxZ, result)", SNAPSHOT)
+        self.assertIn("if (tick != nowTick)", CAPTURE_INDEX)
+        self.assertIn("entries.clear();", CAPTURE_INDEX)
+        self.assertIn("new WeakReference<>(snapshot)", CAPTURE_INDEX)
 
     def test_diagnostic_counter_names(self):
         self.assertIn('"NAV-OPT-STATS world="', PLANNER)
