@@ -1,0 +1,131 @@
+# Журнал змін Millénaire+ (CHANGELOG)
+
+Цей файл фіксує **додані можливості, зміни поведінки, виправлення й їхню прив'язку до версії мода**. Номери версій беруться з `millenaire-1.18.2-forge/gradle.properties` (`mod_version`), а не вигадуються за кількістю комітів.
+
+> **Стан на 2026-11-23:** код мода — `8.1.2-port.0`; Minecraft **1.18.2**, Forge **40.3.0**, Java **17**. Це версія порту в розробці, а **не підтверджений стабільний реліз**. Наведені нижче зміни перебувають у гілці `fix/villager-door-access-and-village-territory`, **не в `main`**.
+
+## [Unreleased] — `8.1.2-port.0` (гілка `fix/villager-door-access-and-village-territory`)
+
+Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: [`a1cde6e6`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/a1cde6e6b47bd40a04af19909d46230081b16258). На момент створення цього журналу гілка мала **62 додаткові коміти**.
+
+### Додано
+
+- Спільний серверний менеджер `VillageDoorAccess` для тимчасового відкривання дверей і хвірток кількома NPC та контрольованого закривання після звільнення проходу.
+- `WorkAccess` для перевірки фізичної доступності складських позицій перед отриманням чи передачею товарів: не лише відстань, але й досяжність/відсутність стіни між NPC і точкою взаємодії.
+- `BarrierPathRules` і `DetourPathFinder` для правил проходу через бар'єри та обмеженого порівняння альтернативних маршрутів за їхньою фактичною вартістю.
+- Скрипти `Update-Millenaire.bat` та `Update-Millenaire.ps1` для локальної збірки й встановлення JAR; поліпшено запуск дочірнього PowerShell та повідомлення про помилки.
+- Технічні документи в `millenaire-1.18.2-forge/docs/` із відтворенням багів, діагностикою маршрутів, тестами пастухів/дверей і росту акацій.
+
+### Змінено
+
+- Навігацію NPC: замість примусу йти конкретною хвірткою використовується звичайний доступний шлях та обмежене порівняння вартості альтернатив; **попередні експерименти з forced-gate waypoint були скасовані**.
+- Логістику доставки/отримання ресурсів у `GoalBringBackResourcesHome`, `GoalDeliverGoodsHousehold`, `GoalDeliverResourcesShop`, `GoalGetGoodsForHousehold`, `GoalGetResourcesForShops`: дія вимагає коректного доступу до реального місця складу.
+- Керування дверима/хвіртками: коротше утримання відчиненими (близько 10 тіків до періодичної перевірки після останнього запиту), перевірка зайнятості самого отвору, відсутність повторного відкривання пройдених вузлів маршруту. Двері, відкриті гравцем, не повинні автоматично закриватися без їхнього відкривання NPC.
+- Стрижку овець: партії вовни з порогом **15 одиниць** (можливе невелике перевищення внаслідок однієї дії), підвищення пріоритету доставки повної партії до складу, підрахунок усіх 16 кольорів вовни без зміни їхніх кольорів.
+- Лісорубів і акацієві гаї: вибір нижчих доступних колод, узгоджений вертикальний діапазон пошуку/підрахунку деревини, перевірки вільного місця для нових паростків акації.
+- Обробку тривалості робіт із видобування: узгоджено конфігураційний час і перетворення мілісекунд в ігрові тіки.
+
+### Виправлено / підготовлено виправлення
+
+- Перевірку перетину радіусів територій поселень під час природної та ручної генерації.
+- Ситуації, коли NPC стояв перед стіною, хоча склад був поруч за дверима/хвірткою; додані перевірки видимості, доступних точок підходу й недопущення передачі ресурсів через стіну.
+- Оцінку близькості вузлів доступу з урахуванням **X, Y і Z**, а не неповної відстані.
+- Евристику A*: усунено подвійне врахування `g`; виправлено порядок розширення та повторне відкриття вузлів за кращого шляху.
+- Чергу пріоритетів і накопичену вартість JPS: оновлення кращих маршрутів, повторне відкриття вузлів, правильну довжину стрибків.
+- Прохідність простору над **зачиненою хвірткою**: хвіртка не має помилково трактуватися як суцільна стіна.
+- Помилку відсутнього імпорту `Comparator` для `InvItemAlphabeticalComparator`.
+- Зависання логіки лісоруба на частково зрубаних деревах (раніше гаї з 1–4 колодами пропускалися).
+- Спроби посадки акації в місцях, де ванільному дереву бракує простору для росту.
+
+### Стан перевірки та обмеження
+
+- **Це записи про зміни в коді, а не про доведену успішність у грі.** Станом на внесення цього журналу немає підтвердженого результату `compileJava` та повного ігрового регресійного тесту цієї гілки.
+- Потрібно перевірити NPC біля дверей і хвірток, подвійні двері, взаємодію кількох NPC, фізичну доставку до складу, коректний вибір маршруту без телепортації, поведінку худоби, партії вовни, лісорубів і ріст акацій.
+- Скорочення часу відкривання хвіртки **не гарантує**, що тварина не втече одночасно з NPC.
+- Порівняння вартості маршрутів не гарантує математично глобального найкоротшого шляху в усіх умовах ванільної навігації.
+- Експериментальні forced-gate зміни присутні в **історії комітів нижче**, але були пізніше видалені: їх **не слід** сприймати як поточну функціональність.
+- До успішних тестів **не переносити** цю гілку в `main`.
+
+## База проєкту (та сама версія `8.1.2-port.0`)
+
+- **2026-11-22:** [`a1cde6e6`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/a1cde6e6b47bd40a04af19909d46230081b16258) — початкове джерело порту Millénaire 1.18.2 у `main`. Це вихідна точка порівняння, **не окремий опублікований реліз**. Виправлення, що вже містилися в цьому початковому знімку, не привласнюються гілці та не датуються заднім числом.
+
+## Повний покомітний журнал поточної гілки
+
+Нижче — усі **62** коміти поверх базового `main` на момент створення журналу. Оригінальні назви комітів залишені англійською для точного пошуку в GitHub. Час — **UTC**, новіші вище. Записи показують **послідовність розробки**, включно з проміжними спробами, які згодом було скасовано.
+
+### 2026-11-23 (UTC)
+
+- [`1097a1b9`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/1097a1b9fddf6b66e0ea3a087a855dcf7c1fb3e3) — Document acacia grove harvesting and vanilla sapling clearance tests (00:07 UTC).
+- [`4935dee7`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/4935dee7a0e18498a60bbf08d3b978d5c1d3bd28) — Skip blocked acacia planting markers that cannot support vanilla tree growth (00:06 UTC).
+- [`a9f244a3`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/a9f244a37b08e156018c6a354c19dbb5e9781f25) — Select accessible lower tree trunks and consistently recognize acacia logs in groves (00:04 UTC).
+- [`fca2dc2a`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/fca2dc2a5e4d8c379eee210521befab7dec6872a) — Let lumbermen clear partly harvested trees with fewer than five logs (00:04 UTC).
+
+### 2026-11-22 (UTC)
+
+- [`fd248796`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/fd248796cfeb60e9c336331307f430dc47fc67b2) — Document sheep-batch logistics, colored wool use and door timing regression tests (23:59 UTC).
+- [`4909b540`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/4909b540b51192286386f7e88bb5cbbcf78eea49) — Stop reopening doors behind villagers while following a path (23:58 UTC).
+- [`40f1b01e`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/40f1b01eacb75a387ce40084a51a3200fed0e583) — Close wooden doors promptly like gates after the actual crossing is clear (23:58 UTC).
+- [`a18cbce2`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/a18cbce21e1947c737aeac6cc649ba63908f7942) — Deliver full sheep wool batches before more shearing or breeding, retaining colour (23:57 UTC).
+- [`6e3a8d2f`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/6e3a8d2f2fea49a11fdfec8294061c07311f05db) — Shear sheep in bounded wool batches and count all wool colours (23:57 UTC).
+- [`6018d5f2`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/6018d5f2c005a0bff05a51c3a545a2ccd9a3750e) — Restore Comparator import required by InvItemAlphabeticalComparator (23:28 UTC).
+- [`68947d1a`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/68947d1a3e745248a74e9e38342855847c8306fb) — Mark superseded forced-gate experiments as historical playtest findings (23:22 UTC).
+- [`321db9b7`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/321db9b72773ee106e608b31835c02c14be24252) — Document systemic cost-based navigation rework and gameplay regression tests (23:22 UTC).
+- [`f20d6f6c`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/f20d6f6c8cd67f9b20d799878a0f843499397487) — Log alternative route costs when pathing diagnostics are enabled (23:21 UTC).
+- [`4f534a4e`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/4f534a4efa8a7f97078474daf0c581e6b0b1a2df) — Allow head clearance above closed fence gates so normal pathfinder can traverse them (23:20 UTC).
+- [`2ddb8126`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/2ddb81266e3dcd61f4d4d4823760853823ca69c8) — Never improve A* queue nodes through nonviable terrain transitions (23:20 UTC).
+- [`3f26a3c1`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/3f26a3c1a52c9653cc8c3ad06460569fde659301) — Remove forced gate routing and retain generic navigation with automatic door interaction (23:20 UTC).
+- [`569e6d3d`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/569e6d3da82c79d8229ef050d7072e66c75d6ce3) — Compare physical costs of bounded alternate paths instead of accepting first reachable detour (23:19 UTC).
+- [`bbd8aa9d`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/bbd8aa9d1cff025752daa187a6d7d5d378ff3f73) — Fix JPS queue decrease-key, reopen improved nodes and correct neighbor costs (23:18 UTC).
+- [`a8c4d230`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/a8c4d230bad0f116faef65a13dce9d362aace309) — Correct classic A* expansion order and reopen cheaper closed nodes (23:18 UTC).
+- [`10973b0c`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/10973b0c5d51d2da2838388786fa12d4eb66cb43) — Use admissible A* heuristic; remove double-counted path cost (23:18 UTC).
+- [`b884b8d4`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/b884b8d461185259b06aa08003a47898e748d40f) — Record 00:08 gate-bypass trace and inside-face staged route diagnostic (23:10 UTC).
+- [`efff351d`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/efff351d896d89253de3ab6b052c8945bc897256) — Use inside-gate approach for courtyard exits and log forced-crossing rejection reasons (23:10 UTC).
+- [`52e319c5`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/52e319c5e7bbdc97f5a3057b6fe052c2f5e2cba0) — Explain confirmed gate-bypass log and staged gate crossing patch (23:02 UTC).
+- [`faece577`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/faece577991d84f03e8cf36ade6dab588431c048) — Force courtyard exit across a reachable fence gate when A* bypasses opening (23:01 UTC).
+- [`2975aacb`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/2975aacb2ebf413aec3b0d7301e889d4c589ca91) — Audit log evidence: distinguish relevant gate path failures from unrelated gate probes (22:50 UTC).
+- [`b043d2d2`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/b043d2d249b42a6992c3ea205c2f5ad9813b65db) — Differentiate gate route failure reasons and reduce irrelevant navigation logs (22:49 UTC).
+- [`26f872c2`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/26f872c229746683e854d8da443db0d0c9249e6b) — Include gate-entry failure marker in playtest log instructions (22:42 UTC).
+- [`8c4356bd`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/8c4356bd24d43780a9abc84bbb91e33916d9c609) — Add gate-entry failure logging and remove obsolete exit comment (22:42 UTC).
+- [`ebe6c9e4`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/ebe6c9e4bea04c51fb204524efbe12ddb0454cc8) — Document teleport-in bypass of remembered gate and diagnostics (22:41 UTC).
+- [`8c994f2a`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/8c994f2ab4e516b085a9cbf47e60c7ef3ede3b14) — Log blocked gate exits and stock teleports for targeted repro (22:41 UTC).
+- [`49f170aa`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/49f170aa090994fc1c99cf08a27969d3fa5678bc) — Keep gate waypoints partial and avoid loading unloaded remembered gates (22:40 UTC).
+- [`c671e04a`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/c671e04a7682f4a113cbacf5e855c9638c66aae8) — Find courtyard exit gate even after villager teleports inside; log route selection (22:40 UTC).
+- [`3f4f72a7`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/3f4f72a7e1a1482acf1093370bbf33b948a1c483) — Track asymmetrical courtyard exit routes and recent-gate waypoint experiment (22:34 UTC).
+- [`5bb2a099`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/5bb2a0998b2677eb2a0a0faedb78f90992d7aa68) — Prefer recently traversed courtyard gate for return trips across enclosure (22:33 UTC).
+- [`76b3336a`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/76b3336a8d0db3587d34dbe8a883a7bee8311115) — Track fast-close gate policy and remaining livestock escape limitation (22:20 UTC).
+- [`8cd88859`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/8cd88859adfcb3816c48fcdc02589fce795cf49f) — Avoid opening pen gates while planning distant stock routes (22:19 UTC).
+- [`7ae69ef7`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/7ae69ef7e7e9bebdb8ea1c920f9f1a484528cd82) — Close livestock-pen gates promptly once crossing is clear (22:19 UTC).
+- [`e45a4a01`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/e45a4a0178f8b57cc2f64ca56e61fed60d0bb55f) — Document gate-first rescue for physically stalled residents (22:09 UTC).
+- [`3b67b5b7`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/3b67b5b7c549e391fd3fb0ab4999fbcef51d9873) — Try gate entry route on physical stalls before teleport fallback (22:09 UTC).
+- [`e3efb06b`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/e3efb06b8c54c161c6d2fb661c8032f5acecb374) — Record failed Anna playtest and side-gate waypoint fix for retesting (22:08 UTC).
+- [`5e5ca413`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/5e5ca413296203d933040747c8e6ed4c19cd39e8) — Allow gate access waypoint routes time to approach before automatic closing (22:08 UTC).
+- [`f5882079`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/f5882079b241d096c9566cb5bb297c4982b909e4) — Probe accessible side gates as stock-transfer waypoints before teleport recovery (22:07 UTC).
+- [`4fc9cab0`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/4fc9cab0c83d5319a16536b14e05b20b09d07228) — Run Gradle in child PowerShell and safely stage and replace JAR (21:54 UTC).
+- [`4e16ff14`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/4e16ff1471baaa242238f9861a2861728ec4a404) — Fix BAT launcher and keep errors visible until keypress (21:54 UTC).
+- [`fa548543`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/fa5485431a324d3ace90e2685646cc5010e109b8) — Document reproducible stock-access wall trap and navigation acceptance tests (21:51 UTC).
+- [`acc11959`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/acc119596ea6af99076aee828c42fbf0b426ae7c) — Rank access-node proximity in all three axes (21:50 UTC).
+- [`5a0adcb9`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/5a0adcb9abcb618a9c99cc38a90def70513d936b) — Route stock-transfer NPCs to reachable visible access nodes, not walls (21:50 UTC).
+- [`8d6f94df`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/8d6f94df93a6880283660af33f6884ab32e4f653) — Require physically accessible storage for GoalDeliverGoodsHousehold (21:50 UTC).
+- [`e3be504b`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/e3be504b055ff3c0d986369e7bc7a8598de1b7a8) — Require physically accessible storage for GoalBringBackResourcesHome (21:50 UTC).
+- [`9cb3d712`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/9cb3d71243eeb2d765e52c8ab8c592b95a760d26) — Require physically accessible storage for GoalDeliverResourcesShop (21:50 UTC).
+- [`7d8d32fd`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/7d8d32fd1e4bbc8f3dcf5f0a30c60bfaa4112f25) — Require physically accessible storage for GoalGetGoodsForHousehold (21:50 UTC).
+- [`785d6b0e`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/785d6b0eae347d49aa7bec3c5a429ea3ea9d2370) — Require physically accessible storage for GoalGetResourcesForShops (21:50 UTC).
+- [`0a14734c`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/0a14734c9e3a8b1cbf2df45ee7ca3349265be0f5) — Validate real line of sight for villager stock transfers (21:49 UTC).
+- [`3639b429`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/3639b4292c21a0800a0db2c1a91c0c65674fd576) — Add automatic Millenaire build and installation scripts (21:33 UTC).
+- [`1cd1f1c6`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/1cd1f1c6bb4cbcc5f888f34b11975ae53172251c) — Accurately describe old mining tick interval (21:11 UTC).
+- [`6d02d89f`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/6d02d89f45aac7b1ec624f701e817c1e48bbbcf2) — Clarify mining duration tick units in the playtest audit (21:10 UTC).
+- [`f105ce96`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/f105ce9621c854d7fb6535f3d8920f00555a01a2) — Honor goal durations already converted from milliseconds to game ticks (21:10 UTC).
+- [`8dbacb74`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/8dbacb7404f34a14d074ec607ecf9e0695fd2d53) — Track reported navigation, production and debug-mode gameplay issues (21:09 UTC).
+- [`19e57881`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/19e578810ca39d5b8c43e0d3695f47a0c201dd2a) — Respect configured mining duration for quarry and ore goals (21:08 UTC).
+- [`68d7977c`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/68d7977c8c87dc0214eb3714c561090d593ea786) — Prevent overlapping village claim radii for natural and manual generation (21:07 UTC).
+- [`218c93e2`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/218c93e24255de8dc44e6e1b98f622b7c4be647c) — Use shared door/gate leases and unblock stalled approach routes (21:06 UTC).
+- [`6b481aa7`](https://github.com/pewpewbs/Millenaire_mod_updating/commit/6b481aa738e1f7319a9f4900f276f2fb826dddf4) — Add shared server-side door and gate access leases (21:06 UTC).
+
+## Правила ведення журналу надалі
+
+1. **З кожною зміною коду** доповнювати верхній розділ `[Unreleased]`: коротко описувати вплив на гру, категорію (додано / змінено / виправлено), технічний компонент, статус тестування та посилання на коміт після його створення.
+2. Якщо фікс спершу експериментальний — явно вказувати **«підготовлено, не перевірено»**. Після компіляції й ігрової перевірки змінювати статус, не заднім числом.
+3. Не записувати як поточну функцію рішення, що було **відкочене або замінене**; залишати їх у покомітній історії з позначкою про скасування.
+4. Для **справжнього випуску** переносити відповідні записи з `[Unreleased]` в окремий розділ із **реальним** значенням `mod_version`, датою релізу й Git-тегом (якщо він створений). Не змінювати версію без фактичної зміни `gradle.properties`.
+5. Після злиття гілки в `main` зберігати записи, але оновлювати статус гілки; `main` не вважається зміненим, доки merge не виконано.
