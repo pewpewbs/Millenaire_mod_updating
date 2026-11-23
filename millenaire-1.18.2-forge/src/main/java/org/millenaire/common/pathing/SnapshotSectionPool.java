@@ -143,6 +143,7 @@ public final class SnapshotSectionPool<T> {
         return revision;
     }
 
+    public synchronized int usedSnapshots() { return snapshots; }
     public synchronized int usedCopies() { return copies; }
     public synchronized int reusedCopies() { return hits; }
     public synchronized int usedChunkVisits() { return chunkVisits; }
