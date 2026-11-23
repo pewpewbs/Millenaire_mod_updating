@@ -13,7 +13,7 @@ import java.util.Objects;
 public final class NavigationRateWindow {
     public record Counts(long jps, long astar, long snapshots, long copiedSections,
                          long cacheHits, long cacheMisses, long cacheInvalidated,
-                         long failedRetryDeferred, long cacheReplayDeferred,
+                         long failedRetryDeferred, long actualNoPathFailures, long cacheReplayDeferred,
                          long inflightJoined, long queueStarted, long queueWaitNanos,
                          long ladderScans, long ladderProbes) {}
 
@@ -42,6 +42,7 @@ public final class NavigationRateWindow {
         long misses = delta(totals.cacheMisses, previous.cacheMisses);
         long invalidated = delta(totals.cacheInvalidated, previous.cacheInvalidated);
         long failed = delta(totals.failedRetryDeferred, previous.failedRetryDeferred);
+        long actualNoPath = delta(totals.actualNoPathFailures, previous.actualNoPathFailures);
         long cacheReplay = delta(totals.cacheReplayDeferred, previous.cacheReplayDeferred);
         long joined = delta(totals.inflightJoined, previous.inflightJoined);
         long queueStarted = delta(totals.queueStarted, previous.queueStarted);
@@ -55,12 +56,12 @@ public final class NavigationRateWindow {
         return String.format(Locale.ROOT,
                 "window_scope=process window_wall_s=%.2f jps_s=%.2f astar_s=%.2f"
                 + " snapshots_s=%.2f sections_s=%.2f cache_hit_pct=%.2f"
-                + " cache_invalidated_s=%.2f failed_retry_deferred_s=%.2f"
+                + " cache_invalidated_s=%.2f failed_retry_deferred_s=%.2f no_path_failures_s=%.2f"
                 + " cache_replay_deferred_s=%.2f inflight_joined_s=%.2f"
                 + " queue_wait_window_avg_ms=%.3f ladder_scans_s=%.2f ladder_probes_s=%.2f",
                 seconds, jps / seconds, astar / seconds, snapshot / seconds,
                 sections / seconds, hitPct, invalidated / seconds, failed / seconds,
-                cacheReplay / seconds, joined / seconds, waitMs,
+                actualNoPath / seconds, cacheReplay / seconds, joined / seconds, waitMs,
                 ladderScans / seconds, ladderProbes / seconds);
     }
 
