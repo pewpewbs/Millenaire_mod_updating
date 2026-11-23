@@ -13,13 +13,12 @@ public final class DoorApproachRules {
     }
 
     /**
-     * Stop an emergency SCANNER from reopening the same wooden door every
-     * 10-15 ticks while the same resident is stuck at the same coordinates.
-     * This does NOT affect path-node opening, gates, other residents, or a
-     * resident that has actually advanced through the doorway.
-     *
-     * The bounded 120-tick cooldown allows a later retry rather than
-     * permanently blocking a resident whose navigation is still stuck.
+     * Recognize a repeated SCANNER interaction for a resident who has not
+     * moved through the door. For the first 120 ticks the controller now
+     * RENEWS the open lease (rather than suppressing opening like DOOR-11).
+     * Only the scanner is affected; path-node opening and gates are not.
+     * After 120 ticks the separate expiredStationaryScannerHold guard
+     * releases the door so the world manager can close it.
      */
     public static boolean suppressStationaryScannerReopen(
             boolean sameDoor, boolean sameGoalAndDestination,
