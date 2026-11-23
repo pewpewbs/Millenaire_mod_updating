@@ -1583,6 +1583,21 @@ IAStarPathedEntity {
      * powered/hinged door states. Called only when LogPathing >= 2 and bounded
      * to once every 100 ticks per resident.
      */
+    private void noteScannerDoorProgress(net.minecraft.core.BlockPos door,
+            Point destination, long now) {
+        if (!door.equals(this.lastScannerOpenedDoor)) return;
+        double movedX = this.getX() - this.lastScannerDoorX;
+        double movedZ = this.getZ() - this.lastScannerDoorZ;
+        if (movedX * movedX + movedZ * movedZ >= 0.25D) {
+            this.lastScannerDoorTick = now;
+            this.lastScannerDoorX = this.getX();
+            this.lastScannerDoorZ = this.getZ();
+            this.lastScannerDoorGoal = this.goalKey;
+            this.lastScannerDoorDestination =
+                    destination == null ? null : destination.getBlockPos().immutable();
+        }
+    }
+
     private boolean doorScannerHoldExpired(net.minecraft.core.BlockPos door,
             Point destination, long now) {
         double movedX = this.getX() - this.lastScannerDoorX;
@@ -1951,6 +1966,7 @@ IAStarPathedEntity {
                     }
 
                     if (!closed) {
+                        if (woodenDoor) this.noteScannerDoorProgress(door, destination, now);
                         // Opened door: only keep renewing a stalled scanner
                         // interaction for the first 120 ticks without progress.
                         // Otherwise the door may remain open forever while
@@ -1988,6 +2004,7 @@ IAStarPathedEntity {
             long elapsed = now - this.lastScannerDoorTick;
             boolean woodenCandidate =
                     BlockItemUtilities.isWoodenDoor(this.level.getBlockState(best).getBlock());
+            if (woodenCandidate) this.noteScannerDoorProgress(best, destination, now);
             boolean repeatedWithoutProgress = woodenCandidate
                     && org.millenaire.common.pathing.DoorApproachRules.suppressStationaryScannerReopen(
                         sameDoor, sameGoalAndDestination,
