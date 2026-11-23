@@ -675,3 +675,70 @@ java -cp build/nav-snapshot-protocol-smoke SnapshotReuseProtocolSmoke
 - Складна геометрія дверей, сходинок, спуску по драбинах та reverse `ENDPOINT_MISMATCH` залишаються для іншої потужнішої моделі, **не** змінювалися в NAV-OPT-14.
 - `main` не чіпати. Жодну нову реалізацію не називати Forge-compiled чи playtest-verified до отримання реального результату.
 
+
+
+## 18. NAV-OPT-15 — кеш простих колонок і профілювання swept-колізій
+
+**Дата:** 23.11.2026 (21:43+01:00). Користувач продовжує просити послідовну оптимізацію без проміжного ігрового тестування; усе перевірятиметься спільним запуском після завершення серії. Змінено тільки робочу гілку `fix/villager-door-access-and-village-territory`, НЕ `main`. Не розпочинати проблеми фізичної геометрії дверей/драбин/плит: вони передані для глибшого аудиту іншій моделі.
+
+### 18.1. Виявлені витрати
+
+1. `AStarStatic.isPassableBlock()` на тому самому `ix/iy/iz` раніше читав блок під ногами до **трьох разів** для `BarrierPathRules.blocksStepAbove`, `ChestPathRules.isChest`, `BlockItemUtilities.isFence` та стін/ґрат. Усього один `belowState` достатній для цих незмінних синхронних обчислень; умови перевірок не змінені.
+2. `AStarStatic.isSimpleFlatColumn()` на кожному плоскому переході A*/JPS заново перевіряв ноги, голову й повну колізійну форму підлоги в тій самій координаті. Ці перевірки безпосередньо залежать від `BlockGetter`, але **не залежать** від окремої `AStarConfig` у цій функції. Тільки для **detached immutable PathWorldSnapshot** можна кешувати точний булевий результат (також `false`) на весь строк життя одного snapshot. У живому `Level` нічого не кешується.
+3. `isBodyCollisionFree()` створював новий `BlockPos(bx,by,bz)` для кожного пробного вокселя, хоча `getCollisionShape`/перевірка `hasChunkAt` використовують координату негайно й не змінюють її поза ітерацією. Один локальний `MutableBlockPos` дає ті самі координати з меншими алокаціями.
+4. `getAccessNodesSorted()` після `Collections.sort` багаторазово видаляв `resultList.remove(0)`; це могло робити копіювання елементів масиву для кожного вийнятого кандидата. `resultList.toArray(new AStarNode[0])` зберігає точний відсортований порядок за O(n), без серії зсувів.
+5. Попередні метрики знали JPS/A* total time, але **не** показували кількість і середній час дорогих swept-shape перевірок, через що не можна було локалізувати вплив складних форм.
+
+### 18.2. NAV-OPT-15 — внесені зміни
+
+- **`SnapshotColumnMemo.java`**: маленька автономна Java 17 структура для `BlockPos.asLong(x,y,z)`. Фіксована ємність `2048` (power-of-two), `AtomicReferenceArray<Entry>` з direct-mapped slot. Порівняння **повного ключа** перед поверненням; колізія хешу може лише витіснити раніший кеш-хіт, але НІКОЛИ не поверне результат іншої колонки. Також кешує `false` із відмінністю між `Boolean.FALSE` та `null`. Підтримує одночасні потоки worker без locks, не накопичує необмежені записи.
+- **`PathWorldSnapshot`**: кожен новий detached snapshot створює свій `private final SnapshotColumnMemo`, методи `getSimpleFlatColumn` / `rememberSimpleFlatColumn`. Кеш **не** розділений між різними snapshot, світами, server ticks або live Level. Навіть коли NAV-OPT-14 index повторно видає той самий snapshot, його кеш лишається коректним щодо його **власного** immutable world view. Для доступу використовується packed position `BlockPos.asLong`.
+- **`AStarStatic.isSimpleFlatColumn()`**: перевірка memo only when `world instanceof PathWorldSnapshot`; cache-hit повертає оригінальний true/false. На miss виконується оригінальна перевірка порожніх ніг, голови й `Block.isShapeFullBlock(state.getCollisionShape(world,pos))`, але з одним локальним `MutableBlockPos`. Булевий результат зберігається лише в snapshot. **Самої геометричної формули НЕ змінено.**
+- **`AStarStatic.isPassableBlock()`**: один `ThreadSafeUtilities.getBlockState(world,ix,iy-1,iz)` для нижнього блока; з нього отримуються ті самі barrier/chest/fence/iron-bars/wall результати. Всі конфігураційні дозволи води, дверей і листя збережені.
+- **`AStarStatic.isBodyCollisionFree()`**: одна `BlockPos.MutableBlockPos` на один body-sampling pass. Збережено порядок обходу, точні `AABB` межі, перевірку на завантаженість чанка для live-world, doors/gates/leaves та `shape.toAabbs` з `body.intersects(part.move(bx,by,bz))`.
+- **`AStarStatic.getAccessNodesSorted()`**: прибрано `remove(0)` після `Collections.sort`; повертається відсортований масив.
+- **`NavigationMetrics`**: додано `flat_column_memo_hit` / `flat_column_memo_miss` тільки для snapshot колонок; для дорогого `TransitionClearanceRules.canTraverse` — `swept_checks`, `swept_blocked`, `swept_avg_ms`, `swept_max_ms`. Вимірювання `System.nanoTime()` **лише на swept-branch**, щоб не додавати таймер до гарячого успішного flat fast-path. Це накопичувальні метрики за весь процес і не підтверджують прискорення без control group.
+- **`tools/tests/SnapshotColumnMemoSmoke.java`** — standalone Java 17: true/false, відсутній ключ, хеш-колізії, розділення двох snapshot, bounded capacity, одночасні worker threads із перенесенням винятків у main thread і заборона непотужності-двійки.
+- **`tools/tests/test_navigation_optimization_wiring.py`** — три нових source-level тести: memo wiring/місткість, оригінальні collision shape і live Level guards, одна below-block load та telemetry; тепер **28** структурних тестів. Ці перевірки не запускаються замість Forge compiler.
+
+**Коміти NAV-OPT-15:**
+- `48edf8e` — створення `SnapshotColumnMemo`;
+- `4dd7871` — локальний memo в `PathWorldSnapshot`;
+- `bf21991` — оптимізації `AStarStatic`;
+- `1366e0f` — swept/flat-column telemetry;
+- `261e284` — Java memo smoke;
+- `0c364cd` — wiring suite до 28;
+- `aaac858` — фіксація невдалих assertions із worker threads;
+- `33d2e5f` — явний `Boolean` у lookup.
+
+### 18.3. Обмеження, ризики й метрики
+
+- `SnapshotColumnMemo` **не можна** використовувати для `ServerLevel` чи загального `BlockGetter`: live-world змінюється між викликами. Навіть snapshot може бути застарілим щодо справжнього світу, тому `MillVillager.applyPathCalculatedSinceLastTick()` зобов'язаний фінально перевірити маршрут у live-world, як і раніше. Також залишається можливість, що async пошук не знайде нову прохідну область, якщо snapshot зроблено до зміни блоку.
+- `SnapshotColumnMemo` кешує повний `isSimpleFlatColumn` boolean, який розрахований лише за `world.getBlockState(pos)` і `getCollisionShape(world,pos)`; він **не** переноситься на політику дверей чи ladder physics. Якщо shape залежить від іншого `BlockGetter`/часу в межах snapshot, потрібен додатковий аудит, але збережені detached palettes immutable.
+- Direct-mapped replacement може давати miss на хеш-колізії. Це питання ефективності, **не** точності; 2048 slots = жорстка memory upper bound для кожного snapshot. Зі зростанням кількості живих snapshot (JPS worker queue) загальне використання пам'яті множиться на кількість одночасно утримуваних snapshot.
+- Зміна `MutableBlockPos` не повинна змінювати позиції до завершення `BlockState.getCollisionShape`; тут позиція локальна, наступний `set` відбувається лише після повернення попередньої колізійної форми.
+- `swept_avg_ms` вимірює лише **дорогий swept branch**, не вартість усіх transition/node validations. `flat_column_memo_hit` рахує запити, а не CPU економію. Аналізувати hit ratio та swept total time разом з `jps_s`, `astar_s`, `stale_routes`, TPS/GC.
+
+### 18.4. Пакетний тест НАПРИКІНЦІ (не запускати окремо без рішення користувача)
+
+З кореневої папки `Millenaire_mod_updating`:
+```powershell
+.\Update-Millenaire.bat
+py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_optimization_wiring.py
+py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_priority.py
+cd .\millenaire-1.18.2-forge
+javac --release 17 -d build/nav-column-smoke src/main/java/org/millenaire/common/pathing/SnapshotColumnMemo.java tools/tests/SnapshotColumnMemoSmoke.java
+java -cp build/nav-column-smoke SnapshotColumnMemoSmoke
+```
+
+Також виконати всі Java smoke NAV-OPT-09/10/11/13/14 та `RouteMemorySmoke` з розділів 13–17: **всього 8 окремих Java smoke** після NAV-OPT-15 (уточнити інвентар, якщо додані нові). `28` Python wiring tests та `BUILD SUCCESSFUL` — **очікування, не факт**. Minecraft playtest: багато NPC із повторними маршрутами по рівній дорозі та на складній геометрії, виміряти `flat_column_memo_hit/miss` і `swept_checks/swept_avg_ms` за інтервали, порівняти затримки/колізії та TPS. Спочатку тестувати з backup світу.
+
+**Статус на момент запису:** лише GitHub source-level consistency verification, НЕ `javac PASS`, НЕ Forge compiled, НЕ Minecraft verified. Не повідомляти користувачу або наступній моделі, що прискорення підтверджено без фактичного A/B тесту.
+
+### 18.5. Наступні напрями оптимізації
+
+1. За метриками `swept_checks` / `swept_avg_ms` з'ясувати, чи насправді bottleneck — shape sampling. Якщо так, дослідити **батчування однакових shape lookups у межах worker** без зміни допустимої геометрії; live-world direction/collision validation не кешувати між ticks.
+2. Профілювання `AStarOpenSet`, hash map closedNodes, `AStarNode` allocation і потоку workers; не змінювати priority/order без regression.
+3. Не вмикати міжтіковий versioned snapshot cache, доки низькорівневий mutation hook, unload/reload epoch, correctness tests і A/B performance не підтверджені.
+4. Геометрія дверей/драбин/плит та `ENDPOINT_MISMATCH` — окремо для іншої потужнішої моделі; **не змінено**.
+
