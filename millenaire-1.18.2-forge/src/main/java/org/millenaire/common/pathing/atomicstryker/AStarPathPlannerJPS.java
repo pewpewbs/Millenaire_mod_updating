@@ -110,6 +110,8 @@ public class AStarPathPlannerJPS {
             boolean valid = path.get(0).equals(end)
                     && path.get(path.size() - 1).equals(start);
             boolean timedOut = false;
+            String rejection = valid ? null : "ENDPOINT_MISMATCH";
+            AStarNode rejectedFrom = null, rejectedTo = null;
             if (valid) {
                 try {
                     for (int i = path.size() - 1; i > 0; i--) {
@@ -119,22 +121,31 @@ public class AStarPathPlannerJPS {
                             break;
                         }
                         AStarNode from = path.get(i), to = path.get(i - 1);
-                        // No unbounded jumps. The route cache never licenses
-                        // moving through an unverified intermediate block.
+                        // Keep the validation ordered and single-pass so
+                        // diagnostics never repeat expensive collision queries.
                         if (Math.abs(to.y - from.y) > 1
                                 || Math.abs(to.x - from.x) > 1
-                                || Math.abs(to.z - from.z) > 1
-                                || !AStarStatic.isViable(this.world, to, 0, this.config)
-                                || !AStarStatic.isTransitionViable(this.world, from, to, this.config)
-                                || (!this.config.canTakeDiagonals && from.y == to.y
-                                    && from.x != to.x && from.z != to.z
-                                    && AStarStatic.findSafeOrthogonalCorner(
-                                            this.world, from, to, this.config) == null)) {
+                                || Math.abs(to.z - from.z) > 1) {
+                            rejection = "NON_ADJACENT_EDGE";
+                        } else if (!AStarStatic.isViable(this.world, to, 0, this.config)) {
+                            rejection = "BLOCKED_NODE";
+                        } else if (!AStarStatic.isTransitionViable(this.world, from, to, this.config)) {
+                            rejection = "BLOCKED_TRANSITION";
+                        } else if (!this.config.canTakeDiagonals && from.y == to.y
+                                && from.x != to.x && from.z != to.z
+                                && AStarStatic.findSafeOrthogonalCorner(
+                                        this.world, from, to, this.config) == null) {
+                            rejection = "NO_ORTHOGONAL_CORNER";
+                        }
+                        if (rejection != null) {
                             valid = false;
+                            rejectedFrom = from;
+                            rejectedTo = to;
                             break;
                         }
                     }
                 } catch (ThreadSafeUtilities.ChunkAccessException problem) {
+                    rejection = "CHUNK_UNAVAILABLE";
                     valid = false;
                 }
             }
@@ -145,6 +156,13 @@ public class AStarPathPlannerJPS {
                     memory.forget(this.world.getGameTime(), routeOptions(this.config),
                             cell(start), cell(end), alternative.reversed());
                     org.millenaire.common.pathing.NavigationMetrics.cacheStale();
+                    if (MillConfigValues.LogPathing >= 2) {
+                        MillLog.major(null, "NAV-OPT-CACHE action=INVALIDATE reason=" + rejection
+                                + " reverse=" + alternative.reversed()
+                                + " from=" + start + " to=" + end
+                                + " rejectedEdge=" + (rejectedFrom == null ? "-" : rejectedFrom
+                                        + "->" + rejectedTo));
+                    }
                 }
                 continue;
             }
