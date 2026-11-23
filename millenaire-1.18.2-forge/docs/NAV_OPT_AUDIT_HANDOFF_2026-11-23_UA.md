@@ -840,3 +840,61 @@ git pull --ff-only origin fix/villager-door-access-and-village-territory
 Збірка NAV-OPT-09–15 підтверджена **runtime у Minecraft**, без crash. Економія повторних роботи кешу й snapshot відбувається, але **немає доказів збільшення TPS, зменшення загального CPU або вирішення navigation geometry**. Основна нова задача general optimization — контроль burst `NO_PATH` і `queue_wait_window_avg_ms`, з діагностикою по NPC/job/goal, а не зміною рухових правил. Наступна ітерація може додати aggregate no-path hotspot summaries або event-based per-request telemetry з rate limit і тестами, але лише після аналізу семантики `MillVillager` (щоб не блокувати нові цілі). Не змінювати фізику дверей/драбин на основі статистики.
 
 Із цього файлу відомо, що Minecraft принаймні стартував і відпрацював до штатного завершення. Окремі Python 28/Java 8 smoke, `Gradle BUILD SUCCESSFUL` console artifact і контрольований TPS profiler залишаються **NOT PROVIDED**, навіть якщо Minecraft runtime підтверджує встановлений JAR. `main` не змінювати.
+
+
+## 21. NAV-OPT-16 — контроль повторних невдалих маршрутів після першого повного playtest
+
+**Дата:** 23.11.2026. Після аналізу `latest(20261123-210746).log` користувач запитав «що далі». Пріоритет: **зменшення реально запущених дорогих повторів для постійно недоступних цілей**, а НЕ наївне зменшення лічильника `no_path_cooldown`. Користувач просив не чіпати геометрію дверей, драбин, сходів, а передати їх на окремий аудит іншій сильнішій моделі. Гілка лише `fix/villager-door-access-and-village-territory`; `main` не змінювати.
+
+### 21.1. Базова метрика перед NAV-OPT-16 (playtest NAV-OPT-09–15)
+
+Останній `NAV-OPT-STATS` о 22:06:16: `no_path_cooldown=1140` — **1140 подавлених retry**, а не 1140 фактичних невдалих обчислень. Реальних `NAV-OPT-COOLDOWN action=NO_PATH` у файлі було **93**, зокрема 63 впродовж хвилини 22:05. Вікно 22:05:22–22:05:46: ~955 подавлених retry. `queue_wait_max_ms=893.374`, `queue_wait_window_avg_ms` доходило до 217.869ms. Це показує гарячі проблемні області, але не доводить, що **саме** невдалі маршрути пояснюють 100% wait/TPS. Навпаки, подавлені повтори вже економлять CPU. До NAV-OPT-16 кожна **наступна фактична невдача того самого exact request** відновлювала однаковий короткий cooldown 20–26 ticks, тож за кілька секунд багато невдалих дорогих пошуків могли повторюватися.
+
+Конкретні пари з логу: `[26|71|647]→[28|66|660]` (9 NO_PATH, перевірку reverse часто відхилено `ENDPOINT_MISMATCH`), `[32|66|552]→[24|66|551]` (11 NO_PATH), `[25|68|648]→[0|65|544]` (10 NO_PATH). Важливо: у випадку, коли NPC змінив **початковий блок** між спробами, streak має скидатися; не агрегувати різні запити лише за близькими координатами.
+
+### 21.2. Реалізація NAV-OPT-16
+
+1. **`FailedRouteBackoff.java`** — standalone Java 17 клас із `NavigationRequestKey` (точні обидві координати та ПОВНИЙ movement config). Перший справжній `NO_PATH` ставить ~20–26 ticks, другий поспіль того самого exact key ~40–46 ticks, третій+ ~80–86 ticks (максимум 4.3 с при 20 TPS), jitter стабільний per planner `identityHashCode%7`. Ліміт капований; це НЕ перманентний blacklist. Інша стартова/кінцева координата чи конфігурація обходить cooldown і скидає серію. При успішному маршруті `clear()`. При rollback world time також `clear()`.
+2. **Відомі зміни світу будять NPC раніше.** `PathWorldSnapshot` додає per-world `KNOWN_MUTATION_EPOCHS` на `WeakHashMap<ServerLevel,Long>` під `SNAPSHOT_LOCK`. Обидва існуючі обробники `onKnownBlockMutation` і `onKnownWorldMutation` інкрементують revision. `onWorldUnload` прибирає entry. `AStarPathPlannerJPS` викликає `knownWorldMutationEpoch()` і не чекає cooldown, коли epoch змінився. Це **лише відомі Forge event notifications**, не універсальна гарантія кожної зміни блока. Відкриття дверей/поршні можуть часто підвищувати epoch — ефективність backoff на таких ділянках потрібно перевірити реально.
+3. **`AStarPathPlannerJPS.getPath/deliver`:** замість `failedStart/failedEnd/failedOptions/failedRetryTick` використовується `FailedRouteBackoff`. Наявний `RouteMemory` lookup залишається **перед** cooldown, тому новий готовий кеш-маршрут все ще може бути використаний без очікування. При suppress зберігається `deferred=true`, не запускається додатковий `Vanilla fallback`. Після NO_PATH записується `NAV-OPT-COOLDOWN action=NO_PATH from=... to=... retryTick=... level=...`; log з'являється **лише для реального failed search**, не кожного подавленого repeat. Після success streak очищується.
+4. **`NavigationMetrics`** розрізняє `no_path_cooldown` (приглушені запити), `no_path_failures` (справді завершені NO_PATH), `no_path_backoff_level2` / `no_path_backoff_level3` (стійкі однакові фейли). `NavigationRateWindow` додає **`no_path_failures_s`** окремо від наявного `failed_retry_deferred_s`, щоб контролювати фактичні невдалі пошуки в перерахунку за wall-clock, а не лише lifetime total.
+5. **Регресійні тести**: новий `tools/tests/FailedRouteBackoffSmoke.java` (повне exact-key порівняння, 20/40/80 + jitter, success reset, different goal/start/config, world edit, rewind, cap); оновлено `NavigationRateWindowSmoke.java` для `no_path_failures_s`; Python `test_navigation_optimization_wiring.py` переглянуто старий cooldown guard і додано 2 guard-кейси для mutation epochs та capped backoff, **тепер 30** структурних Python-тестів.
+
+**Коміти:**
+- `c9a7ef2` — `FailedRouteBackoff`;
+- `924826f` — known world mutation epochs;
+- `6822e2b` — planner integration;
+- `5d690f9` — true failed route counters;
+- `e9badb7` — Java backoff smoke;
+- `fd325b8` — Python guards до 30;
+- `7459336` — `no_path_failures_s` in rate window;
+- `f1c5125` — stats wiring;
+- `e23c091` — rate window Java smoke;
+- `130ee8f` — update Python guards for rate.
+
+### 21.3. Важливі ризики та гарантії
+
+- **На відміну від HPA*** або зміни JPS, не змінено жодних правил проходження та геометрію. Після невдачі дозволена лише коротка, обмежена пауза перед повторним тим самим запитом. Сценарій, де світ змінився без спостережуваної події, може затримати новий пошук **максимум на 80–86 серверних тіків**. На сервері з TPS<20 фактичний wall-clock може бути більшим за 4.3 с. Це свідомий компроміс на користь bounded CPU.
+- **Новий «goal» в сенсі іншої поведінкової задачі, але з абсолютно тими самими endpoint та movement config**, не відрізняється на рівні `AStarPathPlannerJPS`; він не знає `goalKey`. Якщо майбутній аудит доведе, що це важливо для вибору шляху, треба додати semantic task identity на рівні викликача. Зараз кожен інший start/goal/config key обходить backoff.
+- Відомі Forge події можуть часто інвалідовувати backoff для NPC, навіть якщо зміна блоку відбулася в іншій частині світу. Це коректно для актуальності, але зменшує потенційний hit rate adaptive throttle. Наразі **не** вводили spatial mutation filtering, щоб не пропустити важливу зміну.
+- У логах після NAV-OPT-16 треба порівнювати **`no_path_failures_s`, `no_path_failures`, `jps_s`, `astar_s`, `queue_wait_window_avg_ms`**, а не шукати менший `no_path_cooldown`: сильніший backoff може **збільшити** count подавлених повторів, що якраз є економією. Порівнювати в подібних NPC/world/ігрових сценаріях.
+- Java клас `FailedRouteBackoff` не має окремих locks, бо поля використовуються лише у `synchronized` викликах одного `AStarPathPlannerJPS`. Подієвий world epoch читається під `SNAPSHOT_LOCK`.
+- Жодного нового Forge build / Java/Python / Minecraft runtime test для NAV-OPT-16 **НЕ виконував**. Після попереднього багу в Javadoc `A*/JPS` обов'язково перевірити compile перед грою.
+
+### 21.4. Тестування, коли користувач готовий
+
+З кореня `Millenaire_mod_updating`:
+```powershell
+git pull --ff-only origin fix/villager-door-access-and-village-territory
+.\Update-Millenaire.bat
+py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_optimization_wiring.py
+cd .\millenaire-1.18.2-forge
+javac --release 17 -d build/nav-failure-smoke src/main/java/org/millenaire/common/pathing/NavigationRequestKey.java src/main/java/org/millenaire/common/pathing/FailedRouteBackoff.java tools/tests/FailedRouteBackoffSmoke.java
+java -cp build/nav-failure-smoke FailedRouteBackoffSmoke
+```
+Окремо перевірити `NavigationRateWindowSmoke.java` із попередніх розділів, та інші Java smoke. Очікується **30 Python tests `OK`** і standalone `PASS`, але це **не перевірений результат**. Якщо `BUILD FAILED` — передати `error:`/лог і не запускати старий JAR під виглядом нового. При 5–10 хв гри поблизу шахти, дверей і активних будівель дивитися `no_path_failures_s` та `queue_wait_window_avg_ms`; не вимагати, щоб `no_path_backoff_level2/3` були >0 при постійній зміні старту або світу.
+
+### 21.5. Наступний етап
+
+Після вимірювань NAV-OPT-16: визначити, чи реальна черга вузьке місце, чи це `JPS` expansions / `swept_checks`. Лише тоді профілювати `AStarNode`, open-set/closed-map і вводити будь-які зміни eviction/priority. Ні HPA*, ні централізований blacklist для всіх NPC, ні міжтіковий блоковий кеш зараз не виправдані. Зберегти окремо відкладену складну геометрію дверей, драбин, плит та `ENDPOINT_MISMATCH` для іншої моделі.
+
