@@ -24,6 +24,19 @@ public final class DoorApproachRules {
     }
 
     /**
+     * A pending path node can still name the DOOR BLOCK after its thin panel
+     * has already been crossed. Stop renewing its open lease when the original
+     * closed panel is behind the path's horizontal direction; the world-tick
+     * closer separately waits for bodies actually occupying the doorway.
+     */
+    public static boolean passedPanel(double pathDx, double pathDz,
+            double panelOffsetX, double panelOffsetZ) {
+        double length = Math.sqrt(pathDx * pathDx + pathDz * pathDz);
+        return length > 0.01D
+                && (panelOffsetX * pathDx + panelOffsetZ * pathDz) / length < -0.10D;
+    }
+
+    /**
      * Doors are not guaranteed to be explicit path nodes: JPS can omit a door,
      * and a partial route may aim at an offset access node. Do not loosen the
      * approach rule for a walking resident. After prolonged PHYSICAL stalling,
