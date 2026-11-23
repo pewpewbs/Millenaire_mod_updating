@@ -31,7 +31,7 @@ public final class SnapshotSectionPool<T> {
     }
 
     /** Reserve work before any chunk walks; failed admissions spend nothing. */
-    public boolean begin(long nowTick, int requestedChunkVisits) {
+    public synchronized boolean begin(long nowTick, int requestedChunkVisits) {
         resetIfNewTick(nowTick);
         if (requestedChunkVisits < 1 || requestedChunkVisits > maxChunkVisits
                 || snapshots >= maxSnapshots
@@ -46,7 +46,7 @@ public final class SnapshotSectionPool<T> {
      * still has the same identity. This protects palette replacement, NOT
      * in-place mutation; therefore this pool MUST NOT outlive the game tick.
      */
-    public T get(long nowTick, long sectionKey, Object currentSource) {
+    public synchronized T get(long nowTick, long sectionKey, Object currentSource) {
         resetIfNewTick(nowTick);
         Objects.requireNonNull(currentSource, "source");
         Entry<T> entry = sections.get(sectionKey);
@@ -63,12 +63,12 @@ public final class SnapshotSectionPool<T> {
      * The caller must copy the palette BEFORE inserting it. False means the
      * shared copy budget is exhausted and no further copy may be taken.
      */
-    public boolean canCopy(long nowTick) {
+    public synchronized boolean canCopy(long nowTick) {
         resetIfNewTick(nowTick);
         return copies < maxCopies;
     }
 
-    public void remember(long nowTick, long sectionKey, Object currentSource, T detached) {
+    public synchronized void remember(long nowTick, long sectionKey, Object currentSource, T detached) {
         resetIfNewTick(nowTick);
         Objects.requireNonNull(currentSource, "source");
         Objects.requireNonNull(detached, "detached copy");
@@ -82,7 +82,7 @@ public final class SnapshotSectionPool<T> {
      * this tick. Already-admitted copy/scan work remains charged to the budget
      * so repeated edits cannot evade the CPU / allocation ceiling.
      */
-    public boolean invalidateSection(long nowTick, long sectionKey) {
+    public synchronized boolean invalidateSection(long nowTick, long sectionKey) {
         resetIfNewTick(nowTick);
         return sections.remove(sectionKey) != null;
     }
@@ -91,16 +91,16 @@ public final class SnapshotSectionPool<T> {
      * Conservative reaction to an entire chunk reload, piston movement or
      * world lifecycle event. Does NOT reset the admission quotas.
      */
-    public int invalidateAll(long nowTick) {
+    public synchronized int invalidateAll(long nowTick) {
         resetIfNewTick(nowTick);
         int discarded = sections.size();
         sections.clear();
         return discarded;
     }
 
-    public int usedCopies() { return copies; }
-    public int reusedCopies() { return hits; }
-    public int usedChunkVisits() { return chunkVisits; }
+    public synchronized int usedCopies() { return copies; }
+    public synchronized int reusedCopies() { return hits; }
+    public synchronized int usedChunkVisits() { return chunkVisits; }
 
     private void resetIfNewTick(long nowTick) {
         if (tick != nowTick) {
