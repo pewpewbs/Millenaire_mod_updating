@@ -27,6 +27,7 @@ public final class NavigationMetrics {
     private static final LongAdder SNAPSHOT_SECTION_LIMIT = new LongAdder();
     private static final LongAdder SNAPSHOT_SHARED_SECTIONS = new LongAdder();
     private static final LongAdder SNAPSHOT_ADDITIONAL_CAPTURES = new LongAdder();
+    private static final LongAdder SNAPSHOT_NON_LATEST_REUSED = new LongAdder();
     private static final LongAdder SNAPSHOT_KNOWN_SECTIONS_INVALIDATED = new LongAdder();
     private static final LongAdder SNAPSHOT_KNOWN_CAPTURES_INVALIDATED = new LongAdder();
     private static final LongAdder SNAPSHOT_POISONED_BYPASSES = new LongAdder();
@@ -46,11 +47,15 @@ public final class NavigationMetrics {
     public static void snapshotSectionRejected(){SNAPSHOT_SECTION_LIMIT.increment();}
     public static void snapshotSectionsReused(int amount) { SNAPSHOT_SHARED_SECTIONS.add(Math.max(0, amount)); }
     public static void snapshotAdditionalCaptured() { SNAPSHOT_ADDITIONAL_CAPTURES.increment(); }
+    public static void snapshotNonLatestReused() { SNAPSHOT_NON_LATEST_REUSED.increment(); }
     public static void snapshotKnownSectionInvalidated() { SNAPSHOT_KNOWN_SECTIONS_INVALIDATED.increment(); }
     public static void snapshotKnownSectionsInvalidated(int count) {
         SNAPSHOT_KNOWN_SECTIONS_INVALIDATED.add(Math.max(0, count));
     }
     public static void snapshotKnownCaptureInvalidated() { SNAPSHOT_KNOWN_CAPTURES_INVALIDATED.increment(); }
+    public static void snapshotKnownCapturesInvalidated(int count) {
+        SNAPSHOT_KNOWN_CAPTURES_INVALIDATED.add(Math.max(0, count));
+    }
     public static void snapshotPoisonedBypass() { SNAPSHOT_POISONED_BYPASSES.increment(); }
     public static void snapshotMutationRaceRejected() { SNAPSHOT_MUTATION_RACE_REJECTED.increment(); }
     public static void stale(){STALE.increment();}
@@ -99,6 +104,7 @@ public final class NavigationMetrics {
             +" snapshot_section_rejected="+SNAPSHOT_SECTION_LIMIT.sum()
             +" snapshot_shared_sections="+SNAPSHOT_SHARED_SECTIONS.sum()
             +" snapshot_additional_captures="+SNAPSHOT_ADDITIONAL_CAPTURES.sum()
+            +" snapshot_non_latest_reused="+SNAPSHOT_NON_LATEST_REUSED.sum()
             +" snapshot_known_sections_invalidated="+SNAPSHOT_KNOWN_SECTIONS_INVALIDATED.sum()
             +" snapshot_known_captures_invalidated="+SNAPSHOT_KNOWN_CAPTURES_INVALIDATED.sum()
             +" snapshot_poisoned_bypasses="+SNAPSHOT_POISONED_BYPASSES.sum()
@@ -142,7 +148,7 @@ public final class NavigationMetrics {
         ROUTES_STORED.reset();REVERSE_TRIED.reset();REVERSE_FOUND.reset();SNAPSHOT_REUSED.reset();NO_PATH_COOLDOWN.reset();CACHE_REPLAN_DEFERRED.reset();INFLIGHT_JOINED.reset();
         LADDER_SCANS.reset();LADDER_PROBES.reset();LADDER_HITS.reset();LADDER_NANOS.reset();
         SNAPSHOT_AREA_REJECTED.reset();SNAPSHOT_TICK_BUDGET.reset();SNAPSHOT_SECTION_LIMIT.reset();
-        SNAPSHOT_SHARED_SECTIONS.reset();SNAPSHOT_ADDITIONAL_CAPTURES.reset();
+        SNAPSHOT_SHARED_SECTIONS.reset();SNAPSHOT_ADDITIONAL_CAPTURES.reset();SNAPSHOT_NON_LATEST_REUSED.reset();
         SNAPSHOT_KNOWN_SECTIONS_INVALIDATED.reset();SNAPSHOT_KNOWN_CAPTURES_INVALIDATED.reset();
         SNAPSHOT_POISONED_BYPASSES.reset();SNAPSHOT_MUTATION_RACE_REJECTED.reset();
         RATE_WINDOW.reset();
