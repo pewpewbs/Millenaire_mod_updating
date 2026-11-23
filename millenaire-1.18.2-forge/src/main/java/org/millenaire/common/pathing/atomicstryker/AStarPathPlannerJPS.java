@@ -42,6 +42,12 @@ public class AStarPathPlannerJPS {
     private ArrayList<AStarNode> jpsCandidate;
     private boolean immediatePath;
     private boolean deferred;
+    // A physically blocked villager may request the SAME cached route every
+    // tick. Rate-limit only this exact start/goal/config after a successful
+    // cache delivery; a moved villager or changed task is never delayed.
+    private AStarNode recentCacheStart, recentCacheEnd;
+    private int recentCacheOptions;
+    private long recentCacheTick = -1L;
     private static final java.util.Map<Level, org.millenaire.common.pathing.RouteMemory> ROUTES =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
     private static final java.util.Map<Level, Long> REPORT_TICKS =
@@ -259,8 +265,24 @@ public class AStarPathPlannerJPS {
         this.lastEnd = copy(end);
         this.config = copy(settings);
         reportPeriodically();
+        long tick = this.world == null ? 0L : this.world.getGameTime();
+        if (this.world != null && this.recentCacheStart != null
+                && this.lastStart.equals(this.recentCacheStart)
+                && this.lastEnd.equals(this.recentCacheEnd)
+                && routeOptions(this.config) == this.recentCacheOptions
+                && tick >= this.recentCacheTick && tick - this.recentCacheTick < 10L) {
+            // Keep the current movement controller active. Do not clear an
+            // existing route or redo an expensive live-world shape sweep.
+            this.deferred = true;
+            org.millenaire.common.pathing.NavigationMetrics.cacheReplanDeferred();
+            return;
+        }
         ArrayList<AStarNode> cached = reusePath(this.lastStart, this.lastEnd);
         if (cached != null) {
+            this.recentCacheStart = copy(this.lastStart);
+            this.recentCacheEnd = copy(this.lastEnd);
+            this.recentCacheOptions = routeOptions(this.config);
+            this.recentCacheTick = tick;
             this.immediatePath = true;
             if (this.pathedEntity != null) this.pathedEntity.onFoundPath(cached);
             return;
