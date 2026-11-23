@@ -1706,7 +1706,8 @@ IAStarPathedEntity {
                     }
                 }
                 // Fence gates deliberately keep their existing behavior.
-                org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, pos);
+                org.millenaire.common.pathing.VillageDoorAccess.openForResident(
+                        this.level, pos, this, "ROUTE");
             }
         }
 
@@ -1874,7 +1875,7 @@ IAStarPathedEntity {
                         // A passed door must now time out and close normally.
                         // openForResident leaves manually opened doors alone.
                         org.millenaire.common.pathing.VillageDoorAccess.openForResident(
-                                this.level, door);
+                                this.level, door, this, "SCANNER-RENEW");
                     } else if (score < bestScore) {
                         bestScore = score;
                         best = door.immutable();
@@ -1891,7 +1892,8 @@ IAStarPathedEntity {
                     + "/" + route.getNodeCount()));
         }
         if (best != null) {
-            org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, best);
+            org.millenaire.common.pathing.VillageDoorAccess.openForResident(
+                    this.level, best, this, "SCANNER-OPEN");
         } else {
             this.logNearbyClosedDoor("NO_VISIBLE_DOOR_CANDIDATE", route);
         }
