@@ -249,6 +249,10 @@ IAStarPathedEntity {
     private long nextVanillaPathAttempt = 0L;
     private long nextRouteDecisionLog = 0L;
     private String lastRouteDecision = "";
+    // Door recovery uses physical displacement, not per-tick velocity,
+    // which can remain nonzero while a mob presses into a closed door.
+    private long doorStationarySince = -1L;
+    private double doorStationaryX, doorStationaryZ;
     private final org.millenaire.common.pathing.MovementWatchdog movementWatchdog = new org.millenaire.common.pathing.MovementWatchdog();
     private long nextPathFailureDiagnostic = 0L;
     private final PathFailureRecovery pathFailureRecovery = new PathFailureRecovery();
@@ -1618,28 +1622,58 @@ IAStarPathedEntity {
             }
         }
 
-        // A closed door may be omitted from the path (or the path can stop
-        // short of it). After a stall, open ONE directly visible doorway in
-        // the intended direction, not every door in a 5x5 neighborhood.
-        // Shared door control still honours the player's manual override.
-        if (this.stopMoving || this.getPathDestPoint() == null || this.getTarget() != null
-                || (this.level.getGameTime() + this.getVillagerId()) % 4L != 0L) return;
-        if (route != null && !route.isDone()
-                && this.getDeltaMovement().horizontalDistanceSqr() > 0.018D) return;
+        // JPS may omit a doorway node or aim at an offset waypoint beyond it.
+        // Track real displacement while a villager has a travel intent; this is
+        // different from instantaneous velocity, which can be nonzero while
+        // colliding with a closed door. Never force a working/sleeping villager
+        // to interact with an unrelated door.
+        Point destination = this.getPathDestPoint();
+        boolean hasRoute = route != null && !route.isDone();
+        if (this.stopMoving || this.getTarget() != null || (!hasRoute && destination == null)) {
+            this.doorStationarySince = -1L;
+            return;
+        }
+        long now = this.level.getGameTime();
+        double travelledX = this.getX() - this.doorStationaryX;
+        double travelledZ = this.getZ() - this.doorStationaryZ;
+        if (this.doorStationarySince < 0L || now < this.doorStationarySince
+                || travelledX * travelledX + travelledZ * travelledZ >= 0.16D) {
+            this.doorStationarySince = now;
+            this.doorStationaryX = this.getX();
+            this.doorStationaryZ = this.getZ();
+        }
+        boolean physicallyStalled = now - this.doorStationarySince >= 20L;
+        if ((now + this.getVillagerId()) % 4L != 0L) return;
 
+        // Prefer the first genuinely forward route node, not a node that is
+        // already underneath the resident or just behind them.
         Vec3 desired = null;
-        if (route != null && !route.isDone() && route.getNextNode() != null) {
-            var next = route.getNextNode();
-            desired = Vec3.atCenterOf(next.asBlockPos());
+        if (hasRoute) {
+            for (int i = route.getNextNodeIndex();
+                    i < Math.min(route.getNodeCount(), route.getNextNodeIndex() + 5); i++) {
+                var next = route.getNode(i);
+                if (next == null) continue;
+                Vec3 candidate = Vec3.atCenterOf(next.asBlockPos());
+                double vx = candidate.x - this.getX(), vz = candidate.z - this.getZ();
+                if (vx * vx + vz * vz >= 0.25D) {
+                    desired = candidate;
+                    break;
+                }
+            }
         }
-        if (desired == null || desired.distanceToSqr(this.position()) < 0.25D) {
-            desired = Vec3.atCenterOf(this.getPathDestPoint().getBlockPos());
+        if (desired == null && destination != null) {
+            desired = Vec3.atCenterOf(destination.getBlockPos());
         }
+        if (desired == null) return;
         double dx = desired.x - this.getX(), dz = desired.z - this.getZ();
         double len = Math.sqrt(dx * dx + dz * dz);
         if (len < 0.25D) return;
         dx /= len;
         dz /= len;
+        // Eyes are only a secondary hint after a *physical* stall, never a
+        // replacement for movement intent: the NPC may glance at a player.
+        Vec3 look = this.getLookAngle();
+        double lookLen = Math.sqrt(look.x * look.x + look.z * look.z);
 
         net.minecraft.core.BlockPos best = null;
         double bestScore = Double.POSITIVE_INFINITY;
@@ -1663,12 +1697,20 @@ IAStarPathedEntity {
                             ? !doorState.getValue(net.minecraft.world.level.block.DoorBlock.OPEN)
                             : doorState.getBlock() instanceof net.minecraft.world.level.block.FenceGateBlock
                                 && !doorState.getValue(net.minecraft.world.level.block.FenceGateBlock.OPEN);
-                    if (!closed) continue;
 
                     double ox = door.getX() + 0.5D - this.getX();
                     double oz = door.getZ() + 0.5D - this.getZ();
-                    double score = org.millenaire.common.pathing.DoorApproachRules.score(
-                            dx, dz, ox, oz, Math.abs(door.getY() - this.getY()));
+                    double score = org.millenaire.common.pathing.DoorApproachRules.recoveryScore(
+                            dx, dz, ox, oz, Math.abs(door.getY() - this.getY()), physicallyStalled);
+                    if (physicallyStalled && lookLen >= 0.25D) {
+                        // When an A*/JPS waypoint points sideways after a stall,
+                        // permit a visible door the resident is facing, nearby.
+                        // The look candidate is intentionally less preferred.
+                        double lookScore = org.millenaire.common.pathing.DoorApproachRules.recoveryScore(
+                                look.x / lookLen, look.z / lookLen, ox, oz,
+                                Math.abs(door.getY() - this.getY()), true);
+                        score = Math.min(score, 4.0D + lookScore);
+                    }
                     if (!Double.isFinite(score)) continue;
 
                     // Don't interact with a door beyond an intervening wall.
@@ -1686,7 +1728,13 @@ IAStarPathedEntity {
                             || hit.getBlockPos().equals(door.above());
                     if (!org.millenaire.common.pathing.DoorApproachRules.clearSight(hitBlock, hitDoor)) continue;
 
-                    if (score < bestScore) {
+                    if (!closed) {
+                        // An NPC-opened door must keep its lease WHILE being
+                        // approached, even if JPS omitted its actual node.
+                        // openForResident leaves manually opened doors alone.
+                        org.millenaire.common.pathing.VillageDoorAccess.openForResident(
+                                this.level, door);
+                    } else if (score < bestScore) {
                         bestScore = score;
                         best = door.immutable();
                     }
@@ -1696,7 +1744,8 @@ IAStarPathedEntity {
         if (MillConfigValues.LogPathing >= 2
                 && (this.level.getGameTime() + this.getVillagerId()) % 100L == 0L) {
             MillLog.major(this, "DOOR-APPROACH selected=" + best + " feet="
-                    + this.blockPosition() + " target=" + this.getPathDestPoint()
+                    + this.blockPosition() + " target=" + destination
+                    + " stalled=" + physicallyStalled
                     + " path=" + (route == null ? "none" : route.getNextNodeIndex()
                     + "/" + route.getNodeCount()));
         }
