@@ -25,6 +25,8 @@ METRICS = read("pathing/NavigationMetrics.java")
 MEMORY = read("pathing/RouteMemory.java")
 REQUEST = read("pathing/NavigationRequestKey.java")
 FAILED_BACKOFF = read("pathing/FailedRouteBackoff.java")
+DRIFT_WINDOW = read("pathing/NavigationGoalDriftWindow.java")
+TRACE_INTERFACE = read("pathing/atomicstryker/IAStarPathedEntity.java")
 WINDOW = read("pathing/NavigationRateWindow.java")
 UTILITIES = read("utilities/ThreadSafeUtilities.java")
 EXECUTOR = read("pathing/atomicstryker/PathSearchExecutor.java")
@@ -139,6 +141,56 @@ class OptimizationWiring(unittest.TestCase):
                       "no_path_retry_expired="):
             self.assertIn(field, METRICS)
         self.assertIn("this.failedRouteBackoff.onSuccess()", PLANNER)
+
+    def test_actor_task_metadata_is_captured_before_async_search(self):
+        for method in ("navigationActorId()", "navigationActorName()", "navigationBehaviorKey()"):
+            self.assertIn(method, TRACE_INTERFACE)
+            self.assertIn(method, VILLAGER)
+        self.assertIn("this.func_70005_c_()", VILLAGER)
+        self.assertIn("this.goalKey == null ? \"unknown\" : this.goalKey", VILLAGER)
+        self.assertIn("private record SearchTrace(long actorId, String name, String goal)", PLANNER)
+        self.assertIn("SearchTrace.capture(this.pathedEntity)", PLANNER)
+        self.assertIn("this.currentTrace = SearchTrace.capture(this.pathedEntity);", PLANNER)
+        self.assertIn("actorId=", PLANNER)
+        self.assertIn("actorName=", PLANNER)
+        self.assertIn('+" goal="', PLANNER)
+        self.assertIn("this.currentTrace=null;", PLANNER)
+
+    def test_moving_target_bursts_only_sample_real_searches(self):
+        search = PLANNER.split("public synchronized void getPath(AStarNode start,AStarNode end,AStarConfig settings)", 1)[1]
+        search = search.split("private void submit(boolean classic)", 1)[0]
+        self.assertIn("submit(false);", search)
+        self.assertIn("if (this.future != null && this.busy)", search)
+        self.assertLess(search.index("submit(false);"), search.index("goalDrift.onSearch("))
+        self.assertIn("NavigationMetrics.movingGoalRequest()", search)
+        self.assertIn("NavigationMetrics.movingGoalBurst()", search)
+        self.assertIn('"NAV-OPT-MOVING-GOAL actorId="', search)
+        self.assertIn("MillConfigValues.LogPathing >= 2", search)
+        self.assertNotIn("this.deferred = true;", search.split("submit(false);", 1)[1])
+        self.assertIn("WINDOW_TICKS = 20L", DRIFT_WINDOW)
+        self.assertIn("BURST_THRESHOLD = 5", DRIFT_WINDOW)
+        self.assertIn("!start.equals(request.start())", DRIFT_WINDOW)
+        self.assertIn("!movement.equals(request.movement())", DRIFT_WINDOW)
+        self.assertIn("!semanticGoal.equals(normalizedGoal)", DRIFT_WINDOW)
+
+    def test_changed_inflight_requests_are_accounted_before_cancellation(self):
+        search = PLANNER.split("public synchronized void getPath(AStarNode start,AStarNode end,AStarConfig settings)", 1)[1]
+        search = search.split("private void submit(boolean classic)", 1)[0]
+        self.assertIn("this.busy && requested.equals(this.activeRequest)", search)
+        self.assertIn("this.busy && this.activeRequest != null", search)
+        self.assertIn("NavigationMetrics.searchPreempted(", search)
+        self.assertLess(search.index("NavigationMetrics.searchPreempted("),
+                        search.index("stopPathSearch(true);"))
+        for counter in ("search_preempted=", "search_preempted_start=",
+                        "search_preempted_goal=", "search_preempted_movement=",
+                        "moving_goal_requests=", "moving_goal_bursts="):
+            self.assertIn(counter, METRICS)
+        self.assertIn("SEARCH_PREEMPTED.reset();", METRICS)
+        self.assertIn("MOVING_GOAL_BURSTS.reset();", METRICS)
+        for counter in ("search_preempted_s=", "moving_goal_requests_s=",
+                        "moving_goal_bursts_s="):
+            self.assertIn(counter, WINDOW)
+        self.assertIn("MOVING_GOAL_BURSTS.sum()));", METRICS)
 
     def test_identical_cached_routes_are_throttled_without_blocking_new_goals(self):
         self.assertIn("this.lastStart.equals(this.recentCacheStart)", PLANNER)
