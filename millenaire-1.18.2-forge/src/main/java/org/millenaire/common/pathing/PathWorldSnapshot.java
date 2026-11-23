@@ -34,6 +34,9 @@ public final class PathWorldSnapshot implements BlockGetter {
     private static final int MAX_SECTION_COPIES_PER_TICK = 1024;
     private final Map<Long, PalettedContainer<BlockState>> sections;
     private final Set<Long> chunks;
+    // Snapshot-local only: geometry is immutable even if the real world
+    // changes during a worker search. Never use this memo on live Level.
+    private final SnapshotColumnMemo simpleFlatColumns = new SnapshotColumnMemo(2048);
     private final int minHeight, height;
     /**
      * Values are ALREADY detached copies created on the server thread. Never
@@ -202,6 +205,15 @@ public final class PathWorldSnapshot implements BlockGetter {
             CAPTURE_INDICES.remove(level);
             SECTION_POOLS.remove(level);
         }
+    }
+
+    /** Results belong to this detached snapshot, never to a live Level. */
+    public Boolean getSimpleFlatColumn(int x, int y, int z) {
+        return simpleFlatColumns.get(BlockPos.asLong(x, y, z));
+    }
+
+    public void rememberSimpleFlatColumn(int x, int y, int z, boolean simple) {
+        simpleFlatColumns.remember(BlockPos.asLong(x, y, z), simple);
     }
 
     /**
