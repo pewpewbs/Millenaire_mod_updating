@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
  * never return the result for a different column. Both true and false are
  * cached. This is intentionally NOT shared across snapshots or game ticks.
  *
- * Fixed capacity avoids unbounded allocations by broad A*/JPS searches.
+ * Fixed capacity avoids unbounded allocations by broad A-star and JPS searches.
  */
 public final class SnapshotColumnMemo {
     private record Entry(long position, boolean simple) {}
