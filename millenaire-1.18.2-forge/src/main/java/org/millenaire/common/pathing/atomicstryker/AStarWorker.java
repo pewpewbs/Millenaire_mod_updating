@@ -192,6 +192,9 @@ implements Runnable {
         }
         org.millenaire.common.pathing.NavigationMetrics.reverseTried();
         long started = System.nanoTime();
+        // Reverse search gets its own 150 ms budget; reserve a small additional
+        // window for checking the candidate in the requested direction.
+        long reverseDeadline = started + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(175L);
         AStarWorker opposite = new AStarWorker(this.boss);
         opposite.setup(this.world, new AStarNode(this.targetNode.x, this.targetNode.y, this.targetNode.z),
                 new AStarNode(this.startNode.x, this.startNode.y, this.startNode.z), this.config);
@@ -207,7 +210,8 @@ implements Runnable {
         if (valid) {
             try {
                 for (int i = candidate.size() - 1; i > 0; i--) {
-                    if (this.shouldInterrupt()) { valid = false; break; }
+                    if (Thread.currentThread().isInterrupted()
+                            || System.nanoTime() > reverseDeadline) { valid = false; break; }
                     AStarNode from = candidate.get(i), to = candidate.get(i - 1);
                     if (Math.abs(from.y - to.y) > 1
                             || Math.abs(from.x - to.x) > 1
