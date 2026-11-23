@@ -44,7 +44,7 @@ public final class SnapshotCaptureIndex<T> {
         resetIfNewTick(nowTick);
         if (minX > maxX || minZ > maxZ) return null;
         T best = null;
-        int bestArea = Integer.MAX_VALUE;
+        long bestArea = Long.MAX_VALUE;
         boolean nonLatest = false;
         int newest = entries.size() - 1;
         for (int i = 0; i < entries.size(); i++) {
@@ -56,7 +56,7 @@ public final class SnapshotCaptureIndex<T> {
                     * ((long) entry.maxZ() - entry.minZ() + 1);
             if (area < bestArea) {
                 best = value;
-                bestArea = (int) area;
+                bestArea = area;
                 nonLatest = i < newest;
             }
         }
