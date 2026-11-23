@@ -1549,6 +1549,24 @@ IAStarPathedEntity {
         Path route = this.navigation.getPath();
         if (route != null && !route.isDone()) {
             java.util.Set<net.minecraft.core.BlockPos> candidates = new java.util.LinkedHashSet<>();
+            // The pathfinder may advance its next-node index while the resident
+            // is still physically crossing the previous doorway. In that case
+            // keep the shared lease alive, but NEVER reopen a door already
+            // fully behind the resident (the old -1 lookahead regression).
+            int previous = route.getNextNodeIndex() - 1;
+            if (previous >= 0 && previous < route.getNodeCount()) {
+                var prevNode = route.getNode(previous);
+                if (prevNode != null) {
+                    var previousPos = prevNode.asBlockPos();
+                    for (int dy = -1; dy <= 1; dy++) {
+                        var pos = previousPos.offset(0, dy, 0);
+                        if (this.getBoundingBox().inflate(0.12D, 0.0D, 0.12D)
+                                .intersects(new AABB(pos).inflate(0.12D, 0.12D, 0.12D))) {
+                            candidates.add(pos);
+                        }
+                    }
+                }
+            }
             for (int i = Math.max(0, route.getNextNodeIndex());
                     i < Math.min(route.getNodeCount(), route.getNextNodeIndex() + 3); i++) {
                 var node = route.getNode(i);
