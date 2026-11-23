@@ -17,12 +17,12 @@ public final class RouteMemory {
     public record Cell(int x, int y, int z) {}
     public record Lookup(List<Cell> goalToStart, boolean reversed) {}
     private record Key(Cell start, Cell goal, int options) {}
-    private record Entry(List<Cell> path, long tick) {}
+    private record CacheEntry(List<Cell> path, long tick) {}
 
     private final int maxEntries;
     private final int maxNodes;
     private final long lifetimeTicks;
-    private final Map<Key, Entry> entries;
+    private final Map<Key, CacheEntry> entries;
 
     public RouteMemory(int maxEntries, int maxNodes, long lifetimeTicks) {
         if (maxEntries < 1 || maxNodes < 2 || lifetimeTicks < 1) {
@@ -32,7 +32,7 @@ public final class RouteMemory {
         this.maxNodes = maxNodes;
         this.lifetimeTicks = lifetimeTicks;
         this.entries = new LinkedHashMap<>(16, 0.75F, true) {
-            @Override protected boolean removeEldestEntry(Map.Entry<Key, Entry> eldest) {
+            @Override protected boolean removeEldestEntry(Map.Entry<Key, CacheEntry> eldest) {
                 return size() > RouteMemory.this.maxEntries;
             }
         };
@@ -45,7 +45,7 @@ public final class RouteMemory {
         Cell start = path.get(path.size() - 1);
         Cell goal = path.get(0);
         if (start.equals(goal)) return;
-        entries.put(new Key(start, goal, options), new Entry(path, tick));
+        entries.put(new Key(start, goal, options), new CacheEntry(path, tick));
     }
 
     public synchronized Lookup lookup(long tick, int options, Cell start, Cell goal) {
@@ -68,7 +68,7 @@ public final class RouteMemory {
     }
 
     private Lookup find(long tick, Key key, boolean reverse) {
-        Entry entry = entries.get(key);
+        CacheEntry entry = entries.get(key);
         if (entry == null) return null;
         if (tick < entry.tick || tick - entry.tick > lifetimeTicks) {
             entries.remove(key);
