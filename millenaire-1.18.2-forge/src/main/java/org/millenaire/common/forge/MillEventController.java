@@ -62,6 +62,73 @@ import org.millenaire.common.world.MillWorldData;
 import org.millenaire.common.world.UserProfile;
 
 public class MillEventController {
+    // NAV-OPT-12: these are conservative known-mutation notifications, NOT a
+    // universal block-state revision feed. Never permit cross-tick snapshot
+    // reuse solely on the strength of these events.
+    private static void invalidatePathSnapshot(net.minecraft.world.level.LevelAccessor world,
+                                              net.minecraft.core.BlockPos pos) {
+        if (world instanceof ServerLevel server) {
+            org.millenaire.common.pathing.PathWorldSnapshot.onKnownBlockMutation(server, pos);
+        }
+    }
+
+    private static void invalidatePathWorld(net.minecraft.world.level.LevelAccessor world) {
+        if (world instanceof ServerLevel server) {
+            org.millenaire.common.pathing.PathWorldSnapshot.onKnownWorldMutation(server);
+        }
+    }
+
+    @SubscribeEvent
+    public void onSnapshotBlockPlaced(net.minecraftforge.event.world.BlockEvent.EntityPlaceEvent event) {
+        if (event instanceof net.minecraftforge.event.world.BlockEvent.EntityMultiPlaceEvent) {
+            // Multiple blocks may change at coordinates other than getPos().
+            invalidatePathWorld(event.getWorld());
+        } else {
+            invalidatePathSnapshot(event.getWorld(), event.getPos());
+        }
+    }
+
+    @SubscribeEvent
+    public void onSnapshotBlockBroken(net.minecraftforge.event.world.BlockEvent.BreakEvent event) {
+        // Even if another listener cancels the break, false invalidation is
+        // safe; missed invalidation would not be.
+        invalidatePathSnapshot(event.getWorld(), event.getPos());
+    }
+
+    @SubscribeEvent
+    public void onSnapshotFluidPlaced(net.minecraftforge.event.world.BlockEvent.FluidPlaceBlockEvent event) {
+        invalidatePathSnapshot(event.getWorld(), event.getPos());
+    }
+
+    @SubscribeEvent
+    public void onSnapshotCropGrown(net.minecraftforge.event.world.BlockEvent.CropGrowEvent.Post event) {
+        invalidatePathSnapshot(event.getWorld(), event.getPos());
+    }
+
+    @SubscribeEvent
+    public void onSnapshotPistonFinished(net.minecraftforge.event.world.PistonEvent.Post event) {
+        // A piston can update an entire line of blocks, including boundaries
+        // between sections. Discard all current-tick copy candidates.
+        invalidatePathWorld(event.getWorld());
+    }
+
+    @SubscribeEvent
+    public void onSnapshotChunkLoaded(net.minecraftforge.event.world.ChunkEvent.Load event) {
+        invalidatePathWorld(event.getWorld());
+    }
+
+    @SubscribeEvent
+    public void onSnapshotChunkUnloaded(net.minecraftforge.event.world.ChunkEvent.Unload event) {
+        invalidatePathWorld(event.getWorld());
+    }
+
+    @SubscribeEvent
+    public void onSnapshotWorldUnloaded(net.minecraftforge.event.world.WorldEvent.Unload event) {
+        if (event.getWorld() instanceof ServerLevel server) {
+            org.millenaire.common.pathing.PathWorldSnapshot.onWorldUnload(server);
+        }
+    }
+
     @SubscribeEvent
     public void protectPanelClick(net.minecraftforge.event.entity.player.PlayerInteractEvent.LeftClickBlock event) {
         if (event.getWorld().getBlockState(event.getPos()).getBlock() instanceof org.millenaire.common.block.BlockPanel
