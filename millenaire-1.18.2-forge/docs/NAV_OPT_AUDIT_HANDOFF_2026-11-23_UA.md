@@ -615,3 +615,63 @@ java -cp build/nav-snapshot-pool-smoke SnapshotSectionPoolSmoke
 
 Для справжнього cross-tick versioned cache треба інтеграція з низькорівневим `LevelChunkSection.setBlockState` / `PalettedContainer` або універсальний mutation listener **після** всіх типів змін (vanilla, fluids, redstone, third-party mods) плюс chunk unload/reload epochs. Не додавати Mixin або ASM навмання без гарантії сумісності Forge 40.3.0 й без перевірки bytecode/діапазонів версій. Альтернативна безпечна оптимізація — **менше копіювати протягом тіку, не виходячи за його межі**, або профілювати найбільші джерела CPU. Геометричні проблеми відкладені на іншу модель за окремим рішенням користувача.
 
+
+
+## 17. NAV-OPT-14 — повернення до будь-якого придатного same-tick snapshot
+
+**Дата:** 23.11.2026. **Вимога користувача:** продовжити оптимізації без проміжного Minecraft/Forge тесту; після завершення пакета протестувати все разом. Працювати **тільки** у `fix/villager-door-access-and-village-territory`; `main` не змінювати.
+
+### 17.1. Місце втрати продуктивності в NAV-OPT-11/13
+
+До NAV-OPT-14 `PathWorldSnapshot` мав лише **один** `LAST_CAPTURE` на ServerLevel. Знімок A, потім інший B у тому самому тіку — B заміняв слабке посилання на A. Навіть якщо наступний запит до області A повністю вміщався в ще існуючий A, система пробувала заново збирати snapshot, перевіряти до 256 чанків і облік секцій. `SnapshotSectionPool` зменшував кількість реальних `PalettedContainer.copy()`, проте **не** усував повністю повторний обхід чанків, створення HashMap/HashSet та об'єкта `PathWorldSnapshot`. Повністю reused `LAST_CAPTURE` був доступний тільки якщо попередній *останній* snapshot містив новий прямокутник.
+
+### 17.2. Реалізація
+
+1. Додано **`SnapshotCaptureIndex<T>`** — автономний Java 17 клас із жорстким лімітом entries. Кожен запис містить прямокутник чанків і `WeakReference<T>`; значення і навіть WeakReference не мають права затримувати ServerLevel. Індекс із **4** записів відповідає ліміту `MAX_SNAPSHOTS_PER_TICK = 4`; при перевищенні ємності видаляється найстаріший запис, при `gameTime` іншого тіку **всі записи очищаються**. Вимерлі weak refs відкидаються під час вставлення. Для запиту перебираються максимум 4 записи; повертається **найменший живий snapshot**, який повністю покриває прямокутник `minX..maxX,minZ..maxZ`, без злиття частково перекривних знімків. Запис `Match<T>` вказує `nonLatest`, якщо вибрано не найновіший запис.
+2. `PathWorldSnapshot` замість одного `Map<ServerLevel, Capture> LAST_CAPTURE` має `Map<ServerLevel, SnapshotCaptureIndex<PathWorldSnapshot>> CAPTURE_INDICES` та єдиний `SNAPSHOT_LOCK`, під яким працюють і `CAPTURE_INDICES`, і `SECTION_POOLS`. Це зберігає атомарну перевірку ledger `pool.mayReuseSnapshots(tick)`, читання індексу і резервування `pool.begin(tick,chunkVisits)`. Cache hit відбувається **до** дорогого обходу чанків та до витрачання квоти на новий snapshot. При створенні нового snapshot збережено `captureRevision` і відмову при зміні відомої ревізії в процесі копіювання; новий знімок додається в index лише якщо `pool.mayReuseSnapshots(tick)` досі дозволяє reuse.
+3. Відомі Forge-мутації `onKnownBlockMutation` і `onKnownWorldMutation` **консервативно інвалідують увесь index цього світу**, не лише останній snapshot. Ті самі обробники лишають poison у `SnapshotSectionPool`, тому жодні вже побудовані superset snapshots не будуть повторно використані до кінця тіку; quota `snapshots/chunkVisits/copies` **не скидаються**. `onWorldUnload` прибирає обидва пер-світові кеші.
+4. `SnapshotSectionPool.usedSnapshots()` дає точніший облік додаткових *допущених* спроб snapshot, ніж колишній bool `previous.tick()==tick`. Успішний додатковий snapshot збільшує `snapshot_additional_captures`. `snapshot_known_captures_invalidated` після NAV-OPT-14 означає **кількість живих слабко-доступних повних snapshot, вилучених із index після відомої мутації**, а не число всіх сповіщень або null placeholders. Запроваджено новий лічильник `snapshot_non_latest_reused`: він є **підмножиною** `snapshot_reused`, коли було вибрано знімок, який не є останнім у bounded index. `snapshot_shared_sections` рахує повторне використання конкретних копій секцій в іншому *новому* snapshot; це **інша категорія**, не тотожна full-snapshot reuse.
+5. Збережені межі NAV-OPT-11: не більше **4** нових повних snapshot, **256** відвідувань чанків, **1024** palette copies на світ у тіку. Збережені заборони NAV-OPT-13: **ніяких** full-snapshot hits при `poisonedWorld` або непорожній `poisonedSections`, невдалий `revision` відкидає результат до публікації, невідомі зміни блоку можуть бути непомічені, отже **кешування між тіками все ще ВИМКНЕНЕ**.
+
+### 17.3. Тести підготовлено (НЕ запускалися)
+
+- `tools/tests/SnapshotCaptureIndexSmoke.java` — deterministic Java 17 кейси: A→B→A, найменший супермножинний прямокутник, часткове перекриття НЕ допускається, weak index capacity та oldest eviction, invalidation, новий/повернутий tick, некоректні межі, нульова ємність.
+- `tools/tests/SnapshotReuseProtocolSmoke.java` — інтеграційні plain Java 17 кейси `SnapshotCaptureIndex` + `SnapshotSectionPool`: два одночасно збережені знімки, PRE-change `invalidateSection` + `index.invalidate`, заборона повторного видавання старого snapshot/секції, збереження budget, позначення секції poisoned і reset на новому тіку.
+- `tools/tests/test_navigation_optimization_wiring.py` — адаптовано 4 старі source assertions до нового `CAPTURE_INDICES`/`SNAPSHOT_LOCK`, додано 2 регресійні тести, **всього 25** structural tests.
+- GitHub джерела перечитуються через connector, інваріанти перевіряються статично, але `javac`, `python`, `Gradle`, Minecraft playtest NAV-OPT-14 **NOT RUN** до спільної перевірки. Наявність `Smoke.java` — не доказ PASS.
+
+**Коміти NAV-OPT-14:**
+- `6a3eb26` — `SnapshotCaptureIndex.java` з bounded index;
+- `8f597d8` — доступ до кількості допущених snapshot у `SnapshotSectionPool`;
+- `c0e0053` — повна інтеграція індексу в `PathWorldSnapshot`;
+- `a2c3361` — безпечне 64-бітове порівняння площ;
+- `377d3c8` — нова метрика `snapshot_non_latest_reused`;
+- `3593c38` — Java 17 standalone test for index;
+- `e5e554e` — зміни/доповнення source-level тестів до 25;
+- `9cdf187` — Java 17 cross-component smoke for index + pool.
+
+### 17.4. Єдина перевірка всіх NAV-OPT етапів
+
+У корені `Millenaire_mod_updating`:
+```powershell
+.\Update-Millenaire.bat
+py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_optimization_wiring.py
+py -3 .\millenaire-1.18.2-forge\tools\tests\test_navigation_priority.py
+cd .\millenaire-1.18.2-forge
+
+javac --release 17 -d build/nav-capture-index-smoke src/main/java/org/millenaire/common/pathing/SnapshotCaptureIndex.java tools/tests/SnapshotCaptureIndexSmoke.java
+java -cp build/nav-capture-index-smoke SnapshotCaptureIndexSmoke
+javac --release 17 -d build/nav-snapshot-protocol-smoke src/main/java/org/millenaire/common/pathing/SnapshotSectionPool.java src/main/java/org/millenaire/common/pathing/SnapshotCaptureIndex.java tools/tests/SnapshotReuseProtocolSmoke.java
+java -cp build/nav-snapshot-protocol-smoke SnapshotReuseProtocolSmoke
+```
+
+Також виконати Java smoke `SnapshotSectionPoolSmoke`, `RouteMemorySmoke`, `NavigationRequestKeySmoke`, `PathSearchExecutorSmoke`, `NavigationRateWindowSmoke` з попередніх розділів 13–16. Перевірити `BUILD SUCCESSFUL`, 25 Python wiring `OK`, 9 priority `OK`, 7 Java smoke `PASS` (ці результати **очікуються**, не підтверджені). У Minecraft забезпечити сценарій NPC A→B→A в одному світі, зіставити `snapshot_non_latest_reused`, `snapshot_reused`, `snapshot_additional_captures`, `snapshot_shared_sections`, `snapshot_known_captures_invalidated`, `snapshot_poisoned_bypasses`, `snapshot_mutation_race_rejected`, `stale_routes`, навантаження CPU/TPS/GC.
+
+### 17.5. Ризики й завдання для сильнішої моделі
+
+- Навіть у межах одного тіку **невідома без-event in-place зміна** не виявляється через object identity або poison. Індекс може повторно видати знімок A із ранньої частини тіку, який уже не відображає новий стан. Фінальна live-world перевірка ребер у `MillVillager` захищає від прийняття невірного маршруту, але пошук на застарілому snapshot може не знайти актуальний шлях або спожити CPU. Це потрібно оцінити окремим playtest при активному будівництві/руйнуванні.
+- `WeakReference` дозволяє GC видалити раніші snapshot; `snapshot_non_latest_reused=0` навіть під навантаженням не доводить дефекту, якщо ранні snapshot вже звільнені або запити не перекриваються. Немає безумовного прискорення.
+- Довгий snapshot build при async Forge event інвалідованому під час копіювання має відповідати `snapshot_mutation_race_rejected`. Аномально високі `snapshot_known_captures_invalidated` і `snapshot_tick_budget_deferred` можуть показати, що консервативна інвалідація надто агресивна.
+- Складна геометрія дверей, сходинок, спуску по драбинах та reverse `ENDPOINT_MISMATCH` залишаються для іншої потужнішої моделі, **не** змінювалися в NAV-OPT-14.
+- `main` не чіпати. Жодну нову реалізацію не називати Forge-compiled чи playtest-verified до отримання реального результату.
+
