@@ -439,11 +439,20 @@ IAStarPathedEntity {
 
     private void applyPathCalculatedSinceLastTick() {
         try {
-            AS_PathEntity path = AStarStatic.translateAStarPathtoPathEntity(this.level, this.pathCalculatedSinceLastTick, this.getPathingConfig());
+            AStarConfig routeConfig = this.getPathingConfig();
+            AS_PathEntity path = AStarStatic.translateAStarPathtoPathEntity(this.level, this.pathCalculatedSinceLastTick, routeConfig);
             // A builder may have changed the world after this snapshot was captured.
+            // Revalidate actual edges, not just the destination node. The
+            // detached-snapshot planner already checked them off-thread.
             for (int i = 1; i < path.getNodeCount(); i++) {
+                Node previous = path.getNode(i - 1);
                 Node node = path.getNode(i);
-                if (!AStarStatic.isViable(this.level, node.x, node.y, node.z, 0, this.getPathingConfig())) {
+                AStarNode from = new AStarNode(previous.x, previous.y, previous.z);
+                AStarNode to = new AStarNode(node.x, node.y, node.z);
+                if (!AStarStatic.isViable(this.level, node.x, node.y, node.z, 0, routeConfig)
+                        || !AStarStatic.isTransitionViable(this.level, from, to, routeConfig)
+                        || (!routeConfig.canTakeDiagonals && from.y == to.y
+                            && from.x != to.x && from.z != to.z)) {
                     org.millenaire.common.pathing.NavigationMetrics.stale();
                     // Rejecting a stale primary route is a primary failure.
                     // Schedule the same Vanilla fallback used on failed A*/JPS.
