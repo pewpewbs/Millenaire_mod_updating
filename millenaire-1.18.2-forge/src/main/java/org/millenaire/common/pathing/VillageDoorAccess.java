@@ -196,13 +196,31 @@ public final class VillageDoorAccess {
             long idleTicks = gate ? GATE_IDLE_TICKS : DOOR_IDLE_TICKS;
             if (level.getGameTime() - entry.getValue() < idleTicks) continue;
 
-            // Only living entities physically intersecting the doorway can
-            // delay closing. Nearby livestock (or a resident already outside)
-            // must not hold an entrance open for multiple seconds.
-            AABB portal = new AABB(pos).inflate(0.12D, 0.75D, 0.12D);
+            // A wooden door's CLOSED collision panel is only a thin slice
+            // of the block, and FACING/HINGE can put it on either side.
+            // The previous whole-block AABB considered residents standing
+            // inside the ADJACENT room to be "in the doorway" indefinitely,
+            // causing doors to remain open long after they had been crossed.
+            // Keep the gate's established geometry unchanged.
+            AABB portal;
+            if (wooden) {
+                BlockState closed = state.setValue(DoorBlock.OPEN, false);
+                net.minecraft.world.phys.shapes.VoxelShape shape =
+                        closed.getCollisionShape(level, pos);
+                if (shape.isEmpty()) {
+                    // Unexpected custom door shape: avoid closing on an entity.
+                    portal = new AABB(pos).inflate(0.12D, 0.75D, 0.12D);
+                } else {
+                    portal = shape.bounds()
+                            .move(pos.getX(), pos.getY(), pos.getZ())
+                            .inflate(0.10D, 0.85D, 0.10D);
+                }
+            } else {
+                portal = new AABB(pos).inflate(0.12D, 0.75D, 0.12D);
+            }
             if (!level.getEntitiesOfClass(LivingEntity.class, portal,
                     LivingEntity::isAlive).isEmpty()) {
-                if (level.getGameTime() % 100L == 0L) trace(level, pos, "OCCUPIED");
+                if (level.getGameTime() % 100L == 0L) trace(level, pos, "OCCUPIED-PANEL");
                 continue;
             }
 
