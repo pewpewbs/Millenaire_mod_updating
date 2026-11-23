@@ -59,14 +59,9 @@ public class AStarStatic {
             }
         }
         Collections.sort(resultList);
-        int count = 0;
-        AStarNode[] returnVal = new AStarNode[resultList.size()];
-        while (!resultList.isEmpty() && (check = (AStarNode)resultList.get(0)) != null) {
-            returnVal[count] = check;
-            resultList.remove(0);
-            ++count;
-        }
-        return returnVal;
+        // Preserve the sorted candidate order without repeatedly removing
+        // index zero (which shifts the entire ArrayList on each iteration).
+        return resultList.toArray(new AStarNode[0]);
     }
 
     public static double getDistanceBetweenCoords(int x, int y, int z, int posX, int posY, int posZ) {
@@ -96,17 +91,22 @@ public class AStarStatic {
     }
 
     public static boolean isPassableBlock(BlockGetter world, int ix, int iy, int iz, AStarConfig config) throws ThreadSafeUtilities.ChunkAccessException {
-        Block blockBelow;
         BlockState blockState = ThreadSafeUtilities.getBlockState(world, ix, iy, iz);
         Block block = blockState.getBlock();
-        if (org.millenaire.common.pathing.BarrierPathRules.isBarrier(blockState)
-                || iy > world.getMinBuildHeight() && org.millenaire.common.pathing.BarrierPathRules.blocksStepAbove(
-                    ThreadSafeUtilities.getBlockState(world, ix, iy - 1, iz))) return false;
+        if (org.millenaire.common.pathing.BarrierPathRules.isBarrier(blockState)) return false;
+        // A*/JPS calls this many times per expanded node. Fetch the same
+        // supporting block ONCE, then reuse its state for every barrier,
+        // chest, fence and wall check. Rules and evaluation order stay intact.
+        BlockState belowState = iy > world.getMinBuildHeight()
+                ? ThreadSafeUtilities.getBlockState(world, ix, iy - 1, iz) : null;
+        if (belowState != null
+                && org.millenaire.common.pathing.BarrierPathRules.blocksStepAbove(belowState)) return false;
+        Block belowBlock = belowState == null ? null : belowState.getBlock();
         if (org.millenaire.common.pathing.ChestPathRules.isChest(block)
-                || iy > world.getMinBuildHeight()
-                && org.millenaire.common.pathing.ChestPathRules.isChest(
-                    ThreadSafeUtilities.getBlock(world, ix, iy - 1, iz))) return false;
-        if (iy > world.getMinBuildHeight() && (BlockItemUtilities.isFence(blockBelow = ThreadSafeUtilities.getBlock(world, ix, iy - 1, iz)) || blockBelow == Blocks.IRON_BARS || blockBelow == Blocks.NETHER_BRICK_FENCE || blockBelow instanceof WallBlock || blockBelow instanceof BlockMillWall)) {
+                || belowBlock != null && org.millenaire.common.pathing.ChestPathRules.isChest(belowBlock)) return false;
+        if (belowBlock != null && (BlockItemUtilities.isFence(belowBlock)
+                || belowBlock == Blocks.IRON_BARS || belowBlock == Blocks.NETHER_BRICK_FENCE
+                || belowBlock instanceof WallBlock || belowBlock instanceof BlockMillWall)) {
             return false;
         }
         if (block != null) {
@@ -187,21 +187,44 @@ public class AStarStatic {
                 && isSimpleFlatColumn(world, to)) {
             return true;
         }
-        return TransitionClearanceRules.canTraverse(
+        // Only the expensive swept-shape branch pays for nanoTime. Ordinary
+        // flat-path memo hits do not add per-edge timer overhead.
+        long sweepBegan = System.nanoTime();
+        boolean traversable = TransitionClearanceRules.canTraverse(
                 from.x, from.y, from.z, to.x, to.y, to.z,
                 (centerX, feetY, centerZ) -> isBodyCollisionFree(
                         world, centerX, feetY, centerZ, config));
+        org.millenaire.common.pathing.NavigationMetrics.sweptTransition(
+                System.nanoTime() - sweepBegan, traversable);
+        return traversable;
     }
 
     private static boolean isSimpleFlatColumn(BlockGetter world, AStarNode node) {
-        BlockPos feet = new BlockPos(node.x, node.y, node.z);
-        BlockPos head = feet.above();
-        BlockPos floor = feet.below();
-        // No fractional supports, doors, stair faces or overhangs involved.
-        return world.getBlockState(feet).isAir()
-                && world.getBlockState(head).isAir()
-                && Block.isShapeFullBlock(world.getBlockState(floor)
-                        .getCollisionShape(world, floor));
+        org.millenaire.common.pathing.PathWorldSnapshot snapshot =
+                world instanceof org.millenaire.common.pathing.PathWorldSnapshot detached
+                        ? detached : null;
+        if (snapshot != null) {
+            Boolean memoized = snapshot.getSimpleFlatColumn(node.x, node.y, node.z);
+            if (memoized != null) {
+                org.millenaire.common.pathing.NavigationMetrics.flatColumnMemoHit();
+                return memoized;
+            }
+            org.millenaire.common.pathing.NavigationMetrics.flatColumnMemoMiss();
+        }
+        // A single local mutable position avoids allocating feet/head/floor
+        // on every memo miss. Geometry and shape calls are otherwise unchanged.
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(node.x, node.y, node.z);
+        boolean simple = false;
+        if (world.getBlockState(pos).isAir()) {
+            pos.set(node.x, node.y + 1, node.z);
+            if (world.getBlockState(pos).isAir()) {
+                pos.set(node.x, node.y - 1, node.z);
+                simple = Block.isShapeFullBlock(
+                        world.getBlockState(pos).getCollisionShape(world, pos));
+            }
+        }
+        if (snapshot != null) snapshot.rememberSimpleFlatColumn(node.x, node.y, node.z, simple);
+        return simple;
     }
 
     private static boolean isBodyCollisionFree(BlockGetter world, double x,
@@ -220,10 +243,13 @@ public class AStarStatic {
         int maxY = net.minecraft.util.Mth.floor(body.maxY - 1.0E-7D);
         int minZ = net.minecraft.util.Mth.floor(body.minZ);
         int maxZ = net.minecraft.util.Mth.floor(body.maxZ - 1.0E-7D);
+        // Collision sampling may inspect many voxels; keep one position per
+        // body sample instead of allocating one BlockPos per visited block.
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         for (int bx = minX; bx <= maxX; bx++) {
             for (int bz = minZ; bz <= maxZ; bz++) {
                 for (int by = minY; by <= maxY; by++) {
-                    BlockPos pos = new BlockPos(bx, by, bz);
+                    pos.set(bx, by, bz);
                     // The main-thread path translator can receive a stale
                     // route. Do not synchronously load chunks to validate it.
                     if (world instanceof Level level && !level.hasChunkAt(pos)) return false;
