@@ -859,13 +859,22 @@ IAStarPathedEntity {
                         startPos = startPos.getAbove();
                     }
                     this.pathPlannerJPS.getPath(this.doubleToInt(this.getX()), this.doubleToInt(this.getY()), this.doubleToInt(this.getZ()), destNode.x, destNode.y, destNode.z, this.getPathingConfig());
+                    if (!this.pathPlannerJPS.isBusy()) {
+                        // Snapshot capture was deferred (server budget) or the
+                        // worker queue rejected the request. Do not leave this
+                        // villager standing indefinitely waiting for a callback
+                        // that will never arrive; schedule the bounded fallback.
+                        this.onNoPathAvailable();
+                    }
                 } else {
                     this.onNoPathAvailable();
                 }
             }
             catch (ThreadSafeUtilities.ChunkAccessException e) {
-                if (MillConfigValues.LogChunkLoader < 2) break block9;
-                MillLog.minor(this, "Chunk access violation while calculating path.");
+                this.onNoPathAvailable();
+                if (MillConfigValues.LogChunkLoader >= 2) {
+                    MillLog.minor(this, "Chunk access violation while calculating path.");
+                }
             }
         }
         return null;
@@ -2252,6 +2261,9 @@ IAStarPathedEntity {
         // independent Vanilla route before falling back to the primary search.
         if (action == org.millenaire.common.pathing.MovementWatchdog.Action.DETOUR) {
             this.nextVanillaPathAttempt = 0L;
+            if (this.navigation instanceof PathNavigateSimple groundNavigation) {
+                groundNavigation.requestRecoveryDetour();
+            }
             if (this.tryGroundRoute(dest)) return;
         }
         if (action == org.millenaire.common.pathing.MovementWatchdog.Action.RECOVER
