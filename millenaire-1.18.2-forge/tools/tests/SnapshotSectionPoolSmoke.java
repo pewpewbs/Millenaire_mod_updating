@@ -80,6 +80,62 @@ public final class SnapshotSectionPoolSmoke {
         check(edits.canCopy(201) && edits.get(201, 20L, source2) == null,
                 "old copies are never used across tick boundaries");
 
-        System.out.println("PASS: snapshot same-tick overlap, quotas, mutations, source identity and tick isolation");
+        // NAV-OPT-13: PRE-mutation event before a capture must prevent
+        // caching the old palette again during the SAME tick.
+        var preChange = new SnapshotSectionPool<String>(4, 16, 4);
+        long initialRevision = preChange.revision(300);
+        check(!preChange.invalidateSection(300, 5L),
+                "pre-event must be recorded even if no snapshot exists yet");
+        check(preChange.revision(300) > initialRevision,
+                "pre-event must advance revision");
+        check(!preChange.mayReuseSnapshots(300),
+                "no full-snapshot reuse after a pre-change event");
+        check(preChange.isPoisoned(300, 5L),
+                "dirty section remains poisoned through the tick");
+        check(preChange.begin(300, 2), "event does not stop legitimate captures");
+        preChange.remember(300, 5L, source1, "copiedBeforeMutation");
+        check(preChange.get(300, 5L, source1) == null,
+                "old-state copy may never be re-shared in the same tick");
+        check(preChange.usedCopies() == 1,
+                "copy used for a dirty snapshot still consumes quota");
+        preChange.remember(300, 6L, source2, "cleanNeighbor");
+        check(preChange.get(300, 6L, source2).equals("cleanNeighbor"),
+                "clean section can still be reused within an admitted snapshot");
+        long duringCapture = preChange.revision(300);
+        check(preChange.invalidateSection(300, 6L),
+                "mutation between snapshot reads evicts even a clean neighbor");
+        check(preChange.revision(300) != duringCapture,
+                "capture must be able to reject a racing mutation");
+        check(preChange.get(300, 6L, source2) == null,
+                "mutated section cannot return old detached copy");
+        check(preChange.begin(301, 1), "new server tick resets poison");
+        check(preChange.mayReuseSnapshots(301) && !preChange.isPoisoned(301, 5L),
+                "poison never crosses server ticks");
+        check(preChange.revision(301) == 0L,
+                "revision resets only on tick boundary");
+
+        // Unknown position in a multi-block mutation: conservatively poison
+        // the entire world for the rest of the current tick.
+        var multi = new SnapshotSectionPool<String>(4, 12, 3);
+        check(multi.begin(500, 1), "multi-place first snapshot");
+        multi.remember(500, 42L, source1, "prePistonCopy");
+        check(multi.invalidateAll(500) == 1, "whole-world eviction");
+        check(!multi.mayReuseSnapshots(500), "whole-world poison disables sharing");
+        multi.remember(500, 43L, source2, "afterPiston");
+        check(multi.get(500, 43L, source2) == null,
+                "post-piston snapshot must not re-share pre-event data");
+        check(multi.usedCopies() == 2, "poison does not refund copies");
+        check(multi.begin(501, 1) && multi.mayReuseSnapshots(501),
+                "world poison expires with the tick");
+
+        // Pathological mass edits must not grow the poisoned-key set forever.
+        var bulk = new SnapshotSectionPool<String>(2, 10, 2);
+        bulk.invalidateSection(600, 1L);
+        bulk.invalidateSection(600, 2L);
+        bulk.invalidateSection(600, 3L);
+        check(bulk.isPoisoned(600, 999L) && !bulk.mayReuseSnapshots(600),
+                "poison set overflow escalates to bounded world-wide poison");
+
+        System.out.println("PASS: snapshot overlap, quotas, pre-mutation poison, race checks and tick isolation");
     }
 }
