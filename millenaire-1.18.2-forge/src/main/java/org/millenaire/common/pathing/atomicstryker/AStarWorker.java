@@ -207,7 +207,13 @@ implements Runnable {
             java.util.Collections.reverse(candidate);
             valid = candidate.get(0).equals(this.targetNode)
                     && candidate.get(candidate.size() - 1).equals(this.startNode);
-            if (!valid) invalidReason = "ENDPOINT_MISMATCH";
+            if (!valid) {
+                AStarNode actualGoal = candidate.get(0);
+                AStarNode actualStart = candidate.get(candidate.size() - 1);
+                invalidReason = "ENDPOINT_MISMATCH actualStart="
+                        + actualStart.x + "," + actualStart.y + "," + actualStart.z
+                        + " actualGoal=" + actualGoal.x + "," + actualGoal.y + "," + actualGoal.z;
+            }
         }
         if (valid) {
             try {
@@ -252,7 +258,8 @@ implements Runnable {
                     + " forwardCost=" + String.format(java.util.Locale.ROOT, "%.2f", routeCost(forward))
                     + " reverseCost=" + String.format(java.util.Locale.ROOT, "%.2f",
                             valid ? routeCost(candidate) : Double.POSITIVE_INFINITY)
-                    + " chosen=" + (chosen == candidate ? "REVERSED" : "FORWARD")
+                    + " chosen=" + (chosen == null ? "NONE"
+                            : chosen == candidate ? "REVERSED" : "FORWARD")
                     + " tookMs=" + String.format(java.util.Locale.ROOT, "%.2f",
                             (System.nanoTime() - started) / 1.0E6D));
         }
