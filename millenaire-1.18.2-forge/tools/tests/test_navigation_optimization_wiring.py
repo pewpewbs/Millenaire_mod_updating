@@ -16,6 +16,7 @@ PLANNER = read("pathing/atomicstryker/AStarPathPlannerJPS.java")
 WORKER = read("pathing/atomicstryker/AStarWorker.java")
 VILLAGER = read("entity/MillVillager.java")
 SNAPSHOT = read("pathing/PathWorldSnapshot.java")
+SECTION_POOL = read("pathing/SnapshotSectionPool.java")
 METRICS = read("pathing/NavigationMetrics.java")
 MEMORY = read("pathing/RouteMemory.java")
 REQUEST = read("pathing/NavigationRequestKey.java")
@@ -175,6 +176,36 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("snapshot_area_rejected=", METRICS)
         self.assertIn("snapshot_tick_budget_deferred=", METRICS)
         self.assertIn("snapshot_section_rejected=", METRICS)
+
+    def test_same_tick_section_pool_has_strict_work_and_memory_budgets(self):
+        self.assertIn("class SnapshotSectionPool<T>", SECTION_POOL)
+        self.assertIn("if (tick != nowTick)", SECTION_POOL)
+        self.assertIn("sections.clear();", SECTION_POOL)
+        self.assertIn("snapshots >= maxSnapshots", SECTION_POOL)
+        self.assertIn("chunkVisits + (long) requestedChunkVisits > maxChunkVisits", SECTION_POOL)
+        self.assertIn("copies >= maxCopies", SECTION_POOL)
+        self.assertIn("entry.source() != currentSource", SECTION_POOL)
+        self.assertIn("new SnapshotSectionPool<>(", SNAPSHOT)
+        self.assertIn("MAX_SNAPSHOTS_PER_TICK = 4", SNAPSHOT)
+        self.assertIn("MAX_CHUNK_VISITS_PER_TICK = 256", SNAPSHOT)
+        self.assertIn("MAX_SECTION_COPIES_PER_TICK = 1024", SNAPSHOT)
+
+    def test_shared_section_palette_copied_only_once_and_snapshot_stays_detached(self):
+        capture = SNAPSHOT.split("public static PathWorldSnapshot capture(", 1)[1]
+        self.assertLess(capture.index("pool.begin(tick,chunkVisits)"),
+                        capture.index("getChunkNow(x,z)"))
+        self.assertIn("PalettedContainer<BlockState> copy = pool.get(tick,key,source)", capture)
+        self.assertIn("copy = source.copy();", capture)
+        self.assertIn("pool.remember(tick,key,source,copy);", capture)
+        self.assertIn("detached.put(key,copy)", capture)
+        self.assertIn("NavigationMetrics.snapshotSectionsReused(reusedSections)", capture)
+        self.assertIn("NavigationMetrics.snapshotAdditionalCaptured()", capture)
+        ctor = SNAPSHOT.split("PathWorldSnapshot(Map<Long, PalettedContainer<BlockState>> detached,",1)[1]
+        ctor = ctor.split("public static PathWorldSnapshot capture(",1)[0]
+        self.assertIn("this.sections = Map.copyOf(detached)", ctor)
+        self.assertNotIn("palette.copy()", ctor)
+        self.assertIn("snapshot_shared_sections=", METRICS)
+        self.assertIn("snapshot_additional_captures=", METRICS)
 
     def test_snapshot_reuse_only_same_tick(self):
         self.assertIn("previous.tick()==tick", SNAPSHOT)
