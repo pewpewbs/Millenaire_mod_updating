@@ -36,6 +36,18 @@ public final class LadderTransitionRulesSmoke {
                 "no snapping from far outside ladder shaft");
         test(!LadderTransitionRules.shouldAssist(true, true, 0.1, 0.05),
                 "no vertical boost near the current rung");
+        test(LadderTransitionRules.shouldApproach(true, 1.0D),
+                "approach the next ladder rung from adjacent ground");
+        test(!LadderTransitionRules.shouldApproach(false, 0.1D),
+                "do not attract a resident toward an unrelated ladder");
+        test(!LadderTransitionRules.shouldApproach(true, 3.0D),
+                "do not drag the resident from a distant path");
+        test(LadderTransitionRules.approachSpeed(5.0D) <= 0.085D,
+                "positive approach bounded");
+        test(LadderTransitionRules.approachSpeed(-5.0D) >= -0.085D,
+                "negative approach bounded");
+        test(Math.abs(LadderTransitionRules.approachSpeed(0.0D)) < 0.0001D,
+                "no unwanted horizontal drift at ladder");
         System.out.println("PASS: ladder edges and vertical climb assistance");
     }
 }
