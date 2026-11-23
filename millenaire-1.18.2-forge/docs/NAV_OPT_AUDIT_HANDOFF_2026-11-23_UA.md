@@ -898,3 +898,81 @@ java -cp build/nav-failure-smoke FailedRouteBackoffSmoke
 
 Після вимірювань NAV-OPT-16: визначити, чи реальна черга вузьке місце, чи це `JPS` expansions / `swept_checks`. Лише тоді профілювати `AStarNode`, open-set/closed-map і вводити будь-які зміни eviction/priority. Ні HPA*, ні централізований blacklist для всіх NPC, ні міжтіковий блоковий кеш зараз не виправдані. Зберегти окремо відкладену складну геометрію дверей, драбин, плит та `ENDPOINT_MISMATCH` для іншої моделі.
 
+
+
+## 22. Другий Minecraft playtest — NAV-OPT-16
+
+**Дата:** 23.11.2026. **Вхідний доказ:** `latest(20261123-213627).log` (12 915 рядків, ~2.9 MB), фактично запущена `millenaire-8.1.2-port.0.jar`, Minecraft 1.18.2, Forge 40.3.0, Java 17.0.15. Integrated world стартує **22:27:21**, перший NAV-OPT-STATS **22:27:29**, останній звіт **22:36:02**, зупинка сервера 22:36:05–06. Тривалість звітного інтервалу **513 с = 8 хв 33 с**. **51 накопичувальний звіт NAV-OPT-STATS** із новими полями NAV-OPT-16. Винятків Java / FATAL / crash у файлі немає, штатне збереження всіх вимірів. Один startup warning `Can't keep up ... 3225ms / 64 ticks behind` при початковому завантаженні; повторюваного TPS предупрежження не видно, але точного TPS зі звичайного логу не отримано. Старі config warnings (5 unknown keys), 2 missing textures; `Mod 'millenaire' took 31.78 s to run a deferred task` на client/resource loading, це не доказ лагів path worker під час гри.
+
+### 22.1. Фінальні накопичувальні лічильники, 22:36:02
+
+| Категорія | Значення |
+|---|---:|
+| native | `count=4163 avg=4.421ms max=201.546ms` |
+| snapshot | `count=2659 avg=0.356ms max=4.875ms` |
+| JPS | `searches=2737 avg=26.772ms max=159.230ms expanded=689400` |
+| classic A* | `searches=1389 avg=20.250ms max=173.755ms expanded=1703290` |
+| copied_sections | `835353` |
+| snapshot_shared_sections / reuse percent | `44038 / 5.0%` |
+| snapshot_reused / non-latest | `80 / 8` |
+| snapshot_additional_captures | `346` |
+| snapshot_tick_budget_deferred / section_rejected | `37 / 432` (total deferred 469) |
+| snapshot_known_sections_invalidated / captures_invalidated | `8080 / 28` — **евікції**, не загальне число всіх block events |
+| snapshot_poisoned_bypasses / mutation_race_rejected | `56 / 0` |
+| flat_column_memo_hit / miss | `8057695 / 2167774` (~78.8% hits) |
+| swept_checks / swept_blocked | `2724988 / 3650` |
+| swept_avg_ms / max | `0.003 / 27.362` |
+| `no_path_cooldown` (suppressed retry) | `60` |
+| `no_path_failures` (actual NO_PATH search completions) | **`48`** |
+| `no_path_backoff_level2 / level3` | **`1 / 0`** |
+| `cache_replan_deferred` | `744` |
+| `inflight_joined` | `0` |
+| `cache_hit / cache_reverse / cache_miss / invalidated` | `241 / 37 / 6306 / 0` |
+| `routes_stored` | `1575` |
+| `reverse_tried / reverse_found` | `35 / 8` |
+| `queue_started / rejected` | `4127 / 0` |
+| `queue_wait_avg_ms / max` | **`8.978 / 820.106`** |
+| `ladder_scans / probes / hits / avg` | `256 / 866270 / 24 / 0.182ms` |
+
+Whole-file explicit counts: `NAV-OPT-COOLDOWN action=NO_PATH` **48**; 47 `level=1`, лише 1 `level=2`, **0 `level=3`**; `NAV-OPT-REVERSE` **35** (26 FORWARD, 8 REVERSED, 1 NONE; **10 ENDPOINT_MISMATCH**); `NAV-OPT-CACHE` 242; `NAV-CHOICE=ASTAR-RESULT` 2942, `ASTAR-SEARCH` 2740, `ASTAR-CACHE` 242, `VANILLA-FALLBACK` 117; `ASTAR-JOIN` 0. `NAV-OPT-STATS` містить 51 звіт, отже runtime точно включає NAV-OPT-16 код.
+
+### 22.2. Порівняння з playtest NAV-OPT-09–15 (розділ 20)
+
+Попередня сесія мала останній звіт приблизно через **319 с** (22:00:57–22:06:16), нова — через **513 с** (22:27:29–22:36:02); сесії **не контрольовані** за кількістю NPC, активними goals, дистанцією симуляції, будівництвом, CPU та одночасними задачами. Це спостережувані зміни, НЕ причинна оцінка NAV-OPT-16:
+
+| Показник | NAV-OPT-15 | NAV-OPT-16 | Спостереження |
+|---|---:|---:|---|
+| JPS avg | 39.852 ms | **26.772 ms** | -32.8% |
+| A* avg | 24.147 ms | **20.250 ms** | -16.1% |
+| queue avg | 41.567 ms | **8.978 ms** | -78.4% |
+| queue max | 893.374 ms | 820.106 ms | поодинокі піки лишаються |
+| фактичні NO_PATH у всьому тесті | 93 (~17.5/хв) | **48 (~5.6/хв)** | -67.9% на хвилину, але інший workload |
+| подавлені exact NO_PATH повтори | 1140 | 60 | **не** оцінювати як регресію/прискорення: менше ситуацій із тією ж повторною невдачею |
+| snapshot avg | 0.403 ms | 0.356 ms | -11.7% |
+| sweeps avg | 0.003 ms | 0.003 ms | подібно, є max spike |
+| collision memo hits | 78.70% | **78.80%** | механізм працює стабільно |
+| `inflight_joined` | 0 | 0 | не активувався |
+
+**Ключова інтерпретація:** NAV-OPT-16 не довів властивого йому ефекту, адже серед 48 справді невдалих маршрутів лише **один** перейшов на level 2, а **жоден** — на level 3. Тому не приписувати 67.9% нормалізованого зменшення NO_PATH або 78.4% зменшення queue average алгоритму adaptive backoff. Принаймні частково можливі інші інтенсивності маршрутів, а часті оновлення `KNOWN_MUTATION_EPOCHS` скидають streak на будь-яку відому зміну світу, навіть за кілометри від цілі (поточний дизайн). Потрібен навантажувальний тест з фіксованими blocked routes і контрольованими блоковими змінами.
+
+### 22.3. Burst і конкретні маршрути
+
+- **Запуск і перші секунди навантажені:** `22:27:39` `queue_wait_window_avg_ms=216.621`, `jps avg` того накопиченого моменту ~70ms, `astar avg` ~65ms. Далі в більшості інтервалів queue wait близько одиниць мілісекунд (у фінальному вікні **2.171ms**). Це не схоже на постійне переповнення черги, `rejected=0`.
+- `NO_PATH` за хвилинами: **22:27 — 23**, 22:28 — 7, 22:29 — 4, 22:31 — 5, 22:32 — 7, 22:35 — 2. Немає пізнього burst, подібного до 22:05 попередньої сесії.
+- Найповторюваніші exact endpoints: `[45|67|565]→[65|67|547]` **6** (22:27:45–22:27:54, здебільшого `level=1`, один `level=2` о 22:27:48); `[48|66|614]→[65|67|547]` 3; `[49|66|613]→[65|67|547]` 3. Слід пам'ятати, що лог `NAV-OPT-COOLDOWN` зараз виводить **тільки координати та рівень**, без ідентичності NPC та behavior goal. Однакові endpoints можуть належати різним NPC або різним конфігураціям; не трактувати ці 6 повідомлень як одну безперервну streak одного NPC.
+- Кожен world mutation epoch скидає cooldown одразу; `snapshot_known_sections_invalidated=8080` **не є** кількістю таких epoch змін, але підтверджує багато відомих інвалідацій. Просторовий фільтр для epoch був би наступним кандидатом, проте його не можна вмикати без аналізу того, чи зміна поза start/goal впливає на шлях (може впливати), та підтримки chunk lifecycle, заміни секцій, дверей.
+
+### 22.4. Геометричні проблеми й нові факти для іншої моделі
+
+- `DOOR-BLOCKED` **91** (75 NO_VISIBLE_DOOR_CANDIDATE, 12 AT_WAYPOINT, 4 STOP_MOVING). Повторювані door positions: `(65,67,550)` 23 рази; `(23,67,610)` 12; `(25,66,554)` 9; `(23,67,611)` 8. Зустрічаються door lease OPENED, отже двері інколи відкриваються, але багато сценаріїв залишаються блокованими.
+- `NAV-TELEPORT` **25**; часті stock recovery координати `(39,66,594)` **7**, `(29,66,547)` **5**, `(6,67,631)` **4**. NPC Arminios Prinkips та Lizas Raoul по **5** телепортацій, Elena Prinkips, Niompe Prinkips по **4**. Приблизно **2.9/хв**, попередня ~3.8/хв, але сесії різні; проблема **не виправлена**.
+- `LADDER-ASSIST` **46** (direction +1=30, -1=10, 0=6); в **усіх 46** `contact=false, aligned=false, reached=false`. Вперше за серію після останнього тесту є **`LADDER-EXIT` 2**: Giannis Mourtzouplos о **22:28:00** `feet=(3,65,561) exit=(3,65,562)`, раніше о 22:27:32 була його спроба `direction=-1 feet=(3,68,562)`; Eftokios Prinkips о **22:32:52** `feet=(26,67,655)` вихід на `(26,68,654)`. Це свідчить про досягнення нижнього виходу в одному кейсі, але **не доводить** правильне постійне контактування з драбиною чи бездоганну фізику спуску.
+- `NAV-OPT-REVERSE ENDPOINT_MISMATCH` **10** із 35 (наприклад `[190|71|675]→[191|66|680]` із `actualStart=190,66,677`, повторюється), залишається відкладеною проблемою асиметрії tolerance/path topology. Обидва JPS/A* переходи в цих кейсах не слід автоматично визнавати симетричними.
+- `snapshot_section_reuse_pct=5.0` vs 7.3% раніше; `snapshot_non_latest_reused=8` vs 29 раніше. Зменшення не доводить регресії кешу: може бути менше перекриттів та більше інвалідацій. `cache_invalidated=0` і `stale_routes=0` не гарантують загальної правильності напрямків.
+
+### 22.5. Рекомендована наступна дія
+
+**Не розширювати backoff сліпо.** Найкорисніший наступний крок для NAV-OPT-17 — діагностика причини скидання streak: `reset=GOAL_CHANGED / MOVEMENT_CHANGED / WORLD_MUTATED / SUCCESS / TICK_REWIND` з агрегованими counters і rate-limit, а також (за потреби) actor+goal у `NAV-OPT-COOLDOWN` без надмірного спаму. Потім контрольований тест, де той самий NPC має стабільний недоступний exact endpoint, а світ не змінюється, щоб підтвердити переходи level 1→2→3 і обчислити фактичне скорочення A*/JPS. Без точного provenance не переносити world-epoch на окремі чанки, адже мутація поза start/end може відкрити обхідний маршрут.
+
+**Статус змін після цього логу:** лише аналіз і запис аудиту; програмний код NAV-OPT-16 ще не змінено. Повна Gradle консоль, Python wiring tests/Java smoke й профіль TPS від користувача не надані. Якщо користувач просить продовжувати оптимізацію, застосовувати зміни лише в робочій гілці, документувати тестування й залишити геометрію для іншої моделі.
+
