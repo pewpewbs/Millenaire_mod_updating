@@ -24,6 +24,7 @@ EVENTS = read("forge/MillEventController.java")
 METRICS = read("pathing/NavigationMetrics.java")
 MEMORY = read("pathing/RouteMemory.java")
 REQUEST = read("pathing/NavigationRequestKey.java")
+FAILED_BACKOFF = read("pathing/FailedRouteBackoff.java")
 WINDOW = read("pathing/NavigationRateWindow.java")
 UTILITIES = read("utilities/ThreadSafeUtilities.java")
 EXECUTOR = read("pathing/atomicstryker/PathSearchExecutor.java")
@@ -62,14 +63,43 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn('"NAV-OPT-REVERSE from="', reverse)
 
     def test_failed_search_cooldown_preserves_new_goals(self):
-        self.assertIn("this.lastStart.equals(this.failedStart)", PLANNER)
-        self.assertIn("this.lastEnd.equals(this.failedEnd)", PLANNER)
-        self.assertIn("routeOptions(this.config) == this.failedOptions", PLANNER)
-        self.assertIn("this.world.getGameTime() < this.failedRetryTick", PLANNER)
+        self.assertIn("new org.millenaire.common.pathing.FailedRouteBackoff()", PLANNER)
+        self.assertIn("this.failedRouteBackoff.onRequest(requested)", PLANNER)
+        self.assertIn("this.failedRouteBackoff.shouldDefer(", PLANNER)
+        self.assertIn("requested, tick, knownWorldMutationEpoch()", PLANNER)
         self.assertIn("this.deferred = true;", PLANNER)
         self.assertIn("NavigationMetrics.noPathCooldown()", PLANNER)
-        self.assertIn("this.failedRetryTick = this.world.getGameTime() + 20L", PLANNER)
-        self.assertIn("this.failedStart = null;", PLANNER)
+        self.assertIn("this.failedRouteBackoff.onFailed(failed,", PLANNER)
+        self.assertIn("this.failedRouteBackoff.clear();", PLANNER)
+        self.assertIn("new NavigationRequestKey", REQUEST)
+
+    def test_adaptive_no_path_backoff_is_capped_and_policy_sensitive(self):
+        self.assertIn("private static final long BASE_DELAY_TICKS = 20L;", FAILED_BACKOFF)
+        self.assertIn("private static final long MAX_DELAY_TICKS = 80L;", FAILED_BACKOFF)
+        self.assertIn("private static final int MAX_LEVEL = 3;", FAILED_BACKOFF)
+        self.assertIn("lastFailure.equals(requested)", FAILED_BACKOFF)
+        self.assertIn("currentEpoch != mutationEpoch", FAILED_BACKOFF)
+        self.assertIn("tick < failureTick", FAILED_BACKOFF)
+        self.assertIn("Math.min(MAX_LEVEL, level + 1)", FAILED_BACKOFF)
+        self.assertIn("if (lastFailure != null && !lastFailure.equals(requested)) clear();", FAILED_BACKOFF)
+        self.assertIn("NavigationMetrics.noPathFailure(level)", PLANNER)
+        self.assertIn("no_path_failures=", METRICS)
+        self.assertIn("no_path_backoff_level2=", METRICS)
+        self.assertIn("no_path_backoff_level3=", METRICS)
+
+    def test_no_path_wakeup_uses_known_world_mutation_epochs(self):
+        self.assertIn("knownMutationEpoch(ServerLevel level)", SNAPSHOT)
+        self.assertIn("KNOWN_MUTATION_EPOCHS", SNAPSHOT)
+        self.assertIn("advanceKnownMutation(level);", SNAPSHOT)
+        self.assertIn("KNOWN_MUTATION_EPOCHS.remove(level);", SNAPSHOT)
+        self.assertIn("PathWorldSnapshot.knownMutationEpoch(server)", PLANNER)
+        mutation = SNAPSHOT.split("public static void onKnownBlockMutation(", 1)[1]
+        mutation = mutation.split("public static void onKnownWorldMutation(", 1)[0]
+        self.assertIn("advanceKnownMutation(level)", mutation)
+        world = SNAPSHOT.split("public static void onKnownWorldMutation(", 1)[1]
+        world = world.split("public static void onWorldUnload(", 1)[0]
+        self.assertIn("advanceKnownMutation(level)", world)
+        self.assertIn("if (tick < failureTick || currentEpoch != mutationEpoch)", FAILED_BACKOFF)
 
     def test_identical_cached_routes_are_throttled_without_blocking_new_goals(self):
         self.assertIn("this.lastStart.equals(this.recentCacheStart)", PLANNER)
