@@ -32,7 +32,8 @@ class PrimaryRouteWiring(unittest.TestCase):
     def test_deferred_primary_schedules_fallback(self):
         primary = section(VILLAGER, "private List<Node> computeNewPath(Point dest)",
                           "public int countInv(Block block")
-        self.assertIn("if (!this.pathPlannerJPS.isBusy())", primary)
+        self.assertIn("if (this.pathPlannerJPS.isBusy())", primary)
+        self.assertIn("this.logRouteDecision(\"ASTAR-DEFERRED\", dest)", primary)
         self.assertIn("this.onNoPathAvailable();", primary)
         self.assertIn("catch (ThreadSafeUtilities.ChunkAccessException e)", primary)
 
