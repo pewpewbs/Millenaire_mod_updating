@@ -1614,11 +1614,51 @@ IAStarPathedEntity {
                 candidates.add(pos.below());
                 candidates.add(pos.above());
             }
+            // The active path may keep a door's BLOCK as the next waypoint
+            // even after the entity has already crossed its thin panel.
+            // Derive path direction from adjacent nodes, not from which
+            // side of the block center the resident happens to stand on.
+            int idx = route.getNextNodeIndex();
+            var currentNode = route.getNextNode();
+            var previousNode = idx > 0 ? route.getNode(idx - 1) : null;
+            var followingNode = idx + 1 < route.getNodeCount() ? route.getNode(idx + 1) : null;
+            double pathDx = currentNode == null || previousNode == null
+                    ? 0.0D : currentNode.x - previousNode.x;
+            double pathDz = currentNode == null || previousNode == null
+                    ? 0.0D : currentNode.z - previousNode.z;
+            if (pathDx * pathDx + pathDz * pathDz < 0.01D && followingNode != null
+                    && currentNode != null) {
+                pathDx = followingNode.x - currentNode.x;
+                pathDz = followingNode.z - currentNode.z;
+            }
+            if (pathDx * pathDx + pathDz * pathDz < 0.01D && currentNode != null) {
+                pathDx = currentNode.x + 0.5D - this.getX();
+                pathDz = currentNode.z + 0.5D - this.getZ();
+            }
             for (var pos : candidates) {
                 double distanceSquared = this.position().distanceToSqr(Vec3.atCenterOf(pos));
-                if (distanceSquared <= 8.0D) {
-                    org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, pos);
+                if (distanceSquared > 8.0D) continue;
+                if (this.level.hasChunkAt(pos)) {
+                    var state = this.level.getBlockState(pos);
+                    if (BlockItemUtilities.isWoodenDoor(state.getBlock())) {
+                        var door = state.getValue(net.minecraft.world.level.block.DoorBlock.HALF)
+                                == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER
+                                ? pos.below() : pos;
+                        if (!this.level.hasChunkAt(door)) continue;
+                        var lower = this.level.getBlockState(door);
+                        var shut = lower.setValue(net.minecraft.world.level.block.DoorBlock.OPEN, false);
+                        var panel = shut.getCollisionShape(this.level, door).bounds();
+                        double panelX = org.millenaire.common.pathing.DoorApproachRules.closestPanelCoordinate(
+                                this.getX(), door.getX() + panel.minX, door.getX() + panel.maxX);
+                        double panelZ = org.millenaire.common.pathing.DoorApproachRules.closestPanelCoordinate(
+                                this.getZ(), door.getZ() + panel.minZ, door.getZ() + panel.maxZ);
+                        if (org.millenaire.common.pathing.DoorApproachRules.passedPanel(
+                                pathDx, pathDz, panelX - this.getX(), panelZ - this.getZ()))
+                            continue;
+                    }
                 }
+                // Fence gates deliberately keep their existing behavior.
+                org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, pos);
             }
         }
 
