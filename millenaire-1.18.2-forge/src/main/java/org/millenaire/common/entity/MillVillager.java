@@ -1693,6 +1693,13 @@ IAStarPathedEntity {
                 }
             }
         }
+        if (MillConfigValues.LogPathing >= 2
+                && (this.level.getGameTime() + this.getVillagerId()) % 100L == 0L) {
+            MillLog.major(this, "DOOR-APPROACH selected=" + best + " feet="
+                    + this.blockPosition() + " target=" + this.getPathDestPoint()
+                    + " path=" + (route == null ? "none" : route.getNextNodeIndex()
+                    + "/" + route.getNodeCount()));
+        }
         if (best != null) {
             org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, best);
         }
