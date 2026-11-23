@@ -51,23 +51,35 @@ implements Runnable {
         this.queue.offer(input);
     }
 
+    /**
+     * Classic A* vertical edges for a real contiguous ladder. JPS has no
+     * vertical successor expansion, so its fallback runs this worker.
+     * Every rung is validated against the detached pathfinding snapshot.
+     */
     private void checkPossibleLadder(AStarNode node) throws ThreadSafeUtilities.ChunkAccessException {
-        int x = node.x;
-        int y = node.y;
-        int z = node.z;
-        if (AStarStatic.isLadder(this.world, ThreadSafeUtilities.getBlock(this.world, x, y, z), x, y, z)) {
-            AStarNode ladder = null;
-            if (AStarStatic.isLadder(this.world, ThreadSafeUtilities.getBlock(this.world, x, y + 1, z), x, y + 1, z)) {
-                // empty if block
-            }
-            if (!this.tryToUpdateExistingHeapNode(node, ladder = new AStarNode(x, y + 1, z, node.getG() + 2, node, this.targetNode))) {
-                this.addToBinaryHeap(ladder);
-            }
-            if (AStarStatic.isLadder(this.world, ThreadSafeUtilities.getBlock(this.world, x, y - 1, z), x, y - 1, z)) {
-                // empty if block
-            }
-            if (!this.tryToUpdateExistingHeapNode(node, ladder = new AStarNode(x, y - 1, z, node.getG() + 2, node, this.targetNode))) {
-                this.addToBinaryHeap(ladder);
+        final int x = node.x, y = node.y, z = node.z;
+        if (!AStarStatic.isLadder(this.world,
+                ThreadSafeUtilities.getBlock(this.world, x, y, z), x, y, z)) return;
+        for (int direction : new int[] {1, -1}) {
+            final int nextY = y + direction;
+            if (nextY <= this.world.getMinBuildHeight()) continue;
+            if (!AStarStatic.isLadder(this.world,
+                    ThreadSafeUtilities.getBlock(this.world, x, nextY, z),
+                    x, nextY, z)) continue;
+            // Both feet and head must be clear. No climbing through solid ceilings.
+            if (!AStarStatic.isPassableBlock(this.world, x, nextY, z, this.config)
+                    || !AStarStatic.isPassableBlock(this.world, x, nextY + 1, z, this.config)) continue;
+            AStarNode candidate = new AStarNode(x, nextY, z, node.getG() + 2, node, this.targetNode);
+            AStarOpenSet.Position key = AStarOpenSet.Position.of(candidate);
+            AStarNode closed = this.closedIndex.get(key);
+            if (closed != null) {
+                if (closed.updateDistance(candidate.getG(), node)) {
+                    this.closedIndex.remove(key);
+                    this.closedNodes.remove(closed);
+                    this.queue.offer(closed);
+                }
+            } else if (!this.tryToUpdateExistingHeapNode(node, candidate)) {
+                this.addToBinaryHeap(candidate);
             }
         }
     }
@@ -108,6 +120,9 @@ implements Runnable {
                 MillLog.minor(this, e.getLocalizedMessage());
             }
         }
+        // The old implementation never invoked checkPossibleLadder().
+        // This enables actual up/down edges only on consecutive ladder rungs.
+        this.checkPossibleLadder(parent);
     }
 
     public ArrayList<AStarNode> getPath(AStarNode start, AStarNode end, boolean searchMode) throws ThreadSafeUtilities.ChunkAccessException {
