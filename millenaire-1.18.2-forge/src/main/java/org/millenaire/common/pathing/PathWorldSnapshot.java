@@ -62,10 +62,16 @@ public final class PathWorldSnapshot implements BlockGetter {
         int chunkVisits = (maxX - minX + 1) * (maxZ - minZ + 1);
         SnapshotSectionPool<PalettedContainer<BlockState>> pool;
         boolean secondSnapshotInTick;
+        long captureRevision;
         synchronized(LAST_CAPTURE) {
+            // Get the poison ledger before considering an old full snapshot:
+            // a PRE-mutation event could otherwise allow stale reuse.
+            pool = SECTION_POOLS.computeIfAbsent(level, unused -> new SnapshotSectionPool<>(
+                    MAX_SNAPSHOTS_PER_TICK, MAX_CHUNK_VISITS_PER_TICK,
+                    MAX_SECTION_COPIES_PER_TICK));
             Capture previous=LAST_CAPTURE.get(level);
             secondSnapshotInTick = previous!=null && previous.tick()==tick;
-            if(secondSnapshotInTick) {
+            if(secondSnapshotInTick && pool.mayReuseSnapshots(tick)) {
                 PathWorldSnapshot shared=previous.snapshot().get();
                 if(shared!=null && minX>=previous.minX() && maxX<=previous.maxX()
                         && minZ>=previous.minZ() && maxZ<=previous.maxZ()) {
@@ -73,13 +79,11 @@ public final class PathWorldSnapshot implements BlockGetter {
                     return shared;
                 }
             }
-            pool = SECTION_POOLS.computeIfAbsent(level, unused -> new SnapshotSectionPool<>(
-                    MAX_SNAPSHOTS_PER_TICK, MAX_CHUNK_VISITS_PER_TICK,
-                    MAX_SECTION_COPIES_PER_TICK));
             if(!pool.begin(tick,chunkVisits)) {
                 NavigationMetrics.snapshotBudgetDeferred();
                 return null;
             }
+            captureRevision = pool.revision(tick);
             LAST_CAPTURE.put(level,new Capture(tick,minX,maxX,minZ,maxZ,
                     new WeakReference<>(null)));
         }
@@ -102,6 +106,9 @@ public final class PathWorldSnapshot implements BlockGetter {
                 PalettedContainer<BlockState> source = sections[i].getStates();
                 PalettedContainer<BlockState> copy = pool.get(tick,key,source);
                 if(copy==null) {
+                    if(pool.isPoisoned(tick,key)) {
+                        NavigationMetrics.snapshotPoisonedBypass();
+                    }
                     if(!pool.canCopy(tick)) {
                         NavigationMetrics.snapshotSectionRejected();
                         NavigationMetrics.deferred();
@@ -118,6 +125,13 @@ public final class PathWorldSnapshot implements BlockGetter {
         }
         var result=new PathWorldSnapshot(detached,loaded,level.getMinBuildHeight(),level.getHeight());
         synchronized(LAST_CAPTURE) {
+            // Known events can be raised off the normal snapshot call path.
+            // Never publish a copy built across an observed invalidation.
+            if(pool.revision(tick)!=captureRevision) {
+                NavigationMetrics.snapshotMutationRaceRejected();
+                NavigationMetrics.deferred();
+                return null;
+            }
             Capture pending=LAST_CAPTURE.get(level);
             if(pending!=null && pending.tick()==tick) {
                 LAST_CAPTURE.put(level,new Capture(tick,minX,maxX,minZ,maxZ,
@@ -144,8 +158,11 @@ public final class PathWorldSnapshot implements BlockGetter {
         int chunkX = pos.getX() >> 4, chunkZ = pos.getZ() >> 4;
         long key = SectionPos.asLong(chunkX, pos.getY() >> 4, chunkZ);
         synchronized (LAST_CAPTURE) {
-            SnapshotSectionPool<PalettedContainer<BlockState>> pool = SECTION_POOLS.get(level);
-            if (pool != null && pool.invalidateSection(tick, key)) {
+            SnapshotSectionPool<PalettedContainer<BlockState>> pool = SECTION_POOLS.computeIfAbsent(
+                    level, unused -> new SnapshotSectionPool<>(
+                            MAX_SNAPSHOTS_PER_TICK, MAX_CHUNK_VISITS_PER_TICK,
+                            MAX_SECTION_COPIES_PER_TICK));
+            if (pool.invalidateSection(tick, key)) {
                 NavigationMetrics.snapshotKnownSectionInvalidated();
             }
             Capture previous = LAST_CAPTURE.get(level);
@@ -168,10 +185,11 @@ public final class PathWorldSnapshot implements BlockGetter {
         if (level == null) return;
         long tick = level.getGameTime();
         synchronized (LAST_CAPTURE) {
-            SnapshotSectionPool<PalettedContainer<BlockState>> pool = SECTION_POOLS.get(level);
-            if (pool != null) {
-                NavigationMetrics.snapshotKnownSectionsInvalidated(pool.invalidateAll(tick));
-            }
+            SnapshotSectionPool<PalettedContainer<BlockState>> pool = SECTION_POOLS.computeIfAbsent(
+                    level, unused -> new SnapshotSectionPool<>(
+                            MAX_SNAPSHOTS_PER_TICK, MAX_CHUNK_VISITS_PER_TICK,
+                            MAX_SECTION_COPIES_PER_TICK));
+            NavigationMetrics.snapshotKnownSectionsInvalidated(pool.invalidateAll(tick));
             Capture previous = LAST_CAPTURE.get(level);
             if (previous != null && previous.tick() == tick) {
                 LAST_CAPTURE.put(level, new Capture(tick, previous.minX(), previous.maxX(),
