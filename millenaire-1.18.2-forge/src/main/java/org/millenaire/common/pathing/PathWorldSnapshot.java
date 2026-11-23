@@ -131,6 +131,66 @@ public final class PathWorldSnapshot implements BlockGetter {
         return result;
     }
     /**
+     * Best-effort invalidation for Forge block-change notifications. It is
+     * deliberately NOT a proof of section immutability across server ticks:
+     * some vanilla and modded writes do not publish BlockEvent.
+     *
+     * All eviction paths keep the existing per-tick copy/visit budgets. A
+     * single block edit therefore cannot reset limits and cause a CPU spike.
+     */
+    public static void onKnownBlockMutation(ServerLevel level, BlockPos pos) {
+        if (level == null || pos == null) return;
+        long tick = level.getGameTime();
+        int chunkX = pos.getX() >> 4, chunkZ = pos.getZ() >> 4;
+        long key = SectionPos.asLong(chunkX, pos.getY() >> 4, chunkZ);
+        synchronized (LAST_CAPTURE) {
+            SnapshotSectionPool<PalettedContainer<BlockState>> pool = SECTION_POOLS.get(level);
+            if (pool != null && pool.invalidateSection(tick, key)) {
+                NavigationMetrics.snapshotKnownSectionInvalidated();
+            }
+            Capture previous = LAST_CAPTURE.get(level);
+            if (previous != null && previous.tick() == tick
+                    && chunkX >= previous.minX() && chunkX <= previous.maxX()
+                    && chunkZ >= previous.minZ() && chunkZ <= previous.maxZ()) {
+                LAST_CAPTURE.put(level, new Capture(tick, previous.minX(), previous.maxX(),
+                        previous.minZ(), previous.maxZ(), new WeakReference<>(null)));
+                NavigationMetrics.snapshotKnownCaptureInvalidated();
+            }
+        }
+    }
+
+    /**
+     * Chunk unload/load and multi-block moves can change more than one
+     * section. Drop cached copies conservatively while retaining the
+     * admission counters to prevent runaway copying during repeated edits.
+     */
+    public static void onKnownWorldMutation(ServerLevel level) {
+        if (level == null) return;
+        long tick = level.getGameTime();
+        synchronized (LAST_CAPTURE) {
+            SnapshotSectionPool<PalettedContainer<BlockState>> pool = SECTION_POOLS.get(level);
+            if (pool != null) {
+                NavigationMetrics.snapshotKnownSectionsInvalidated(pool.invalidateAll(tick));
+            }
+            Capture previous = LAST_CAPTURE.get(level);
+            if (previous != null && previous.tick() == tick) {
+                LAST_CAPTURE.put(level, new Capture(tick, previous.minX(), previous.maxX(),
+                        previous.minZ(), previous.maxZ(), new WeakReference<>(null)));
+                NavigationMetrics.snapshotKnownCaptureInvalidated();
+            }
+        }
+    }
+
+    /** Do not retain old palettes when a server world is closed. */
+    public static void onWorldUnload(ServerLevel level) {
+        if (level == null) return;
+        synchronized (LAST_CAPTURE) {
+            LAST_CAPTURE.remove(level);
+            SECTION_POOLS.remove(level);
+        }
+    }
+
+    /**
      * Primitive fast path for hot A*/JPS block-state reads. Identical bounds
      * and palette rules to BlockGetter.getBlockState(BlockPos), but avoids
      * allocation of one BlockPos object per neighbor / occupancy check.
