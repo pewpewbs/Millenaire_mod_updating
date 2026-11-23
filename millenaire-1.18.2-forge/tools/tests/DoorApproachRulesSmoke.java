@@ -124,9 +124,9 @@ public final class DoorApproachRulesSmoke {
         // Reported Minecraft collision: door faces WEST/EAST, but planner
         // routes from z=547 to z=548 (parallel to the swung OPEN leaf).
         test(!DoorApproachRules.followsDoorNormal(0, 1, true),
-                "west-facing door cannot be traversed along Z");
+                "Z travel is not a normal-panel crossing for west-facing door");
         test(!DoorApproachRules.followsDoorNormal(0, -1, true),
-                "east-facing door cannot be traversed along Z");
+                "Z travel is not a normal-panel crossing for east-facing door");
         test(DoorApproachRules.followsDoorNormal(1, 0, true),
                 "west/east door can be crossed normally in +X");
         test(DoorApproachRules.followsDoorNormal(-1, 0, true),
@@ -145,6 +145,48 @@ public final class DoorApproachRulesSmoke {
                 "diagonal entry cannot graze either hinge");
         test(DoorApproachRules.followsDoorNormal(0, 0, true),
                 "vertical-only ladder movement is unaffected");
+        // DOOR-14: walking along a door's CLOSED leaf can be physically
+        // possible: an OPEN leaf instead swings across that same path.
+        // DOOR-13 accidentally excluded BOTH states, forcing detours.
+        test(DoorApproachRules.canTraverseDoorEdge(0, 1, true, false),
+                "WEST/EAST CLOSED door permits sideways +Z lane");
+        test(DoorApproachRules.canTraverseDoorEdge(0, -1, true, false),
+                "WEST/EAST CLOSED door permits sideways -Z lane");
+        test(!DoorApproachRules.canTraverseDoorEdge(0, 1, true, true),
+                "WEST/EAST OPEN door blocks sideways +Z lane");
+        test(!DoorApproachRules.canTraverseDoorEdge(0, -1, true, true),
+                "WEST/EAST OPEN door blocks sideways -Z lane");
+        test(DoorApproachRules.canTraverseDoorEdge(1, 0, false, false),
+                "NORTH/SOUTH CLOSED door permits sideways +X lane");
+        test(DoorApproachRules.canTraverseDoorEdge(-1, 0, false, false),
+                "NORTH/SOUTH CLOSED door permits sideways -X lane");
+        test(!DoorApproachRules.canTraverseDoorEdge(1, 0, false, true),
+                "NORTH/SOUTH OPEN door blocks sideways +X lane");
+        test(!DoorApproachRules.canTraverseDoorEdge(-1, 0, false, true),
+                "NORTH/SOUTH OPEN door blocks sideways -X lane");
+        test(DoorApproachRules.canTraverseDoorEdge(1, 0, true, true),
+                "WEST/EAST OPEN door permits normal +X crossing");
+        test(DoorApproachRules.canTraverseDoorEdge(-1, 0, true, false),
+                "WEST/EAST CLOSED door can be planned for opening from -X");
+        test(DoorApproachRules.canTraverseDoorEdge(0, 1, false, true),
+                "NORTH/SOUTH OPEN door permits normal +Z crossing");
+        test(!DoorApproachRules.canTraverseDoorEdge(1, 1, true, false),
+                "diagonal cannot graze CLOSED door panel");
+        test(!DoorApproachRules.canTraverseDoorEdge(1, 1, true, true),
+                "diagonal cannot graze OPEN door leaf");
+        test(DoorApproachRules.canTraverseDoorEdge(0, 0, true, true),
+                "vertical-only step must not change");
+
+        test(DoorApproachRules.facingDoorPanel(9.5, 10.5, 10.5, 10.5, true),
+                "can open WEST/EAST door approaching from west");
+        test(DoorApproachRules.facingDoorPanel(11.5, 10.5, 10.5, 10.5, true),
+                "can open WEST/EAST door approaching from east");
+        test(!DoorApproachRules.facingDoorPanel(10.5, 9.5, 10.5, 10.5, true),
+                "do not swing WEST/EAST leaf into sideways Z lane");
+        test(DoorApproachRules.facingDoorPanel(10.5, 9.5, 10.5, 10.5, false),
+                "can open NORTH/SOUTH door approaching from north");
+        test(!DoorApproachRules.facingDoorPanel(9.5, 10.5, 10.5, 10.5, false),
+                "do not swing NORTH/SOUTH leaf into sideways X lane");
         System.out.println("PASS: emergency front-door geometry");
     }
 }
