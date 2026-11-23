@@ -1698,24 +1698,48 @@ IAStarPathedEntity {
                             : doorState.getBlock() instanceof net.minecraft.world.level.block.FenceGateBlock
                                 && !doorState.getValue(net.minecraft.world.level.block.FenceGateBlock.OPEN);
 
-                    double ox = door.getX() + 0.5D - this.getX();
-                    double oz = door.getZ() + 0.5D - this.getZ();
-                    double score = org.millenaire.common.pathing.DoorApproachRules.recoveryScore(
-                            dx, dz, ox, oz, Math.abs(door.getY() - this.getY()), physicallyStalled);
-                    if (physicallyStalled && lookLen >= 0.25D) {
-                        // When an A*/JPS waypoint points sideways after a stall,
-                        // permit a visible door the resident is facing, nearby.
-                        // The look candidate is intentionally less preferred.
+                    // A CLOSED wooden door's collision plane can be at EITHER
+                    // end of the block, depending on FACING. Its center is
+                    // *not* the panel center. Always score and raycast against
+                    // the same physical panel, including if already OPEN.
+                    // This preserves side symmetry even for hinged double doors.
+                    double panelX = door.getX() + 0.5D;
+                    double panelZ = door.getZ() + 0.5D;
+                    if (BlockItemUtilities.isWoodenDoor(doorState.getBlock())) {
+                        var shutState = doorState.setValue(net.minecraft.world.level.block.DoorBlock.OPEN, false);
+                        var panel = shutState.getCollisionShape(this.level, door).bounds();
+                        panelX = org.millenaire.common.pathing.DoorApproachRules.closestPanelCoordinate(
+                                this.getX(), door.getX() + panel.minX, door.getX() + panel.maxX);
+                        panelZ = org.millenaire.common.pathing.DoorApproachRules.closestPanelCoordinate(
+                                this.getZ(), door.getZ() + panel.minZ, door.getZ() + panel.maxZ);
+                    }
+                    double ox = panelX - this.getX();
+                    double oz = panelZ - this.getZ();
+                    double elevation = Math.abs(door.getY() - this.getY());
+                    // Do not keep an already OPEN door leased just because a
+                    // stationary resident looks back at it. Only the forward
+                    // route direction may renew its lease. The world manager
+                    // separately protects anyone physically in the doorway.
+                    double forwardScore = org.millenaire.common.pathing.DoorApproachRules.score(
+                            dx, dz, ox, oz, elevation);
+                    if (!closed && !Double.isFinite(forwardScore)) continue;
+                    double score = closed
+                            ? org.millenaire.common.pathing.DoorApproachRules.recoveryScore(
+                                dx, dz, ox, oz, elevation, physicallyStalled)
+                            : forwardScore;
+                    if (closed && physicallyStalled && lookLen >= 0.25D) {
+                        // Head direction is a last-resort hint for a closed
+                        // doorway only, never a reason to keep one open.
                         double lookScore = org.millenaire.common.pathing.DoorApproachRules.recoveryScore(
                                 look.x / lookLen, look.z / lookLen, ox, oz,
-                                Math.abs(door.getY() - this.getY()), true);
+                                elevation, true);
                         score = Math.min(score, 4.0D + lookScore);
                     }
                     if (!Double.isFinite(score)) continue;
 
                     // Don't interact with a door beyond an intervening wall.
                     Vec3 from = new Vec3(this.getX(), this.getY() + 0.9D, this.getZ());
-                    Vec3 to = new Vec3(door.getX() + 0.5D, door.getY() + 0.9D, door.getZ() + 0.5D);
+                    Vec3 to = new Vec3(panelX, door.getY() + 0.9D, panelZ);
                     var hit = this.level.clip(new net.minecraft.world.level.ClipContext(from, to,
                             net.minecraft.world.level.ClipContext.Block.COLLIDER,
                             net.minecraft.world.level.ClipContext.Fluid.NONE, this));
@@ -1729,8 +1753,9 @@ IAStarPathedEntity {
                     if (!org.millenaire.common.pathing.DoorApproachRules.clearSight(hitBlock, hitDoor)) continue;
 
                     if (!closed) {
-                        // An NPC-opened door must keep its lease WHILE being
-                        // approached, even if JPS omitted its actual node.
+                        // Renew only while approaching the original CLOSED
+                        // door plane from the forward route direction.
+                        // A passed door must now time out and close normally.
                         // openForResident leaves manually opened doors alone.
                         org.millenaire.common.pathing.VillageDoorAccess.openForResident(
                                 this.level, door);
