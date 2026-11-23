@@ -121,6 +121,30 @@ public final class DoorApproachRulesSmoke {
         test(!DoorApproachRules.suppressStationaryScannerReopen(
                 true, true, 0.0D, -1L),
                 "negative elapsed ticks after reload do not suppress opening");
+        // Reported Minecraft collision: door faces WEST/EAST, but planner
+        // routes from z=547 to z=548 (parallel to the swung OPEN leaf).
+        test(!DoorApproachRules.followsDoorNormal(0, 1, true),
+                "west-facing door cannot be traversed along Z");
+        test(!DoorApproachRules.followsDoorNormal(0, -1, true),
+                "east-facing door cannot be traversed along Z");
+        test(DoorApproachRules.followsDoorNormal(1, 0, true),
+                "west/east door can be crossed normally in +X");
+        test(DoorApproachRules.followsDoorNormal(-1, 0, true),
+                "west/east door can be crossed normally in -X");
+        test(!DoorApproachRules.followsDoorNormal(1, 0, false),
+                "north-facing door cannot be traversed along X");
+        test(!DoorApproachRules.followsDoorNormal(-1, 0, false),
+                "south-facing door cannot be traversed along X");
+        test(DoorApproachRules.followsDoorNormal(0, 1, false),
+                "north/south door can be crossed normally in +Z");
+        test(DoorApproachRules.followsDoorNormal(0, -1, false),
+                "north/south door can be crossed normally in -Z");
+        test(!DoorApproachRules.followsDoorNormal(1, 1, true),
+                "diagonal entry cannot graze an open door leaf");
+        test(!DoorApproachRules.followsDoorNormal(1, 1, false),
+                "diagonal entry cannot graze either hinge");
+        test(DoorApproachRules.followsDoorNormal(0, 0, true),
+                "vertical-only ladder movement is unaffected");
         System.out.println("PASS: emergency front-door geometry");
     }
 }
