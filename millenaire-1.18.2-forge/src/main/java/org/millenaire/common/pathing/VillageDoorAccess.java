@@ -140,6 +140,12 @@ public final class VillageDoorAccess {
     public static void onWorldTick(TickEvent.WorldTickEvent event) {
         if (event.phase != TickEvent.Phase.END || !(event.world instanceof ServerLevel level)
                 || level.getGameTime() % 5L != 0L) return;
+        Map<BlockPos, Long> playerOverrides = PLAYER_CONTROL.get(level);
+        if (playerOverrides != null) {
+            long now = level.getGameTime();
+            playerOverrides.entrySet().removeIf(entry -> now >= entry.getValue());
+            if (playerOverrides.isEmpty()) PLAYER_CONTROL.remove(level);
+        }
         Map<BlockPos, Long> doors = OPENED.get(level);
         if (doors == null || doors.isEmpty()) return;
 
