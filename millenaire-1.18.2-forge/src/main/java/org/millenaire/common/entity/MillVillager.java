@@ -2177,7 +2177,10 @@ IAStarPathedEntity {
     }
 
     private static boolean isStockTransferGoal(Goal goal) {
-        return goal instanceof org.millenaire.common.goal.GoalGetResourcesForShops
+        // Builders also collect supplies from a stock point. Without this,
+        // recovery can accept a partial path ending outside the town hall.
+        return goal instanceof org.millenaire.common.goal.GoalGetResourcesForBuild
+                || goal instanceof org.millenaire.common.goal.GoalGetResourcesForShops
                 || goal instanceof org.millenaire.common.goal.GoalGetGoodsForHousehold
                 || goal instanceof org.millenaire.common.goal.GoalDeliverResourcesShop
                 || goal instanceof org.millenaire.common.goal.GoalDeliverGoodsHousehold
