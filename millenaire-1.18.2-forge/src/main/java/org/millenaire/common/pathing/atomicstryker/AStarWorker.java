@@ -100,12 +100,6 @@ implements Runnable {
         for (int i = 0; i < c.length; ++i) {
             AStarNode check = new AStarNode(x + c[i][0], y + c[i][1], z + c[i][2], parent.getG() + c[i][3], parent, this.targetNode);
             try {
-                // The door block may be passable, but not from every axis:
-                // OPEN doors swing their collision pane across the sideways
-                // direction. Check the actual edge before queueing a node.
-                if (!org.millenaire.common.pathing.DoorTransitionRules.allowsEdge(
-                        this.world, parent.x, parent.y, parent.z,
-                        check.x, check.y, check.z)) continue;
                 // Clearance must be checked BEFORE improving either an open
                 // or a closed node. A blocked transition is not a cheaper path.
                 if (!AStarStatic.isViable(this.world, check, c[i][1], this.config)) continue;
