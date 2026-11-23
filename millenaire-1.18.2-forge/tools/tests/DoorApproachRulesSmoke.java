@@ -26,6 +26,12 @@ public final class DoorApproachRulesSmoke {
         test(DoorApproachRules.score(1, 0, 0.8, 0.05, 0)
                 < DoorApproachRules.score(1, 0, 1.6, 0.3, 0),
                 "prefer closer, aligned doorway");
+        test(DoorApproachRules.clearSight(false, false),
+                "thin closed door missed by center ray must still be reachable");
+        test(DoorApproachRules.clearSight(true, true),
+                "ray actually touching door is valid");
+        test(!DoorApproachRules.clearSight(true, false),
+                "solid wall before doorway must block opening");
         System.out.println("PASS: emergency front-door geometry");
     }
 }
