@@ -170,9 +170,13 @@ public class AStarStatic {
         int dx = Math.abs(to.x - from.x);
         int dz = Math.abs(to.z - from.z);
         if (dx == 0 && dz == 0) {
-            // Vertical movement is checked by the consecutive-rung ladder
-            // expansion, not by horizontal swept collision.
-            return Math.abs(to.y - from.y) == 1;
+            // Never create an unsupported vertical edge through ordinary air:
+            // only adjacent real ladder rungs can support this movement.
+            if (Math.abs(to.y - from.y) != 1) return false;
+            return ThreadSafeUtilities.getBlock(world, from.x, from.y, from.z) == Blocks.LADDER
+                    && ThreadSafeUtilities.getBlock(world, to.x, to.y, to.z) == Blocks.LADDER
+                    && isPassableBlock(world, to.x, to.y, to.z, config)
+                    && isPassableBlock(world, to.x, to.y + 1, to.z, config);
         }
         if (dx > 1 || dz > 1) return false;
         // Most flat, axial moves are between two columns of air on full
