@@ -88,6 +88,10 @@ public final class NavigationMetrics {
             +" snapshot_section_rejected="+SNAPSHOT_SECTION_LIMIT.sum()
             +" snapshot_shared_sections="+SNAPSHOT_SHARED_SECTIONS.sum()
             +" snapshot_additional_captures="+SNAPSHOT_ADDITIONAL_CAPTURES.sum()
+            +String.format(java.util.Locale.ROOT, " snapshot_section_reuse_pct=%.1f",
+                    SECTIONS.sum()+SNAPSHOT_SHARED_SECTIONS.sum()==0 ? 0.0D
+                    : SNAPSHOT_SHARED_SECTIONS.sum()*100.0D
+                        /(SECTIONS.sum()+SNAPSHOT_SHARED_SECTIONS.sum()))
             +" no_path_cooldown="+NO_PATH_COOLDOWN.sum()
             +" cache_replan_deferred="+CACHE_REPLAN_DEFERRED.sum()
             +" inflight_joined="+INFLIGHT_JOINED.sum()
