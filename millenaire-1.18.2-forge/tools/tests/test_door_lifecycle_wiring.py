@@ -64,6 +64,15 @@ class DoorLifecycleWiring(unittest.TestCase):
         self.assertIn("this.mob.horizontalCollision", NAVIGATOR)
         self.assertIn("this.mob.getDeltaMovement()", NAVIGATOR)
 
+    def test_stair_diagnostics_are_observational_and_rate_limited(self):
+        self.assertIn('this.traceNearbyStair(rung);', NAVIGATOR)
+        self.assertIn('"STAIR-WAYPOINT stair=" + stair', NAVIGATOR)
+        self.assertIn('this.nextStairTraceTick = now + 60L;', NAVIGATOR)
+        self.assertIn('shapeState.getCollisionShape(level, stair)', NAVIGATOR)
+        self.assertIn('level.noCollision(this.mob, targetBox)', NAVIGATOR)
+        self.assertIn('this.mob.getBbHeight()', NAVIGATOR)
+        self.assertIn('now - this.stairStationarySince >= 40L', NAVIGATOR)
+
     def test_ladder_assist_remains_present(self):
         self.assertIn('if (!state.is(net.minecraft.world.level.block.Blocks.LADDER)) return;', NAVIGATOR)
         self.assertIn("LADDER-ASSIST next=", NAVIGATOR)
