@@ -1590,28 +1590,81 @@ IAStarPathedEntity {
             }
         }
 
-        // If the closed passage prevented a route from being created, allow nearby
-        // doors in the *direction of travel* to open so a retry can find the exit.
-        if (route != null && !route.isDone() || this.stopMoving || this.getPathDestPoint() == null
+        // A closed door may be omitted from the path (or the path can stop
+        // short of it). After a stall, open ONE directly visible doorway in
+        // the intended direction, not every door in a 5x5 neighborhood.
+        // Shared door control still honours the player's manual override.
+        if (this.stopMoving || this.getPathDestPoint() == null || this.getTarget() != null
                 || (this.level.getGameTime() + this.getVillagerId()) % 4L != 0L) return;
-        Vec3 target = Vec3.atCenterOf(this.getPathDestPoint().getBlockPos());
-        double dx = target.x - this.getX(), dz = target.z - this.getZ();
-        double length = Math.sqrt(dx * dx + dz * dz);
-        if (length <= 2.0D) return;
-        dx /= length;
-        dz /= length;
+        if (route != null && !route.isDone()
+                && this.getDeltaMovement().horizontalDistanceSqr() > 0.018D) return;
+
+        Vec3 desired = null;
+        if (route != null && !route.isDone() && route.getNextNode() != null) {
+            var next = route.getNextNode();
+            desired = Vec3.atCenterOf(next.asBlockPos());
+        }
+        if (desired == null || desired.distanceToSqr(this.position()) < 0.25D) {
+            desired = Vec3.atCenterOf(this.getPathDestPoint().getBlockPos());
+        }
+        double dx = desired.x - this.getX(), dz = desired.z - this.getZ();
+        double len = Math.sqrt(dx * dx + dz * dz);
+        if (len < 0.25D) return;
+        dx /= len;
+        dz /= len;
+
+        net.minecraft.core.BlockPos best = null;
+        double bestScore = Double.POSITIVE_INFINITY;
         var feet = this.blockPosition();
         for (int x = -2; x <= 2; x++) {
             for (int z = -2; z <= 2; z++) {
-                for (int y = 0; y <= 1; y++) {
-                    var pos = feet.offset(x, y, z);
-                    Vec3 middle = Vec3.atCenterOf(pos);
-                    double forward = (middle.x - this.getX()) * dx + (middle.z - this.getZ()) * dz;
-                    if (forward < 0.1D || forward > 3.0D
-                            || this.position().distanceToSqr(middle) > 8.0D) continue;
-                    org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, pos);
+                for (int y = -1; y <= 1; y++) {
+                    var samplePos = feet.offset(x, y, z);
+                    if (!this.level.hasChunkAt(samplePos)) continue;
+                    var blockState = this.level.getBlockState(samplePos);
+                    var block = blockState.getBlock();
+                    if (!(block instanceof net.minecraft.world.level.block.FenceGateBlock)
+                            && !BlockItemUtilities.isWoodenDoor(block)) continue;
+                    var door = block instanceof net.minecraft.world.level.block.DoorBlock
+                            && blockState.getValue(net.minecraft.world.level.block.DoorBlock.HALF)
+                                == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER
+                                    ? samplePos.below() : samplePos;
+                    if (!this.level.hasChunkAt(door)) continue;
+                    var doorState = this.level.getBlockState(door);
+                    boolean closed = BlockItemUtilities.isWoodenDoor(doorState.getBlock())
+                            ? !doorState.getValue(net.minecraft.world.level.block.DoorBlock.OPEN)
+                            : doorState.getBlock() instanceof net.minecraft.world.level.block.FenceGateBlock
+                                && !doorState.getValue(net.minecraft.world.level.block.FenceGateBlock.OPEN);
+                    if (!closed) continue;
+
+                    double ox = door.getX() + 0.5D - this.getX();
+                    double oz = door.getZ() + 0.5D - this.getZ();
+                    double forward = ox * dx + oz * dz;
+                    double side = Math.abs(ox * dz - oz * dx);
+                    if (forward < 0.10D || forward > 2.2D || side > 0.85D
+                            || ox * ox + oz * oz > 5.0D
+                            || Math.abs(door.getY() - this.getY()) > 1.5D) continue;
+
+                    // Don't interact with a door beyond an intervening wall.
+                    Vec3 from = new Vec3(this.getX(), this.getY() + 0.9D, this.getZ());
+                    Vec3 to = new Vec3(door.getX() + 0.5D, door.getY() + 0.9D, door.getZ() + 0.5D);
+                    var hit = this.level.clip(new net.minecraft.world.level.ClipContext(from, to,
+                            net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                            net.minecraft.world.level.ClipContext.Fluid.NONE, this));
+                    if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK
+                            || !hit.getBlockPos().equals(door)
+                                && !hit.getBlockPos().equals(door.above())) continue;
+
+                    double score = forward + side;
+                    if (score < bestScore) {
+                        bestScore = score;
+                        best = door.immutable();
+                    }
                 }
             }
+        }
+        if (best != null) {
+            org.millenaire.common.pathing.VillageDoorAccess.openForResident(this.level, best);
         }
     }
 
