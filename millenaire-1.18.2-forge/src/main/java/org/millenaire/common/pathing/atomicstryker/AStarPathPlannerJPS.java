@@ -37,7 +37,8 @@ public class AStarPathPlannerJPS {
     // NAV-OPT-16: exact request identity, capped 20/40/80 tick backoff and
     // immediate wake-up on known world edits. Different goals retry normally.
     private final org.millenaire.common.pathing.FailedRouteBackoff failedRouteBackoff =
-            new org.millenaire.common.pathing.FailedRouteBackoff();
+            new org.millenaire.common.pathing.FailedRouteBackoff(
+                    org.millenaire.common.pathing.NavigationMetrics::noPathBackoffEvent);
     // JPS never expands vertical ladder edges. Keep its candidate while a
     // bounded classic A* attempt checks for a shorter ladder alternative.
     private ArrayList<AStarNode> jpsCandidate;
@@ -433,7 +434,7 @@ public class AStarPathPlannerJPS {
         this.activeRequest = null;
         this.joinedSearch = false;
         if (result != null) {
-            this.failedRouteBackoff.clear();
+            this.failedRouteBackoff.onSuccess();
             rememberPath(result);
         } else if (this.world != null && this.lastStart != null && this.lastEnd != null) {
             var failed = requestKey(this.lastStart, this.lastEnd, this.config);
