@@ -247,6 +247,8 @@ IAStarPathedEntity {
     public MillWorldData mw;
     private volatile boolean pathFailedSincelastTick = false;
     private long nextVanillaPathAttempt = 0L;
+    private long nextRouteDecisionLog = 0L;
+    private String lastRouteDecision = "";
     private final org.millenaire.common.pathing.MovementWatchdog movementWatchdog = new org.millenaire.common.pathing.MovementWatchdog();
     private long nextPathFailureDiagnostic = 0L;
     private final PathFailureRecovery pathFailureRecovery = new PathFailureRecovery();
@@ -817,6 +819,17 @@ IAStarPathedEntity {
         return this.vtype.health;
     }
 
+    /** Optional, rate-limited route selection diagnostics for real playtests. */
+    private void logRouteDecision(String mode, Point destination) {
+        if (MillConfigValues.LogPathing < 2) return;
+        long tick = this.level.getGameTime();
+        if (mode.equals(this.lastRouteDecision) && tick < this.nextRouteDecisionLog) return;
+        this.lastRouteDecision = mode;
+        this.nextRouteDecisionLog = tick + 200L;
+        MillLog.major(this, "NAV-CHOICE=" + mode + " goal=" + this.goalKey
+                + " pos=" + this.blockPosition() + " target=" + destination);
+    }
+
     private List<Node> computeNewPath(Point dest) {
         this.pathCalculatedSinceLastTick = null;
         this.pathFailedSincelastTick = false;
@@ -859,14 +872,18 @@ IAStarPathedEntity {
                         startPos = startPos.getAbove();
                     }
                     this.pathPlannerJPS.getPath(this.doubleToInt(this.getX()), this.doubleToInt(this.getY()), this.doubleToInt(this.getZ()), destNode.x, destNode.y, destNode.z, this.getPathingConfig());
-                    if (!this.pathPlannerJPS.isBusy()) {
+                    if (this.pathPlannerJPS.isBusy()) {
+                        this.logRouteDecision("ASTAR-SEARCH", dest);
+                    } else {
                         // Snapshot capture was deferred (server budget) or the
                         // worker queue rejected the request. Do not leave this
                         // villager standing indefinitely waiting for a callback
                         // that will never arrive; schedule the bounded fallback.
+                        this.logRouteDecision("ASTAR-DEFERRED", dest);
                         this.onNoPathAvailable();
                     }
                 } else {
+                    this.logRouteDecision("ASTAR-NO-ACCESS", dest);
                     this.onNoPathAvailable();
                 }
             }
@@ -2368,6 +2385,7 @@ IAStarPathedEntity {
         for (int i = 0; i < nodes.length; i++) nodes[i] = fallback.getNode(i);
         AS_PathEntity adapted = new AS_PathEntity(nodes, fallback.getTarget(), fallback.canReach());
         if (this.navigation.moveTo(adapted, 0.5)) {
+            this.logRouteDecision("VANILLA-FALLBACK", dest);
             this.pathEntity = adapted;
             this.pathFailureRecovery.reset();
             return true;
@@ -2651,6 +2669,7 @@ IAStarPathedEntity {
             }
         } else {
             this.pathFailureRecovery.reset();
+            this.logRouteDecision("ASTAR-RESULT", this.getPathDestPoint());
             try {
                 this.navigation.moveTo((Path)path, 0.5);
             }
