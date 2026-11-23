@@ -19,6 +19,8 @@ SNAPSHOT = read("pathing/PathWorldSnapshot.java")
 METRICS = read("pathing/NavigationMetrics.java")
 MEMORY = read("pathing/RouteMemory.java")
 REQUEST = read("pathing/NavigationRequestKey.java")
+WINDOW = read("pathing/NavigationRateWindow.java")
+UTILITIES = read("utilities/ThreadSafeUtilities.java")
 EXECUTOR = read("pathing/atomicstryker/PathSearchExecutor.java")
 
 class OptimizationWiring(unittest.TestCase):
@@ -128,6 +130,39 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("queue_wait_max_ms=", METRICS)
         self.assertIn("record NavigationRequestKey(", REQUEST)
         self.assertIn("record Movement(", REQUEST)
+
+    def test_hot_snapshot_reads_are_allocation_free(self):
+        self.assertIn("public BlockState getBlockState(int x, int y, int z)", SNAPSHOT)
+        self.assertIn("return getBlockState(pos.getX(), pos.getY(), pos.getZ());", SNAPSHOT)
+        self.assertIn("!chunks.contains(ChunkPos.asLong(x >> 4, z >> 4))", SNAPSHOT)
+        self.assertIn("palette.get(x & 15, y & 15, z & 15)", SNAPSHOT)
+        self.assertIn("world instanceof org.millenaire.common.pathing.PathWorldSnapshot snapshot", UTILITIES)
+        self.assertIn("return snapshot.getBlockState(x, y, z)", UTILITIES)
+        # Non-snapshot live worlds still validate unloaded chunk access.
+        self.assertIn("ThreadSafeUtilities.validateCoords(world, x, z);", UTILITIES)
+
+    def test_ladder_scan_reuses_mutable_position_and_preserves_geometry(self):
+        part = PLANNER.split("private boolean nearbyLadderOnVerticalRoute()", 1)[1]
+        part = part.split("protected net.minecraft.world.level.BlockGetter captureWorld(", 1)[0]
+        self.assertIn("int[] sampledHeights = new int[ySamples];", part)
+        self.assertIn("net.minecraft.core.BlockPos.MutableBlockPos probe =", part)
+        self.assertIn("probe.set(x, y, z);", part)
+        self.assertIn("for (int y : sampledHeights)", part)
+        self.assertIn("NavigationMetrics.ladderScan(", part)
+        self.assertNotIn("new net.minecraft.core.BlockPos(x, y, z)", part)
+
+    def test_window_metrics_use_monotonic_elapsed_time_and_reset(self):
+        self.assertIn("public synchronized String sample(long nowNanos, Counts totals)", WINDOW)
+        self.assertIn("nowNanos - lastNanos", WINDOW)
+        self.assertIn("window_scope=process", WINDOW)
+        self.assertIn("cache_hit_pct=", WINDOW)
+        self.assertIn("queue_wait_window_avg_ms=", WINDOW)
+        self.assertIn("private static final NavigationRateWindow RATE_WINDOW", METRICS)
+        self.assertIn("RATE_WINDOW.sample(System.nanoTime()", METRICS)
+        self.assertIn("RATE_WINDOW.reset()", METRICS)
+        for name in ("ladder_scans=", "ladder_probes=", "ladder_hits=",
+                     "ladder_scan_avg_ms=", "ladderScan(int probes"):
+            self.assertIn(name, METRICS)
 
     def test_snapshot_reuse_only_same_tick(self):
         self.assertIn("previous.tick()==tick", SNAPSHOT)
