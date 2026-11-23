@@ -3448,44 +3448,46 @@ public class Building {
       return this.visitorManager;
    }
 
-   public int getWoodCount() {
-      if (!this.containsTags("grove")) {
-         return 0;
-      } else {
-         int nb = 0;
+   /** Only harvest unstripped logs/wood belonging to a vanilla tree family. */
+   private static boolean isHarvestableGroveLog(BlockState state) {
+      WoodVariant variant = WoodVariant.fromState(state);
+      if (variant == null) return false;
+      Block block = state.getBlock();
+      return block == variant.log()
+         || Registry.BLOCK.getKey(block).getPath().equals(variant.getSerializedName() + "_wood");
+   }
 
-         for (int i = this.location.minx - 3; i < this.location.maxx + 3; i++) {
-            for (int j = this.location.pos.getiY() - 1; j < this.location.pos.getiY() + 10; j++) {
-               for (int k = this.location.minz - 3; k < this.location.maxz + 3; k++) {
-                  if (LegacyBlockStates.matchesName(WorldUtilities.getBlock(this.world, i, j, k), "minecraft:log")
-                     || LegacyBlockStates.matchesName(WorldUtilities.getBlock(this.world, i, j, k), "minecraft:log2")) {
-                     nb++;
-                  }
+   public int getWoodCount() {
+      if (!this.containsTags("grove")) return 0;
+      int count = 0;
+      // Count the same spatial region that getWoodLocation actually searches.
+      // Acacia crowns can be much higher than centreY+10.
+      for (int y = this.location.miny - 1; y < this.location.maxy + 20; y++) {
+         for (int x = this.location.minx - 3; x < this.location.maxx + 3; x++) {
+            for (int z = this.location.minz - 3; z < this.location.maxz + 3; z++) {
+               if (isHarvestableGroveLog(this.world.getBlockState(new BlockPos(x, y, z)))) {
+                  count++;
                }
             }
          }
-
-         return nb;
       }
+      return count;
    }
 
    public Point getWoodLocation() {
-      if (!this.containsTags("grove")) {
-         return null;
-      } else {
-         for (int xPos = this.location.minx - 3; xPos < this.location.maxx + 3; xPos++) {
-            for (int yPos = this.location.miny - 1; yPos < this.location.maxy + 20; yPos++) {
-               for (int zPos = this.location.minz - 3; zPos < this.location.maxz + 3; zPos++) {
-                  Block block = WorldUtilities.getBlock(this.world, xPos, yPos, zPos);
-                  if (LegacyBlockStates.matchesName(block, "minecraft:log") || LegacyBlockStates.matchesName(block, "minecraft:log2")) {
-                     return new Point(xPos, yPos, zPos);
-                  }
+      if (!this.containsTags("grove")) return null;
+      // Search from low to high to select an accessible trunk/stump instead
+      // of the first horizontal branch of a leaning acacia canopy.
+      for (int y = this.location.miny - 1; y < this.location.maxy + 20; y++) {
+         for (int x = this.location.minx - 3; x < this.location.maxx + 3; x++) {
+            for (int z = this.location.minz - 3; z < this.location.maxz + 3; z++) {
+               if (isHarvestableGroveLog(this.world.getBlockState(new BlockPos(x, y, z)))) {
+                  return new Point(x, y, z);
                }
             }
          }
-
-         return null;
       }
+      return null;
    }
 
    public void growTree(Level world, int x, int y, int z, Random random) {
