@@ -1639,11 +1639,9 @@ IAStarPathedEntity {
 
                     double ox = door.getX() + 0.5D - this.getX();
                     double oz = door.getZ() + 0.5D - this.getZ();
-                    double forward = ox * dx + oz * dz;
-                    double side = Math.abs(ox * dz - oz * dx);
-                    if (forward < 0.10D || forward > 2.2D || side > 0.85D
-                            || ox * ox + oz * oz > 5.0D
-                            || Math.abs(door.getY() - this.getY()) > 1.5D) continue;
+                    double score = org.millenaire.common.pathing.DoorApproachRules.score(
+                            dx, dz, ox, oz, Math.abs(door.getY() - this.getY()));
+                    if (!Double.isFinite(score)) continue;
 
                     // Don't interact with a door beyond an intervening wall.
                     Vec3 from = new Vec3(this.getX(), this.getY() + 0.9D, this.getZ());
@@ -1655,7 +1653,6 @@ IAStarPathedEntity {
                             || !hit.getBlockPos().equals(door)
                                 && !hit.getBlockPos().equals(door.above())) continue;
 
-                    double score = forward + side;
                     if (score < bestScore) {
                         bestScore = score;
                         best = door.immutable();
