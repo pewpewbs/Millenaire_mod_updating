@@ -1,5 +1,6 @@
 package org.millenaire.common.pathing;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -18,7 +19,12 @@ import org.millenaire.common.pathing.atomicstryker.AStarNode;
 
 /** Private copies of block palettes. Retains no Level, chunk or block entity. */
 public final class PathWorldSnapshot implements BlockGetter {
-    private static final Map<ServerLevel, Long> LAST_CAPTURE = new java.util.WeakHashMap<>();
+    // One snapshot may be shared by searches whose bounding rectangles fit
+    // inside it during the SAME game tick. Never reuse across ticks: buildings,
+    // doors and player edits can change collision states between ticks.
+    private record Capture(long tick, int minX, int maxX, int minZ, int maxZ,
+                           WeakReference<PathWorldSnapshot> snapshot) {}
+    private static final Map<ServerLevel, Capture> LAST_CAPTURE = new java.util.WeakHashMap<>();
     private final Map<Long, PalettedContainer<BlockState>> sections;
     private final Set<Long> chunks;
     private final int minHeight, height;
@@ -31,14 +37,24 @@ public final class PathWorldSnapshot implements BlockGetter {
     public static PathWorldSnapshot capture(ServerLevel level, AStarNode start, AStarNode end) {
         if (!level.getServer().isSameThread()) throw new IllegalStateException("Path snapshot must be captured on server thread");
         long began=System.nanoTime();
-        synchronized(LAST_CAPTURE) {
-            long tick=level.getGameTime();
-            Long previous=LAST_CAPTURE.get(level);
-            if(previous!=null && previous.longValue()==tick){NavigationMetrics.deferred();return null;}
-            LAST_CAPTURE.put(level,tick);
-        }
+        long tick=level.getGameTime();
         int minX = (Math.min(start.x, end.x) >> 4) - 2, maxX = (Math.max(start.x, end.x) >> 4) + 2;
         int minZ = (Math.min(start.z, end.z) >> 4) - 2, maxZ = (Math.max(start.z, end.z) >> 4) + 2;
+        synchronized(LAST_CAPTURE) {
+            Capture previous=LAST_CAPTURE.get(level);
+            if(previous!=null && previous.tick()==tick) {
+                PathWorldSnapshot shared=previous.snapshot().get();
+                if(shared!=null && minX>=previous.minX() && maxX<=previous.maxX()
+                        && minZ>=previous.minZ() && maxZ<=previous.maxZ()) {
+                    NavigationMetrics.snapshotReused();
+                    return shared;
+                }
+                NavigationMetrics.deferred();
+                return null;
+            }
+            LAST_CAPTURE.put(level,new Capture(tick,minX,maxX,minZ,maxZ,
+                    new WeakReference<>(null)));
+        }
         // Extremely distant goals are approached by the native partial route first.
         if ((long)(maxX-minX+1)*(maxZ-minZ+1)>256) {NavigationMetrics.deferred();return null;}
         Map<Long, PalettedContainer<BlockState>> source = new HashMap<>();
@@ -54,6 +70,13 @@ public final class PathWorldSnapshot implements BlockGetter {
             }
         }
         var result=new PathWorldSnapshot(source,loaded,level.getMinBuildHeight(),level.getHeight());
+        synchronized(LAST_CAPTURE) {
+            Capture pending=LAST_CAPTURE.get(level);
+            if(pending!=null && pending.tick()==tick) {
+                LAST_CAPTURE.put(level,new Capture(tick,minX,maxX,minZ,maxZ,
+                        new WeakReference<>(result)));
+            }
+        }
         NavigationMetrics.sections(source.size());NavigationMetrics.record(1,System.nanoTime()-began);
         return result;
     }
