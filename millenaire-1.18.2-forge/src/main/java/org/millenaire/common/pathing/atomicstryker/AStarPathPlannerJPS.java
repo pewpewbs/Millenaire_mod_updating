@@ -32,6 +32,45 @@ public class AStarPathPlannerJPS {
     public AStarConfig config;
     private net.minecraft.world.level.BlockGetter snapshot;
     private long nextSnapshotAttempt;
+    // JPS never expands vertical ladder edges. Keep its candidate while a
+    // bounded classic A* attempt checks for a shorter ladder alternative.
+    private ArrayList<AStarNode> jpsCandidate;
+
+    private static double pathCost(ArrayList<AStarNode> nodes) {
+        if (nodes == null || nodes.size() < 2) return Double.POSITIVE_INFINITY;
+        double cost = 0.0D;
+        for (int i = 1; i < nodes.size(); i++) {
+            AStarNode a = nodes.get(i - 1), b = nodes.get(i);
+            int dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+            cost += Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (dy != 0 && dx == 0 && dz == 0) cost += 0.8D;
+        }
+        return cost;
+    }
+
+    private boolean nearbyLadderOnVerticalRoute() {
+        if (this.snapshot == null || this.lastStart == null || this.lastEnd == null) return false;
+        int deltaY = Math.abs(this.lastStart.y - this.lastEnd.y);
+        if (deltaY < 3 || deltaY > 48) return false;
+        int dx = this.lastStart.x - this.lastEnd.x, dz = this.lastStart.z - this.lastEnd.z;
+        if (dx * dx + dz * dz > 96 * 96) return false;
+        int floor = Math.max(this.snapshot.getMinBuildHeight(),
+            Math.min(this.lastStart.y, this.lastEnd.y) - 2);
+        int ceiling = Math.min(this.snapshot.getMaxBuildHeight() - 1,
+            Math.max(this.lastStart.y, this.lastEnd.y) + 2);
+        // Only sample two endpoint neighborhoods, never scan or load chunks.
+        for (AStarNode near : new AStarNode[] {this.lastStart, this.lastEnd}) {
+            for (int x = near.x - 3; x <= near.x + 3; x++) {
+                for (int z = near.z - 3; z <= near.z + 3; z++) {
+                    for (int y = floor; y <= ceiling; y++) {
+                        if (this.snapshot.getBlockState(new net.minecraft.core.BlockPos(x, y, z))
+                                .is(net.minecraft.world.level.block.Blocks.LADDER)) return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
     protected net.minecraft.world.level.BlockGetter captureWorld(AStarNode start, AStarNode end) {
         if (!(this.world instanceof net.minecraft.server.level.ServerLevel server)) return null;
         return org.millenaire.common.pathing.PathWorldSnapshot.capture(server, start, end);
@@ -53,7 +92,7 @@ public class AStarPathPlannerJPS {
     }
     public synchronized void getPath(AStarNode start,AStarNode end,AStarConfig settings) {
         if(this.world != null && this.world.getGameTime()<this.nextSnapshotAttempt)return;
-        stopPathSearch(true);this.lastStart=copy(start);this.lastEnd=copy(end);this.config=copy(settings);
+        stopPathSearch(true);this.jpsCandidate=null;this.lastStart=copy(start);this.lastEnd=copy(end);this.config=copy(settings);
         this.snapshot=captureWorld(start,end);
         if(this.snapshot==null && this.world!=null) { this.nextSnapshotAttempt=this.world.getGameTime()+20+Math.floorMod(System.identityHashCode(this),17);return; }
         submit(false);
@@ -78,7 +117,21 @@ public class AStarPathPlannerJPS {
     private synchronized void deliver(AStarWorker source,ArrayList<AStarNode> result) {
         if(source!=this.worker||source.requestGeneration!=this.generation)return;
         this.busy=false;this.future=null;this.worker=null;
-        if(result==null&&this.isJPS&&!source.classicAttempt) { submit(true);return; }
+        if (this.isJPS && !source.classicAttempt) {
+            if (result == null) { submit(true); return; }
+            if (nearbyLadderOnVerticalRoute()) {
+                // Compare the JPS solution to a ladder-capable classical route.
+                this.jpsCandidate = result;
+                submit(true);
+                return;
+            }
+        }
+        if (source.classicAttempt && this.jpsCandidate != null) {
+            if (result == null || pathCost(this.jpsCandidate) <= pathCost(result)) {
+                result = this.jpsCandidate;
+            }
+        }
+        this.jpsCandidate=null;
         this.snapshot=null;
         if(this.pathedEntity!=null) {
             if(result==null)this.pathedEntity.onNoPathAvailable();
@@ -86,7 +139,7 @@ public class AStarPathPlannerJPS {
         }
     }
     public synchronized void stopPathSearch(boolean interrupted) {
-        ++this.generation;PathSearchExecutor.cancel(this.future);this.future=null;this.worker=null;this.busy=false;this.snapshot=null;
+        ++this.generation;PathSearchExecutor.cancel(this.future);this.future=null;this.worker=null;this.busy=false;this.snapshot=null;this.jpsCandidate=null;
         if(!interrupted&&this.pathedEntity!=null)this.pathedEntity.onNoPathAvailable();
     }
 }
