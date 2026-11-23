@@ -900,12 +900,17 @@ IAStarPathedEntity {
                     this.pathPlannerJPS.getPath(this.doubleToInt(this.getX()), this.doubleToInt(this.getY()), this.doubleToInt(this.getZ()), destNode.x, destNode.y, destNode.z, this.getPathingConfig());
                     if (this.pathPlannerJPS.isBusy()) {
                         this.logRouteDecision("ASTAR-SEARCH", dest);
+                    } else if (this.pathPlannerJPS.hadImmediatePath()) {
+                        // A validated cached route has been delivered without
+                        // submitting another expensive worker search.
+                        this.logRouteDecision("ASTAR-CACHE", dest);
+                    } else if (this.pathPlannerJPS.wasDeferred()) {
+                        // Budget exhaustion is NOT the same as NO_PATH.
+                        // Leave any existing route in place and try again
+                        // after the planner's small, staggered cooldown.
+                        // Do not stampede the synchronous Vanilla fallback.
                     } else {
-                        // Snapshot capture was deferred (server budget) or the
-                        // worker queue rejected the request. Do not leave this
-                        // villager standing indefinitely waiting for a callback
-                        // that will never arrive; schedule the bounded fallback.
-                        this.logRouteDecision("ASTAR-DEFERRED", dest);
+                        this.logRouteDecision("ASTAR-NO-WORKER", dest);
                         this.onNoPathAvailable();
                     }
                 } else {
