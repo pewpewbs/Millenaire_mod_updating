@@ -16,6 +16,9 @@ public final class NavigationMetrics {
     private static final LongAdder ROUTES_STORED = new LongAdder();
     private static final LongAdder SNAPSHOT_REUSED = new LongAdder();
     private static final LongAdder NO_PATH_COOLDOWN = new LongAdder();
+    private static final LongAdder NO_PATH_FAILURES = new LongAdder();
+    private static final LongAdder NO_PATH_BACKOFF_LEVEL2 = new LongAdder();
+    private static final LongAdder NO_PATH_BACKOFF_LEVEL3 = new LongAdder();
     private static final LongAdder CACHE_REPLAN_DEFERRED = new LongAdder();
     private static final LongAdder INFLIGHT_JOINED = new LongAdder();
     private static final LongAdder LADDER_SCANS = new LongAdder();
@@ -90,6 +93,11 @@ public final class NavigationMetrics {
     public static void routeStored() { ROUTES_STORED.increment(); }
     public static void snapshotReused() { SNAPSHOT_REUSED.increment(); }
     public static void noPathCooldown() { NO_PATH_COOLDOWN.increment(); }
+    public static void noPathFailure(int level) {
+        NO_PATH_FAILURES.increment();
+        if (level == 2) NO_PATH_BACKOFF_LEVEL2.increment();
+        if (level >= 3) NO_PATH_BACKOFF_LEVEL3.increment();
+    }
     public static void cacheReplanDeferred() { CACHE_REPLAN_DEFERRED.increment(); }
     public static void inflightJoined() { INFLIGHT_JOINED.increment(); }
     public static void ladderScan(int probes, boolean found, long nanos) {
@@ -138,6 +146,9 @@ public final class NavigationMetrics {
                     : SNAPSHOT_SHARED_SECTIONS.sum()*100.0D
                         /(SECTIONS.sum()+SNAPSHOT_SHARED_SECTIONS.sum()))
             +" no_path_cooldown="+NO_PATH_COOLDOWN.sum()
+            +" no_path_failures="+NO_PATH_FAILURES.sum()
+            +" no_path_backoff_level2="+NO_PATH_BACKOFF_LEVEL2.sum()
+            +" no_path_backoff_level3="+NO_PATH_BACKOFF_LEVEL3.sum()
             +" cache_replan_deferred="+CACHE_REPLAN_DEFERRED.sum()
             +" inflight_joined="+INFLIGHT_JOINED.sum()
             +" cache_hit="+CACHE_HIT.sum()
@@ -169,7 +180,7 @@ public final class NavigationMetrics {
         }
         SECTIONS.reset();DEFERRED.reset();STALE.reset();
         CACHE_HIT.reset();CACHE_REVERSE.reset();CACHE_MISS.reset();CACHE_STALE.reset();
-        ROUTES_STORED.reset();REVERSE_TRIED.reset();REVERSE_FOUND.reset();SNAPSHOT_REUSED.reset();NO_PATH_COOLDOWN.reset();CACHE_REPLAN_DEFERRED.reset();INFLIGHT_JOINED.reset();
+        ROUTES_STORED.reset();REVERSE_TRIED.reset();REVERSE_FOUND.reset();SNAPSHOT_REUSED.reset();NO_PATH_COOLDOWN.reset();NO_PATH_FAILURES.reset();NO_PATH_BACKOFF_LEVEL2.reset();NO_PATH_BACKOFF_LEVEL3.reset();CACHE_REPLAN_DEFERRED.reset();INFLIGHT_JOINED.reset();
         LADDER_SCANS.reset();LADDER_PROBES.reset();LADDER_HITS.reset();LADDER_NANOS.reset();
         SNAPSHOT_AREA_REJECTED.reset();SNAPSHOT_TICK_BUDGET.reset();SNAPSHOT_SECTION_LIMIT.reset();
         SNAPSHOT_SHARED_SECTIONS.reset();SNAPSHOT_ADDITIONAL_CAPTURES.reset();SNAPSHOT_NON_LATEST_REUSED.reset();
