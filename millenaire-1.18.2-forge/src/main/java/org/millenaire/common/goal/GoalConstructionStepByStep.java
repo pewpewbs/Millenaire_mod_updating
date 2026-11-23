@@ -253,7 +253,11 @@ extends Goal {
 
     @Override
     public boolean stopMovingWhileWorking() {
-        return false;
+        // A builder already within the five-block work range should not keep
+        // swimming or requesting a new path while waiting to place a block.
+        // Movement resumes automatically as soon as the next block is out of
+        // reach. This keeps the original per-block construction duration.
+        return true;
     }
 
     @Override
