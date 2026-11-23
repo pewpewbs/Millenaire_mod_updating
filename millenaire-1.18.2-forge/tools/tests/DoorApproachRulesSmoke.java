@@ -187,6 +187,21 @@ public final class DoorApproachRulesSmoke {
                 "can open NORTH/SOUTH door approaching from north");
         test(!DoorApproachRules.facingDoorPanel(9.5, 10.5, 10.5, 10.5, false),
                 "do not swing NORTH/SOUTH leaf into sideways X lane");
+        test(!DoorApproachRules.expiredStationaryScannerHold(
+                true, true, 0.0D, 119L),
+                "scanner holds door open during stalled 119-tick approach");
+        test(DoorApproachRules.expiredStationaryScannerHold(
+                true, true, 0.0D, 120L),
+                "scanner releases door when 120-tick stalled window expires");
+        test(!DoorApproachRules.expiredStationaryScannerHold(
+                true, true, 0.25D, 120L),
+                "physical movement renews scanner access");
+        test(!DoorApproachRules.expiredStationaryScannerHold(
+                true, false, 0.0D, 120L),
+                "goal change renews scanner access");
+        test(!DoorApproachRules.expiredStationaryScannerHold(
+                false, true, 0.0D, 120L),
+                "different door does not inherit old expired window");
         System.out.println("PASS: emergency front-door geometry");
     }
 }
