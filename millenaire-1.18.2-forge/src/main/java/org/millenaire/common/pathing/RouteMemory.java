@@ -49,10 +49,22 @@ public final class RouteMemory {
     }
 
     public synchronized Lookup lookup(long tick, int options, Cell start, Cell goal) {
-        Key forward = new Key(start, goal, options);
-        Lookup exact = find(tick, forward, false);
-        if (exact != null) return exact;
-        return find(tick, new Key(goal, start, options), true);
+        List<Lookup> hits = candidates(tick, options, start, goal);
+        return hits.isEmpty() ? null : hits.get(0);
+    }
+
+    /** Return both alternatives so the caller can compare VALIDATED costs. */
+    public synchronized List<Lookup> candidates(long tick, int options, Cell start, Cell goal) {
+        ArrayList<Lookup> result = new ArrayList<>(2);
+        Lookup exact = find(tick, new Key(start, goal, options), false);
+        Lookup opposite = find(tick, new Key(goal, start, options), true);
+        if (exact != null) result.add(exact);
+        if (opposite != null) result.add(opposite);
+        return result;
+    }
+
+    public synchronized void forget(long tick, int options, Cell start, Cell goal, boolean reversed) {
+        entries.remove(reversed ? new Key(goal, start, options) : new Key(start, goal, options));
     }
 
     private Lookup find(long tick, Key key, boolean reverse) {
