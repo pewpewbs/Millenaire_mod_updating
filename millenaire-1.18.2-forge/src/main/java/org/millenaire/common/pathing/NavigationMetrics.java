@@ -27,6 +27,8 @@ public final class NavigationMetrics {
     private static final LongAdder SNAPSHOT_SECTION_LIMIT = new LongAdder();
     private static final LongAdder SNAPSHOT_SHARED_SECTIONS = new LongAdder();
     private static final LongAdder SNAPSHOT_ADDITIONAL_CAPTURES = new LongAdder();
+    private static final LongAdder SNAPSHOT_KNOWN_SECTIONS_INVALIDATED = new LongAdder();
+    private static final LongAdder SNAPSHOT_KNOWN_CAPTURES_INVALIDATED = new LongAdder();
     private static final NavigationRateWindow RATE_WINDOW = new NavigationRateWindow();
     private NavigationMetrics() {}
     public static void record(int kind,long nanos){COUNT[kind].increment();NANOS[kind].add(nanos);MAX[kind].accumulateAndGet(nanos,Math::max);}
@@ -42,6 +44,11 @@ public final class NavigationMetrics {
     public static void snapshotSectionRejected(){SNAPSHOT_SECTION_LIMIT.increment();}
     public static void snapshotSectionsReused(int amount) { SNAPSHOT_SHARED_SECTIONS.add(Math.max(0, amount)); }
     public static void snapshotAdditionalCaptured() { SNAPSHOT_ADDITIONAL_CAPTURES.increment(); }
+    public static void snapshotKnownSectionInvalidated() { SNAPSHOT_KNOWN_SECTIONS_INVALIDATED.increment(); }
+    public static void snapshotKnownSectionsInvalidated(int count) {
+        SNAPSHOT_KNOWN_SECTIONS_INVALIDATED.add(Math.max(0, count));
+    }
+    public static void snapshotKnownCaptureInvalidated() { SNAPSHOT_KNOWN_CAPTURES_INVALIDATED.increment(); }
     public static void stale(){STALE.increment();}
     /** kind: 0=JPS, 1=classic A*; includes search and validation time. */
     public static void search(int kind, long nanos, int expanded) {
@@ -88,6 +95,8 @@ public final class NavigationMetrics {
             +" snapshot_section_rejected="+SNAPSHOT_SECTION_LIMIT.sum()
             +" snapshot_shared_sections="+SNAPSHOT_SHARED_SECTIONS.sum()
             +" snapshot_additional_captures="+SNAPSHOT_ADDITIONAL_CAPTURES.sum()
+            +" snapshot_known_sections_invalidated="+SNAPSHOT_KNOWN_SECTIONS_INVALIDATED.sum()
+            +" snapshot_known_captures_invalidated="+SNAPSHOT_KNOWN_CAPTURES_INVALIDATED.sum()
             +String.format(java.util.Locale.ROOT, " snapshot_section_reuse_pct=%.1f",
                     SECTIONS.sum()+SNAPSHOT_SHARED_SECTIONS.sum()==0 ? 0.0D
                     : SNAPSHOT_SHARED_SECTIONS.sum()*100.0D
@@ -128,6 +137,7 @@ public final class NavigationMetrics {
         LADDER_SCANS.reset();LADDER_PROBES.reset();LADDER_HITS.reset();LADDER_NANOS.reset();
         SNAPSHOT_AREA_REJECTED.reset();SNAPSHOT_TICK_BUDGET.reset();SNAPSHOT_SECTION_LIMIT.reset();
         SNAPSHOT_SHARED_SECTIONS.reset();SNAPSHOT_ADDITIONAL_CAPTURES.reset();
+        SNAPSHOT_KNOWN_SECTIONS_INVALIDATED.reset();SNAPSHOT_KNOWN_CAPTURES_INVALIDATED.reset();
         RATE_WINDOW.reset();
     }
 }
