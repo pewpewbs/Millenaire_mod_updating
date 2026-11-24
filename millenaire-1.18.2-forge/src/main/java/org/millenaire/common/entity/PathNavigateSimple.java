@@ -63,6 +63,7 @@ public class PathNavigateSimple extends GroundPathNavigation {
         // collision, bad waypoint height, and absent physical movement before
         // changing movement physics. Emit only near a DOOR node (not gates).
         if (org.millenaire.common.utilities.BlockItemUtilities.isWoodenDoor(state.getBlock())) {
+            this.assistOpenDoorWaypoint(rung, state);
             double ex = rung.getX() + 0.5D - this.mob.getX();
             double ez = rung.getZ() + 0.5D - this.mob.getZ();
             long now = this.mob.level.getGameTime();
@@ -86,6 +87,27 @@ public class PathNavigateSimple extends GroundPathNavigation {
             return;
         }
         this.assistLadderRung(next, state);
+    }
+
+    // An OPEN door still has a collision panel. Aim at the actual clear
+    // cross-section rather than repeatedly pushing into the hinged panel.
+    private void assistOpenDoorWaypoint(net.minecraft.core.BlockPos pos,
+            net.minecraft.world.level.block.state.BlockState state) {
+        if (!state.getValue(net.minecraft.world.level.block.DoorBlock.OPEN)
+                || !this.mob.horizontalCollision || Math.abs(this.mob.getY() - pos.getY()) > 0.25D) return;
+        double x = pos.getX() + 0.5D, z = pos.getZ() + 0.5D;
+        double dx = x - this.mob.getX(), dz = z - this.mob.getZ();
+        if (dx * dx + dz * dz > 4.0D) return;
+        var shape = state.getCollisionShape(this.mob.level, pos);
+        if (shape.isEmpty()) return;
+        var panel = shape.bounds();
+        if (panel.maxX - panel.minX < panel.maxZ - panel.minZ)
+            x = pos.getX() + (panel.minX >= 0.5D ? panel.minX * 0.5D : (1.0D + panel.maxX) * 0.5D);
+        else
+            z = pos.getZ() + (panel.minZ >= 0.5D ? panel.minZ * 0.5D : (1.0D + panel.maxZ) * 0.5D);
+        var targetBox = this.mob.getBoundingBox().move(x - this.mob.getX(), 0.0D, z - this.mob.getZ());
+        if (!this.mob.level.noCollision(this.mob, targetBox)) return;
+        this.mob.getMoveControl().setWantedPosition(x, this.mob.getY(), z, this.speedModifier);
     }
 
     /** A route node is a real, loaded vanilla ladder (not vines/scaffolding). */

@@ -111,7 +111,7 @@ extends Goal {
             for (Entity ent : animals) {
                 if (!ent.isAlive()) continue;
                 animal = (Animal)ent;
-                if (animal.getAge() != 0 || animal.isInLove()) continue;
+                if (animal.getAge() != 0 || animal.isInLove() || villager.isAnimalWorkTargetCoolingDown(ent)) continue;
                 return this.packDest(null, villager.getHouse(), (Entity)animal);
             }
         }
@@ -218,8 +218,10 @@ extends Goal {
 
     @Override
     public boolean isWithinActionRange(MillVillager villager, org.millenaire.common.utilities.Point destination) {
-        return destination != null && destination.distanceTo(villager) < this.range(villager)
-            && Math.abs(destination.y - villager.getY()) < 2.0;
+        Entity target = villager.getGoalDestEntity();
+        if (target == null || !target.isAlive()) return false;
+        double reach = this.range(villager);
+        return villager.distanceToSqr(target) < reach * reach && villager.hasLineOfSight(target);
     }
 
     @Override

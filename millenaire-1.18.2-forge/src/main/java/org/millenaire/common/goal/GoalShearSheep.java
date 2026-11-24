@@ -78,8 +78,9 @@ extends Goal {
         Entity closestSheep = null;
         double sheepBestDist = Double.MAX_VALUE;
         List<Entity> sheep = WorldUtilities.getEntitiesWithinAABB(villager.level, Sheep.class, villager.getHouse().getPos(), 30, 10);
+        if (sheep == null) return null;
         for (Entity ent : sheep) {
-            if (!ent.isAlive() || ((Sheep)ent).isSheared() || ((Sheep)ent).isBaby() || closestSheep != null && !(pos.distanceTo(ent) < sheepBestDist)) continue;
+            if (!ent.isAlive() || villager.isAnimalWorkTargetCoolingDown(ent) || ((Sheep)ent).isSheared() || ((Sheep)ent).isBaby() || closestSheep != null && !(pos.distanceTo(ent) < sheepBestDist)) continue;
             closestSheep = ent;
             sheepBestDist = pos.distanceTo(ent);
         }
@@ -114,7 +115,7 @@ extends Goal {
         }
         for (Entity ent : sheep) {
             Sheep asheep = (Sheep)ent;
-            if (asheep.isBaby() || !asheep.isAlive() || ((Sheep)ent).isSheared()) continue;
+            if (asheep.isBaby() || !asheep.isAlive() || villager.isAnimalWorkTargetCoolingDown(ent) || ((Sheep)ent).isSheared()) continue;
             return true;
         }
         return false;
