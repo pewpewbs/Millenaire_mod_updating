@@ -331,40 +331,39 @@ extends GuiText {
             this.drawGradient(i + 10 - 3 - xStart, j + 10 - 3 - yStart, i + 10 + stringlength + 3 - xStart, j + 10 + 11 - yStart, -1073741824, -1073741824);
             this.font.draw(framePose,playerHover.getName().getString(), i + 10 - xStart, j + 10 - yStart, 0x909090);
         } else if (locHover != null) {
-            boolean gameString;
-            String nativeString;
-            int stringlength;
-            boolean unreachable;
-            Building b = locHover.getBuilding(this.townHall.world);
-            boolean bl = unreachable = b != null && this.townHall.regionMapper != null && !b.isReachableFromRegion(this.townHall.regionMapper.thRegion);
-            if (unreachable) {
-                stringlength = this.font.width(locHover.getNativeName() + " - " + LanguageUtilities.string("panels.unreachablebuilding"));
-                nativeString = locHover.getNativeName() + " - " + LanguageUtilities.string("panels.unreachablebuilding");
-            } else {
-                stringlength = this.font.width(locHover.getNativeName());
-                nativeString = locHover.getNativeName();
+            Building building = locHover.getBuilding(this.townHall.world);
+            boolean unreachable = building != null && this.townHall.regionMapper != null
+                    && !building.isReachableFromRegion(this.townHall.regionMapper.thRegion);
+            // A synchronized plan may be temporarily missing while opening the map.
+            String title = locHover.getIBuildingPlan() == null ? locHover.planKey : locHover.getNativeName();
+            if (unreachable) title += " - " + LanguageUtilities.string("panels.unreachablebuilding");
+            var details = BuildingMapTooltip.describe(locHover, this.townHall, title);
+            // The pose is already translated to the parchment origin. Measure and
+            // wrap each line, preserving the gold colour of the maximum level.
+            var wrapped = new ArrayList<net.minecraft.util.FormattedCharSequence>();
+            var colors = new ArrayList<Integer>();
+            int maxWidth = Math.max(40, Math.min(320, this.width - 20));
+            int stringWidth = 0;
+            for (var line : details) {
+                for (var part : this.font.split(new net.minecraft.network.chat.TextComponent(line.text()), maxWidth)) {
+                    wrapped.add(part);
+                    colors.add(line.color());
+                    stringWidth = Math.max(stringWidth, this.font.width(part));
+                }
             }
-            int nblines = 1;
-            boolean bl2 = gameString = locHover.getGameName() != null && locHover.getGameName().length() > 0;
-            if (gameString) {
-                stringlength = Math.max(stringlength, this.font.width(locHover.getGameName()));
-                ++nblines;
-            }
-            List<String> effects = locHover.getBuildingEffects(this.townHall.world);
-            nblines += effects.size();
-            for (String s : effects) {
-                stringlength = Math.max(stringlength, this.font.width(s));
-            }
-            this.drawGradient(i - 3 - xStart, j - 3 - yStart, i + stringlength + 3 - xStart, j + 11 * nblines - yStart, -1073741824, -1073741824);
-            this.font.draw(framePose,nativeString, i - xStart, j - yStart, 0x909090);
-            int pos = 1;
-            if (gameString) {
-                this.font.draw(framePose,locHover.getGameName(), i - xStart, j - yStart + 11, 0x909090);
-                ++pos;
-            }
-            for (String s : effects) {
-                this.font.draw(framePose,s, i - xStart, j - yStart + 11 * pos, 0x909090);
-                ++pos;
+            int tooltipHeight = wrapped.size() * 11;
+            int left = Math.max(5, Math.min(i + 10, this.width - stringWidth - 5)) - xStart;
+            int top = Math.max(5, Math.min(j + 10, this.height - tooltipHeight - 5)) - yStart;
+            framePose.pushPose();
+            try {
+                framePose.translate(0, 0, 200);
+                this.drawGradient(left - 3, top - 3, left + stringWidth + 3,
+                        top + tooltipHeight + 3, 0xF0101010, 0xF0101010);
+                for (int n = 0; n < wrapped.size(); n++) {
+                    this.font.draw(framePose, wrapped.get(n), left, top + 11 * n, colors.get(n));
+                }
+            } finally {
+                framePose.popPose();
             }
         }
 
