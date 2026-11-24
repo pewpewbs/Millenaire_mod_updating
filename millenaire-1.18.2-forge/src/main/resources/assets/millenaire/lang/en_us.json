@@ -1462,5 +1462,14 @@
   "millenaire.export.length": "(length)",
   "millenaire.export.width": "(width)",
   "millenaire.export.panel": "Panel %s",
-  "millenaire.export.start_level": "Start level: %s"
+  "millenaire.export.start_level": "Start level: %s",
+  "millenaire.test_tuning.title": "Testing (cheats)",
+  "millenaire.test_tuning.move": "Movement speed",
+  "millenaire.test_tuning.work": "Work speed",
+  "millenaire.test_tuning.yield": "Resource yield",
+  "millenaire.test_tuning.build": "Construction speed",
+  "millenaire.test_tuning.reset": "Reset to 1×",
+  "millenaire.test_tuning.waiting": "Waiting for server…",
+  "millenaire.test_tuning.session": "Session only • affects all villages",
+  "millenaire.test_tuning.denied": "Server permission required"
 }
