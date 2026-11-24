@@ -15,6 +15,7 @@ texture=textures/entity/mayan/mayan_Lumberman3.png
 goal=gorest
 goal=gopray
 goal=minestone
+goal=minesandstone
 goal=minesand
 goal=cookstone
 goal=cooksand
