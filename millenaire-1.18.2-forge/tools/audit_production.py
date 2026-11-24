@@ -17,14 +17,14 @@ COOK_OUTPUT = {
     "cobblestone": "stone", "sand": "glass", "clay": "brick",
     "fishraw": "fishcooked", "beefraw": "beefcooked",
     "chickenmeat": "chickenmeatcooked", "porkchops": "porkchopscooked",
-    "mutton": "cooked_mutton", "potato": "bakedpotato",
+    "mutton": "cooked_mutton", "potato": "baked_potato",
     "seafood_raw": "seafood_cooked", "ironore": "iron",
     "wood_any": "charcoal", "mudbrick": "paintedbrickwhite",
 }
 # Explicitly limited Java-goal knowledge; unknown Java outputs are not errors.
 JAVA_OUTPUT = {
     "fish": {"fishraw"}, "fishinuit": {"fishraw", "boneblock"},
-    "choptrees": {"wood_any"}, "gathersilk": {"silk"},
+    "choptrees": {"wood", "wood_pine", "wood_birch", "wood_jungle", "wood_acacia", "wood_darkoak"}, "gathersilk": {"silk"},
     "gathersnails": {"dye_purple"}, "harvestcocoa": {"dye_brown"},
     "harvestwarts": {"netherwart"}, "harvestsugarcane": {"sugarcane"},
 }
@@ -94,8 +94,14 @@ def matches(a, b, aliases):
     if a == b:
         return True
     x, y = aliases.get(a), aliases.get(b)
-    return bool(x and y and x[0] == y[0] and
-                (x[1] == y[1] or "-1" in (x[1], y[1])))
+    if not x or not y:
+        return False
+    # Legacy oak-log wildcard includes both old log families in Java.
+    if x == ("minecraft:log", "-1") and y[0] in ("minecraft:log", "minecraft:log2"):
+        return True
+    if y == ("minecraft:log", "-1") and x[0] in ("minecraft:log", "minecraft:log2"):
+        return True
+    return x[0] == y[0] and (x[1] == y[1] or "-1" in (x[1], y[1]))
 
 def covered(item, pool, aliases):
     return any(matches(item, other, aliases) for other in pool)
@@ -144,7 +150,7 @@ def load_goals(data, java):
     for name in re.findall(r'goals\.put\("([^"]+)"', source):
         name = norm(name)
         result[name] = Goal(name, "java", None, outputs=JAVA_OUTPUT.get(name, set()),
-                            inventory=name in JAVA_OUTPUT, uncertain=True)
+                            inventory=name in JAVA_OUTPUT and name != "harvestwarts", uncertain=True)
     for path in txts(data / "goals"):
         kind = path.relative_to(data / "goals").parts[0]
         if not kind.startswith("generic"):
@@ -164,6 +170,11 @@ def load_goals(data, java):
             goal.outputs = items(cfg, "harvestitem", "irrigationbonuscrop", "bonusitem")
             goal.inventory = cfg.last("collectinbuilding") != "true"
             goal.uncertain = True
+        elif kind == "genericplanting":
+            goal.inputs = items(cfg, "seed")
+        elif kind == "generictakefrombuilding":
+            goal.inputs = items(cfg, "collect_good")
+            goal.uncertain = True  # transfer, never manufacture goods
         else:
             goal.uncertain = True
         if key in result:
@@ -344,10 +355,20 @@ def audit(data, java, scan_png=False):
                                  plans=len(plans), shops=len(shops), villages=village_rows,
                                  producers={i: sorted(rs) for i, rs in sorted(producers.items())},
                                  consumers={i: sorted(rs) for i, rs in sorted(consumers.items())},
-                                 shop_needs=sorted(shop_needs), player_buy=sorted(buy),
+                                 shop_needs=sorted(shop_needs),
+                                 shop_catalog={s.path.stem: {"deliverto": sorted(csv_items(s,"deliverto")),
+                                     "buys": sorted(csv_items(s,"buys")), "sells": sorted(csv_items(s,"sells"))}
+                                     for s in shops}, player_buy=sorted(buy),
                                  foreign_listing=sorted(foreign), png_scanned=png is not None)
     findings.sort(key=lambda f: (f["level"] != "ERROR", f["culture"], f["code"], f["file"], f["message"]))
-    return dict(schema=1, scope="bundled static data, not live world",
+    catalog = {key: dict(kind=g.kind, inputs=sorted(g.inputs), outputs=sorted(g.outputs),
+                         source=g.source, inferred=g.uncertain,
+                         config=g.cfg.path.relative_to(data).as_posix() if g.cfg else None,
+                         constraints={k: g.cfg.values(k) for k in ("priority", "priorityrandom",
+                             "buildinglimit", "townhalllimit", "villagelimit", "itemsbalance",
+                             "minimumtocook", "buildingtag", "requiredtag", "townhallgoal")
+                             if g.cfg and g.cfg.values(k)}) for key,g in sorted(goals.items())}
+    return dict(schema=1, scope="bundled static data, not live world", goal_catalog=catalog,
                 summary=dict(cultures=len(cultures), profiles=sum(c["profiles"] for c in cultures.values()),
                              goals=len(goals), findings=dict(Counter(f["level"] for f in findings))),
                 cultures=cultures, edges=edges, findings=findings)
