@@ -62,16 +62,17 @@ extends GoalGeneric {
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
         List<Building> buildings = this.getBuildings(villager);
-        ArrayList validSources = new ArrayList();
-        ArrayList<Building> validDests = new ArrayList<Building>();
+        ArrayList<Point> validSources = new ArrayList<>();
+        ArrayList<Building> validDests = new ArrayList<>();
         for (Building possibleDest : buildings) {
-            CopyOnWriteArrayList<CopyOnWriteArrayList<Point>> sources = possibleDest.getResManager().sources;
-            for (int i = 0; i < sources.size(); ++i) {
-                if (this.sourceBlockState != possibleDest.getResManager().sourceTypes.get(i)) continue;
-                for (int j = 0; j < ((CopyOnWriteArrayList)sources.get(i)).size(); ++j) {
-                    BlockState actualBlockState = WorldUtilities.getBlockState(villager.level, (Point)((CopyOnWriteArrayList)sources.get(i)).get(j));
-                    if (actualBlockState != this.sourceBlockState) continue;
-                    validSources.add(((CopyOnWriteArrayList)sources.get(i)).get(j));
+            if (!this.validateDest(villager,possibleDest)) continue;
+            var sources = possibleDest.getResManager().sources;
+            var types = possibleDest.getResManager().sourceTypes;
+            for (int index=0; index<Math.min(sources.size(),types.size()); index++) {
+                if (this.sourceBlockState != types.get(index)) continue;
+                for (Point point:sources.get(index)) {
+                    if (!liveSource(villager,point)) continue;
+                    validSources.add(point);
                     validDests.add(possibleDest);
                 }
             }
@@ -119,9 +120,20 @@ extends GoalGeneric {
         return GOAL_TYPE;
     }
 
+    private boolean liveSource(MillVillager villager, Point point) {
+        return point != null && villager.level.hasChunkAt(point.getBlockPos())
+                && WorldUtilities.getBlockState(villager.level,point) == this.sourceBlockState;
+    }
+
     @Override
     public boolean isDestPossibleSpecific(MillVillager villager, Building b) {
-        return true;
+        var sources = b.getResManager().sources;
+        var types = b.getResManager().sourceTypes;
+        for (int index=0; index<Math.min(sources.size(),types.size()); index++) {
+            if (this.sourceBlockState != types.get(index)) continue;
+            for (Point point:sources.get(index)) if (liveSource(villager,point)) return true;
+        }
+        return org.millenaire.common.goal.GoalDiagnostics.reject(villager,this,"NO_REGISTERED_MATCHING_LIVE_SOURCE");
     }
 
     @Override
@@ -131,6 +143,18 @@ extends GoalGeneric {
 
     @Override
     public boolean performAction(MillVillager villager) throws Exception {
+        Building destination = villager.getGoalBuildingDest();
+        Point point = villager.getGoalDestPoint();
+        if (villager.level.isClientSide || destination == null || !liveSource(villager,point)
+                || !this.validateDest(villager,destination)) return true;
+        // A source can be removed or replaced after selection; never award
+        // resources from a stale target or an unregistered point.
+        var sources = destination.getResManager().sources;
+        var types = destination.getResManager().sourceTypes;
+        boolean registered = false;
+        for (int index=0; index<Math.min(sources.size(),types.size()); index++)
+            if (types.get(index)==this.sourceBlockState && sources.get(index).contains(point)) { registered=true; break; }
+        if (!registered) return true;
         for (InvItem key : this.loots.keySet()) {
             villager.addToInv(key, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, (int)this.loots.get(key)));
             if (MillConfigValues.LogMiner < 3 || !villager.extraLog) continue;
