@@ -144,8 +144,9 @@ extends Goal {
             if (!ent.isAlive() || (animal = (Sheep)ent).isBaby() || animal.isSheared()) continue;
             if (villager.distanceToSqr(animal) >= 4.0
                     || !WorkAccess.visible(villager, animal.getBoundingBox().getCenter(), null)) continue;
-            villager.addToInv(Registry.ITEM.get(new ResourceLocation(animal.getColor().getName() + "_wool")), 3);
-            carriedWool += 3;
+            int amount = org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 3);
+            villager.addToInv(Registry.ITEM.get(new ResourceLocation(animal.getColor().getName() + "_wool")), amount);
+            carriedWool += amount;
             ((Sheep)ent).setSheared(true);
             if (MillConfigValues.LogCattleFarmer >= 1 && villager.extraLog) {
                 MillLog.major(this, "Shearing: " + ent);
