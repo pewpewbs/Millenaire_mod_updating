@@ -5319,6 +5319,7 @@ public class Building {
       if (expected.isEmpty()) return 0;
       long room = 0;
       for (Point p : this.resManager.chests) {
+         if (!this.world.hasChunkAt(p.getBlockPos())) continue;
          TileEntityLockedChest chest = p.getMillChest(this.world);
          if (chest == null) continue;
          for (int i = 0; i < chest.getContainerSize(); i++) {
