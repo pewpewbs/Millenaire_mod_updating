@@ -5312,6 +5312,31 @@ public class Building {
       return org.millenaire.common.utilities.GoodsTransaction.capture(this, villager);
    }
 
+   /** Read-only capacity estimate for a concrete stock item. Never changes a slot. */
+   public int storageRoom(InvItem item) {
+      if (item == null || item.meta == -1 || item.getItem() == null) return 0;
+      ItemStack expected = LegacyItemStacks.stack(item.getItem(), 1, item.meta);
+      if (expected.isEmpty()) return 0;
+      long room = 0;
+      for (Point p : this.resManager.chests) {
+         TileEntityLockedChest chest = p.getMillChest(this.world);
+         if (chest == null) continue;
+         for (int i = 0; i < chest.getContainerSize(); i++) {
+            ItemStack stack = chest.getItem(i);
+            if (stack.isEmpty()) room += Math.min(chest.getMaxStackSize(), expected.getMaxStackSize());
+            else if (LegacyItemStacks.matches(stack, item.getItem(), item.meta))
+               room += Math.max(0, Math.min(chest.getMaxStackSize(), stack.getMaxStackSize()) - stack.getCount());
+         }
+      }
+      return (int)Math.min(Integer.MAX_VALUE, room);
+   }
+
+   /** Snapshot concrete stock keys before transfers invalidate the inventory cache. */
+   public java.util.Set<InvItem> stockKeys() {
+      if (this.inventoryCache == null) this.calculateInventoryCache();
+      return new java.util.HashSet<>(this.inventoryCache.keySet());
+   }
+
    public int storeGoods(InvItem item, int toPut) {
       return this.storeGoods(item.getItem(), item.meta, toPut);
    }
