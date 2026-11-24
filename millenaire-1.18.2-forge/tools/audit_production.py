@@ -106,6 +106,17 @@ def matches(a, b, aliases):
 def covered(item, pool, aliases):
     return any(matches(item, other, aliases) for other in pool)
 
+def reachable(edges, roles, aliases, seeds=()):
+    """Potential recipe closure, deliberately not a live-world simulation."""
+    available = set(seeds)
+    relevant = [edge for edge in edges if edge["role"] in roles]
+    while True:
+        added = {edge["output"] for edge in relevant if all(
+            covered(i, available, aliases) for i in edge["inputs"])} - available
+        if not added:
+            return available
+        available.update(added)
+
 def scope(cfg):
     if cfg.last("townhallgoal") == "true":
         return "townhall"
@@ -257,7 +268,7 @@ def audit(data, java, scan_png=False):
         plans = defaultdict(list)
         for p in txts(root / "buildings") + txts(root / "custombuildings"):
             plans[plan_key(p)].append(read_config(p))
-        plan_roles, role_plans = defaultdict(set), defaultdict(set)
+        plan_roles, role_plans, initial_plan_roles = defaultdict(set), defaultdict(set), defaultdict(set)
         for key, variants in plans.items():
             for cfg in variants:
                 for field_name, values in cfg.fields.items():
@@ -268,6 +279,8 @@ def audit(data, java, scan_png=False):
                         if resident in roles:
                             plan_roles[key].add(resident)
                             role_plans[resident].add(key)
+                            if field_name in ("initial.male", "initial.female", "male", "female"):
+                                initial_plan_roles[key].add(resident)
                         elif resident and resident not in ("none", "null"):
                             emit("REVIEW", "UNRESOLVED_RESIDENT", culture, cfg, resident, field_name)
         shops = [read_config(p) for p in txts(root / "shops")]
@@ -276,6 +289,7 @@ def audit(data, java, scan_png=False):
         assigned = {r: set(cfg.values("goal")) for r, cfg in roles.items()}
         producers, consumers = defaultdict(set), defaultdict(set)
         png = scan_plans(root / "buildings", markers(data)) if scan_png else None
+        first_edge = len(edges)
         for r, cfg in roles.items():
             active = assigned[r]
             inputs = items(cfg, "requiredgood")
@@ -319,6 +333,12 @@ def audit(data, java, scan_png=False):
                              f"{name}: scope={scope(goal.cfg)}; check other workers", "goal")
             for item in inputs:
                 consumers[item].add(r)
+        for shop in shops:
+            for item in sorted(csv_items(shop, "deliverto")):
+                if not covered(item, producers, aliases) and not covered(item, buy | foreign, aliases):
+                    emit("REVIEW", "SHOP_SUPPLY_UNCONFIRMED", culture, shop,
+                         f"{item}; no indexed local producer or player/foreign price", "deliverto")
+        culture_edges = edges[first_edge:]
         for item, needing in sorted(consumers.items()):
             if covered(item, producers, aliases):
                 continue
@@ -333,7 +353,7 @@ def audit(data, java, scan_png=False):
             name = norm(cfg.path.stem)
             initial = items(cfg, "centre", "start")
             possible = (initial | items(cfg, "core", "secondary", "extra")) - items(cfg, "never")
-            initial_roles = set().union(*(plan_roles[p] for p in sorted(initial)))
+            initial_roles = set().union(*(initial_plan_roles[p] for p in sorted(initial)))
             possible_roles = set().union(*(plan_roles[p] for p in sorted(possible)))
             for key in sorted(possible - plans.keys()):
                 emit("REVIEW", "UNRESOLVED_BUILDING_REFERENCE", culture, cfg, key, village=name)
@@ -348,9 +368,15 @@ def audit(data, java, scan_png=False):
                 emit("REVIEW", "STARTING_SUPPLY_UNCONFIRMED", culture, cfg,
                      f"{item}; starting roles={sorted(needing & initial_roles)}; {channel}; not a runtime deadlock proof",
                      village=name)
+            internal = reachable(culture_edges, possible_roles, aliases)
+            assisted = reachable(culture_edges, possible_roles, aliases, buy | foreign)
+            needed = {item for item, rs in consumers.items() if rs.intersection(possible_roles)}
             village_rows.append(dict(name=name, file=cfg.path.relative_to(data).as_posix(),
                                      initial_buildings=sorted(initial), possible_buildings=sorted(possible),
-                                     initial_roles=sorted(initial_roles), possible_roles=sorted(possible_roles)))
+                                     initial_roles=sorted(initial_roles), possible_roles=sorted(possible_roles),
+                                     potential_internal_outputs=sorted(internal),
+                                     potential_external_assisted_outputs=sorted(assisted - (buy | foreign)),
+                                     unresolved_recipe_inputs=sorted(i for i in needed if not covered(i, assisted, aliases))))
         cultures[culture] = dict(profiles=len(role_files), indexed_roles=len(roles),
                                  plans=len(plans), shops=len(shops), villages=village_rows,
                                  producers={i: sorted(rs) for i, rs in sorted(producers.items())},
