@@ -3160,17 +3160,33 @@ IAStarPathedEntity {
         ConstructionIP cip;
         Goal nextGoal = null;
         this.clearGoal();
-        for (Goal goal : this.getGoals()) {
-            if (!goal.isPossible(this)) continue;
-            if (MillConfigValues.LogGeneralAI >= 2 && this.extraLog) {
-                MillLog.minor(this, "Priority for goal " + goal.gameName(this) + ": " + goal.priority(this));
-            }
-            if (nextGoal == null || nextGoal.leasure && !goal.leasure) {
+        // Observe the existing decision pass only; preserve every priority call and its order.
+        var diagnostic = org.millenaire.common.goal.GoalDiagnostics.begin(this);
+        try {
+            for (Goal goal : this.getGoals()) {
+                if (diagnostic != null) diagnostic.candidate(goal);
+                boolean possible = goal.isPossible(this);
+                if (diagnostic != null) diagnostic.possible(possible);
+                if (!possible) continue;
+                if (MillConfigValues.LogGeneralAI >= 2 && this.extraLog) {
+                    MillLog.minor(this, "Priority for goal " + goal.gameName(this) + ": " + goal.priority(this));
+                }
+                if (nextGoal == null || nextGoal.leasure && !goal.leasure) {
+                    nextGoal = goal;
+                    continue;
+                }
+                int previousPriority = nextGoal.priority(this);
+                int candidatePriority = goal.priority(this);
+                if (diagnostic != null) {
+                    diagnostic.priority(nextGoal, previousPriority);
+                    diagnostic.priority(goal, candidatePriority);
+                }
+                if (previousPriority >= candidatePriority) continue;
                 nextGoal = goal;
-                continue;
             }
-            if (nextGoal != null && nextGoal.priority(this) >= goal.priority(this)) continue;
-            nextGoal = goal;
+            if (diagnostic != null) diagnostic.finish(nextGoal);
+        } finally {
+            if (diagnostic != null) diagnostic.close();
         }
         if (MillConfigValues.LogGeneralAI >= 2 && this.extraLog) {
             MillLog.minor(this, "Selected this: " + nextGoal);
