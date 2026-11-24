@@ -108,5 +108,23 @@ class ProductionRepairs(unittest.TestCase):
         self.assertIn("snowblock", goals["makesnowwall"].inputs)
 
 
+    def test_crafting_stock_limits_match_product_and_silk_recipe(self):
+        goals, _ = load_goals(DATA, DEFAULT_JAVA)
+        for item in ("pathdirt", "pathgravel", "pathgravelslabs", "pathochretiles",
+                     "pathsandstone", "pathslabs"):
+            with self.subTest(item=item):
+                goal = goals["make" + item]
+                self.assertEqual(goal.outputs, {item})
+                self.assertEqual(goal.cfg.last("buildinglimit"), item + ",64")
+                self.assertEqual(goal.cfg.last("townhalllimit"), item + ",128")
+        yellow = goals["dyewool_yellow"]
+        self.assertEqual(yellow.outputs, {"wool_yellow"})
+        self.assertEqual(yellow.cfg.last("buildinglimit"), "wool_yellow,8")
+        silk = goals["makeclothessilk"]
+        self.assertEqual(silk.outputs, {"clothes_byz_silk"})
+        self.assertIn("silk", silk.inputs)
+        self.assertEqual(silk.cfg.last("buildinglimit"), "clothes_byz_silk,2")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
