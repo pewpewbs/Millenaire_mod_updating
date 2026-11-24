@@ -41,6 +41,8 @@ collectGood=rottenflesh
 collectGood=bone
 bringBackHomeGood=snowbrick
 bringBackHomeGood=icebrick
+bringBackHomeGood=potato
+bringBackHomeGood=pathsnow
 
 baseAttackStrength=6
 toolneededclass=armour
