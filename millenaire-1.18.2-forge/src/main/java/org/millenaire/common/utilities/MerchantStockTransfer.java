@@ -18,14 +18,24 @@ public final class MerchantStockTransfer {
     }
     private record Slot(Container chest, int index, ItemStack original) {}
 
-    private static List<Slot> snapshot(Building building) {
-        List<Slot> slots = new ArrayList<>();
+    private static List<Container> resolveStores(Building building) {
+        List<Container> stores = new ArrayList<>();
         Set<Container> seen = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Point p : building.getResManager().chests) {
             // Keep the existing selected-inn block-entity lookup semantics.
             // Do not require both villages to be active: distant trade is
             // intentional. A lookup which cannot resolve a chest is not empty stock.
             Container chest = p.getMillChest(building.world);
+            if (chest == null) return null;
+            if (seen.add(chest)) stores.add(chest);
+        }
+        return stores;
+    }
+    private static List<Slot> snapshot(List<Container> stores) {
+        if (stores == null) return null;
+        List<Slot> slots = new ArrayList<>();
+        Set<Container> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Container chest : stores) {
             if (chest == null) return null;
             if (!seen.add(chest)) continue;
             for (int i=0; i<chest.getContainerSize(); i++)
@@ -91,6 +101,14 @@ public final class MerchantStockTransfer {
     public static Result transfer(Building source,Building destination,boolean exchange) {
         if (source==null || destination==null || source==destination || source.world!=destination.world
                 || source.world.isClientSide) return Result.blocked("INVALID_INNS");
+        return transferStores(resolveStores(source),resolveStores(destination),exchange,() -> {
+            source.invalidateInventoryCache(); destination.invalidateInventoryCache();
+        });
+    }
+
+    // Package-private entry point for container-level regression tests.
+    static Result transferStores(List<Container> source,List<Container> destination,
+                                 boolean exchange,Runnable invalidate) {
         List<Slot> left=snapshot(source),right=snapshot(destination);
         if (left==null || right==null) return Result.blocked("STOCK_UNLOADED_OR_MISSING");
         Set<Container> stores=Collections.newSetFromMap(new IdentityHashMap<>());
@@ -108,12 +126,10 @@ public final class MerchantStockTransfer {
             if (!insert(left,leftPlan,stack)) return Result.blocked("SOURCE_CAPACITY");
         if (!unchanged(left) || !unchanged(right)) return Result.blocked("STOCK_CHANGED");
         Map<InvItem,Integer> outward=totals(outgoing),inward=totals(incoming);
-        try (var tx=new GoodsTransaction(new ArrayList<>(stores),List.of(),null,() -> {
-            source.invalidateInventoryCache(); destination.invalidateInventoryCache();
-        })) {
+        try (var tx=new GoodsTransaction(new ArrayList<>(stores),List.of(),null,invalidate)) {
             write(left,leftPlan); write(right,rightPlan);
             for (Container store:stores) store.setChanged();
-            source.invalidateInventoryCache(); destination.invalidateInventoryCache();
+            invalidate.run();
             tx.commit();
         }
         return new Result(true,"OK",outward,inward);
