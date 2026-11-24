@@ -62,6 +62,13 @@ extends GuiText {
     private CompletableFuture<ChunkMapSnapshot> chunkRequest;
     private long nextChunkRefresh;
     private Building townHall = null;
+    private BuildingLocation tooltipLocation;
+    private int tooltipLevel;
+    private boolean tooltipConstruction;
+    private String tooltipTitle;
+    private String tooltipLanguage;
+    private long tooltipRefreshNanos;
+    private List<BuildingMapTooltip.Line> tooltipDetails = List.of();
     private final Player player;
     ResourceLocation backgroundParchment = new ResourceLocation("millenaire", "textures/gui/parchment.png");
     ResourceLocation backgroundPanel = new ResourceLocation("millenaire", "textures/gui/panel.png");
@@ -210,6 +217,7 @@ extends GuiText {
 
         this.drawScaledRect(-2, -2, minfo.length + 2, minfo.width + 2, 0x20000000);
         BuildingLocation locHover = null;
+        boolean constructionHover = false;
         MillVillager villagerHover = null;
         Player playerHover = null;
         List<BuildingLocation> locations = this.townHall.getLocations();
@@ -228,6 +236,7 @@ extends GuiText {
             float screenBottom = (float)yStart + this.scaledStartY + (float)bottom * this.scaleFactor;
             if ((float)i >= screenLeft && (float)i <= screenRight && (float)j >= screenTop && (float)j <= screenBottom) {
                 locHover = bl;
+                constructionHover = true;
             }
             this.drawScaledRect(left, top, right, bottom, 0x40FF00FF);
             for (int x = left; x < right; ++x) {
@@ -247,6 +256,7 @@ extends GuiText {
             float screenBottom = (float)yStart + this.scaledStartY + (float)bottom * this.scaleFactor;
             if ((float)i >= screenLeft && (float)i <= screenRight && (float)j >= screenTop && (float)j <= screenBottom) {
                 locHover = bl;
+                constructionHover = false;
             }
             if (bl.level < 0) {
                 this.drawScaledRect(left, top, right, bottom, 0x40000060);
@@ -337,7 +347,22 @@ extends GuiText {
             // A synchronized plan may be temporarily missing while opening the map.
             String title = locHover.getIBuildingPlan() == null ? locHover.planKey : locHover.getNativeName();
             if (unreachable) title += " - " + LanguageUtilities.string("panels.unreachablebuilding");
-            var details = BuildingMapTooltip.describe(locHover, this.townHall, title);
+            long now = System.nanoTime();
+            String language = org.millenaire.common.config.MillConfigValues.effective_language;
+            if (tooltipLocation != locHover || tooltipLevel != locHover.level
+                    || tooltipConstruction != constructionHover
+                    || !java.util.Objects.equals(tooltipTitle, title)
+                    || !java.util.Objects.equals(tooltipLanguage, language)
+                    || now - tooltipRefreshNanos >= 500_000_000L) {
+                tooltipDetails = BuildingMapTooltip.describe(locHover, this.townHall, title, constructionHover);
+                tooltipLocation = locHover;
+                tooltipLevel = locHover.level;
+                tooltipConstruction = constructionHover;
+                tooltipTitle = title;
+                tooltipLanguage = language;
+                tooltipRefreshNanos = now;
+            }
+            var details = tooltipDetails;
             // The pose is already translated to the parchment origin. Measure and
             // wrap each line, preserving the gold colour of the maximum level.
             var wrapped = new ArrayList<net.minecraft.util.FormattedCharSequence>();
