@@ -432,7 +432,9 @@ public abstract class Goal {
     }
 
     public void setVillagerDest(MillVillager villager) throws Exception {
-        villager.setGoalInformation(this.getDestination(villager));
+        GoalInformation info = this.getDestination(villager);
+        GoalDiagnostics.destination(villager, this, info);
+        villager.setGoalInformation(info);
     }
 
     public boolean shouldVillagerLieDown() {
