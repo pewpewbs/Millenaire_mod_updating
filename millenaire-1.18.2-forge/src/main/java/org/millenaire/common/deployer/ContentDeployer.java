@@ -80,7 +80,7 @@ public class ContentDeployer {
             Mill.LOGGER.warn("Mayan sandstone migration skipped: deployed miner has no standard minestone goal");
             return;
         }
-        String newline = original.contains("\\r\\n") ? "\\r\\n" : "\\n";
+        String newline = original.contains("\r\n") ? "\r\n" : "\n";
         String updated = original.substring(0, anchor.end()) + newline
                 + "goal=minesandstone" + original.substring(anchor.end());
         var installedGoal = installed.resolve(goalRelative);
