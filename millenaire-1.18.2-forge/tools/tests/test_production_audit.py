@@ -147,5 +147,40 @@ class ProductionAuditTests(unittest.TestCase):
             result = audit(self.data, self.java, True)
             self.assertTrue(any(f["code"] == "NO_HOME_SOURCE_MARKER_SEEN" for f in result["findings"]))
 
+
+    def test_crafting_limit_mismatch_is_review(self):
+        self.put(self.data, "goals/genericcrafting/makepane.txt",
+                 "input=glass,1\noutput=pane,1\nbuildinglimit=gravel,64\n")
+        findings = self.run_audit()["findings"]
+        flagged = [f for f in findings if f["code"] == "CRAFT_LIMIT_DIFFERS_FROM_OUTPUT"]
+        self.assertEqual(len(flagged), 1)
+        self.assertEqual(flagged[0]["level"], "REVIEW")
+        self.put(self.data, "goals/genericcrafting/makepane.txt",
+                 "input=glass,1\noutput=pane,1\nbuildinglimit=pane,64\n")
+        self.assertFalse(any(f["code"] == "CRAFT_LIMIT_DIFFERS_FROM_OUTPUT"
+                             for f in self.run_audit()["findings"]))
+
+    def test_legacy_mining_requires_home_plan_marker(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("Pillow not installed")
+        self.put(self.java, "goal/Goal.java",
+                 'goals.put("mining", x);\ngoals.put("bringbackresourceshome", x);')
+        self.put(self.data, "cultures/test/villagers/miner.txt",
+                 "goal=mining\ngoal=bringbackresourceshome\nbringBackHomeGood=sand\n")
+        self.put(self.data, "cultures/test/villagers/unassigned.txt",
+                 "goal=mining\n")
+        path = self.data / "cultures/test/buildings/quarry_A0.png"
+        Image.new("RGB", (1, 1), (200, 20, 20)).save(path)
+        self.assertFalse(any(e["goal"] == "mining" for e in self.run_audit()["edges"]))
+        result = audit(self.data, self.java, True)
+        mining = [e for e in result["edges"] if e["goal"] == "mining"]
+        self.assertEqual([(e["role"], e["output"], e["source"]) for e in mining],
+                         [("miner", "sand", "minecraft:sand")])
+        self.assertTrue(mining[0]["inferred"])
+        Image.new("RGB", (1, 1), (0, 0, 0)).save(path)
+        self.assertFalse(any(e["goal"] == "mining" for e in audit(self.data, self.java, True)["edges"]))
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

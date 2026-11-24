@@ -45,6 +45,17 @@ SOURCE_MARKERS = {
 }
 SOURCE_MARKERS["minecraft:red_sandstone"] = "redsandstonesource"
 SOURCE_MARKERS["minecraft:nether_quartz_ore"] = "quartzsource"
+# GoalMinerMineResource selects registered sources at the resident's home.
+# Only map block types with explicit output branches and known palette markers.
+LEGACY_MINING_SOURCES = {
+    "cobblestone": "minecraft:stone",
+    "sand": "minecraft:sand",
+    "sandstone": "minecraft:sandstone",
+    "clay": "minecraft:clay",
+    "gravel": "minecraft:gravel",
+    "snowbrick": "minecraft:snow",
+    "icebrick": "minecraft:ice",
+}
 TRANSPORT = {"bringbackresourceshome", "gathergoods", "deliverresourcesshop",
              "delivergoodshousehold", "gethousethresources", "getgoodshousehold"}
 
@@ -285,6 +296,13 @@ def audit(data, java, scan_png=False):
                 if field_name in ("input", "output", "loot") and (
                         "," not in value or not positive(value.split(",", 1)[1])):
                     emit("ERROR", "INVALID_QUANTITY", "", cfg, value, field_name)
+        if goal.kind == "genericcrafting" and goal.outputs:
+            for limit in ("buildinglimit", "townhalllimit", "villagelimit"):
+                for value in cfg.values(limit):
+                    if not covered(first(value), goal.outputs, aliases):
+                        emit("REVIEW", "CRAFT_LIMIT_DIFFERS_FROM_OUTPUT", "", cfg,
+                             f"{limit}={value}; outputs={sorted(goal.outputs)}; may be intentional",
+                             limit)
         if goal.kind == "genericcooking":
             balance = cfg.last("itemsbalance").split(",")
             if len(balance) == 2 and goal.inputs and not covered(balance[0], goal.inputs, aliases):
@@ -344,15 +362,24 @@ def audit(data, java, scan_png=False):
                 # rather than claim that every color is actually available.
                 pickup_outputs = {i for i in goal.drop_outputs if i in aliases and covered(i, collected, aliases)}
                 direct_outputs = set(goal.outputs)
+                legacy_sources = {}
+                if name == "mining" and goal.kind == "java" and png is not None:
+                    # Evidence across known home plan variants, not proof of live
+                    # registration, a reachable source or simultaneous residents.
+                    plan_markers = set().union(*(png.get(p, set()) for p in role_plans[r]))
+                    legacy_sources = {item: block for item, block in LEGACY_MINING_SOURCES.items()
+                                      if item in aliases and SOURCE_MARKERS.get(block) in plan_markers}
+                    direct_outputs.update(legacy_sources)
                 if name == "shearsheep":
                     direct_outputs.update(i for i in aliases if i.startswith("wool_") and
                         (i == "wool_white" or covered(i, collected | returned, aliases)))
                 for output in sorted(direct_outputs | pickup_outputs):
-                    inventory_output = goal.inventory or output in pickup_outputs or name == "shearsheep"
+                    inventory_output = (goal.inventory or output in pickup_outputs or
+                                        output in legacy_sources or name == "shearsheep")
                     retained_seed = inventory_output and covered(output, planting_inputs, aliases)
                     producers[output].add(r)
                     edges.append(dict(culture=culture, role=r, goal=name, output=output,
-                                      inputs=sorted(goal.inputs), source=goal.source,
+                                      inputs=sorted(goal.inputs), source=legacy_sources.get(output, goal.source),
                                       inferred=goal.uncertain or output in pickup_outputs or name == "shearsheep",
                                       collection="potential_drop" if output in pickup_outputs else "direct",
                                       retained_planting_input=retained_seed))
