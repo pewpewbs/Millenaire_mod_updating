@@ -108,6 +108,30 @@ class ProductionAuditTests(unittest.TestCase):
         path.write_bytes(b"\xef\xbb\xbfloot=sand,1\n")
         self.assertEqual(read_legacy_text(path), "loot=sand,1\n")
 
+    def test_drops_require_collection_and_are_inferred(self):
+        self.put(self.data, "itemlist.txt", (self.data / "itemlist.txt").read_text() +
+                 "beefraw;minecraft:beef;0\nleather;minecraft:leather;0\n")
+        self.put(self.data, "goals/genericslaughteranimal/cow.txt",
+                 "animalkey=minecraft:cow\n")
+        self.put(self.data, "cultures/test/villagers/butcher.txt",
+                 "goal=cow\ngoal=bringbackresourceshome\ncollectGood=beefraw\nbringBackHomeGood=beefraw\n")
+        result = self.run_audit()
+        edges = [e for e in result["edges"] if e["role"] == "butcher"]
+        self.assertEqual([e["output"] for e in edges], ["beefraw"])
+        self.assertTrue(edges[0]["inferred"])
+        self.assertEqual(edges[0]["collection"], "potential_drop")
+        self.assertEqual(result["goal_catalog"]["cow"]["possible_entity_drops"], ["beefraw", "leather"])
+
+    def test_planting_seed_retention_not_missing_return(self):
+        self.put(self.data, "goals/genericplanting/plant.txt", "seed=sand\n")
+        self.put(self.data, "cultures/test/villagers/miner.txt",
+                 "goal=minesand\ngoal=plant\ngoal=bringbackresourceshome\n")
+        result = self.run_audit()
+        self.assertFalse(any(f["code"] == "MISSING_HOME_RETURN" and "miner.txt" in f["file"]
+                             for f in result["findings"]))
+        edge = next(e for e in result["edges"] if e["role"] == "miner" and e["output"] == "sand")
+        self.assertTrue(edge["retained_planting_input"])
+
     def test_png_optional_source_evidence(self):
         try:
             from PIL import Image
@@ -118,9 +142,10 @@ class ProductionAuditTests(unittest.TestCase):
         result = audit(self.data, self.java, True)
         self.assertTrue(result["cultures"]["test"]["png_scanned"])
         self.assertFalse(any(f["code"] == "NO_HOME_SOURCE_MARKER_SEEN" for f in result["findings"]))
-        Image.new("RGBA", (1,1), (200,20,20,0)).save(path)
-        result = audit(self.data, self.java, True)
-        self.assertTrue(any(f["code"] == "NO_HOME_SOURCE_MARKER_SEEN" for f in result["findings"]))
+        for alpha in (0, 128):
+            Image.new("RGBA", (1,1), (200,20,20,alpha)).save(path)
+            result = audit(self.data, self.java, True)
+            self.assertTrue(any(f["code"] == "NO_HOME_SOURCE_MARKER_SEEN" for f in result["findings"]))
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
