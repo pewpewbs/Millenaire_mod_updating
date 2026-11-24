@@ -3930,15 +3930,32 @@ public class Building {
       this.visitorsList.add("panels.startedtrading;" + this.merchantRecord.getName() + ";" + this.merchantRecord.getNativeOccupationName());
    }
 
-   private void moveMerchant(Building destInn) {
-      HashMap<InvItem, Integer> contents = this.resManager.getChestsContent();
-
-      for (InvItem key : contents.keySet()) {
-         int nb = this.takeGoods(key.getItem(), key.meta, 9999999);
-         destInn.storeGoods(key.getItem(), key.meta, nb);
-         destInn.addToImports(key, nb);
-         this.addToExports(key, nb);
+   private boolean transferMerchantStock(Building destInn, boolean exchange) {
+      if (this.merchantRecord == null || destInn == null || destInn == this
+            || this.getTownHall() == null || destInn.getTownHall() == null
+            || destInn.resManager.getSleepingPos() == null
+            || (exchange && this.resManager.getSleepingPos() == null)
+            || exchange != (destInn.merchantRecord != null)) return false;
+      var result = org.millenaire.common.utilities.MerchantStockTransfer.transfer(this, destInn, exchange);
+      if (!result.success()) {
+         if (MillConfigValues.LogMerchant >= 1)
+            MillLog.major(this, "MERCHANT-STOCK-DEFERRED: " + result.reason() + " -> " + destInn.getPos());
+         return false;
       }
+      // Account for actual committed cargo only.
+      for (var entry : result.outward().entrySet()) {
+         this.addToExports(entry.getKey(), entry.getValue());
+         destInn.addToImports(entry.getKey(), entry.getValue());
+      }
+      for (var entry : result.inward().entrySet()) {
+         destInn.addToExports(entry.getKey(), entry.getValue());
+         this.addToImports(entry.getKey(), entry.getValue());
+      }
+      return true;
+   }
+
+   private void moveMerchant(Building destInn) {
+      if (!transferMerchantStock(destInn, false)) return;
 
       this.transferVillagerPermanently(this.merchantRecord, destInn);
       this.visitorsList
@@ -3968,6 +3985,11 @@ public class Building {
       destInn.merchantRecord = this.merchantRecord;
       this.merchantRecord = null;
       this.nbNightsMerchant = 0;
+      destInn.nbNightsMerchant = 0;
+      this.markSaveNeeded();
+      destInn.markSaveNeeded();
+      destInn.saveTownHall("merchant arrived");
+      this.saveTownHall("merchant departed");
    }
 
    public int nbGoodAvailable(BlockState bs, boolean forConstruction, boolean forExport, boolean forShop) {
@@ -5379,22 +5401,7 @@ public class Building {
    }
 
    private void swapMerchants(Building destInn) {
-      HashMap<InvItem, Integer> contents = this.resManager.getChestsContent();
-      HashMap<InvItem, Integer> destContents = destInn.resManager.getChestsContent();
-
-      for (InvItem key : contents.keySet()) {
-         int nb = this.takeGoods(key.getItem(), key.meta, contents.get(key));
-         destInn.storeGoods(key.getItem(), key.meta, nb);
-         destInn.addToImports(key, nb);
-         this.addToExports(key, nb);
-      }
-
-      for (InvItem key : destContents.keySet()) {
-         int nb = destInn.takeGoods(key.getItem(), key.meta, destContents.get(key));
-         this.storeGoods(key.getItem(), key.meta, nb);
-         destInn.addToExports(key, nb);
-         this.addToImports(key, nb);
-      }
+      if (!transferMerchantStock(destInn, true)) return;
 
       VillagerRecord oldMerchant = this.merchantRecord;
       VillagerRecord newMerchant = destInn.merchantRecord;
