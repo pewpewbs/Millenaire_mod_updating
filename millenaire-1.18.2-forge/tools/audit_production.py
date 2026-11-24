@@ -339,6 +339,12 @@ def audit(data, java, scan_png=False):
                     emit("REVIEW", "SHOP_SUPPLY_UNCONFIRMED", culture, shop,
                          f"{item}; no indexed local producer or player/foreign price", "deliverto")
         culture_edges = edges[first_edge:]
+        if any(goals[g].kind == "genericcooking" for gs in assigned.values() for g in gs if g in goals):
+            if not covered("wood_any", set(producers) | buy | foreign, aliases):
+                cooking_roles = sorted(r for r, gs in assigned.items()
+                    if any(g in goals and goals[g].kind == "genericcooking" for g in gs))
+                emit("REVIEW", "FURNACE_FUEL_SUPPLY_UNCONFIRMED", culture, roles[cooking_roles[0]],
+                     "No indexed log producer or purchase listing; existing fuel and unmodeled sources may cover.")
         for item, needing in sorted(consumers.items()):
             if covered(item, producers, aliases):
                 continue
