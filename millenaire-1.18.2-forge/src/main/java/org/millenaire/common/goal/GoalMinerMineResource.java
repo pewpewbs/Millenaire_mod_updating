@@ -135,47 +135,47 @@ extends Goal {
         BlockState blockState = WorldUtilities.getBlockState(villager.level, villager.getGoalDestPoint());
         Block block = blockState.getBlock();
         if (LegacyBlockStates.matchesName(block, "minecraft:sand")) {
-            villager.addToInv((Block)Blocks.SAND, 1);
+            villager.addToInv((Block)Blocks.SAND, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             WorldUtilities.playSoundBlockBreaking(villager.level, villager.getGoalDestPoint(), (Block)Blocks.SAND, 1.0f);
             if (MillConfigValues.LogMiner >= 3 && villager.extraLog) {
                 MillLog.debug(this, "Gathered sand at: " + villager.getGoalDestPoint());
             }
         } else if (LegacyBlockStates.matchesName(block, "minecraft:stone")) {
             if (block == Blocks.STONE) {
-                villager.addToInv(Blocks.COBBLESTONE, 1);
+                villager.addToInv(Blocks.COBBLESTONE, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             } else {
-                villager.addToInv(blockState, 1);
+                villager.addToInv(blockState, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             }
             WorldUtilities.playSoundBlockBreaking(villager.level, villager.getGoalDestPoint(), Blocks.STONE, 1.0f);
             if (MillConfigValues.LogMiner >= 3 && villager.extraLog) {
                 MillLog.debug(this, "Gather cobblestone at: " + villager.getGoalDestPoint());
             }
         } else if (LegacyBlockStates.matchesName(block, "minecraft:sandstone")) {
-            villager.addToInv(Blocks.SANDSTONE, 1);
+            villager.addToInv(Blocks.SANDSTONE, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             WorldUtilities.playSoundBlockBreaking(villager.level, villager.getGoalDestPoint(), Blocks.SANDSTONE, 1.0f);
             if (MillConfigValues.LogMiner >= 3 && villager.extraLog) {
                 MillLog.debug(this, "Gather sand stone at: " + villager.getGoalDestPoint());
             }
         } else if (block == Blocks.CLAY) {
-            villager.addToInv(Items.CLAY_BALL, 1);
+            villager.addToInv(Items.CLAY_BALL, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             WorldUtilities.playSoundBlockBreaking(villager.level, villager.getGoalDestPoint(), Blocks.CLAY, 1.0f);
             if (MillConfigValues.LogMiner >= 3 && villager.extraLog) {
                 MillLog.debug(this, "Gather clay at: " + villager.getGoalDestPoint());
             }
         } else if (block == Blocks.GRAVEL) {
-            villager.addToInv(Blocks.GRAVEL, 1);
+            villager.addToInv(Blocks.GRAVEL, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             WorldUtilities.playSoundBlockBreaking(villager.level, villager.getGoalDestPoint(), Blocks.GRAVEL, 1.0f);
             if (MillConfigValues.LogMiner >= 3 && villager.extraLog) {
                 MillLog.debug(this, "Gather gravel at: " + villager.getGoalDestPoint());
             }
         } else if (block == Blocks.SNOW) {
-            villager.addToInv((Block)MillBlocks.SNOW_BRICK, 1);
+            villager.addToInv((Block)MillBlocks.SNOW_BRICK, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             WorldUtilities.playSoundBlockBreaking(villager.level, villager.getGoalDestPoint(), Blocks.SNOW_BLOCK, 1.0f);
             if (MillConfigValues.LogMiner >= 3) {
                 MillLog.debug(this, "Gather snow at: " + villager.getGoalDestPoint());
             }
         } else if (block == Blocks.ICE) {
-            villager.addToInv(MillBlocks.ICE_BRICK, 1);
+            villager.addToInv(MillBlocks.ICE_BRICK, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             WorldUtilities.playSoundBlockBreaking(villager.level, villager.getGoalDestPoint(), Blocks.ICE, 1.0f);
             if (MillConfigValues.LogMiner >= 3) {
                 MillLog.debug(this, "Gather ice at: " + villager.getGoalDestPoint());
