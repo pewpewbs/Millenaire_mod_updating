@@ -41,6 +41,22 @@ class OptimizationWiring(unittest.TestCase):
         self.assertIn("memory.forget(", cache)
         self.assertIn("cacheStale()", cache)
 
+    def test_route_cache_admission_matches_replay_edge_contract(self):
+        replay = PLANNER.split("private ArrayList<AStarNode> reusePath(", 1)[1]
+        replay = replay.split("private static boolean isCacheEdgeAdjacent(", 1)[0]
+        self.assertIn("if (!isCacheEdgeAdjacent(from, to))", replay)
+        self.assertIn('rejection = "NON_ADJACENT_EDGE"', replay)
+        predicate = PLANNER.split("private static boolean isCacheEdgeAdjacent(", 1)[1]
+        predicate = predicate.split("private void rememberPath(", 1)[0]
+        for axis in ("x", "y", "z"):
+            self.assertIn(f"Math.abs(to.{axis} - from.{axis}) <= 1", predicate)
+        admission = PLANNER.split("private void rememberPath(", 1)[1]
+        admission = admission.split("private static double pathCost(", 1)[0]
+        guard = "if (!isCacheEdgeAdjacent(path.get(i), path.get(i - 1))) return;"
+        self.assertIn("for (int i = 1; i < path.size(); i++)", admission)
+        self.assertLess(admission.index(guard), admission.index(".remember("))
+        self.assertLess(admission.index(guard), admission.index("routeStored()"))
+
     def test_navopt19_negative_route_cache_is_exact_and_revision_guarded(self):
         self.assertIn("record CandidatesSnapshot(List<Lookup> matches, long revision)", MEMORY)
         self.assertIn("public synchronized CandidatesSnapshot candidatesWithRevision(", MEMORY)
