@@ -50,6 +50,52 @@ public class GoalGenericTendFurnace extends GoalGeneric {
         }
         return best;
     }
+    /** Output recovery is independent of recipe quotas, input batches and fuel. */
+    static boolean canStoreOutput(Building destination, ItemStack output) {
+        if (output.isEmpty() || output.hasTag()) return false;
+        for (Point point : destination.getResManager().chests) {
+            var chest = point.getMillChest(destination.world);
+            if (chest == null) continue;
+            for (int i = 0; i < chest.getContainerSize(); i++) {
+                ItemStack stack = chest.getItem(i);
+                if (stack.isEmpty() || (ItemStack.isSameItemSameTags(stack, output)
+                        && stack.getCount() < stack.getMaxStackSize())) return true;
+            }
+        }
+        return false;
+    }
+
+    private static ItemStack storeOutput(Building destination, ItemStack output) {
+        if (!canStoreOutput(destination, output)) return output;
+        int stored = destination.storeGoods(output.getItem(), output.getDamageValue(), output.getCount());
+        if (stored <= 0) return output;
+        ItemStack remainder = output.copy();
+        remainder.shrink(stored);
+        return remainder;
+    }
+
+    private static boolean hasCollectableOutput(Building destination, BlockEntity entity) {
+        if (entity instanceof FurnaceBlockEntity furnace)
+            return canStoreOutput(destination, furnace.getItem(2));
+        if (entity instanceof TileEntityFirePit firepit) {
+            for (int i = 0; i < 3; i++)
+                if (canStoreOutput(destination, firepit.outputs.getStackInSlot(i))) return true;
+        }
+        return false;
+    }
+
+    private static void collectOutput(Building destination, BlockEntity entity) {
+        if (entity instanceof FurnaceBlockEntity furnace) {
+            ItemStack old = furnace.getItem(2), remainder = storeOutput(destination, old);
+            if (old != remainder) { furnace.setItem(2, remainder); furnace.setChanged(); }
+        } else if (entity instanceof TileEntityFirePit firepit) {
+            for (int i = 0; i < 3; i++) {
+                ItemStack old = firepit.outputs.getStackInSlot(i), remainder = storeOutput(destination, old);
+                if (old != remainder) { firepit.outputs.setStackInSlot(i, remainder); firepit.setChanged(); }
+            }
+        }
+    }
+
     private boolean needsFuel(MillVillager villager, Building destination, BlockEntity entity) {
         if (!(entity instanceof FurnaceBlockEntity) && !(entity instanceof TileEntityFirePit)) return false;
         ItemStack current = fuel(entity);
@@ -60,6 +106,11 @@ public class GoalGenericTendFurnace extends GoalGeneric {
     @Override public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
         for (Building destination : getBuildings(villager)) {
             if (!isDestPossible(villager, destination)) continue;
+            // Empty finished output even when fuel is already sufficient.
+            for (Point point : destination.getResManager().furnaces)
+                if (hasCollectableOutput(destination, point.getFurnace(villager.level))) return packDest(point, destination);
+            for (Point point : destination.getResManager().firepits)
+                if (hasCollectableOutput(destination, point.getFirePit(villager.level))) return packDest(point, destination);
             for (Point point : destination.getResManager().furnaces)
                 if (needsFuel(villager, destination, point.getFurnace(villager.level))) return packDest(point, destination);
             for (Point point : destination.getResManager().firepits)
@@ -87,6 +138,8 @@ public class GoalGenericTendFurnace extends GoalGeneric {
         if (destination == null || point == null) return true;
         BlockEntity entity = point.getTileEntity(villager.level);
         if (!(entity instanceof FurnaceBlockEntity) && !(entity instanceof TileEntityFirePit)) return true;
+        collectOutput(destination, entity);
+        if (!needsFuel(villager, destination, entity)) return true;
         ItemStack current = fuel(entity);
         WoodVariant wood = chooseWood(villager, destination, current);
         if (wood == null) return true;
