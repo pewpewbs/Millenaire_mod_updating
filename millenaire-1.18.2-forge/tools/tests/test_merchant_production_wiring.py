@@ -42,12 +42,26 @@ class MerchantProductionWiring(unittest.TestCase):
 
     def test_live_mining_source_at_selection_and_action(self):
         code=read("goal/generic/GoalGenericMining.java")
-        self.assertIn("if (!this.validateDest(villager,possibleDest)) continue;",code)
+        selection=code.split("public Goal.GoalInformation getDestination(",1)[1].split("public ItemStack[] getHeldItemsTravelling",1)[0]
+        self.assertIn("if (possibleDest == null || !this.validateDest(villager,possibleDest)) continue;",selection)
+        self.assertIn("if (this.sourceBlockState != types.get(index)) continue;",selection)
+        self.assertIn("if (!liveSource(villager,point)) continue;",selection)
         self.assertIn("NO_REGISTERED_MATCHING_LIVE_SOURCE",code)
-        self.assertIn("villager.level.hasChunkAt(point.getBlockPos())",code)
+        live=code.split("private boolean liveSource(",1)[1].split("@Override",1)[0]
+        self.assertIn("villager.level.hasChunkAt(point.getBlockPos())",live)
+        self.assertIn("WorldUtilities.getBlockState(villager.level,point) == this.sourceBlockState",live)
+        target=code.split("private boolean validTarget(",1)[1].split("@Override",1)[0]
+        self.assertIn("!liveSource(villager, point)",target)
+        self.assertIn("!getBuildings(villager).contains(destination)",target)
+        self.assertIn("types.get(index)==this.sourceBlockState && sources.get(index).contains(point)",target)
+        self.assertIn("return false;",target)
         action=code.split("public boolean performAction(",1)[1].split("public boolean stuckAction",1)[0]
-        self.assertLess(action.index("!liveSource(villager,point)"),action.index("villager.addToInv"))
-        self.assertLess(action.index("if (!registered) return true;"),action.index("villager.addToInv"))
+        for guard in ("!validTarget(villager,destination,point)", "!this.passesStockLimits(villager)",
+                      "!this.validateDest(villager,destination)", "!this.isWithinActionRange(villager,point)"):
+            self.assertLess(action.index(guard),action.index("villager.addToInv"))
+        stuck=code.split("public boolean stuckAction(",1)[1].split("}",1)[0]
+        self.assertNotIn("performAction",stuck)
+        self.assertIn("return false;",stuck)
 
     def test_lone_miner_can_deposit_gravel(self):
         path=ROOT/"src/main/resources/todeploy/millenaire/cultures/japanese/villagers/japanese_loneminer.txt"

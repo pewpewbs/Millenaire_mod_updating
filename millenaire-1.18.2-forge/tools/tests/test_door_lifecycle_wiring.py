@@ -74,8 +74,21 @@ class DoorLifecycleWiring(unittest.TestCase):
         self.assertIn('now - this.stairStationarySince >= 40L', NAVIGATOR)
 
     def test_ladder_assist_remains_present(self):
-        self.assertIn('if (!state.is(net.minecraft.world.level.block.Blocks.LADDER)) return;', NAVIGATOR)
-        self.assertIn("LADDER-ASSIST next=", NAVIGATOR)
+        tick = NAVIGATOR.split("public void tick()", 1)[1].split("private boolean isLadderNode", 1)[0]
+        self.assertIn("if (!this.mob.level.hasChunkAt(rung)) return;", tick)
+        self.assertIn("if (!state.is(net.minecraft.world.level.block.Blocks.LADDER)) {", tick)
+        self.assertLess(tick.index("this.assistLeavingLadder(next);"), tick.index("this.assistLadderRung(next, state);"))
+        self.assertIn("this.assistLeavingLadder(next);\n            return;", tick)
+        rung = NAVIGATOR.split("private void assistLadderRung(", 1)[1].split("private void assistLeavingLadder(", 1)[0]
+        self.assertIn("LadderTransitionRules.shouldClimb(", rung)
+        self.assertIn("if (this.canRiseInsideLadder())", rung)
+        self.assertIn("this.mob.setDeltaMovement(", rung)
+        self.assertIn("LADDER-ASSIST next=", rung)
+        exit = NAVIGATOR.split("private void assistLeavingLadder(", 1)[1].split("private void traceNearbyStair(", 1)[0]
+        self.assertIn("if (!this.isLadderNode(previous)) return;", exit)
+        self.assertIn("LadderTransitionRules.needsTopOut(", exit)
+        self.assertIn("if (!this.canRiseInsideLadder()) return;", exit)
+        self.assertIn("LADDER-EXIT lastRung=", exit)
 
 
 if __name__ == "__main__":
