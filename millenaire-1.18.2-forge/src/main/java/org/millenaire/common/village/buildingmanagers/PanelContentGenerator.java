@@ -889,7 +889,7 @@ public class PanelContentGenerator {
             status = LanguageUtilities.string(house.buildingGoalIssue);
          }
 
-         page.addLine(name + " - " + status);
+         page.addLine(name + (status.isBlank() ? "" : " - " + status));
          page.addLine("");
          Collections.sort(res, new MillVillager.InvItemAlphabeticalComparator());
 
@@ -1002,10 +1002,15 @@ public class PanelContentGenerator {
       page.addLine(LanguageUtilities.string("ui.teens", "" + (nbGrownBoy + nbGrownGirl), "" + nbGrownBoy, "" + nbGrownGirl));
       page.addLine(LanguageUtilities.string("ui.children", "" + (nbBoy + nbGirl), "" + nbBoy, "" + nbGirl));
       page.addLine("");
-      if (townHall.buildingGoal == null) {
+      if (townHall.buildingGoal == null || townHall.buildingGoal.isBlank()) {
          page.addLine(LanguageUtilities.string("ui.goalscompleted1") + " " + LanguageUtilities.string("ui.goalscompleted2"));
       } else {
          BuildingPlan goal = townHall.getCurrentGoalBuildingPlan();
+         // A goal and its plan may arrive in separate synchronization steps.
+         // Keep the book usable until the actual plan is available.
+         if (goal == null) {
+            page.addLine(LanguageUtilities.string("panels.buildingproject") + " " + townHall.buildingGoal);
+         } else {
          ConstructionIP goalCIP = null;
 
          for (ConstructionIP cip : townHall.getConstructionsInProgress()) {
@@ -1025,7 +1030,7 @@ public class PanelContentGenerator {
             status = LanguageUtilities.string(townHall.buildingGoalIssue);
          }
 
-         page.addLine(LanguageUtilities.string("panels.buildingproject") + " " + goal.nativeName + " " + goal.getNameTranslated() + ": " + status);
+         page.addLine(LanguageUtilities.string("panels.buildingproject") + " " + goal.nativeName + " " + goal.getNameTranslated() + (status.isBlank() ? "" : ": " + status));
          List<InvItem> res = new ArrayList<>();
          HashMap<InvItem, Integer> resCost = new HashMap<>();
          HashMap<InvItem, Integer> resHas = new HashMap<>();
@@ -1077,6 +1082,7 @@ public class PanelContentGenerator {
          for (TextLine l : BookManager.splitInColumns(infoColumns, 2)) {
             page.addLine(l);
          }
+         }
       }
 
       page.addLine("");
@@ -1085,7 +1091,9 @@ public class PanelContentGenerator {
 
       for (ConstructionIP cipxx : townHall.getConstructionsInProgress()) {
          if (cipxx.getBuildingLocation() != null) {
-            String planName = townHall.culture.getBuildingPlanSet(cipxx.getBuildingLocation().planKey).getNameNative();
+            String planKey = cipxx.getBuildingLocation().planKey;
+            var planSet = townHall.culture.getBuildingPlanSet(planKey);
+            String planName = planSet == null ? planKey : planSet.getNameNative();
             String status;
             if (cipxx.getBuildingLocation().level == 0) {
                status = LanguageUtilities.string("ui.inconstruction");

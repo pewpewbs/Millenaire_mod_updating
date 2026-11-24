@@ -16,7 +16,7 @@ import org.millenaire.common.utilities.Point;
 
 @Mod.EventBusSubscriber(modid="millenaire",bus=Mod.EventBusSubscriber.Bus.MOD)
 public final class MillNetwork {
-    private static final String PROTOCOL="1.18.2-2";
+    private static final String PROTOCOL="1.18.2-3";
     private static final SimpleChannel CHANNEL=NetworkRegistry.newSimpleChannel(new ResourceLocation("millenaire","main"),()->PROTOCOL,PROTOCOL::equals,PROTOCOL::equals);
     private record ToClient(MillPacketPayload payload) {}
     private record ToServer(MillPacketPayload payload) {}

@@ -160,7 +160,7 @@ final class BuildingMapTooltip {
                         // Read registered source types only, not world blocks.
                         // The legacy mining goal transforms particular sources
                         // into specific drops; mirror its explicit output rules.
-                        if (building != null) for (var source : building.getResManager().sourceTypes) {
+                        if (building != null) for (var source : building.getResManager().getDisplaySourceTypes()) {
                             if (source == null) continue;
                             var block = source.getBlock();
                             if (LegacyBlockStates.matchesName(block, "minecraft:sand"))

@@ -72,6 +72,13 @@ public class ResManager {
     public CopyOnWriteArrayList<Point> cultureBanners = new CopyOnWriteArrayList();
     public CopyOnWriteArrayList<CopyOnWriteArrayList<Point>> sources = new CopyOnWriteArrayList();
     public CopyOnWriteArrayList<BlockState> sourceTypes = new CopyOnWriteArrayList();
+    private static final int MAX_DISPLAY_SOURCE_TYPES = 1024;
+    private List<BlockState> displaySourceTypes = List.of();
+
+    /** Read-only source summary; the client does not receive source coordinates. */
+    public List<BlockState> getDisplaySourceTypes() {
+        return this.building.world.isClientSide ? displaySourceTypes : List.copyOf(sourceTypes);
+    }
     public CopyOnWriteArrayList<CopyOnWriteArrayList<Point>> spawns = new CopyOnWriteArrayList();
     public CopyOnWriteArrayList<ResourceLocation> spawnTypes = new CopyOnWriteArrayList();
     public CopyOnWriteArrayList<CopyOnWriteArrayList<Point>> mobSpawners = new CopyOnWriteArrayList();
@@ -540,6 +547,15 @@ public class ResManager {
         this.stalls = StreamReadWrite.readPointList(ds);
         this.banners = StreamReadWrite.readPointList(ds);
         this.cultureBanners = StreamReadWrite.readPointList(ds);
+        int sourceCount = ds.readVarInt();
+        if (sourceCount < 0 || sourceCount > MAX_DISPLAY_SOURCE_TYPES)
+            throw new IOException("Invalid resource source type count: " + sourceCount);
+        java.util.ArrayList<BlockState> receivedSources = new java.util.ArrayList<>(sourceCount);
+        for (int i = 0; i < sourceCount; i++) {
+            BlockState state = Block.stateById(ds.readVarInt());
+            if (!state.isAir()) receivedSources.add(state);
+        }
+        displaySourceTypes = List.copyOf(receivedSources);
         for (Point p : this.chests) {
             TileEntityLockedChest chest = p.getMillChest(this.building.mw.world);
             if (chest == null) continue;
@@ -759,6 +775,10 @@ public class ResManager {
         StreamReadWrite.writePointList(this.stalls, data);
         StreamReadWrite.writePointList(this.banners, data);
         StreamReadWrite.writePointList(this.cultureBanners, data);
+        List<BlockState> types = List.copyOf(this.sourceTypes);
+        int count = Math.min(types.size(), MAX_DISPLAY_SOURCE_TYPES);
+        data.writeVarInt(count);
+        for (int i = 0; i < count; i++) data.writeVarInt(Block.getId(types.get(i)));
     }
 
     public void setCraftingPos(Point p) {
