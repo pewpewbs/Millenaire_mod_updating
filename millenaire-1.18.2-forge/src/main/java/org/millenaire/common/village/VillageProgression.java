@@ -21,6 +21,7 @@ final class VillageProgression {
     record Candidate(BuildingProject project, BuildingPlan plan) {}
     private record Recipe(InvItem output, Map<InvItem,Integer> inputs) {}
     private static final Map<BuildingPlan, Set<String>> PALETTES = new WeakHashMap<>();
+    private static final Map<BuildingPlan, Set<InvItem>> QUARRY_OUTPUTS = new WeakHashMap<>();
     private VillageProgression() {}
 
     static boolean enabled(Building v) {
@@ -29,20 +30,7 @@ final class VillageProgression {
     }
 
     static String styleFamily(ResourceLocation id) {
-        if (id == null) return null;
-        String p = id.getPath();
-        if (p.startsWith("path") || p.contains("road")) return null;
-        if (p.startsWith("stairs_")) p = p.substring(7);
-        if (p.startsWith("slab_")) p = p.substring(5);
-        for (String suffix : List.of("_stairs", "_slab", "_wall"))
-            if (p.endsWith(suffix)) p = p.substring(0, p.length() - suffix.length());
-        if (!(p.contains("sandstone") || p.contains("tiles") || p.contains("terracotta")
-                || p.contains("stone_brick") || p.contains("stonebrick") || p.contains("painted_brick")
-                || p.contains("mudbrick") || p.contains("mud_brick") || p.contains("cookedbrick")
-                || p.contains("timberframe") || p.contains("timber_frame") || p.contains("thatch")
-                || p.equals("paper_wall") || p.contains("marble") || p.contains("snowbrick")
-                || p.contains("icebrick") || p.equals("bricks"))) return null;
-        return id.getNamespace() + ":" + p;
+        return id == null ? null : VillageProgressionRules.styleFamily(id.getNamespace(), id.getPath());
     }
 
     private static synchronized Set<String> palette(BuildingPlan plan) {
@@ -85,7 +73,7 @@ final class VillageProgression {
                 introduced.removeAll(palette(older));
                 previous = older;
             }
-            return !Collections.disjoint(introduced, locked);
+            return VillageProgressionRules.intersects(introduced, locked);
         }
     }
 
@@ -102,8 +90,7 @@ final class VillageProgression {
         Set<String> past = new HashSet<>(), future = new HashSet<>();
         for (int n = 0; n < levels.length; n++)
             (n <= centre.location.level ? past : future).addAll(palette(levels[n]));
-        future.removeAll(past);
-        return new StyleGate(new Candidate(centre, next), Set.copyOf(future));
+        return new StyleGate(new Candidate(centre, next), VillageProgressionRules.futureOnly(past, future));
     }
 
     static boolean deferStyle(Building v, BuildingPlan p, boolean ignoreCost) {
@@ -138,9 +125,7 @@ final class VillageProgression {
             case PLAYER -> 105; case CENTRE -> 86; case START -> 84;
             case CORE -> 78; case SECONDARY -> 60; case EXTRA -> 45; default -> 40;
         };
-        return tier + (c.plan().level == 0 ? 20 : 0)
-                - 10 * Math.min(5, Math.max(0,c.plan().level))
-                + 4 * Math.min(25, Math.max(1,c.plan().priority));
+        return VillageProgressionRules.rank(tier, c.plan().level, c.plan().priority);
     }
 
     static Candidate select(Building v, List<BuildingProject> projects, BuildingPlan waiting,
@@ -152,7 +137,12 @@ final class VillageProgression {
             boolean dependent = v.getFlatProjectList().stream().anyMatch(p ->
                     p.planSet != null && gate.blocks(p.getNextBuildingPlan(false)));
             if (dependent) for (Candidate c : options)
-                if (c.project() == gate.centre().project()) return c;
+                if (c.project() == gate.centre().project()) {
+                    if (MillConfigValues.LogBuildingPlan >= 1)
+                        MillLog.major(v, "VILLAGE-PROGRESSION centre=" + c.project().key
+                                + " level=" + c.plan().level + " lockedStyles=" + gate.locked());
+                    return c;
+                }
         }
         Candidate preferred = options.stream().max(Comparator.comparingInt(VillageProgression::rank)
                 .thenComparing(c -> c.project().key, Comparator.reverseOrder())).orElse(null);
@@ -190,6 +180,36 @@ final class VillageProgression {
             tags.removeAll(chain.get(n).clearTags);
         }
         return tags;
+    }
+
+    // Mirror the old quarry goal's explicitly supported drops from the same
+    // source markers BuildingPlan.referenceBuildingPoints registers.
+    // Quartz/red sandstone are not guessed: the old action may not harvest them.
+    private static synchronized Set<InvItem> quarryOutputs(BuildingPlan plan) {
+        if (plan == null || plan.plan == null) return Set.of();
+        return QUARRY_OUTPUTS.computeIfAbsent(plan, p -> {
+            Set<InvItem> outputs = new HashSet<>();
+            for (PointType[][] floor : p.plan) {
+                if (floor == null) continue;
+                for (PointType[] row : floor) {
+                    if (row == null) continue;
+                    for (PointType pt : row) {
+                        if (pt == null) continue;
+                        if (pt.isType("stonesource")) outputs.add(InvItem.createInvItem(Blocks.COBBLESTONE));
+                        else if (pt.isType("sandsource")) outputs.add(InvItem.createInvItem(Blocks.SAND));
+                        else if (pt.isType("sandstonesource")) outputs.add(InvItem.createInvItem(Blocks.SANDSTONE));
+                        else if (pt.isType("claysource")) outputs.add(InvItem.createInvItem(Items.CLAY_BALL));
+                        else if (pt.isType("gravelsource")) outputs.add(InvItem.createInvItem(Blocks.GRAVEL));
+                        else if (pt.isType("granitesource")) outputs.add(InvItem.createInvItem(Blocks.GRANITE));
+                        else if (pt.isType("dioritesource")) outputs.add(InvItem.createInvItem(Blocks.DIORITE));
+                        else if (pt.isType("andesitesource")) outputs.add(InvItem.createInvItem(Blocks.ANDESITE));
+                        else if (pt.isType("snowsource")) outputs.add(InvItem.createInvItem(org.millenaire.common.block.MillBlocks.SNOW_BRICK));
+                        else if (pt.isType("icesource")) outputs.add(InvItem.createInvItem(org.millenaire.common.block.MillBlocks.ICE_BRICK));
+                    }
+                }
+            }
+            return Set.copyOf(outputs);
+        });
     }
 
     private static List<Recipe> recipes(Building v, BuildingPlan plan, BuildingProject project, Set<VillagerType> workers) {
@@ -231,6 +251,15 @@ final class VillageProgression {
                                 if (!stack.isEmpty()) output(out,InvItem.createInvItem(stack),Map.of(cook.itemToCook,1));
                             });
                 }
+            } else if (goal instanceof GoalMinerMineResource miner
+                    && (miner.buildingTag == null ? home : tags.contains(miner.buildingTag))) {
+                for (BuildingPlan p = plan; p != null; ) {
+                    for (InvItem item : quarryOutputs(p)) output(out,item,Map.of());
+                    if (p.level <= 0) break;
+                    BuildingPlan previous = p.getPreviousBuildingPlan();
+                    if (previous == null || previous.level >= p.level) break;
+                    p = previous;
+                }
             } else if (goal instanceof GoalLumbermanChopTrees && tags.contains("grove"))
                 output(out,InvItem.createInvItem(Items.OAK_LOG,-1),Map.of());
             else if (goal instanceof GoalFish && tags.contains("fishingspot")) {
@@ -256,7 +285,7 @@ final class VillageProgression {
     private static void missing(Building v, Map<InvItem,Integer> costs, Set<InvItem> needs) {
         if (costs == null) return;
         for (var e : costs.entrySet()) {
-            if (needs.size() >= 128) break;
+            if (needs.size() >= VillageProgressionRules.MAX_ITEMS) break;
             if (e.getValue() != null && e.getValue() > v.progressionAvailable(e.getKey())) needs.add(e.getKey());
         }
     }
@@ -284,16 +313,16 @@ final class VillageProgression {
         }
         // Bounded reverse expansion of recipe ingredients and producer build
         // costs. Cycles terminate; never execute an unaffordable prerequisite.
-        for (int pass = 0; pass < 8 && needs.size() < 128; pass++) {
+        List<InvItem> already = existing.stream().map(Recipe::output).toList();
+        for (int pass = 0; pass < VillageProgressionRules.MAX_PASSES && needs.size() < VillageProgressionRules.MAX_ITEMS; pass++) {
             int size = needs.size();
             for (Recipe r : existing) if (matches(needs,r.output())) missing(v,r.inputs(),needs);
-            for (var e : potential.entrySet()) for (Recipe r : e.getValue()) if (matches(needs,r.output())) {
+            for (var e : potential.entrySet()) for (Recipe r : e.getValue()) if (matches(needs,r.output()) && !matches(already,r.output())) {
                 missing(v,r.inputs(),needs);
                 missing(v,e.getKey().plan().resCost,needs);
             }
             if (needs.size() == size) break;
         }
-        List<InvItem> already = existing.stream().map(Recipe::output).toList();
         Candidate best = null;
         int score = Integer.MIN_VALUE;
         for (var e : potential.entrySet()) {
