@@ -91,10 +91,11 @@ extends Goal {
         for (var entry : targets.entrySet())
             carried += LocalLogistics.householdDelivery(villager,home,entry.getKey(),entry.getValue());
         if (carried > 0) return (int)Math.min(Integer.MAX_VALUE,100 + carried*20);
+        var sources = villager.getTownHall().getBuildings();
         for (var entry : targets.entrySet()) {
             if (!LocalLogistics.low(home,entry.getKey(),entry.getValue())) continue;
             int best = 0;
-            for (Building source : villager.getTownHall().getBuildings())
+            for (Building source : sources)
                 best = Math.max(best,LocalLogistics.householdPickup(villager,source,entry.getKey(),entry.getValue()));
             total += best;
         }
