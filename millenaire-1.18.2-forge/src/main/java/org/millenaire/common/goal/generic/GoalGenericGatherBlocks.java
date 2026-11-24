@@ -141,10 +141,10 @@ extends GoalGeneric {
             for (AnnotedParameter.BonusItem bonusItem : this.harvestItem) {
                 if (MillCommonUtilities.randomInt(100) > bonusItem.chance) continue;
                 if (this.collectInBuilding) {
-                    villager.getGoalBuildingDest().storeGoods(bonusItem.item, 1);
+                    villager.getGoalBuildingDest().storeGoods(bonusItem.item, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
                     continue;
                 }
-                villager.addToInv(bonusItem.item, 1);
+                villager.addToInv(bonusItem.item, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             }
             if (this.resultingBlockState != null) {
                 villager.setBlockstate(villager.getGoalDestPoint(), this.resultingBlockState);
