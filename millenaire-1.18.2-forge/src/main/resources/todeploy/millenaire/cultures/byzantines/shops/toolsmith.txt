@@ -1,4 +1,4 @@
 sells=byzantineAxe,byzantinePickaxe,byzantineShovel,byzantineHoe,stoneAxe,stonePickaxe,stoneShovel,stoneHoe
 
-buys=iron,cobblestone
+buys=iron,cobblestone,feather,flint
 

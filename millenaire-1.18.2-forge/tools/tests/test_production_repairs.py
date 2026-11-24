@@ -141,5 +141,25 @@ class ProductionRepairs(unittest.TestCase):
             self.assertIn("bringbackresourceshome", cfg.values("goal"))
 
 
+    def test_missing_arrow_and_banner_materials_can_be_purchased(self):
+        from audit_production import read_trade, csv_items
+        for culture, shops, materials in (
+            ("byzantines", ("toolsmith", "armyforge"), {"feather", "flint"}),
+            ("seljuk", ("weaver",), {"feather"}),
+        ):
+            with self.subTest(culture=culture):
+                root = DATA / "cultures" / culture
+                buy, foreign, _ = read_trade(root / "traded_goods.txt")
+                self.assertTrue(materials.issubset(buy))
+                self.assertTrue(materials.issubset(foreign))
+                for shop in shops:
+                    cfg = read_config(root / "shops" / (shop + ".txt"))
+                    self.assertTrue(materials.issubset(csv_items(cfg, "buys")))
+        wife = read_config(DATA / "cultures/seljuk/villagers/female/turk_weaverwife.txt")
+        self.assertIn("bringbackresourceshome", wife.values("goal"))
+        self.assertTrue({"dye_yellow", "dye_lightblue", "dye_red"}.issubset(
+            wife.values("bringbackhomegood")))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
