@@ -32,7 +32,8 @@ extends Goal {
     private static int countDeliverableGoods(MillVillager villager) {
         int total = 0;
         for (InvItem key : villager.getInventoryKeys()) {
-            if (isDeliverable(villager, key)) total += villager.countInv(key);
+            if (isDeliverable(villager, key) && villager.getHouse() != null)
+                total += Math.min(villager.countInv(key), villager.getHouse().storageRoom(key));
         }
         return total;
     }
@@ -68,7 +69,7 @@ extends Goal {
         if (villager.getGoodsToBringBackHome().isEmpty()
                 && !GoalShearSheep.hasShearingGoal(villager)) return false;
         int nb = countDeliverableGoods(villager);
-        if (nb <= 0) return false;
+        if (nb <= 0) return GoalDiagnostics.reject(villager, this, "NO_DELIVERABLE_GOODS_OR_HOME_STORAGE");
         // Override the old 100-second cooldown once a shepherd has a full
         // batch. Otherwise a large flock repeatedly wins the goal selection.
         if (fullShearingBatch(villager)) return true;
@@ -92,10 +93,11 @@ extends Goal {
     public boolean performAction(MillVillager villager) {
         // Never deposit remotely at an intermediate route endpoint.
         org.millenaire.common.utilities.Point destination = villager.getGoalDestPoint();
-        if (!this.isWithinActionRange(villager, destination)) return false;
+        if (!LocalLogistics.access(this,villager,villager.getHouse())) return false;
         for (InvItem key : villager.getInventoryKeys()) {
             if (isDeliverable(villager, key) && villager.countInv(key) > 0) {
-                villager.putInBuilding(villager.getHouse(), key.getItem(), key.meta, 256);
+                int amount = Math.min(256, villager.getHouse().storageRoom(key));
+                if (amount > 0) villager.putInBuilding(villager.getHouse(), key.getItem(), key.meta, amount);
             }
         }
         return true;
