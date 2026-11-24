@@ -2791,9 +2791,24 @@ IAStarPathedEntity {
     }
 
     public int putInBuilding(Building building, Item item, int meta, int nb) {
-        nb = this.takeFromInv(item, meta, nb);
-        building.storeGoods(item, meta, nb);
-        return nb;
+        if (building == null || nb <= 0 || this.level.isClientSide) return 0;
+        // A wildcard is a request, not an inventory stack. Preserve each
+        // concrete species/variant, including any remainder in a full chest.
+        if (meta == -1) {
+            int stored = 0;
+            InvItem requested = InvItem.createInvItem(item, meta);
+            for (InvItem actual : new ArrayList<>(this.inventory.keySet())) {
+                if (stored >= nb) break;
+                if (actual.meta == -1 || !requested.matches(actual)) continue;
+                stored += this.putInBuilding(building, actual.getItem(), actual.meta, nb - stored);
+            }
+            return stored;
+        }
+        int taken = this.takeFromInv(item, meta, nb);
+        if (taken <= 0) return 0;
+        int stored = building.storeGoods(item, meta, taken);
+        if (stored < taken) this.addToInv(item, meta, taken - stored);
+        return stored;
     }
 
     public void readAdditionalSaveData(CompoundTag nbttagcompound) {
