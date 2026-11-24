@@ -11,8 +11,8 @@ import java.util.function.Consumer;
 public final class ContentBundleUpdater {
     private ContentBundleUpdater() {}
     private static final String MANIFEST = ".millenaire-stock-content.properties";
-    private static final List<String> ROOTS = List.of("cultures", "goals", "villagerconfig", "quests", "help");
-    private static final List<String> FILES = List.of("blocklist.txt", "blocktypes.txt", "itemlist.txt");
+    private static final List<String> ROOTS = List.of("cultures", "goals", "villagerconfig", "quests", "help", "languages");
+    private static final List<String> FILES = List.of("blocklist.txt", "blocktypes.txt", "itemlist.txt", "localization-version.txt");
     public record Report(int installed, int updated, int removed, int conflicts, int preserved) {}
     private static String hash(Path path) throws IOException {
         try {
