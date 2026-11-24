@@ -104,7 +104,7 @@ extends Goal {
             // Award dye only after the harvest has actually changed the soil.
             if (villager.setBlockstate(destination, soil.setValue(BlockSnailSoil.PROGRESS,
                     BlockSnailSoil.EnumType.SNAIL_SOIL_EMPTY))) {
-                villager.addToInv(Items.PURPLE_DYE, 1);
+                villager.addToInv(Items.PURPLE_DYE, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
                 villager.swing(InteractionHand.MAIN_HAND);
             }
             return false;
