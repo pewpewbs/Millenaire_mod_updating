@@ -90,11 +90,15 @@ final class BuildingMapTooltip {
                 if (type != null) residents.add(type);
             }
             for (var record : townHall.getVillagerRecords().values()) {
-                if (!record.killed && record.getType() != null) workers.add(record.getType());
+                if (!record.killed) {
+                    VillagerType type = record.getType();
+                    if (type != null) workers.add(type);
+                }
             }
         }
         workers.addAll(residents);
         Set<String> produced = new TreeSet<>();
+        Set<String> activities = new TreeSet<>();
         for (VillagerType type : workers) {
             for (Goal goal : type.goals) {
                 boolean home = residents.contains(type);
@@ -126,6 +130,13 @@ final class BuildingMapTooltip {
                 if (generic.townHallGoal ? !central
                         : generic.buildingTag == null ? !home : !hasTag(loc, building, plan, generic.buildingTag)) continue;
                 if (generic.requiredTag != null && !hasTag(loc, building, plan, generic.requiredTag)) continue;
+                // A configured workplace can also have a non-producing role:
+                // planting, visiting, tending equipment or collecting supplies.
+                if (generic.buildingTag != null || generic.townHallGoal) {
+                    String activity = generic.gameName();
+                    if (activity != null && !activity.isBlank() && !activity.startsWith("goal."))
+                        activities.add(activity);
+                }
                 if (generic instanceof GoalGenericCrafting crafting) {
                     crafting.output.forEach((item, count) -> { if (count != null && count > 0) addItem(produced, item); });
                 } else if (generic instanceof GoalGenericMining mining) {
@@ -168,6 +179,7 @@ final class BuildingMapTooltip {
         List<String> effects = loc.getBuildingEffects(townHall.world);
         if (produced.isEmpty() && planned.isEmpty() && sells.isEmpty()) {
             Set<String> roles = new LinkedHashSet<>(effects);
+            roles.addAll(activities);
             if (!residents.isEmpty()) roles.add(label("Housing for villagers", "Житло для мешканців", "Жильё для жителей"));
             if (!loc.getVisitors().isEmpty()) roles.add(label("Accommodation for visitors", "Помешкання для відвідувачів", "Жильё для посетителей"));
             if (hasTag(loc, building, plan, "grove")) roles.add(label("Forestry", "Лісозаготівля", "Лесозаготовка"));
