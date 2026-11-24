@@ -34,10 +34,11 @@ public class ContentDeployer {
                 var destination = mods.resolve(folder);
                 var version = destination.resolve("version.txt");
                 if (Files.exists(destination)) {
-                    if (folder.equals("millenaire-custom")) continue;
-                    if (Files.isRegularFile(version) && Files.readString(version).trim().equals(Mill.VERSION_NUMBER)) continue;
-                    // Preserve previous content rather than deleting a user's edited files.
-                    Files.move(destination, mods.resolve(folder + "-backup-" + java.util.UUID.randomUUID()));
+                    if (!Files.isDirectory(destination) || Files.isSymbolicLink(destination))
+                        throw new IOException("Invalid deployed directory " + destination);
+                    // Reconcile stock files below, even across version changes.
+                    // Never replace an existing user configuration or custom directory.
+                    continue;
                 }
                 var input = source.resolve(folder);
                 if (!Files.isDirectory(input)) throw new IOException("Missing bundled directory: " + input);
@@ -56,109 +57,10 @@ public class ContentDeployer {
             var bundled = source.resolve("millenaire");
             var installed = mods.resolve("millenaire");
             ContentBundleUpdater.update(bundled, installed, message -> Mill.LOGGER.info(message));
-            LanguageBundleUpdater.update(bundled, installed);
+            Files.writeString(installed.resolve("version.txt"), Mill.VERSION_NUMBER);
         } catch (IOException error) {
             throw new IllegalStateException("Unable to deploy Millenaire content", error);
         }
-    }
-
-    /**
-     * Same-version ports keep their deployed content. Migrate just the missing
-     * stock Mayan miner task, without replacing the rest of the culture or
-     * touching millenaire-custom. Safe to run again after every startup.
-     */
-    private static void updateMayanSandstoneGoal(java.nio.file.Path bundled,
-            java.nio.file.Path installed) throws IOException {
-        var relative = java.nio.file.Path.of("cultures", "mayan", "villagers", "mayan_miner.txt");
-        var target = installed.resolve(relative);
-        var stock = bundled.resolve(relative);
-        var goalRelative = java.nio.file.Path.of("goals", "genericmining", "minesandstone.txt");
-        if (!Files.isRegularFile(stock) || !Files.isRegularFile(target)) return;
-        String stockText = Files.readString(stock);
-        if (!stockText.lines().anyMatch(line -> line.trim().equalsIgnoreCase("goal=minesandstone"))) return;
-        String original = Files.readString(target);
-        if (original.lines().anyMatch(line -> line.trim().equalsIgnoreCase("goal=minesandstone"))) return;
-        // Do not alter a locally rewritten miner lacking the standard stone task.
-        var anchor = java.util.regex.Pattern.compile("(?im)^[ \\t]*goal[ \\t]*=[ \\t]*minestone[ \\t]*(?=\\r?$)").matcher(original);
-        if (!anchor.find()) {
-            Mill.LOGGER.warn("Mayan sandstone migration skipped: deployed miner has no standard minestone goal");
-            return;
-        }
-        String newline = original.contains("\r\n") ? "\r\n" : "\n";
-        String updated = original.substring(0, anchor.end()) + newline
-                + "goal=minesandstone" + original.substring(anchor.end());
-        var installedGoal = installed.resolve(goalRelative);
-        if (!Files.isRegularFile(installedGoal)) {
-            var bundledGoal = bundled.resolve(goalRelative);
-            if (!Files.isRegularFile(bundledGoal)) {
-                Mill.LOGGER.warn("Mayan sandstone migration skipped: minesandstone goal definition missing");
-                return;
-            }
-            Files.createDirectories(installedGoal.getParent());
-            Files.copy(bundledGoal, installedGoal);
-        }
-        var backup = installed.resolveSibling("millenaire-content-backups")
-                .resolve(java.util.UUID.randomUUID().toString()).resolve(relative);
-        Files.createDirectories(backup.getParent());
-        Files.copy(target, backup);
-        var staged = Files.createTempFile(target.getParent(), "mayan-miner-", ".tmp");
-        try {
-            Files.writeString(staged, updated);
-            try {
-                Files.move(staged, target, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
-                Files.move(staged, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } finally {
-            Files.deleteIfExists(staged);
-        }
-        Mill.LOGGER.info("MAYAN-SANDSTONE-MIGRATION: installed missing minesandstone goal; original backed up");
-    }
-
-    /** Same-version migration of the bundled tavern cook; custom overrides are untouched. */
-    private static void updateTavernFurnace(java.nio.file.Path bundled,
-            java.nio.file.Path installed) throws IOException {
-        var relative = java.nio.file.Path.of("cultures", "byzantines", "villagers",
-                "artisans", "hostesse_byzantine.txt");
-        var target = installed.resolve(relative);
-        var stock = bundled.resolve(relative);
-        if (!Files.isRegularFile(target) || !Files.isRegularFile(stock)) return;
-        String original = Files.readString(target);
-        String stockText = Files.readString(stock);
-        if (!stockText.lines().anyMatch(line -> line.trim().equalsIgnoreCase("goal=tendfurnace"))) return;
-        var anchor = java.util.regex.Pattern.compile("(?im)^[ \\t]*goal[ \\t]*=[ \\t]*cooksteak[ \\t]*(?=\\r?$)").matcher(original);
-        if (!anchor.find()) return;
-        String newline = original.contains("\r\n") ? "\r\n" : "\n";
-        var additions = new java.util.ArrayList<String>();
-        if (!java.util.regex.Pattern.compile("(?im)^\\s*goal\\s*=\\s*tendfurnace\\s*$").matcher(original).find())
-            additions.add("goal=tendfurnace");
-        for (String wood : new String[]{"wood", "wood_pine", "wood_birch", "wood_jungle", "wood_acacia", "wood_darkoak"}) {
-            String key = "requiredGood=" + wood + ",4";
-            if (!stockText.lines().anyMatch(line -> line.trim().equalsIgnoreCase(key))) continue;
-            if (!java.util.regex.Pattern.compile("(?im)^[ \\t]*requiredGood[ \\t]*=[ \\t]*"
-                    + wood + "[ \\t]*,").matcher(original).find()) additions.add(key);
-        }
-        if (additions.isEmpty()) return;
-        String updated = original.substring(0, anchor.end()) + newline
-                + String.join(newline, additions) + original.substring(anchor.end());
-        var backup = installed.resolveSibling("millenaire-content-backups")
-                .resolve(java.util.UUID.randomUUID().toString()).resolve(relative);
-        Files.createDirectories(backup.getParent());
-        Files.copy(target, backup);
-        var staged = Files.createTempFile(target.getParent(), "tavern-cook-", ".tmp");
-        try {
-            Files.writeString(staged, updated);
-            try {
-                Files.move(staged, target, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
-                Files.move(staged, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } finally {
-            Files.deleteIfExists(staged);
-        }
-        Mill.LOGGER.info("TAVERN-FURNACE-MIGRATION: added missing maintenance/fuel entries; original backed up");
     }
 
     private static final String DEV_VERSION_NUMBER = "@VERSION@";
