@@ -1247,3 +1247,85 @@ ActorId тут runtime ID; не зберігається як ідентифік
 
 Користувач прямо сказав, що **етап 2 передає іншій розумнішій моделі**. Перший етап реалізації заморожено, ігровий запуск фінального коду підтверджено; формальна перевірка всіх підготовлених тестів і контрольована TPS/CPU/GC залишаються непідтвердженими. Повторне оптимізування за кількістю NO_PATH до виправлення фізичних причин зараз недоцільне. Поточний лог і аудит показують, що саме physical route validity/representation — наступний пріоритет. Не змінювати main. Зберегти всі оптимізації snapshots/cache/executor, directed validity і bounded work. Почати з повного читання §§20–26, актуального source і реальних переходів; перевірити контракт між `AStarStatic.isViable/isTransitionViable`, `AStarWorker`, `AStarWorkerJPS`, `AStarPathPlannerJPS`, `AS_PathEntity`, `PathNavigateSimple`, `MillVillager`. Створити контрольні геометричні fixtures (stair+slab+low ceiling; direction-specific jump/drop; door/gate; ladder ascent/descent/top-out; compressed JPS path vs edge-wise replay) із відповідністю до Minecraft 1.18.2 hitbox/collision shapes. Не ставити ціллю 0 NO_PATH для фізично недоступних цілей: коректна відмова має бути дозволеною. Спочатку correctness, потім контрольований performance profiling. У цьому раунді оновлено лише аудит, source не змінювався.
 
+
+## 27. Playtest 24.11.2026 — передача етапу 2 новішій моделі
+
+**Джерело:** `latest(20261124-152922).log`, 20 966 192 bytes, 87 090 фізичних рядків. Перевірено повний оригінал програмно, номери L нижче — 1-based фізичні рядки. Minecraft 1.18.2 / Forge 40.3.0 / Java 17.0.15 / millenaire-8.1.2-port.0.jar. Інтегрований сервер 15:28:04 (L64); перший NAV-OPT-STATS 15:28:13 (L89), останній 16:20:32 (L86899), 297 звітів, інтервал 3139 с (52:19). Штатне завершення і збереження 16:20:37–41 (L87079–87090). Один startup Can't keep up 3392ms/67 ticks (L87); протягом гри більше немає. Немає Java Exception/FATAL/ERROR-level записів. Старі 5 unknown config і 2 missing texture warnings залишилися. NullPointerException книги поселення в цьому логу відсутній; не доказ покриття всіх GUI сценаріїв. Ім'я JAR не дозволяє визначити точний Git SHA збірки.
+
+**Рішення користувача:** фізична перевірка переходів між вузлами, правильний підхід до драбин/спуск, визначення причин блокування дверей передаються новішій моделі. Цей розділ є handoff, не реалізацією цих трьох задач. У цьому раунді Java/config/tests не змінювалися. Працювати лише в `fix/villager-door-access-and-village-territory`, main не чіпати.
+
+### 27.1. Продуктивність і навігаційні лічильники
+
+Останній періодичний звіт L86899 (не змішувати з підрахунком подій повного логу):
+
+| Метрика | Значення |
+|---|---:|
+| JPS searches / avg / max | 14823 / 35.275ms / 159.506ms |
+| Classic A* searches / avg / max | 9461 / 26.375ms / 241.095ms |
+| Total JPS+A* / queue_started | 24284 (~464/min) |
+| Expanded JPS / A* | 5633671 / 15761456 |
+| Native count / avg / max | 31486 / 4.977ms / 162.081ms |
+| Snapshot count / avg / max | 14014 / 0.368ms / 12.263ms |
+| Queue avg / max / rejected | 27.180ms / 1107.168ms / 0 |
+| NO_PATH failures / cooldown | 854 / 5342 |
+| Cache hit / reverse / miss | 1993 / 137 / 64151 |
+| Empty lookup skipped | 41553 (64.77% misses; не % прискорення гри) |
+| Cache invalidated / stored | 15 / 8543 |
+| Snapshot full reuse / non-latest | 818 / 212 |
+| Shared sections / copied / reuse pct | 403529 / 4882286 / 7.6% |
+| Swept checks / blocked / avg / max | 26344281 / 33798 / 0.002ms / 20.747ms |
+| Flat column memo hit / miss | 77395512 / 21245683 |
+| Ladder scans / probes / hits | 1024 / 3463551 / 181 |
+| Moving goal requests / bursts | 707 / 15 |
+| Search preempted / inflight joined | 0 / 0 |
+
+Попередній лог 24.11 14:22:23 (за попереднім аналізом: 28.4 хв, 12210 пошуків, 196 stair collision events) порівняно з цим (52.3 хв, 24284, 693): ~429→464 пошуків/min, ~6.9→13.2 stair collision events/min. Не A/B: різна тривалість, навантаження, стан світу та невідомий точний build SHA. Повний Forge build/tests, CPU/GC/TPS profiling не підтверджені. Не збільшувати executor threads лише через queue max. Лог містить 857 NO_PATH подій, з них gatherolives=183, construction=92, gosocialise=88; 15 moving-goal bursts (приклад L14903 Evdoxia Raoul, gatherolives, 5 changes/20 ticks). Це окремий напрям, не підміняти ним physical correctness.
+
+### 27.2. P0 — фізичний перехід A→B: сходи, slab, низька стеля, стрибок
+
+STAIR-WAYPOINT=1775, horizontalCollision=true=693, серед останніх atNextClear=true=692. 627/693 (90.48%) колізій зареєстровані для одного stair=(22,66,571), facing=north, half=bottom, shape=straight, collisionTop=1.00. Це **повторні діагностичні події**, не 627 унікальних NPC або незалежних випадків. Інші координати: (27,68,648) 10; (71,67,592) 10; (24,67,610) 8; (20,71,590) 8; (70,69,598) 6.
+
+Відтворювані записи:
+- L21313 15:41:34 Nikiforos Kallergis, feet=(23,66,571), exactY=66.00, next=(22,67,570), nextHead=spruce_door, atNextClear=true, height=1.80, horizontalCollision=true, velocity=(0,-0.0784,0), stationaryTicks=55, path=27/32. Це діагональний підйом у районі сходів/дверей; не доказ що саме двері блокують AABB.
+- L86688 16:20:28 Elena Kallergis, feet=(22,67,570), exactY=67.00, next=(22,67,571), nextHead=air, atNextClear=true, horizontalCollision=true, height=1.80, velocity=(0,-0.0784,0), stationaryTicks=5048, path=1/35. 5048 ticks еквівалент 252.4 с при 20 TPS; не незалежний замір wall-clock і не доказ безперервної нерухомості без перевірки семантики лічильника.
+
+**Спостереження користувача з попереднього playtest:** NPC намагається піднятися на сходинку або стрибнути в прохід із напівблоками над головою; доступна висота приблизно 2.5 блока, хоча для конкретного стрибка може знадобитися більший вертикальний простір. Користувач запропонував перевіряти можливість переміщення сутності висотою близько двох блоків протягом усього переходу A→B, а не лише окремі вузли. Не перетворювати це на універсальне правило 'завжди 3 блоки': врахувати реальні entity dimensions, step height, fractional support surfaces, collision shapes, jump trajectory, clearance, напрямок і фізику Minecraft 1.18.2. Точну геометрію локації (22,66,571) лог не містить.
+
+**Наступній моделі:** перевірити актуальну реалізацію `AStarStatic.isViable/isTransitionViable`, `TransitionClearanceRules`, JPS/classic worker, snapshot shape reads, `AS_PathEntity`, `PathNavigateSimple`, `MillVillager`, vanilla fallback. Swept-check лічильник уже є, отже не стверджувати, що переходи взагалі не перевіряються: з'ясувати, чому наявна перевірка або її використання не гарантує виконуваності (різні support heights, sampling, compressed edges, path consumer, fallback, зміна світу, двері, рух). Однакова directed edge semantics для всіх producer/consumer/cache/reverse; не послаблювати collision і не видаляти recovery, поки не усунута причина. Fixtures: stair facing/half/shape в обидва напрямки; slab/low ceiling; jump/drop; diagonal corner; stair+door; фактичні ширина/висота NPC; перевірка всієї swept AABB/фізично допустимої траєкторії. Відтворити hotspot у світі з block states/shape/положенням NPC і запланованими вузлами, логувати конкретний blocker без надмірного spam. Зберегти snapshots, bounded executor, thread safety; не читати live world з background worker.
+
+### 27.3. P0 — драбини: підхід, контакт, підйом/спуск, вихід
+
+LADDER-ASSIST=811; direction=-1 531, +1 259, 0 21. contact=false 758, true 53. aligned=false/contact=false/reached=false=742; aligned=true/contact=false/reached=false=16; aligned=true/contact=true/reached=false=53. Усі ці assist events мають reached=false; це не доказ що ніхто не досяг цілі, бо події логування умовні. LADDER-EXIT=15 (не дорівнює кількості успішно завершених спусків).
+
+Найчастіші **next waypoints**, не підтверджені координати самих ladder blocks: (212,74,679) 434; (190,66,677) 161; (3,67,561) 66; (26,61,655) 61; (190,67,677) 25. NPC: Hoil Mulac 361, Ah Tabai Chibirias 194, Evdokia Mourtzouplos 60, Anatolios Zaridis 56, Bacab Ah Cuxtal 41, Tohil Ak 41.
+
+- L48704 15:59:23 Hoil Mulac, feet=(212,75,680), exactY=75.00, next=(212,74,679), direction=-1, aligned=false, contact=false, reached=false, dy=-1, velocityY=-0.08, path=3/174. L85376 16:19:54 та сама NPC, feet=(212,75,679), exactY=75.20, next=(212,74,679), direction=-1, aligned=true, contact=true, reached=false, dy=-1.20, velocityY=-0.12, path=1/97. Проблема повторювалася протягом 20:31; не доказ що весь час була нерухома.
+- L312 15:28:22 Ah Tabai Chibirias, feet=(189,66,678), next=(190,67,677), exactY=66.00, direction=+1, aligned=false, contact=false, reached=false, dy=1, velocityY=-0.08, path=7/16. L1499 той же next, feet=(190,66,678).
+- L25665 15:44:49 Theotota Mourtzouplos feet=(4,68,561), next=(3,67,561), direction=-1, aligned=false/contact=false. L26543 15:45:12 feet=(3,67,561), exactY=67.90, next=(3,66,561), direction=-1, aligned=true/contact=true, dy=-1.90, velocityY=-0.12. Контакт під час спуску дійсно зафіксовано.
+- L12707 15:36:18 Eftokios Prinkips LADDER-EXIT lastRung=(26,67,655), exit=(26,68,654), feet=(26,67,655), exactY=67.85, velocityY=0.20. L28464 15:46:17 Thaleia Zaridis lastRung=(3,65,561), exit=(3,65,562), feet=(3,65,561), exactY=65.00.
+
+**Гіпотеза:** правильна ціль по Y ще не забезпечує горизонтального підходу та контакту з драбиною. Аудит `LadderTransitionRules`, `PathNavigateSimple`, `MillVillager`, JPS/classic transitions: розділити approach → align/contact → climb/descend → exit/top-out; перевірити facing/support, реальний hitbox, можливість підходу зверху до отвору, відсутність небезпечного падіння, exit clearance, напрямки і просування waypoint лише після фактичного досягнення відповідної фази. Не вважати contact=false автоматично failure (нормальний approach теж може мати false); відокремити короткий підхід від тривалого циклу. Потрібні контрольні fixtures для входу збоку/зверху/знизу, підйому, спуску, верхнього й нижнього виходу, обмеженої стелі, різних facing, cache/reverse і повторного планування. Не форсувати teleport/vertical velocity як універсальний workaround.
+
+### 27.4. P1 — двері: визначити першопричину, а не лікувати лог
+
+DOOR-BLOCKED=1717: NO_VISIBLE_DOOR_CANDIDATE=1418 (82.59%), STOP_MOVING=188, AT_WAYPOINT=106, NO_DESTINATION=5. DOOR-LEASE OPENED=955, CLOSING=951; це counts подій, не доказ відсутності races або того, що кожен NPC пройшов. Hot doors: (234,74,662) 165; (39,67,569) 136; (24,71,646) 129; (13,67,606) 126; (126,68,763) 120; (118,67,740) 120. (234,74,662) повторюється ще з §26.4.
+
+L200 15:28:16 Times Diaserenos: NO_VISIBLE_DOOR_CANDIDATE, door=(41,67,573) spruce_door facing=east hinge=right powered=false, feet=(43,66,574), goal=gosocialise, dest=(64,67,549), path=3/49, next=(43,67,573)>(43,67,572)>(43,67,571)>(43,67,570)>(44,67,570). Двері в цьому повідомленні не лежать на зазначеному найближчому сегменті. L826 Elena Prinkips: door=(69,67,598), feet=(67,66,598), next=(67,67,597)>(67,67,596)>(67,67,595)>(67,67,594)>(67,67,593). Отже близькість дверей у повідомленні не доводить, що саме вони блокують шлях.
+
+Аудит `DoorApproachRules`, `DoorTransitionRules`, `VillageDoorAccess`, `BarrierPathRules`, `MillVillager`, `PathNavigateSimple`: зіставляти двері з реальною перешкодою та спрямованим swept path, обидві половини, hinge/facing, open/closed shape, доступ до входу/виходу, timing lease, одночасних NPC. Окремо перевірити stair/door interaction та діагностичне повідомлення в разі сторонніх дверей. Не відкривати всі двері поруч, не прибирати перевірки доступу, не оголошувати NO_VISIBLE_DOOR_CANDIDATE причиною кожного застрягання. NAV-TELEPORT stock recovery=278 (Anatolios Zaridis 53, Niompe Prinkips 41, Elena Prinkips 34, Eftokios Prinkips 21, Lizas Raoul 18, Appa Zaridis 18). Не вимикати recovery до виправлення першопричини.
+
+### 27.5. Пов'язана проблема: формат маршруту і додаткові напрямки
+
+У повному логу 15 NON_ADJACENT_EDGE invalidations (L31444–L77631); приклад такий самий, як §26.3: from=(68,67,593), to=(71,70,599), rejectedEdge=(71,68,593)→(72,70,594), delta=(1,2,1). ENDPOINT_MISMATCH=92. У GitHub після попередньої передачі додано спільний adjacency guard для cache admission/replay (2634b9b) та source-level regression test (9f92b0e). Це запобігає запису гарантовано непридатних для replay ребер, але не виправляє fresh route reconstruction/physical movement. Не приписувати зменшення кількості invalidations цьому коміту: точний SHA встановленого JAR не доведений.
+
+Menou Maliasenos 83 NO_PATH загалом, не всі construction. L147/L176: construction (31,69,669)→(36,130,665), dy=61. Перевірка reachable work position будівельників — окрема задача, не доказ відсутності валідного маршруту лише за dy. VILLAGE-PROGRESSION=0, цей лог не доводить відсутності planner: його повідомлення залежать від LogBuildingPlan і вибраних centre/supplier branches. Піщаник майя — окрема задача культури, не змішувати з physical pathfinding; див. docs/VILLAGE_BOOK_RESOURCE_ICONS_UA.md.
+
+### 27.6. Acceptance для новішої моделі
+
+1. Прочитати §§20–27 та актуальну гілку, не починати з нуля. Повторити геометричні fixtures на 1.18.2 Forge, включно з точними hotspot blocks з користувацького світу, якщо доступні. Довести і позитивні, і негативні переходи (валідний маршрут не має відхилятися без причини; фізично неможливий не має прийматися).
+2. Зробити Forge build, standalone Java/Python regression suites; додати тести, що перевіряють реальну геометрію, а не тільки source strings. Забезпечити обмежену вартість collision checks і thread-safe snapshots.
+3. Playtest на тому ж світі: stair (22,66,571), ladder target (212,74,679), (190,66,677), (3,67,561), hot doors. Підтвердити actual NPC passage в обох напрямках, відсутність довгих stationary loops, контакт/завершення підйому і спуску, коректний door lease. Логувати actor+goal, from/to, actual feet fractional position, shape, failed movement phase, конкретний blocker, arrival/recovery; не збільшувати spam.
+4. Порівняти нормалізовані rates і runtime поведінку, перевірити queue/rejected і CPU/TPS/GC при однаковому навантаженні. Не трактувати STAIR-WAYPOINT, LADDER-ASSIST, DOOR-BLOCKED, ASTAR-RESULT як незалежні завершені маршрути. Не вимагати 0 NO_PATH для неможливих цілей. Спочатку correctness, потім performance.
+
+**Статус:** дослідження останнього логу завершене, три задачі передані наступній моделі, реалізацію не розпочато в цьому раунді. Відсутність fatal errors — позитивний сигнал, не acceptance фізичної навігації.
+
