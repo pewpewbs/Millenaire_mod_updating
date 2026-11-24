@@ -20,7 +20,7 @@ minimumtocook=32
 
 helditems=sand
 
-itemsbalance=sandstone,glass
+itemsbalance=sand,glass
 
 villagelimit=glass,128
 buildinglimit=glass,128
