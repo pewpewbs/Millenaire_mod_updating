@@ -49,7 +49,7 @@ goal=gopraymalemuslim
 goal=takebath
 goal=godrinkayran
 
-goal=MakeSandstone
+goal=makesandstoneseljuk
 goal=MakeMudbrickSandstone
 goal=MakeMudbrickDecorated
 goal=MakeMudbrickOrnamented
