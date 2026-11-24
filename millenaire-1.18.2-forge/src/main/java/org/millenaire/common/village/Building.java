@@ -5481,14 +5481,14 @@ public class Building {
       for (int var7 = 0; taken < toTake && var7 < this.resManager.furnaces.size(); var7++) {
          FurnaceBlockEntity furnace = this.resManager.furnaces.get(var7).getFurnace(this.world);
          if (furnace != null) {
-            taken += WorldUtilities.getItemsFromFurnace(furnace, item, toTake - taken);
+            taken += WorldUtilities.getItemsFromFurnace(furnace, item, meta, toTake - taken);
          }
       }
 
       for (int var8 = 0; taken < toTake && var8 < this.resManager.firepits.size(); var8++) {
-         TileEntityFirePit firepit = (TileEntityFirePit)this.world.getBlockEntity(this.resManager.firepits.get(var8).getBlockPos());
+         TileEntityFirePit firepit = this.resManager.firepits.get(var8).getFirePit(this.world);
          if (firepit != null) {
-            taken += WorldUtilities.getItemsFromFirePit(firepit, item, toTake - taken);
+            taken += WorldUtilities.getItemsFromFirePit(firepit, item, meta, toTake - taken);
          }
       }
 
