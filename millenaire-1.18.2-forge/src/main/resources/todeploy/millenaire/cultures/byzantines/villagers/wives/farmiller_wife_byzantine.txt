@@ -82,6 +82,7 @@ goal=gatherolives
 goal=makeoliveoil
 goal=plantsaplingolivetree
 bringBackHomeGood=olives
+bringBackHomeGood=wheat
 startingInv=sapling_olivetree,10
 
 //grapes
