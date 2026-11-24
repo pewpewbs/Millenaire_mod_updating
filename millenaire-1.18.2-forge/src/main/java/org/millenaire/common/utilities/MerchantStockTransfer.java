@@ -22,8 +22,9 @@ public final class MerchantStockTransfer {
         List<Slot> slots = new ArrayList<>();
         Set<Container> seen = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Point p : building.getResManager().chests) {
-            // Never treat an unloaded or missing chest as empty stock.
-            if (!building.world.hasChunkAt(p.getBlockPos())) return null;
+            // Keep the existing selected-inn block-entity lookup semantics.
+            // Do not require both villages to be active: distant trade is
+            // intentional. A lookup which cannot resolve a chest is not empty stock.
             Container chest = p.getMillChest(building.world);
             if (chest == null) return null;
             if (!seen.add(chest)) continue;
