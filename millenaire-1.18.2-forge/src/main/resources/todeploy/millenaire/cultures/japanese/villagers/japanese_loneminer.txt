@@ -29,6 +29,7 @@ bringBackHomeGood=sandStone
 bringBackHomeGood=stone
 bringBackHomeGood=sand
 bringBackHomeGood=clay
+bringBackHomeGood=gravel
 
 toolneededclass=pickaxes
 toolneededclass=shovels
