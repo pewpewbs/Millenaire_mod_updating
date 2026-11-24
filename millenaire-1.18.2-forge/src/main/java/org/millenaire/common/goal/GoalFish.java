@@ -38,7 +38,14 @@ extends Goal {
     }
 
     protected void addFishResults(MillVillager villager) {
-        villager.addToInv(Items.COD, 1);
+        InvItem cod = InvItem.createInvItem(Items.COD, 0);
+        Building home = villager.getHouse(), destination = villager.getGoalBuildingDest();
+        if (home == null || destination == null) return;
+        int limit = this.buildingLimit.getOrDefault(cod, 128);
+        long room = (long)limit - home.countGoods(cod) - villager.countInv(cod);
+        if (destination != home) room = Math.min(room, (long)limit - destination.countGoods(cod));
+        int amount = (int)Math.max(0L, Math.min(room, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1)));
+        if (amount > 0) villager.addToInv(Items.COD, amount);
     }
 
     @Override
