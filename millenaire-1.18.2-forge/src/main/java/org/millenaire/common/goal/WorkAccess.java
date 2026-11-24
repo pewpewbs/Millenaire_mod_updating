@@ -19,6 +19,15 @@ public final class WorkAccess {
                 && visible(villager, Vec3.atCenterOf(actual.getBlockPos()), actual.getBlockPos());
     }
 
+    /** Measure to the registered work target, never an alternate path endpoint. */
+    public static boolean canAccessResource(MillVillager villager, Point target, double range) {
+        if (villager == null || target == null || range <= 0
+                || !villager.level.hasChunkAt(target.getBlockPos())) return false;
+        Vec3 center = Vec3.atCenterOf(target.getBlockPos());
+        return villager.position().add(0, 0.8, 0).distanceToSqr(center) < range * range
+                && visible(villager, center, target.getBlockPos());
+    }
+
     public static boolean visible(MillVillager villager, Vec3 target, BlockPos allowedTarget) {
         // A waist-height ray prevents reaching across a fence or through a wall.
         Vec3 from = villager.position().add(0, 0.8, 0);

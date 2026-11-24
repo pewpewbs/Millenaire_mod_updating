@@ -87,7 +87,10 @@ extends GoalGeneric {
     public boolean performAction(MillVillager villager) throws Exception {
         Building dest = villager.getGoalBuildingDest();
         if (dest == null || villager.level.isClientSide || !this.validQuantities()) return true;
-        if (!this.isDestPossibleSpecific(villager, dest)) return true;
+        if (!this.getBuildings(villager).contains(dest) || !this.passesStockLimits(villager)
+                || !this.passesResourceBalance(villager) || !this.isDestPossible(villager,dest)) return true;
+        if (villager.getGoalDestPoint() == null || !villager.getGoalDestPoint().equals(dest.getResManager().getCraftingPos())) return true;
+        if (!this.isWithinActionRange(villager,null)) return false;
         try (org.millenaire.common.utilities.GoodsTransaction transaction = dest.beginGoodsTransaction(villager)) {
             for (var entry : this.input.entrySet()) {
                 int required = entry.getValue();

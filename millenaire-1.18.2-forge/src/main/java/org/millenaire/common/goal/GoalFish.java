@@ -102,11 +102,32 @@ extends Goal {
         return true;
     }
 
+    private boolean validFishingPoint(MillVillager villager, Building destination) {
+        var point = villager.getGoalDestPoint();
+        return destination != null && point != null
+                && villager.getTownHall() != null
+                && villager.getTownHall().getBuildingsWithTag("fishingspot").contains(destination)
+                && destination.getResManager().fishingspots.contains(point)
+                && villager.level.hasChunkAt(point.getBlockPos());
+    }
+
+    @Override
+    public boolean isWithinActionRange(MillVillager villager, org.millenaire.common.utilities.Point ignored) {
+        return WorkAccess.canAccessResource(villager, villager.getGoalDestPoint(), this.range(villager));
+    }
+
+    @Override
+    protected boolean isStillValidSpecific(MillVillager villager) throws Exception {
+        return validFishingPoint(villager, villager.getGoalBuildingDest())
+                && hasStockRoom(villager, villager.getGoalBuildingDest());
+    }
+
     @Override
     public boolean performAction(MillVillager villager) throws Exception {
         if (villager.level.isClientSide) return true;
         Building destination = villager.getGoalBuildingDest();
-        if (destination == null || !hasStockRoom(villager, destination)) return true;
+        if (destination == null || !hasStockRoom(villager, destination) || !validFishingPoint(villager,destination)) return true;
+        if (!this.isWithinActionRange(villager,villager.getGoalDestPoint())) return false;
         this.addFishResults(villager);
         villager.swing(InteractionHand.MAIN_HAND);
         return true;
@@ -125,7 +146,7 @@ extends Goal {
 
     @Override
     public boolean stuckAction(MillVillager villager) throws Exception {
-        return this.performAction(villager);
+        return false;
     }
 }
 

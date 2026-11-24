@@ -65,7 +65,7 @@ extends GoalGeneric {
         ArrayList<Point> validSources = new ArrayList<>();
         ArrayList<Building> validDests = new ArrayList<>();
         for (Building possibleDest : buildings) {
-            if (!this.validateDest(villager,possibleDest)) continue;
+            if (possibleDest == null || !this.validateDest(villager,possibleDest)) continue;
             var sources = possibleDest.getResManager().sources;
             var types = possibleDest.getResManager().sourceTypes;
             for (int index=0; index<Math.min(sources.size(),types.size()); index++) {
@@ -142,19 +142,32 @@ extends GoalGeneric {
     }
 
     @Override
+    public boolean isWithinActionRange(MillVillager villager, Point ignored) {
+        return org.millenaire.common.goal.WorkAccess.canAccessResource(
+                villager, villager.getGoalDestPoint(), this.range(villager));
+    }
+
+    private boolean validTarget(MillVillager villager, Building destination, Point point) {
+        if (destination == null || !liveSource(villager, point) || !getBuildings(villager).contains(destination)) return false;
+        var sources = destination.getResManager().sources;
+        var types = destination.getResManager().sourceTypes;
+        for (int index=0; index<Math.min(sources.size(),types.size()); index++)
+            if (types.get(index)==this.sourceBlockState && sources.get(index).contains(point)) return true;
+        return false;
+    }
+
+    @Override
+    protected boolean isStillValidSpecific(MillVillager villager) throws Exception {
+        return validTarget(villager, villager.getGoalBuildingDest(), villager.getGoalDestPoint());
+    }
+
+    @Override
     public boolean performAction(MillVillager villager) throws Exception {
         Building destination = villager.getGoalBuildingDest();
         Point point = villager.getGoalDestPoint();
-        if (villager.level.isClientSide || destination == null || !liveSource(villager,point)
-                || !this.validateDest(villager,destination)) return true;
-        // A source can be removed or replaced after selection; never award
-        // resources from a stale target or an unregistered point.
-        var sources = destination.getResManager().sources;
-        var types = destination.getResManager().sourceTypes;
-        boolean registered = false;
-        for (int index=0; index<Math.min(sources.size(),types.size()); index++)
-            if (types.get(index)==this.sourceBlockState && sources.get(index).contains(point)) { registered=true; break; }
-        if (!registered) return true;
+        if (villager.level.isClientSide || !validTarget(villager,destination,point)
+                || !this.passesStockLimits(villager) || !this.validateDest(villager,destination)) return true;
+        if (!this.isWithinActionRange(villager,point)) return false;
         for (InvItem key : this.loots.keySet()) {
             villager.addToInv(key, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, (int)this.loots.get(key)));
             if (MillConfigValues.LogMiner < 3 || !villager.extraLog) continue;
@@ -166,7 +179,8 @@ extends GoalGeneric {
 
     @Override
     public boolean stuckAction(MillVillager villager) throws Exception {
-        return this.performAction(villager);
+        // Navigation failure is never a completed mining action.
+        return false;
     }
 
     @Override
@@ -176,7 +190,8 @@ extends GoalGeneric {
 
     @Override
     public boolean validateGoal() {
-        return true;
+        return this.sourceBlockState != null && !this.loots.isEmpty()
+                && this.loots.values().stream().allMatch(amount -> amount != null && amount > 0);
     }
 }
 

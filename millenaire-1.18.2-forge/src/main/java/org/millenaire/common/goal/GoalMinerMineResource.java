@@ -66,8 +66,8 @@ extends Goal {
     public List<Building> getBuildings(MillVillager villager) {
         ArrayList<Building> buildings = new ArrayList<Building>();
         if (this.buildingTag == null) {
-            buildings.add(villager.getHouse());
-        } else {
+            if (villager.getHouse() != null) buildings.add(villager.getHouse());
+        } else if (villager.getTownHall() != null) {
             for (Building b : villager.getTownHall().getBuildingsWithTag(this.buildingTag)) {
                 buildings.add(b);
             }
@@ -82,11 +82,13 @@ extends Goal {
         ArrayList<Building> validDests = new ArrayList<Building>();
         for (Building possibleDest : buildings) {
             CopyOnWriteArrayList<CopyOnWriteArrayList<Point>> sources = possibleDest.getResManager().sources;
-            for (int i = 0; i < sources.size(); ++i) {
+            for (int i = 0; i < Math.min(sources.size(), possibleDest.getResManager().sourceTypes.size()); ++i) {
                 BlockState sourceBlockState = possibleDest.getResManager().sourceTypes.get(i);
                 for (int j = 0; j < ((CopyOnWriteArrayList)sources.get(i)).size(); ++j) {
-                    BlockState actualBlockState = WorldUtilities.getBlockState(villager.level, (Point)((CopyOnWriteArrayList)sources.get(i)).get(j));
-                    if (actualBlockState != sourceBlockState) continue;
+                    Point point = sources.get(i).get(j);
+                    if (point == null || !villager.level.hasChunkAt(point.getBlockPos())) continue;
+                    BlockState actualBlockState = WorldUtilities.getBlockState(villager.level, point);
+                    if (actualBlockState != sourceBlockState || !supported(actualBlockState.getBlock())) continue;
                     validSources.add(((CopyOnWriteArrayList)sources.get(i)).get(j));
                     validDests.add(possibleDest);
                 }
@@ -129,9 +131,38 @@ extends Goal {
         return true;
     }
 
+    private boolean supported(Block block) {
+        return LegacyBlockStates.matchesName(block, "minecraft:sand")
+                || LegacyBlockStates.matchesName(block, "minecraft:stone")
+                || LegacyBlockStates.matchesName(block, "minecraft:sandstone")
+                || block == Blocks.CLAY || block == Blocks.GRAVEL || block == Blocks.SNOW || block == Blocks.ICE;
+    }
+
+    private boolean validTarget(MillVillager villager, Building dest, Point point) {
+        if (dest == null || point == null || !getBuildings(villager).contains(dest)
+                || !villager.level.hasChunkAt(point.getBlockPos())) return false;
+        BlockState actual = WorldUtilities.getBlockState(villager.level,point);
+        if (!supported(actual.getBlock())) return false;
+        var manager = dest.getResManager();
+        for (int i=0; i<Math.min(manager.sources.size(),manager.sourceTypes.size()); i++)
+            if (manager.sourceTypes.get(i)==actual && manager.sources.get(i).contains(point)) return true;
+        return false;
+    }
+
+    @Override
+    public boolean isWithinActionRange(MillVillager villager, Point ignored) {
+        return WorkAccess.canAccessResource(villager, villager.getGoalDestPoint(), this.range(villager));
+    }
+
+    @Override
+    protected boolean isStillValidSpecific(MillVillager villager) throws Exception {
+        return validTarget(villager, villager.getGoalBuildingDest(), villager.getGoalDestPoint());
+    }
+
     @Override
     public boolean performAction(MillVillager villager) throws Exception {
-        if (villager.getGoalDestPoint() == null) return true;
+        if (villager.level.isClientSide || !validTarget(villager,villager.getGoalBuildingDest(),villager.getGoalDestPoint())) return true;
+        if (!this.isWithinActionRange(villager,villager.getGoalDestPoint())) return false;
         BlockState blockState = WorldUtilities.getBlockState(villager.level, villager.getGoalDestPoint());
         Block block = blockState.getBlock();
         if (LegacyBlockStates.matchesName(block, "minecraft:sand")) {
@@ -196,7 +227,7 @@ extends Goal {
 
     @Override
     public boolean stuckAction(MillVillager villager) throws Exception {
-        return this.performAction(villager);
+        return false;
     }
 
     @Override

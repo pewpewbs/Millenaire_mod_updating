@@ -745,7 +745,11 @@ IAStarPathedEntity {
             // tick() resets stopMoving before checkGoals(). Preserve the
             // construction pause on EVERY active work tick, not only the
             // first one, otherwise builders continue paddling in water.
-            if (goal == Goal.construction && this.actionStart != 0L) {
+            if ((goal == Goal.construction || goal instanceof org.millenaire.common.goal.GoalMinerMineResource
+                    || goal instanceof org.millenaire.common.goal.GoalFish
+                    || goal instanceof org.millenaire.common.goal.generic.GoalGenericMining
+                    || goal instanceof org.millenaire.common.goal.generic.GoalGenericCrafting
+                    || goal instanceof org.millenaire.common.goal.generic.GoalGenericCooking) && this.actionStart != 0L) {
                 this.stopMoving = goal.stopMovingWhileWorking();
             }
             if (this.actionStart == 0L) {
@@ -775,6 +779,12 @@ IAStarPathedEntity {
                 this.goalStarted = this.level.getGameTime();
             }
         } else {
+            // A resident must spend the entire work interval at an accessible target.
+            if (goal instanceof org.millenaire.common.goal.GoalMinerMineResource
+                    || goal instanceof org.millenaire.common.goal.GoalFish
+                    || goal instanceof org.millenaire.common.goal.generic.GoalGenericMining
+                    || goal instanceof org.millenaire.common.goal.generic.GoalGenericCrafting
+                    || goal instanceof org.millenaire.common.goal.generic.GoalGenericCooking) this.actionStart = 0L;
             this.stopMoving = false;
             this.shouldLieDown = false;
         }

@@ -167,17 +167,25 @@ extends GoalGeneric {
 
     @Override
     public boolean performAction(MillVillager villager) throws Exception {
-        if (!this.isWithinActionRange(villager, null)) return false;
-        BlockEntity tileEntity = villager.getGoalDestPoint().getTileEntity(villager.level);
+        if (villager.level.isClientSide || this.itemToCook == null) return true;
         Building dest = villager.getGoalBuildingDest();
+        Point target = villager.getGoalDestPoint();
+        if (dest == null || target == null || !this.getBuildings(villager).contains(dest)
+                || !villager.level.hasChunkAt(target.getBlockPos())
+                || !(dest.getResManager().furnaces.contains(target) || dest.getResManager().firepits.contains(target))) return true;
+        if (!this.isWithinActionRange(villager, null)) return false;
+        BlockEntity tileEntity = target.getTileEntity(villager.level);
+        // A stale stock limit must stop new input, never strand cooked output.
+        boolean allowInput = this.passesStockLimits(villager) && this.validateDest(villager,dest)
+                && this.passesWorkplaceBalance(villager,dest);
         boolean firepitBurnable = TileEntityFirePit.isFirePitBurnable(villager.level, this.itemToCook.staticStack);
         if (tileEntity != null && dest != null) {
             if (tileEntity instanceof FurnaceBlockEntity) {
                 FurnaceBlockEntity furnace = (FurnaceBlockEntity)tileEntity;
-                this.performAction_furnace(dest, furnace, villager);
+                this.performAction_furnace(dest, furnace, villager, allowInput);
             } else if (firepitBurnable && tileEntity instanceof TileEntityFirePit) {
                 TileEntityFirePit firepit = (TileEntityFirePit)tileEntity;
-                this.performAction_firepit(dest, firepit, villager);
+                this.performAction_firepit(dest, firepit, villager, allowInput);
             }
         }
         return true;
@@ -209,8 +217,8 @@ extends GoalGeneric {
         return remainder;
     }
 
-    private void performAction_firepit(Building dest, TileEntityFirePit firepit, MillVillager villager) {
-        for (int slot = 0; slot < 3; slot++) {
+    private void performAction_firepit(Building dest, TileEntityFirePit firepit, MillVillager villager, boolean allowInput) {
+        if (allowInput) for (int slot = 0; slot < 3; slot++) {
             ItemStack old = firepit.inputs.getStackInSlot(slot);
             ItemStack updated = fillCookingInput(dest, villager, old, firepit.inputs.getSlotLimit(slot));
             if (updated != old) firepit.inputs.setStackInSlot(slot, updated);
@@ -222,10 +230,12 @@ extends GoalGeneric {
         }
     }
 
-    private void performAction_furnace(Building dest, FurnaceBlockEntity furnace, MillVillager villager) {
-        ItemStack oldInput = furnace.getItem(0);
-        ItemStack input = fillCookingInput(dest, villager, oldInput, furnace.getMaxStackSize());
-        if (input != oldInput) furnace.setItem(0, input);
+    private void performAction_furnace(Building dest, FurnaceBlockEntity furnace, MillVillager villager, boolean allowInput) {
+        if (allowInput) {
+            ItemStack oldInput = furnace.getItem(0);
+            ItemStack input = fillCookingInput(dest, villager, oldInput, furnace.getMaxStackSize());
+            if (input != oldInput) furnace.setItem(0, input);
+        }
         ItemStack oldOutput = furnace.getItem(2);
         ItemStack output = storeCookingOutput(dest, oldOutput);
         if (output != oldOutput) furnace.setItem(2, output);

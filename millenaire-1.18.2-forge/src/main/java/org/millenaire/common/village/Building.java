@@ -189,6 +189,7 @@ public class Building {
    public Player closestPlayer = null;
    private Point pos = null;
    private boolean rebuildingRegionMapper = false;
+   private boolean productionSourcesChecked = false;
    private boolean saveNeeded = false;
    private String saveReason = null;
    public MillVillager seller = null;
@@ -5905,6 +5906,11 @@ public class Building {
 
             if (this.location != null) {
                try {
+                  // Only run in the active, server-side building loop. A
+                  // missing chunk is retried without forcing it to load.
+                  if (!this.productionSourcesChecked && (this.world.getGameTime() + this.hashCode()) % 100L == 0L) {
+                     this.productionSourcesChecked = org.millenaire.common.buildingplan.ProductionSourceRepair.reconcile(this);
+                  }
                   if (this.isTownhall && this.villageType != null) {
                      this.updateTownHall();
                   }

@@ -140,14 +140,14 @@ implements ParametersManager.DefaultValueOverloaded {
     public List<Building> getBuildings(MillVillager villager) {
         ArrayList<Building> buildings = new ArrayList<Building>();
         if (this.townHallGoal) {
-            if (this.requiredTag == null || villager.getTownHall().containsTags(this.requiredTag)) {
+            if (villager.getTownHall() != null && (this.requiredTag == null || villager.getTownHall().containsTags(this.requiredTag))) {
                 buildings.add(villager.getTownHall());
             }
         } else if (this.buildingTag == null) {
-            if (this.requiredTag == null || villager.getHouse().containsTags(this.requiredTag)) {
+            if (villager.getHouse() != null && (this.requiredTag == null || villager.getHouse().containsTags(this.requiredTag))) {
                 buildings.add(villager.getHouse());
             }
-        } else {
+        } else if (villager.getTownHall() != null) {
             for (Building b : villager.getTownHall().getBuildingsWithTag(this.buildingTag)) {
                 if (this.requiredTag != null && !b.containsTags(this.requiredTag)) continue;
                 buildings.add(b);

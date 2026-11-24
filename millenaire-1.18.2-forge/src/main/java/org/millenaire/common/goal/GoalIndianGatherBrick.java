@@ -97,13 +97,17 @@ extends Goal {
 
     @Override
     public boolean performAction(MillVillager villager) throws MillLog.MillenaireException {
+        if (villager.level.isClientSide || villager.getGoalDestPoint() == null || villager.getGoalBuildingDest() == null
+                || !villager.level.hasChunkAt(villager.getGoalDestPoint().getBlockPos())) return true;
         if (WorldUtilities.getBlockState(villager.level, villager.getGoalDestPoint()) == MillBlocks.BS_MUD_BRICK) {
+            if (!villager.setBlockAndMetadata(villager.getGoalDestPoint(), Blocks.AIR, 0)) return true;
             villager.addToInv(MillBlocks.BS_MUD_BRICK, 1);
-            villager.setBlockAndMetadata(villager.getGoalDestPoint(), Blocks.AIR, 0);
             villager.swing(InteractionHand.MAIN_HAND);
         }
         if (villager.getGoalBuildingDest().getResManager().getNbFullBrickLocation() > 0) {
-            villager.setGoalInformation(this.getDestination(villager));
+            Goal.GoalInformation next = this.getDestination(villager);
+            if (next == null) return true;
+            villager.setGoalInformation(next);
             return false;
         }
         return true;

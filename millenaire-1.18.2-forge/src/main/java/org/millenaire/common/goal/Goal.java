@@ -303,18 +303,7 @@ public abstract class Goal {
             if (this.maximumHour >= 0 && villager.level.getDayTime() % 24000L > (long)this.maximumHour) {
                 return GoalDiagnostics.reject(villager, this, "AFTER_MAXIMUM_HOUR");
             }
-            for (InvItem item : this.townhallLimit.keySet()) {
-                int available = villager.getTownHall().nbGoodAvailable(item, false, false, false);
-                if (available <= this.townhallLimit.get(item)) continue;
-                if (GoalDiagnostics.recording(villager, this)) GoalDiagnostics.note(villager, this, "TOWNHALL_LIMIT " + item + " " + available + "/" + this.townhallLimit.get(item));
-                return false;
-            }
-            for (InvItem item : this.villageLimit.keySet()) {
-                int available = villager.getTownHall().nbGoodAvailable(item, false, false, false);
-                if (available <= this.villageLimit.get(item)) continue;
-                if (GoalDiagnostics.recording(villager, this)) GoalDiagnostics.note(villager, this, "VILLAGE_LIMIT (townhall stock) " + item + " " + available + "/" + this.villageLimit.get(item));
-                return false;
-            }
+            if (!passesStockLimits(villager)) return false;
             if (!passesResourceBalance(villager)) {
                 return GoalDiagnostics.reject(villager, this, "RESOURCE_BALANCE");
             }
@@ -334,6 +323,25 @@ public abstract class Goal {
             MillLog.printException("Exception in isPossible() for goal: " + this.key + " and villager: " + villager, e);
             return GoalDiagnostics.reject(villager, this, "EVALUATION_EXCEPTION");
         }
+    }
+
+    /** Recheck shared stock gates at the moment a production action executes. */
+    protected boolean passesStockLimits(MillVillager villager) {
+        if (this.townhallLimit.isEmpty() && this.villageLimit.isEmpty()) return true;
+        if (villager.getTownHall() == null) return false;
+        for (InvItem item : this.townhallLimit.keySet()) {
+            int available = villager.getTownHall().nbGoodAvailable(item, false, false, false);
+            if (available <= this.townhallLimit.get(item)) continue;
+            if (GoalDiagnostics.recording(villager, this)) GoalDiagnostics.note(villager, this, "TOWNHALL_LIMIT " + item + " " + available + "/" + this.townhallLimit.get(item));
+            return false;
+        }
+        for (InvItem item : this.villageLimit.keySet()) {
+            int available = villager.getTownHall().nbGoodAvailable(item, false, false, false);
+            if (available <= this.villageLimit.get(item)) continue;
+            if (GoalDiagnostics.recording(villager, this)) GoalDiagnostics.note(villager, this, "VILLAGE_LIMIT (townhall stock) " + item + " " + available + "/" + this.villageLimit.get(item));
+            return false;
+        }
+        return true;
     }
 
     /** Override only when a goal must evaluate balance at its selected workplace. */
