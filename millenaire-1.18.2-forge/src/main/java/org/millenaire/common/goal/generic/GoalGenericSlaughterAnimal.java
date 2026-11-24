@@ -162,7 +162,7 @@ extends GoalGeneric {
             villager.setTarget(entLiving);
             for (AnnotedParameter.BonusItem bonusItem : this.bonusItem) {
                 if (bonusItem.tag != null && !dest.containsTags(bonusItem.tag) || MillCommonUtilities.randomInt(100) > bonusItem.chance) continue;
-                villager.addToInv(bonusItem.item, 1);
+                villager.addToInv(bonusItem.item, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             }
             villager.swing(InteractionHand.MAIN_HAND);
             return true;
@@ -174,7 +174,7 @@ extends GoalGeneric {
             villager.setTarget(entLiving);
             for (AnnotedParameter.BonusItem bonusItem : this.bonusItem) {
                 if (bonusItem.tag != null && !dest.containsTags(bonusItem.tag) || MillCommonUtilities.randomInt(100) > bonusItem.chance) continue;
-                villager.addToInv(bonusItem.item, 1);
+                villager.addToInv(bonusItem.item, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             }
             villager.swing(InteractionHand.MAIN_HAND);
             return true;
