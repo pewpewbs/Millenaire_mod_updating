@@ -292,26 +292,32 @@ public abstract class Goal {
     public final boolean isPossible(MillVillager villager) {
         try {
             if (villager.level.isDay() && !this.canBeDoneInDayTime()) {
-                return false;
+                return GoalDiagnostics.reject(villager, this, "DAY_NOT_ALLOWED");
             }
             if (!villager.level.isDay() && !this.canBeDoneAtNight()) {
-                return false;
+                return GoalDiagnostics.reject(villager, this, "NIGHT_NOT_ALLOWED");
             }
             if (this.minimumHour >= 0 && villager.level.getDayTime() % 24000L < (long)this.minimumHour) {
-                return false;
+                return GoalDiagnostics.reject(villager, this, "BEFORE_MINIMUM_HOUR");
             }
             if (this.maximumHour >= 0 && villager.level.getDayTime() % 24000L > (long)this.maximumHour) {
-                return false;
+                return GoalDiagnostics.reject(villager, this, "AFTER_MAXIMUM_HOUR");
             }
             for (InvItem item : this.townhallLimit.keySet()) {
-                if (villager.getTownHall().nbGoodAvailable(item, false, false, false) <= this.townhallLimit.get(item)) continue;
+                int available = villager.getTownHall().nbGoodAvailable(item, false, false, false);
+                if (available <= this.townhallLimit.get(item)) continue;
+                if (GoalDiagnostics.recording(villager, this)) GoalDiagnostics.note(villager, this, "TOWNHALL_LIMIT " + item + " " + available + "/" + this.townhallLimit.get(item));
                 return false;
             }
             for (InvItem item : this.villageLimit.keySet()) {
-                if (villager.getTownHall().nbGoodAvailable(item, false, false, false) <= this.villageLimit.get(item)) continue;
+                int available = villager.getTownHall().nbGoodAvailable(item, false, false, false);
+                if (available <= this.villageLimit.get(item)) continue;
+                if (GoalDiagnostics.recording(villager, this)) GoalDiagnostics.note(villager, this, "VILLAGE_LIMIT (townhall stock) " + item + " " + available + "/" + this.villageLimit.get(item));
                 return false;
             }
-            if (!passesResourceBalance(villager)) return false;
+            if (!passesResourceBalance(villager)) {
+                return GoalDiagnostics.reject(villager, this, "RESOURCE_BALANCE");
+            }
             if (this.maxSimultaneousTotal > 0) {
                 int nbSame = 0;
                 for (MillVillager v : villager.getTownHall().getKnownVillagers()) {
@@ -319,14 +325,14 @@ public abstract class Goal {
                     ++nbSame;
                 }
                 if (nbSame >= this.maxSimultaneousTotal) {
-                    return false;
+                    return GoalDiagnostics.reject(villager, this, "MAX_SIMULTANEOUS_TOTAL");
                 }
             }
             return this.isPossibleSpecific(villager);
         }
         catch (Exception e) {
             MillLog.printException("Exception in isPossible() for goal: " + this.key + " and villager: " + villager, e);
-            return false;
+            return GoalDiagnostics.reject(villager, this, "EVALUATION_EXCEPTION");
         }
     }
 
@@ -487,7 +493,9 @@ public abstract class Goal {
             throw new MillLog.MillenaireException("Given null dest in validateDest for goal: " + this.key);
         }
         for (InvItem item : this.buildingLimit.keySet()) {
-            if (dest.nbGoodAvailable(item, false, false, false) <= this.buildingLimit.get(item)) continue;
+            int available = dest.nbGoodAvailable(item, false, false, false);
+            if (available <= this.buildingLimit.get(item)) continue;
+            if (GoalDiagnostics.recording(villager, this)) GoalDiagnostics.note(villager, this, "BUILDING_LIMIT " + item + " " + available + "/" + this.buildingLimit.get(item) + " at " + dest.getPos());
             return false;
         }
         int nbSameBuilding = 0;
@@ -497,7 +505,7 @@ public abstract class Goal {
                 ++nbSameBuilding;
             }
             if (nbSameBuilding >= this.maxSimultaneousInBuilding) {
-                return false;
+                return GoalDiagnostics.reject(villager, this, "MAX_SIMULTANEOUS_IN_BUILDING");
             }
         }
         return true;
