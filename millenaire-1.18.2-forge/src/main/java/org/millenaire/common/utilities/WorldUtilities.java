@@ -347,25 +347,33 @@ public class WorldUtilities {
     }
 
     public static int getItemsFromFirePit(TileEntityFirePit firepit, Item item, int toTake) {
+        return getItemsFromFirePit(firepit,item,0,toTake);
+    }
+
+    public static int getItemsFromFirePit(TileEntityFirePit firepit, Item item, int meta, int toTake) {
         if (firepit == null) {
             return 0;
         }
         int taken = 0;
         for (int stackNb = 0; stackNb < 3; ++stackNb) {
             ItemStack stack = firepit.outputs.getStackInSlot(stackNb);
-            if (taken >= toTake || stack == null || stack.getItem() != item) continue;
+            if (taken >= toTake || !org.millenaire.common.item.LegacyItemStacks.matches(stack,item,meta)) continue;
             taken += firepit.outputs.extractItem(stackNb, toTake - taken, false).getCount();
         }
         return taken;
     }
 
     public static int getItemsFromFurnace(FurnaceBlockEntity furnace, Item item, int toTake) {
+        return getItemsFromFurnace(furnace,item,0,toTake);
+    }
+
+    public static int getItemsFromFurnace(FurnaceBlockEntity furnace, Item item, int meta, int toTake) {
         if (furnace == null) {
             return 0;
         }
         int nb = 0;
         ItemStack stack = furnace.getItem(2);
-        if (stack != null && stack.getItem() == item) {
+        if (org.millenaire.common.item.LegacyItemStacks.matches(stack,item,meta)) {
             if (stack.getCount() <= toTake - nb) {
                 nb += stack.getCount();
                 furnace.setItem(2, ItemStack.EMPTY);
