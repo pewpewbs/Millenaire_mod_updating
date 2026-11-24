@@ -81,6 +81,33 @@ class ProductionAuditTests(unittest.TestCase):
         self.assertEqual(reachable(edges, {"r"}, {}), set())
         self.assertEqual(reachable(edges, {"r"}, {}, {"a"}), {"a", "b"})
 
+    def test_legacy_encoding_across_config_readers(self):
+        paths = [
+            self.data / "goals/genericmining/minesand.txt",
+            self.data / "cultures/test/villagers/miner.txt",
+            self.data / "cultures/test/traded_goods.txt",
+            self.data / "itemlist.txt",
+            self.data / "blocklist.txt",
+        ]
+        original = {}
+        for path in paths:
+            raw = b"// ancien r\xf4le et co\xfbts\n" + path.read_bytes()
+            path.write_bytes(raw)
+            original[path] = raw
+        result = audit(self.data, self.java, True)
+        self.assertEqual(result["summary"]["profiles"], 2)
+        self.assertEqual(result["summary"]["findings"].get("ERROR", 0), 0)
+        for path, raw in original.items():
+            self.assertEqual(path.read_bytes(), raw)
+
+    def test_latin1_fallback_and_utf8_bom(self):
+        from audit_production import read_legacy_text
+        path = self.data / "encoding.txt"
+        path.write_bytes(b"// \x81\xf4\nloot=sand,1\n")
+        self.assertIn("loot=sand,1", read_legacy_text(path))
+        path.write_bytes(b"\xef\xbb\xbfloot=sand,1\n")
+        self.assertEqual(read_legacy_text(path), "loot=sand,1\n")
+
     def test_png_optional_source_evidence(self):
         try:
             from PIL import Image
