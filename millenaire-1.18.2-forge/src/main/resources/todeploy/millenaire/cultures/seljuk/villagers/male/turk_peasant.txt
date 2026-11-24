@@ -75,6 +75,7 @@ collectGood=seeds
 collectGood=wheat
 
 bringBackHomeGood=sugarcane
+bringBackHomeGood=wheat
 startingInv=seeds,32
 startingInv=sugarcane,3
 
