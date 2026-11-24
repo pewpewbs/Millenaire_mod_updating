@@ -51,9 +51,12 @@ public class ContentDeployer {
                 }
                 if (folder.equals("millenaire")) Files.writeString(version, Mill.VERSION_NUMBER);
             }
-            LanguageBundleUpdater.update(source.resolve("millenaire"), mods.resolve("millenaire"));
-            updateMayanSandstoneGoal(source.resolve("millenaire"), mods.resolve("millenaire"));
-            updateTavernFurnace(source.resolve("millenaire"), mods.resolve("millenaire"));
+            // Reconcile the entire managed stock bundle, even when VERSION_NUMBER
+            // has not changed. The SHA-256 baseline preserves later local edits.
+            var bundled = source.resolve("millenaire");
+            var installed = mods.resolve("millenaire");
+            ContentBundleUpdater.update(bundled, installed, message -> Mill.LOGGER.info(message));
+            LanguageBundleUpdater.update(bundled, installed);
         } catch (IOException error) {
             throw new IllegalStateException("Unable to deploy Millenaire content", error);
         }
