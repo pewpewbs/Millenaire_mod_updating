@@ -13,6 +13,7 @@ goal=gorest
 goal=gopray
 goal=goDrinkCacauhaa
 goal=harvestcocoa
+goal=bringBackResourcesHome
 goal=plantcocoa
 goal=makecacauhaa
 goal=gosocialise

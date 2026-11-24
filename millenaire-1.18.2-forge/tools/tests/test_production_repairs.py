@@ -87,5 +87,26 @@ class ProductionRepairs(unittest.TestCase):
                 self.assertIn(item, profile.values("bringbackhomegood"))
 
 
+    def test_missing_production_and_transport_assignments(self):
+        root = DATA / "cultures"
+        delivery = {
+            "mayan/villagers/mayan_cocoafarmer.txt": {"dye_brown"},
+            "seljuk/villagers/male/turk_headfarmer.txt": {"olives"},
+            "seljuk/villagers/female/turk_richwoman.txt": {"dye_yellow", "dye_lightblue", "dye_red"},
+            "seljuk/villagers/female/turk_richpeasantwife.txt": {"wheat", "olives", "cotton", "dye_yellow", "dye_lightblue", "dye_red"},
+        }
+        for path, items in delivery.items():
+            with self.subTest(path=path):
+                profile = read_config(root / path)
+                self.assertIn("bringbackresourceshome", profile.values("goal"))
+                self.assertTrue(items.issubset(profile.values("bringbackhomegood")))
+        for name in ("inuit_carver", "inuit_lonecarver"):
+            profile = read_config(root / "inuits/villagers" / (name + ".txt"))
+            self.assertTrue({"packsnowblock", "makesnowwall"}.issubset(profile.values("goal")))
+        goals, _ = load_goals(DATA, DEFAULT_JAVA)
+        self.assertIn("snowblock", goals["packsnowblock"].outputs)
+        self.assertIn("snowblock", goals["makesnowwall"].inputs)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

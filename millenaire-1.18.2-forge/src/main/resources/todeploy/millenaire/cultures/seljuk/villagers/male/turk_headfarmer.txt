@@ -55,6 +55,8 @@ goal=makehay
 
 goal=makeoliveoil
 goal=gatherolives
+goal=bringBackResourcesHome
+bringBackHomeGood=olives
 
 toolneededclass=toolssword
 toolneededclass=armour

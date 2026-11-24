@@ -104,6 +104,10 @@ bringBackHomeGood=wheat
 //bringBackHomeGood=seeds
 bringBackHomeGood=olives
 bringBackHomeGood=cotton
+goal=bringBackResourcesHome
+bringBackHomeGood=dye_yellow
+bringBackHomeGood=dye_lightblue
+bringBackHomeGood=dye_red
 
 toolneededclass=hoes
 toolneededclass=shovels
