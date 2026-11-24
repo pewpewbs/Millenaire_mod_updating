@@ -62,6 +62,8 @@ public class ServerReceiver {
     public static final int PACKET_VILLAGERINTERACT_REQUEST = 204;
     public static final int PACKET_AVAILABLECONTENT = 205;
     public static final int PACKET_DEVCOMMAND = 206;
+    public static final int PACKET_TEST_TUNING_REQUEST = 207;
+    public static final int PACKET_TEST_TUNING_STATE = 112;
     public static final int GUIACTION_CHIEF_BUILDING = 1;
     public static final int GUIACTION_CHIEF_CROP = 2;
     public static final int GUIACTION_CHIEF_CONTROL = 3;
@@ -126,6 +128,18 @@ public class ServerReceiver {
             this.readAvailableContentPacket((Player)sender, packetBuffer);
         } else if (packettype == 206) {
             this.readDevCommandPacket((Player)sender, packetBuffer);
+        } else if (packettype == PACKET_TEST_TUNING_REQUEST) {
+            if (packetBuffer.readableBytes() != 8) return;
+            int field = packetBuffer.readInt(), value = packetBuffer.readInt();
+            var settings = org.millenaire.common.config.TestTuning.change(sender, field, value);
+            var response = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+            try {
+                response.writeInt(PACKET_TEST_TUNING_STATE);
+                response.writeBoolean(org.millenaire.common.config.TestTuning.allowed(sender));
+                response.writeInt(settings.move()); response.writeInt(settings.work());
+                response.writeInt(settings.yield()); response.writeInt(settings.build());
+                MillNetwork.sendToPlayer(response, sender);
+            } finally { response.release(); }
         }
     }
 
