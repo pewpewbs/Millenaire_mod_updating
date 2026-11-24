@@ -51,9 +51,29 @@ class Config:
     def line(self, key):
         return (self.fields.get(key) or [("", 0)])[0][1]
 
+def read_legacy_text(path):
+    """Preserve UTF-8/BOM and support older Western-European config files.
+
+    Never modify source bytes. Report fallback decoding so non-ASCII legacy
+    identifiers can be checked manually if necessary.
+    """
+    raw = path.read_bytes()
+    try:
+        return raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        for encoding in ("cp1252", "latin-1"):
+            try:
+                decoded = raw.decode(encoding)
+            except UnicodeDecodeError:
+                continue
+            print(f"ENCODING_FALLBACK {encoding}: {path}", file=sys.stderr)
+            return decoded
+    raise AssertionError("Latin-1 must decode every byte")
+
+
 def read_config(path):
     obj = Config(path)
-    for number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
+    for number, line in enumerate(read_legacy_text(path).splitlines(), 1):
         line = line.strip()
         if not line or line.startswith(("//", "#")) or "=" not in line:
             continue
@@ -82,7 +102,7 @@ def positive(value):
 
 def index_items(path):
     result = {}
-    for line in path.read_text(encoding="utf-8-sig").splitlines():
+    for line in read_legacy_text(path).splitlines():
         if not line.strip() or line.lstrip().startswith(("//", "#")):
             continue
         cols = line.split(";")
@@ -129,7 +149,7 @@ def plan_key(path):
 def read_trade(path):
     buy, foreign, all_goods = set(), set(), set()
     if path.is_file():
-        for line in path.read_text(encoding="utf-8-sig").splitlines():
+        for line in read_legacy_text(path).splitlines():
             if not line.strip() or line.lstrip().startswith(("//", "#")):
                 continue
             cols = [norm(v) for v in line.split(",")]
@@ -195,7 +215,7 @@ def load_goals(data, java):
 
 def markers(data):
     palette = {}
-    for line in (data / "blocklist.txt").read_text(encoding="utf-8-sig").splitlines():
+    for line in read_legacy_text(data / "blocklist.txt").splitlines():
         if line.lstrip().startswith(("//", "#")):
             continue
         cols = line.split(";")
