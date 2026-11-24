@@ -1462,5 +1462,14 @@
   "millenaire.export.length": "(довжина)",
   "millenaire.export.width": "(ширина)",
   "millenaire.export.panel": "Панель %s",
-  "millenaire.export.start_level": "Початковий рівень: %s"
+  "millenaire.export.start_level": "Початковий рівень: %s",
+  "millenaire.test_tuning.title": "Тестування (чіти)",
+  "millenaire.test_tuning.move": "Швидкість пересування",
+  "millenaire.test_tuning.work": "Швидкість роботи",
+  "millenaire.test_tuning.yield": "Кількість видобутих ресурсів",
+  "millenaire.test_tuning.build": "Швидкість будівництва",
+  "millenaire.test_tuning.reset": "Скинути до 1×",
+  "millenaire.test_tuning.waiting": "Очікування відповіді сервера…",
+  "millenaire.test_tuning.session": "Лише поточна сесія • усі поселення",
+  "millenaire.test_tuning.denied": "Необхідні права на сервері"
 }
