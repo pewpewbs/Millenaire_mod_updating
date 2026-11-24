@@ -24,6 +24,8 @@ goal=chat
 goal=deliverResourcesShop
 
 goal=maketannedhide
+goal=makewolfsteak
+requiredGood=wolfmeat_raw,4
 goal=makehidehanging
 goal=makeleather
 goal=makeinuitbow

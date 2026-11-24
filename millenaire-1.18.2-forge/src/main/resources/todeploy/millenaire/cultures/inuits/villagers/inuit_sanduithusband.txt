@@ -46,6 +46,7 @@ bringBackHomeGood=beefraw
 bringBackHomeGood=leather
 bringBackHomeGood=bone
 bringBackHomeGood=rottenflesh
+bringBackHomeGood=bearmeat_raw
 
 startinginv=leatherHelmet,1
 startinginv=leatherChest,1

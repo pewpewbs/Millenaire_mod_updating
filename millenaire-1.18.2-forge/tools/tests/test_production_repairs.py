@@ -126,5 +126,20 @@ class ProductionRepairs(unittest.TestCase):
         self.assertEqual(silk.cfg.last("buildinglimit"), "clothes_byz_silk,2")
 
 
+    def test_inuit_wolf_processing_and_bear_delivery(self):
+        root = DATA / "cultures/inuits/villagers"
+        tanner = read_config(root / "inuit_tanner.txt")
+        self.assertIn("makewolfsteak", tanner.values("goal"))
+        self.assertIn("wolfmeat_raw,4", tanner.values("requiredgood"))
+        goals, _ = load_goals(DATA, DEFAULT_JAVA)
+        self.assertEqual(goals["makewolfsteak"].inputs, {"wolfmeat_raw"})
+        self.assertEqual(goals["makewolfsteak"].outputs, {"wolfmeat_cooked", "tannedhide"})
+        for role in ("inuit_hunter", "inuit_hunterth", "inuit_sanduithusband"):
+            cfg = read_config(root / (role + ".txt"))
+            self.assertIn("bearmeat_raw", cfg.values("collectgood"))
+            self.assertIn("bearmeat_raw", cfg.values("bringbackhomegood"))
+            self.assertIn("bringbackresourceshome", cfg.values("goal"))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
