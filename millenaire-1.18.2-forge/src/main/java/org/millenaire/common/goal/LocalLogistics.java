@@ -42,38 +42,47 @@ final class LocalLogistics {
         return best;
     }
     static int householdDelivery(MillVillager v, Building home, InvItem item, int target) {
-        return Math.min(deficit(home,item,target), Math.min(v.countInv(item),room(home,item,v.getInventoryKeys())));
+        int wanted = Math.min(deficit(home,item,target),v.countInv(item));
+        return wanted <= 0 ? 0 : Math.min(wanted,room(home,item,v.getInventoryKeys()));
     }
     static int householdPickup(MillVillager v, Building source, InvItem item, int target) {
         Building home = v.getHouse();
         if (source == home || !usable(source) || !usable(home)) return 0;
-        int wanted = Math.max(0, deficit(home,item,target) - v.countInv(item));
-        int capacity = Math.max(0, room(home,item,source.stockKeys()) - v.countInv(item));
-        return Math.min(wanted, Math.min(capacity, source.nbGoodAvailable(item,false,false,false)));
+        int carried = v.countInv(item);
+        int wanted = Math.max(0, deficit(home,item,target) - carried);
+        if (wanted == 0) return 0;
+        int available = source.nbGoodAvailable(item,false,false,false);
+        if (available <= 0) return 0;
+        int capacity = Math.max(0, room(home,item,item.meta == -1 ? source.stockKeys() : List.of()) - carried);
+        return Math.min(wanted, Math.min(capacity, available));
     }
     static Collection<InvItem> needs(MillVillager v, Building shop) {
         if (!usable(shop) || shop.location == null || shop.location.shop == null) return List.of();
         var needs = v.getCulture().shopNeeds.get(shop.location.shop);
-        return needs == null ? List.of() : new LinkedHashSet<>(needs);
+        return needs == null ? List.of() : needs;
     }
     static boolean neededBy(MillVillager v, Building shop, InvItem concrete) {
         for (InvItem item : needs(v,shop)) if (item.matches(concrete)) return true;
         return false;
     }
     static int shopDelivery(MillVillager v, Building shop, InvItem concrete) {
-        return concrete.meta == -1 || !neededBy(v,shop,concrete) ? 0
-                : Math.min(v.countInv(concrete),shop.storageRoom(concrete));
+        int carried = concrete.meta == -1 ? 0 : v.countInv(concrete);
+        return carried <= 0 || !neededBy(v,shop,concrete) ? 0
+                : Math.min(carried,shop.storageRoom(concrete));
     }
     static int shopPickup(MillVillager v, Building source, InvItem concrete, List<Building> shops) {
         if (!usable(source) || concrete.meta == -1) return 0;
-        int capacity = 0;
+        int capacity = 0, available = -1;
+        int carried = v.countInv(concrete);
         for (Building shop : shops) {
             if (shop == source || !neededBy(v,shop,concrete)) continue;
+            if (available < 0) available = source.nbGoodAvailable(concrete,false,false,true);
+            if (available <= 0) return 0;
             capacity = Math.max(capacity,shop.storageRoom(concrete));
+            if ((long)capacity - carried >= available) break;
         }
         // Existing cargo already occupies part of the recipient's capacity.
-        return Math.min(Math.max(0,capacity-v.countInv(concrete)),
-                source.nbGoodAvailable(concrete,false,false,true));
+        return Math.min(Math.max(0,capacity-carried), Math.max(0,available));
     }
     static boolean access(Goal goal, MillVillager v, Building building) {
         return !v.level.isClientSide && usable(building)
