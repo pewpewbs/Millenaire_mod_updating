@@ -53,6 +53,7 @@ public class ContentDeployer {
             }
             LanguageBundleUpdater.update(source.resolve("millenaire"), mods.resolve("millenaire"));
             updateMayanSandstoneGoal(source.resolve("millenaire"), mods.resolve("millenaire"));
+            updateTavernFurnace(source.resolve("millenaire"), mods.resolve("millenaire"));
         } catch (IOException error) {
             throw new IllegalStateException("Unable to deploy Millenaire content", error);
         }
@@ -110,6 +111,51 @@ public class ContentDeployer {
             Files.deleteIfExists(staged);
         }
         Mill.LOGGER.info("MAYAN-SANDSTONE-MIGRATION: installed missing minesandstone goal; original backed up");
+    }
+
+    /** Same-version migration of the bundled tavern cook; custom overrides are untouched. */
+    private static void updateTavernFurnace(java.nio.file.Path bundled,
+            java.nio.file.Path installed) throws IOException {
+        var relative = java.nio.file.Path.of("cultures", "byzantines", "villagers",
+                "artisans", "hostesse_byzantine.txt");
+        var target = installed.resolve(relative);
+        var stock = bundled.resolve(relative);
+        if (!Files.isRegularFile(target) || !Files.isRegularFile(stock)) return;
+        String original = Files.readString(target);
+        String stockText = Files.readString(stock);
+        if (!stockText.lines().anyMatch(line -> line.trim().equalsIgnoreCase("goal=tendfurnace"))) return;
+        var anchor = java.util.regex.Pattern.compile("(?im)^[ \\t]*goal[ \\t]*=[ \\t]*cooksteak[ \\t]*(?=\\r?$)").matcher(original);
+        if (!anchor.find()) return;
+        String newline = original.contains("\r\n") ? "\r\n" : "\n";
+        var additions = new java.util.ArrayList<String>();
+        if (!java.util.regex.Pattern.compile("(?im)^\\s*goal\\s*=\\s*tendfurnace\\s*$").matcher(original).find())
+            additions.add("goal=tendfurnace");
+        for (String wood : new String[]{"wood", "wood_pine", "wood_birch", "wood_jungle", "wood_acacia", "wood_darkoak"}) {
+            String key = "requiredGood=" + wood + ",4";
+            if (!stockText.lines().anyMatch(line -> line.trim().equalsIgnoreCase(key))) continue;
+            if (!java.util.regex.Pattern.compile("(?im)^[ \\t]*requiredGood[ \\t]*=[ \\t]*"
+                    + wood + "[ \\t]*,").matcher(original).find()) additions.add(key);
+        }
+        if (additions.isEmpty()) return;
+        String updated = original.substring(0, anchor.end()) + newline
+                + String.join(newline, additions) + original.substring(anchor.end());
+        var backup = installed.resolveSibling("millenaire-content-backups")
+                .resolve(java.util.UUID.randomUUID().toString()).resolve(relative);
+        Files.createDirectories(backup.getParent());
+        Files.copy(target, backup);
+        var staged = Files.createTempFile(target.getParent(), "tavern-cook-", ".tmp");
+        try {
+            Files.writeString(staged, updated);
+            try {
+                Files.move(staged, target, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
+                Files.move(staged, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(staged);
+        }
+        Mill.LOGGER.info("TAVERN-FURNACE-MIGRATION: added missing maintenance/fuel entries; original backed up");
     }
 
     private static final String DEV_VERSION_NUMBER = "@VERSION@";
