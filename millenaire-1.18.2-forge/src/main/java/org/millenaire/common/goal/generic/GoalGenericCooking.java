@@ -75,8 +75,18 @@ extends GoalGeneric {
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
         List<Building> buildings = this.getBuildings(villager);
         for (Building dest : buildings) {
-            if (!this.isDestPossible(villager, dest) || !passesWorkplaceBalance(villager, dest)) continue;
+            if (!this.isDestPossible(villager, dest)) continue;
+            if (!passesWorkplaceBalance(villager, dest)) {
+                org.millenaire.common.goal.GoalDiagnostics.note(villager, this, "WORKPLACE_RESOURCE_BALANCE");
+                continue;
+            }
             int countGoods = dest.countGoods(this.itemToCook) + villager.countInv(this.itemToCook);
+            if (org.millenaire.common.goal.GoalDiagnostics.recording(villager, this)) {
+                if (countGoods < this.minimumToCook)
+                    org.millenaire.common.goal.GoalDiagnostics.note(villager, this, "INPUT_BELOW_MINIMUM " + this.itemToCook + " " + countGoods + "/" + this.minimumToCook);
+                if (dest.getResManager().furnaces.isEmpty() && dest.getResManager().firepits.isEmpty())
+                    org.millenaire.common.goal.GoalDiagnostics.note(villager, this, "NO_REGISTERED_FURNACE_OR_FIREPIT");
+            }
             for (Point p : dest.getResManager().furnaces) {
                 FurnaceBlockEntity furnace = p.getFurnace(villager.level);
                 if (furnace == null) continue;
@@ -106,6 +116,7 @@ extends GoalGeneric {
                 }
             }
         }
+        org.millenaire.common.goal.GoalDiagnostics.note(villager, this, "NO_ELIGIBLE_COOKING_SLOT_OR_COLLECTABLE_OUTPUT");
         return null;
     }
 
