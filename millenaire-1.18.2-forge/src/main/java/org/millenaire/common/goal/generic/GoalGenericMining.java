@@ -132,7 +132,7 @@ extends GoalGeneric {
     @Override
     public boolean performAction(MillVillager villager) throws Exception {
         for (InvItem key : this.loots.keySet()) {
-            villager.addToInv(key, (int)this.loots.get(key));
+            villager.addToInv(key, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, (int)this.loots.get(key)));
             if (MillConfigValues.LogMiner < 3 || !villager.extraLog) continue;
             MillLog.debug(this, "Gathered " + key + " at: " + villager.getGoalDestPoint());
         }
