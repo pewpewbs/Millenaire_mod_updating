@@ -130,14 +130,14 @@ extends Goal {
                             villager.setBlock(p, Blocks.AIR);
                             villager.swing(InteractionHand.MAIN_HAND);
                             // Axis/bark is placement state; harvested stock remains the species' ordinary log.
-                            villager.addToInv(wood.log(), 0, 1);
+                            villager.addToInv(wood.log(), 0, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
                             woodFound = true;
                             if (MillConfigValues.LogLumberman >= 3) MillLog.debug(this, "Gathered wood at: " + p);
                             continue;
                         }
                         // Preserve the original grove sapling chances: dark oak 1/2, other species 1/4.
                         if (MillCommonUtilities.randomInt(wood == WoodVariant.DARK_OAK ? 2 : 4) == 0)
-                            villager.addToInv(wood.sapling(), 0, 1);
+                            villager.addToInv(wood.sapling(), 0, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
                         villager.setBlock(p, Blocks.AIR);
                         villager.swing(InteractionHand.MAIN_HAND);
                         if (MillConfigValues.LogLumberman >= 3) MillLog.debug(this, "Destroyed leaves at: " + p);
