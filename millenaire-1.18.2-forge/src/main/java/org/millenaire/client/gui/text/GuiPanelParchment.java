@@ -367,25 +367,37 @@ extends GuiText {
             // wrap each line, preserving the gold colour of the maximum level.
             var wrapped = new ArrayList<net.minecraft.util.FormattedCharSequence>();
             var colors = new ArrayList<Integer>();
-            int maxWidth = Math.max(40, Math.min(320, this.width - 20));
+            int availableWidth = Math.max(40, this.width - 20);
+            int maxWidth = Math.min(320, availableWidth);
             int stringWidth = 0;
-            for (var line : details) {
-                for (var part : this.font.split(new net.minecraft.network.chat.TextComponent(line.text()), maxWidth)) {
-                    wrapped.add(part);
-                    colors.add(line.color());
-                    stringWidth = Math.max(stringWidth, this.font.width(part));
+            // Prefer a compact tooltip, but widen it for very long shop lists.
+            for (int attempt = 0; attempt < 2; attempt++) {
+                wrapped.clear();
+                colors.clear();
+                stringWidth = 0;
+                for (var line : details) {
+                    for (var part : this.font.split(new net.minecraft.network.chat.TextComponent(line.text()), maxWidth)) {
+                        wrapped.add(part);
+                        colors.add(line.color());
+                        stringWidth = Math.max(stringWidth, this.font.width(part));
+                    }
                 }
+                if (wrapped.size() * 11 <= this.height - 20 || maxWidth == availableWidth) break;
+                maxWidth = availableWidth;
             }
             int tooltipHeight = wrapped.size() * 11;
-            int left = Math.max(5, Math.min(i + 10, this.width - stringWidth - 5)) - xStart;
-            int top = Math.max(5, Math.min(j + 10, this.height - tooltipHeight - 5)) - yStart;
+            float fit = Math.min(1.0f, Math.max(1, this.height - 20) / (float)Math.max(1, tooltipHeight));
+            int screenWidth = (int)Math.ceil(stringWidth * fit);
+            int screenHeight = (int)Math.ceil(tooltipHeight * fit);
+            int left = Math.max(5, Math.min(i + 10, this.width - screenWidth - 5)) - xStart;
+            int top = Math.max(5, Math.min(j + 10, this.height - screenHeight - 5)) - yStart;
             framePose.pushPose();
             try {
-                framePose.translate(0, 0, 200);
-                this.drawGradient(left - 3, top - 3, left + stringWidth + 3,
-                        top + tooltipHeight + 3, 0xF0101010, 0xF0101010);
+                framePose.translate(left, top, 200);
+                framePose.scale(fit, fit, 1);
+                this.drawGradient(-3, -3, stringWidth + 3, tooltipHeight + 3, 0xF0101010, 0xF0101010);
                 for (int n = 0; n < wrapped.size(); n++) {
-                    this.font.draw(framePose, wrapped.get(n), left, top + 11 * n, colors.get(n));
+                    this.font.draw(framePose, wrapped.get(n), 0, 11 * n, colors.get(n));
                 }
             } finally {
                 framePose.popPose();
