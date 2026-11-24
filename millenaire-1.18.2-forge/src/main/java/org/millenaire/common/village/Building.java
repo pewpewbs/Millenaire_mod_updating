@@ -171,6 +171,7 @@ public class Building {
    public boolean hasVisitors = false;
    public boolean hasAutoSpawn = false;
    private long lastFailedOtherLocationSearch = 0L;
+   private long nextProgressionReviewTick = Long.MIN_VALUE;
    private long lastFailedProjectLocationSearch = 0L;
    public long lastPathingUpdate;
    private long lastSaved = 0L;
@@ -993,7 +994,30 @@ public class Building {
       }
    }
 
+   boolean canAffordProgression(BuildingPlan plan, boolean reservePendingGoal) {
+      if (plan == null || plan.resCost == null) return false;
+      for (var entry : plan.resCost.entrySet()) {
+         if (entry.getValue() > this.nbGoodAvailable(entry.getKey(), true, false, false, reservePendingGoal)) return false;
+      }
+      return true;
+   }
+
+   int progressionAvailable(InvItem item) {
+      return this.nbGoodAvailable(item, true, false, false, false);
+   }
+
+   boolean validProgressionPlan(BuildingProject project, BuildingPlan plan) {
+      if (plan == null || plan.priority <= 0) return false;
+      if (project.location != null && project.location.level >= 0) {
+         if (!project.location.upgradesAllowed || plan.version != project.location.version
+               || plan.level != project.location.level + 1) return false;
+      } else if (plan.level != 0 || (!this.villageType.playerControlled
+               && (plan.price > 0 || plan.isgift) && !this.buildingsBought.contains(project.key))) return false;
+      return this.checkProjectValidity(project, plan);
+   }
+
    private boolean canAffordProject(BuildingPlan plan) {
+      if (VillageProgression.enabled(this)) return this.canAffordProgression(plan, false);
       if (plan == null) {
          MillLog.error(this, "Needed to compute plan cost but the plan is null.");
          return false;
@@ -2326,6 +2350,14 @@ public class Building {
                   return false;
                }
 
+               BuildingPlan pendingPlan = goalProject.getPlan(this.buildingGoalVariation, this.buildingGoalLevel);
+               if (VillageProgression.enabled(this) && (!this.validProgressionPlan(goalProject, pendingPlan)
+                       || VillageProgression.deferStyle(this, pendingPlan, ignoreCost))) {
+                  this.buildingGoal = null;
+                  this.buildingGoalLocation = null;
+                  this.buildingGoalIssue = null;
+                  return true;
+               }
                if (goalProject.location != null && goalProject.location.level >= 0 && goalProject.location.upgradesAllowed) {
                   if (!ignoreCost && !this.canAffordProject(goalProject.getPlan(this.buildingGoalVariation, this.buildingGoalLevel))) {
                      this.buildingGoalIssue = "ui.lackingresources";
@@ -2436,13 +2468,13 @@ public class Building {
                   if (projectx.planSet != null && (goalProject == null || projectx != goalProject)) {
                      if (projectx.location != null && projectx.location.level >= 0) {
                         if (this.findConstructionIPforLocation(projectx.location) == null) {
-                           BuildingPlan plan = projectx.getNextBuildingPlan(true);
+                           BuildingPlan plan = projectx.getNextBuildingPlan(false);
                            if (ignoreCost || this.canAffordBuild(plan)) {
                               affordableProjects.add(projectx);
                            }
                         }
                      } else if (this.findConstructionIPforBuildingPlanKey(projectx.planSet.key, true) == null
-                        && (ignoreCost || this.canAffordBuild(projectx.planSet.getFirstStartingPlan()))) {
+                        && (ignoreCost || this.canAffordBuild(projectx.getNextBuildingPlan(false)))) {
                         affordableProjects.add(projectx);
                      }
                   }
@@ -2452,7 +2484,11 @@ public class Building {
                   this.lastFailedOtherLocationSearch = System.currentTimeMillis();
                   return false;
                } else {
-                  BuildingProject newProject = BuildingProject.getRandomProject(affordableProjects);
+                  VillageProgression.Candidate progression = VillageProgression.enabled(this)
+                        ? VillageProgression.select(this, affordableProjects, this.getCurrentGoalBuildingPlan(), true, ignoreCost) : null;
+                  if (VillageProgression.enabled(this) && progression == null) return false;
+                  BuildingProject newProject = progression != null ? progression.project() : BuildingProject.getRandomProject(affordableProjects);
+                  if (newProject == null) return false;
                   if (newProject.location != null && newProject.location.level >= 0) {
                      int level = newProject.location.level + 1;
                      int variation = newProject.location.getVariation();
@@ -2474,7 +2510,8 @@ public class Building {
                         );
                      }
                   } else {
-                     BuildingPlan plan = newProject.planSet.getRandomStartingPlan();
+                     BuildingPlan plan = progression != null ? progression.plan() : newProject.planSet.getRandomStartingPlan();
+                     if (plan == null) return false;
                      BuildingLocation location = null;
                      if (ignoreCost || this.canAffordBuild(plan)) {
                         if (newProject.location == null && System.currentTimeMillis() - this.lastFailedOtherLocationSearch > 80000L) {
@@ -2534,7 +2571,9 @@ public class Building {
       } else if (!this.buildingProjects.containsKey(BuildingProject.EnumProjects.WALLBUILDING)) {
          return false;
       } else {
+         var progressionStyle = VillageProgression.styleGate(this, ignoreCost);
          for (BuildingProject project : this.buildingProjects.get(BuildingProject.EnumProjects.WALLBUILDING)) {
+            if (project.location == null || progressionStyle.blocks(project.getNextBuildingPlan(false))) continue;
             if (project.planSet != null && this.findConstructionIPforLocation(project.location) == null) {
                if (project.location.level >= 0 || !ignoreCost && !this.canAffordBuild(project.location.getPlan())) {
                   int level = project.location.level + 1;
@@ -2577,9 +2616,20 @@ public class Building {
       }
    }
 
-   private boolean findBuildingProject() {
+   private boolean findBuildingProject(boolean ignoreCost) {
       if (this.buildingGoal != null && this.buildingGoal.length() > 0) {
-         return false;
+         if (!VillageProgression.enabled(this)) return false;
+         long tick = this.world.getGameTime();
+         if (nextProgressionReviewTick != Long.MIN_VALUE && tick < nextProgressionReviewTick
+               && nextProgressionReviewTick - tick <= 100L) return false;
+         nextProgressionReviewTick = tick + 100L;
+         if (this.findConstructionIPforLocation(this.buildingGoalLocation) != null
+               || this.findConstructionIPforBuildingPlanKey(this.buildingGoal, false) != null) return false;
+         BuildingPlan waiting = this.getCurrentGoalBuildingPlan();
+         if (waiting == null) return false;
+         var replacement = VillageProgression.replacement(this, this.getAllPossibleProjects(), waiting, ignoreCost);
+         if (replacement == null) return false;
+         return this.setProgressionGoal(replacement.project(), replacement.plan());
       } else if (this.noProjectsLeft && (this.world.getDayTime() + this.hashCode()) % 600L != 3L) {
          return false;
       } else {
@@ -2595,31 +2645,35 @@ public class Building {
             return false;
          } else {
             this.noProjectsLeft = false;
+            if (VillageProgression.enabled(this)) {
+               var selection = VillageProgression.select(this, possibleProjects, null, false, ignoreCost);
+               if (selection == null) return false;
+               return this.setProgressionGoal(selection.project(), selection.plan());
+            }
             BuildingProject project = BuildingProject.getRandomProject(possibleProjects);
-            BuildingPlan plan = project.getNextBuildingPlan(true);
-            this.buildingGoal = project.key;
-            this.buildingGoalLevel = plan.level;
-            this.buildingGoalVariation = plan.variation;
-            if (project.location == null) {
-               this.buildingGoalLocation = null;
-               ConstructionIP cip = this.findConstructionIPforBuildingPlanKey(this.buildingGoal, true);
-               if (cip != null) {
-                  this.buildingGoalLocation = cip.getBuildingLocation();
-               }
-            } else {
-               this.buildingGoalLocation = project.location.createLocationForLevel(this.buildingGoalLevel);
-            }
-
-            if (MillConfigValues.LogBuildingPlan >= 1) {
-               MillLog.major(
-                  this,
-                  "Picked new upgrade goal: " + this.buildingGoal + " level: " + this.buildingGoalLevel + " buildingGoalLocation: " + this.buildingGoalLocation
-               );
-            }
-
-            return true;
+            return project != null && this.setProgressionGoal(project, project.getNextBuildingPlan(true));
          }
       }
+   }
+
+   private boolean setProgressionGoal(BuildingProject project, BuildingPlan plan) {
+      if (project == null || plan == null) return false;
+      this.buildingGoal = project.key;
+      this.buildingGoalLevel = plan.level;
+      this.buildingGoalVariation = plan.variation;
+      this.buildingGoalIssue = null;
+      if (project.location == null) {
+         this.buildingGoalLocation = null;
+         ConstructionIP cip = this.findConstructionIPforBuildingPlanKey(this.buildingGoal, true);
+         if (cip != null) this.buildingGoalLocation = cip.getBuildingLocation();
+      } else {
+         this.buildingGoalLocation = project.location.createLocationForLevel(this.buildingGoalLevel);
+      }
+      if (MillConfigValues.LogBuildingPlan >= 1) {
+         MillLog.major(this, "Picked new upgrade goal: " + this.buildingGoal + " level: "
+               + this.buildingGoalLevel + " buildingGoalLocation: " + this.buildingGoalLocation);
+      }
+      return true;
    }
 
    public ConstructionIP findConstructionIPforBuildingPlanKey(String key, boolean newBuildingOnly) {
@@ -2826,7 +2880,8 @@ public class Building {
 
             for (BuildingProject project : projectsLevel) {
                project.projectTier = ep;
-               if ((project.location == null || project.location.level < 0) && !foundNewBuildingsLevel) {
+               if ((project.location == null || project.location.level < 0)
+                    && (!foundNewBuildingsLevel || VillageProgression.enabled(this))) {
                   if (this.isValidProject(project)) {
                      possibleProjects.add(project);
                      includedNewBuildings = true;
@@ -3920,6 +3975,11 @@ public class Building {
    }
 
    public int nbGoodAvailable(InvItem ii, boolean forConstruction, boolean forExport, boolean forShop) {
+      return this.nbGoodAvailable(ii, forConstruction, forExport, forShop, true);
+   }
+
+   private int nbGoodAvailable(InvItem ii, boolean forConstruction, boolean forExport, boolean forShop,
+                               boolean reservePendingGoal) {
       if (this.resManager.chests.isEmpty()) {
          return 0;
       } else {
@@ -3958,7 +4018,7 @@ public class Building {
                }
             }
 
-            if (!projectHandled && project != null) {
+            if (reservePendingGoal && !projectHandled && project != null) {
                for (InvItem keyx : project.resCost.keySet()) {
                   if (keyx.matches(ii)) {
                      nb -= project.resCost.get(keyx);
@@ -5896,7 +5956,7 @@ public class Building {
          ignoreCost = true;
       }
 
-      change = this.findBuildingProject();
+      change = this.findBuildingProject(ignoreCost);
       change |= this.findBuildingConstruction(ignoreCost);
       if (this.getSimultaneousWallConstructionSlots() > 0) {
          change |= this.findBuildingConstructionWall(ignoreCost);
