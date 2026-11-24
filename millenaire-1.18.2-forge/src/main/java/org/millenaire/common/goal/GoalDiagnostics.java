@@ -54,8 +54,8 @@ public final class GoalDiagnostics {
         result.add("NPC: " + villager.getName().getString());
         result.add("CURRENT: " + (villager.goalKey == null ? "-" : villager.goalKey));
         result.add("CURRENT_DESTINATION: " + (villager.getGoalDestPoint() == null ? "-" : villager.getGoalDestPoint().toString()));
-        if (watch.destinationGoal != null && watch.destinationGoal.equals(villager.goalKey))
-            result.add("LAST_DESTINATION: " + watch.destinationResult + " | age=" + Math.max(0, now-watch.destinationTick) + " ticks");
+        if (watch.destinationGoal != null)
+            result.add("LAST_DESTINATION (" + watch.destinationGoal + "): " + watch.destinationResult + " | age=" + Math.max(0, now-watch.destinationTick) + " ticks");
         Snapshot snapshot = watch.snapshot;
         if (snapshot == null) {
             result.add("WAITING_FOR_NEXT_NATURAL_GOAL_SELECTION");
@@ -127,8 +127,7 @@ public final class GoalDiagnostics {
             List<Row> rows = candidates.values().stream().map(Candidate::freeze).toList();
             synchronized (GoalDiagnostics.class) {
                 watch.snapshot = new Snapshot(villager.level.getGameTime(), selected == null ? "-" : selected.key, rows);
-                watch.destinationGoal = null;
-                watch.destinationResult = null;
+
             }
         }
         @Override public void close() { if (CURRENT.get() == this) CURRENT.remove(); }
