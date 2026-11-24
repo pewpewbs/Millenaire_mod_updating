@@ -31,6 +31,11 @@ extends GuiText {
 
     @Override
     protected void onButtonPressed(Button guibutton) throws IOException {
+        if (guibutton instanceof GoalDiagnosticsButton) {
+            if (this.minecraft.player != null && this.minecraft.player.hasPermissions(2))
+                this.minecraft.setScreen(new GuiGoalDiagnostics(this));
+            return;
+        }
         if (guibutton instanceof TestTuningButton) {
             if (this.minecraft.player != null && this.minecraft.player.hasPermissions(2))
                 this.minecraft.setScreen(new GuiTestTuning(this));
@@ -88,8 +93,10 @@ extends GuiText {
         for (int i = 0; i < MillConfigValues.configPages.size(); ++i) {
             text.add(new TextLine(new ConfigPageButton(i)));
         }
-        if (this.minecraft.player != null && this.minecraft.player.hasPermissions(2))
+        if (this.minecraft.player != null && this.minecraft.player.hasPermissions(2)) {
             text.add(new TextLine(new TestTuningButton()));
+            text.add(new TextLine(new GoalDiagnosticsButton()));
+        }
         pages.add(text);
         return this.bookManager.convertAndAdjustLines(pages);
     }
@@ -150,6 +157,10 @@ extends GuiText {
         else { pageId=-1; pageNum=0; textBook=getData(); buttonPagination(); }
     }
 
+
+    private static class GoalDiagnosticsButton extends GuiText.MillGuiButton {
+        GoalDiagnosticsButton() { super(0,0,0,0,0,new net.minecraft.network.chat.TranslatableComponent("millenaire.goal_diagnostics.title").getString()); }
+    }
 
     private static class TestTuningButton extends GuiText.MillGuiButton {
         TestTuningButton() { super(0, 0, 0, 0, 0, new net.minecraft.network.chat.TranslatableComponent("millenaire.test_tuning.title").getString()); }
