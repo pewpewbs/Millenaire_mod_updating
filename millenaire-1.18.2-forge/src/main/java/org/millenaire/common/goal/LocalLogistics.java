@@ -45,16 +45,38 @@ final class LocalLogistics {
         int wanted = Math.min(deficit(home,item,target),v.countInv(item));
         return wanted <= 0 ? 0 : Math.min(wanted,room(home,item,v.getInventoryKeys()));
     }
-    static int householdPickup(MillVillager v, Building source, InvItem item, int target) {
+    private record Pickup(InvItem item, int amount) {}
+    private static Pickup householdPlan(MillVillager v, Building source, InvItem item, int target) {
+        Pickup none = new Pickup(item,0);
         Building home = v.getHouse();
-        if (source == home || !usable(source) || !usable(home)) return 0;
+        if (source == home || !usable(source) || !usable(home)) return none;
         int carried = v.countInv(item);
         int wanted = Math.max(0, deficit(home,item,target) - carried);
-        if (wanted == 0) return 0;
+        if (wanted == 0) return none;
         int available = source.nbGoodAvailable(item,false,false,false);
-        if (available <= 0) return 0;
-        int capacity = Math.max(0, room(home,item,item.meta == -1 ? source.stockKeys() : List.of()) - carried);
-        return Math.min(wanted, Math.min(capacity, available));
+        if (available <= 0) return none;
+        if (item.meta != -1) {
+            int capacity = Math.max(0,home.storageRoom(item)-carried);
+            return new Pickup(item,Math.min(wanted,Math.min(capacity,available)));
+        }
+        // A family request must not bypass the reserve of an individual variant.
+        // Choose one feasible concrete variant per request, conservatively sharing free slots.
+        Pickup best = none;
+        for (InvItem actual : source.stockKeys()) {
+            if (actual.meta == -1 || !item.matches(actual)) continue;
+            int surplus = source.nbGoodAvailable(actual,false,false,false);
+            int capacity = Math.max(0,home.storageRoom(actual)-carried);
+            int amount = Math.min(wanted,Math.min(available,Math.min(surplus,capacity)));
+            if (amount > best.amount()) best = new Pickup(actual,amount);
+        }
+        return best;
+    }
+    static int householdPickup(MillVillager v, Building source, InvItem item, int target) {
+        return householdPlan(v,source,item,target).amount();
+    }
+    static int collectHousehold(MillVillager v, Building source, InvItem item, int target) {
+        Pickup plan = householdPlan(v,source,item,target);
+        return plan.amount() <= 0 ? 0 : v.takeFromBuilding(source,plan.item().getItem(),plan.item().meta,plan.amount());
     }
     static Collection<InvItem> needs(MillVillager v, Building shop) {
         if (!usable(shop) || shop.location == null || shop.location.shop == null) return List.of();
