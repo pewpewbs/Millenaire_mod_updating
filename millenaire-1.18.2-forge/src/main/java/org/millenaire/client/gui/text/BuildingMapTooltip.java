@@ -10,6 +10,9 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.block.Blocks;
+import org.millenaire.common.utilities.LegacyBlockStates;
+import org.millenaire.common.block.MillBlocks;
 import org.millenaire.common.buildingplan.BuildingPlan;
 import org.millenaire.common.config.MillConfigValues;
 import org.millenaire.common.culture.VillagerType;
@@ -66,12 +69,12 @@ final class BuildingMapTooltip {
             if (set != null && variation >= 0 && variation < set.plans.size()
                     && set.plans.get(variation).length > loc.level) {
                 int maximum = set.plans.get(variation).length - 1;
-                String level = label("Upgrade: ", "Покращення: ", "Улучшение: ") + loc.level + "/" + maximum;
+                String level = label("Upgrade level: ", "Рівень покращення: ", "Уровень улучшения: ") + loc.level + "/" + maximum;
                 boolean max = loc.level == maximum;
                 if (max) level += label(" (MAX)", " (МАКС.)", " (МАКС.)");
                 add(lines, level, max ? GOLD : NORMAL);
             } else {
-                add(lines, label("Upgrade: ", "Покращення: ", "Улучшение: ") + loc.level, NORMAL);
+                add(lines, label("Upgrade level: ", "Рівень покращення: ", "Уровень улучшения: ") + loc.level, NORMAL);
             }
         }
 
@@ -116,6 +119,26 @@ final class BuildingMapTooltip {
                         addStack(produced, new ItemStack(Items.SUGAR_CANE));
                     } else if (goal instanceof GoalIndianGatherBrick && hasTag(loc, building, plan, "brickkiln")) {
                         addItem(produced, InvItem.createInvItem(org.millenaire.common.block.MillBlocks.BS_MUD_BRICK));
+                    } else if (goal instanceof GoalMinerMineResource miner
+                            && (miner.buildingTag == null ? home : hasTag(loc, building, plan, miner.buildingTag))) {
+                        activities.add(label("Resource extraction", "Видобування ресурсів", "Добыча ресурсов"));
+                        // Read registered source types only, not world blocks.
+                        // The legacy mining goal transforms particular sources
+                        // into specific drops; mirror its explicit output rules.
+                        if (building != null) for (var source : building.getResManager().sourceTypes) {
+                            if (source == null) continue;
+                            var block = source.getBlock();
+                            if (LegacyBlockStates.matchesName(block, "minecraft:sand"))
+                                addStack(produced, new ItemStack(Blocks.SAND));
+                            else if (LegacyBlockStates.matchesName(block, "minecraft:stone"))
+                                addItem(produced, block == Blocks.STONE ? InvItem.createInvItem(Blocks.COBBLESTONE) : InvItem.createInvItem(source));
+                            else if (LegacyBlockStates.matchesName(block, "minecraft:sandstone"))
+                                addStack(produced, new ItemStack(Blocks.SANDSTONE));
+                            else if (block == Blocks.CLAY) addStack(produced, new ItemStack(Items.CLAY_BALL));
+                            else if (block == Blocks.GRAVEL) addStack(produced, new ItemStack(Blocks.GRAVEL));
+                            else if (block == Blocks.SNOW) addStack(produced, new ItemStack(MillBlocks.SNOW_BRICK));
+                            else if (block == Blocks.ICE) addStack(produced, new ItemStack(MillBlocks.ICE_BRICK));
+                        }
                     } else if (goal instanceof GoalHarvestWarts && home) {
                         addStack(produced, new ItemStack(Items.NETHER_WART));
                     } else if (goal instanceof GoalShearSheep && home && hasTag(loc, building, plan, "sheeps")) {
