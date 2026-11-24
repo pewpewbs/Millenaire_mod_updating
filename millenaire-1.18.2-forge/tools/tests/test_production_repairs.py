@@ -6,7 +6,7 @@ import sys
 PROJECT = Path(__file__).resolve().parents[2]
 DATA = PROJECT / "src/main/resources/todeploy/millenaire"
 sys.path.insert(0, str(PROJECT / "tools"))
-from audit_production import load_goals, read_config, DEFAULT_JAVA
+from audit_production import load_goals, read_config, markers, DEFAULT_JAVA
 
 
 class ProductionRepairs(unittest.TestCase):
@@ -40,19 +40,24 @@ class ProductionRepairs(unittest.TestCase):
             from PIL import Image
         except ImportError:
             self.skipTest("Pillow not installed")
+        palette = markers(DATA)
         plans = [
             ("indian/buildings/basic/quarry_A0.png", 14, [(1,2,5),(1,6,6)], (200,20,20), (155,155,155)),
             ("indian/buildings/basic/quarry_B0.png", 14, [(2,3,3),(3,9,8)], (200,20,20), (155,155,155)),
-            ("japanese/buildings/lone/lonemine_A0.png", 20, [(7,4,2),(7,2,4)], (60,60,20), (109,71,35)),
+            ("japanese/buildings/lone/lonemine_A0.png", 20, [(7,4,2),(7,2,4)], (60,60,60), (109,71,35)),
             ("mayan/buildings/core/mayanmining_A0.png", 12, [(2,4,5),(2,3,9)], (200,20,20), (155,155,155)),
         ]
         for path, width, points, color, support in plans:
+            expected_marker = "gravelsource" if path.startswith("japanese/") else "sandsource"
+            self.assertEqual(palette.get(color), expected_marker, path)
             with Image.open(DATA / "cultures" / path) as raw:
                 image = raw.convert("RGB")
                 for floor, x, y in points:
                     self.assertEqual(image.getpixel((floor*(width+1)+x,y)), color, path)
                     self.assertEqual(image.getpixel(((floor-1)*(width+1)+x,y)), support, path)
-                self.assertGreater(sum(p == (180,20,20) for p in image.getdata()), 0)
+                self.assertEqual(palette.get((180,20,20)), "stonesource")
+                self.assertGreater(sum(n for n, p in image.getcolors(image.width * image.height)
+                                       if p == (180,20,20)), 0)
 
     def test_lone_fisherman_delivery_and_log_variants(self):
         root = DATA / "cultures"
