@@ -258,19 +258,21 @@ public class MillWorldData {
             centreZ = server.getSharedSpawnPos().getZ() >> 4;
         }
         int nbGenerated = 0;
-        for (int radius = 1; radius < MillConfigValues.forcePreload; ++radius) {
-            for (int i = -MillConfigValues.forcePreload; i < MillConfigValues.forcePreload && nbGenerated < 100; ++i) {
-                for (int j = -MillConfigValues.forcePreload; j < MillConfigValues.forcePreload && nbGenerated < 100; ++j) {
+        // Optional preloading must not synchronously generate a batch of 100
+        // chunks on one server tick. Visit each ring once, nearest first.
+        preload: for (int radius = 1; radius < MillConfigValues.forcePreload; ++radius) {
+            for (int i = -radius; i <= radius; ++i) {
+                for (int j = -radius; j <= radius; ++j) {
+                    if (i*i+j*j < (radius-1)*(radius-1)) continue;
                     if (i * i + j * j >= radius * radius || org.millenaire.common.utilities.WorldUtilities.isChunkGenerated(server, i + centreX, j + centreZ)) continue;
                     server.getChunk(i + centreX, j + centreZ);
                     MillLog.minor(this, "Forcing population of chunk " + (i + centreX) + "/" + (j + centreZ));
                     ++nbGenerated;
+                    if (nbGenerated >= 1) break preload;
                 }
             }
         }
-        if (nbGenerated > 0) {
-            server.getChunkSource().save(false);
-        }
+        // Normal Minecraft autosave persists generated chunks.
     }
 
     public Collection<MillVillager> getAllKnownVillagers() {
@@ -1062,9 +1064,20 @@ public class MillWorldData {
         this.testLog();
     }
 
+    private void reportSlowStage(String stage, long started) {
+        long elapsed = System.nanoTime() - started;
+        if (elapsed >= 100_000_000L)
+            MillLog.major(this, "MILL-SLOW stage=" + stage + " ms=" + elapsed / 1_000_000L
+                    + " tick=" + this.world.getGameTime());
+    }
+
     public void updateWorldServer() {
+        long totalStarted = System.nanoTime();
+        long stageStarted = totalStarted;
         this.testTimeReset();
         this.rebuildVillagerList();
+        this.reportSlowStage("villager-index", stageStarted);
+        stageStarted = System.nanoTime();
         for (int i = 0; i < this.villagesList.pos.size(); ++i) {
             this.villagesList.buildingsTime.get(i).add(0L);
             this.villagesList.villagersTime.get(i).add(0L);
@@ -1075,10 +1088,17 @@ public class MillWorldData {
         for (Building b : this.allBuildings()) {
             long startTime = System.nanoTime();
             b.updateBuildingServer();
+            if (System.nanoTime() - startTime >= 100_000_000L)
+                this.reportSlowStage("building:" + b.getPos(), startTime);
+            long backgroundStarted = System.nanoTime();
             b.updateBackgroundVillage();
+            if (System.nanoTime() - backgroundStarted >= 100_000_000L)
+                this.reportSlowStage("background:" + b.getPos(), backgroundStarted);
             if (b.getTownHall() == null) continue;
             this.reportTime(b.getTownHall(), System.nanoTime() - startTime, false);
         }
+        this.reportSlowStage("building-loop", stageStarted);
+        stageStarted = System.nanoTime();
         this.checkConnections();
         ArrayList<UserProfile> profilesCopy = new ArrayList<UserProfile>(this.profiles.values());
         for (UserProfile profile : profilesCopy) {
@@ -1095,8 +1115,12 @@ public class MillWorldData {
         if (MillConfigValues.DEV) {
             DevModUtilities.runAutoMove(this.world);
         }
+        this.reportSlowStage("profiles-and-quests", stageStarted);
+        stageStarted = System.nanoTime();
         this.forcePreload();
+        this.reportSlowStage("force-preload", stageStarted);
         this.testLog();
+        this.reportSlowStage("world-total", totalStarted);
     }
 }
 

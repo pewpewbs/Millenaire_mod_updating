@@ -1144,6 +1144,8 @@ public class Building {
       int nbAttackers = 0;
       int nbLiveAttackers = 0;
       int nbLiveDefenders = 0;
+      int knownResidents = 0, livingResidents = 0, knownDefenders = 0, survivingDefenders = 0;
+      boolean unknownResidentType = false;
       Point attackingVillagePos = null;
 
       for (VillagerRecord vr : this.getVillagerRecords().values()) {
@@ -1154,18 +1156,38 @@ public class Building {
             }
 
             attackingVillagePos = vr.originalVillagePos;
-         } else if (vr.getType().helpInAttacks && !vr.killed && !vr.awayraiding && !vr.awayhired) {
-            nbLiveDefenders++;
+         } else {
+            knownResidents++;
+            if (!vr.killed) livingResidents++;
+            if (vr.getType() == null) {
+               unknownResidentType = true;
+               continue;
+            }
+            if (vr.getType().helpInAttacks) {
+               knownDefenders++;
+               if (!vr.killed) {
+                  survivingDefenders++;
+                  if (!vr.awayraiding && !vr.awayhired) nbLiveDefenders++;
+               }
+            }
          }
       }
 
+      // Records persist when entities/chunks unload. An empty or unresolved
+      // roster is NOT evidence of defeat; civilian-only homes are protected
+      // while residents live. Absent or hired guards are not dead.
+      boolean rosterKnown = knownResidents > 0 && !unknownResidentType;
+      boolean defeated = rosterKnown && (knownDefenders > 0
+            ? survivingDefenders == 0 : livingResidents == 0);
+      boolean protectedByResidents = rosterKnown && (knownDefenders > 0
+            ? survivingDefenders > 0 : livingResidents > 0);
       if (this.isTownhall) {
-         if (this.chestLocked && nbLiveDefenders == 0) {
+         if (this.chestLocked && defeated) {
             this.unlockAllChests();
             ServerSender.sendTranslatedSentenceInRange(
                this.world, this.getPos(), MillConfigValues.BackgroundRadius, '4', "ui.allchestsunlocked", this.getVillageQualifiedName()
             );
-         } else if (!this.chestLocked && nbLiveDefenders > 0) {
+         } else if (!this.chestLocked && protectedByResidents) {
             this.lockAllBuildingsChests();
          }
       }

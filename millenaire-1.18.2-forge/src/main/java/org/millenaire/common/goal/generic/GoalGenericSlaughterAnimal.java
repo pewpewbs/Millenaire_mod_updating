@@ -150,6 +150,14 @@ extends GoalGeneric {
     }
 
     @Override
+    protected boolean isStillValidSpecific(MillVillager villager) throws Exception {
+        Entity target = villager.getGoalDestEntity();
+        Building dest = villager.getGoalBuildingDest();
+        return target != null && target.isAlive() && !this.isEntityChild(target)
+                && dest != null && this.getBuildings(villager).contains(dest);
+    }
+
+    @Override
     public boolean performAction(MillVillager villager) throws Exception {
         Building dest = villager.getGoalBuildingDest();
         if (dest == null || villager.level.isClientSide || !this.isDestPossibleSpecific(villager, dest)) {

@@ -17,7 +17,14 @@ public final class RegionChunkIndex {
             Path file=regionFolder.resolve("r."+rx+"."+rz+".mca");
             try (FileChannel channel=FileChannel.open(file,StandardOpenOption.READ)) {
                 ByteBuffer header=ByteBuffer.allocate(4096);
-                while (header.hasRemaining()) if (channel.read(header)<0) throw new IOException("Truncated region header: "+file);
+                // A newly created region may still have an incomplete header
+                // while the server writes it. Keep other regions in the overview
+                // and let the next refresh retry this file; do not modify it.
+                if (channel.size() < 8192L) continue;
+                while (header.hasRemaining()) {
+                    if (channel.read(header) <= 0) break;
+                }
+                if (header.hasRemaining()) continue;
                 header.flip();
                 long fileSize=channel.size();
                 for (int x=Math.max(startX,rx*32);x<=Math.min(endX,rx*32+31);x++)

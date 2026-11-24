@@ -247,6 +247,7 @@ IAStarPathedEntity {
     public MillWorldData mw;
     private volatile boolean pathFailedSincelastTick = false;
     private long nextVanillaPathAttempt = 0L;
+    private long nextTrackedEntityPathAttempt;
     private long nextRouteDecisionLog = 0L;
     private String lastRouteDecision = "";
     // Door recovery uses physical displacement, not per-tick velocity,
@@ -460,6 +461,12 @@ IAStarPathedEntity {
                     this.nextVanillaPathAttempt = 0L;
                     return;
                 }
+            }
+            Goal active = this.getActiveGoal();
+            if (this.tracksLandEntity() && path.getNodeCount() <= 1 && active != null
+                    && !active.isWithinActionRange(this, this.getPathDestPoint())) {
+                this.pathFailedSincelastTick = true;
+                return;
             }
             this.registerNewPath(path);
         }
@@ -721,7 +728,7 @@ IAStarPathedEntity {
                 this.setGoalDestEntity(null);
                 this.setPathDestPoint(null, 0);
             } else {
-                this.setPathDestPoint(new Point(this.getGoalDestEntity()), 2);
+                this.refreshTrackedEntityDestination();
             }
         }
         Point target = null;
@@ -880,7 +887,33 @@ IAStarPathedEntity {
                 + " pos=" + this.blockPosition() + " target=" + destination);
     }
 
+    private boolean tracksLandEntity() {
+        Entity target = this.getGoalDestEntity();
+        return target != null && target.isAlive() && !target.isInWater() && !this.isInWater();
+    }
+
+    private void refreshTrackedEntityDestination() {
+        Entity target = this.getGoalDestEntity();
+        if (!this.tracksLandEntity()) {
+            this.setPathDestPoint(new Point(target), 2);
+            return;
+        }
+        Point previous = this.getPathDestPoint();
+        Point live = new Point(target);
+        if (previous != null && previous.sameBlock(live)) return;
+        // Keep a useful active route for small movements; measure drift against
+        // its unchanged anchor, not the target's immediately preceding tick.
+        if (previous != null && this.pathEntity != null && !this.pathEntity.isDone()
+                && previous.distanceTo(live) < 1.5D) return;
+        this.setPathDestPoint(new Point(live.getiX(), live.getiY(), live.getiZ()), 0);
+    }
+
     private List<Node> computeNewPath(Point dest) {
+        if (this.tracksLandEntity()) {
+            long now = this.level.getGameTime();
+            if (now < this.nextTrackedEntityPathAttempt) return null;
+            this.nextTrackedEntityPathAttempt = now + 10L;
+        }
         this.pathCalculatedSinceLastTick = null;
         this.pathFailedSincelastTick = false;
         // NAV-OPT-09: do not cancel a still-running route before checking
@@ -909,7 +942,12 @@ IAStarPathedEntity {
                 } else {
                     AStarNode[] possibles = AStarStatic.getAccessNodesSorted(this.level, this.doubleToInt(this.getX()), this.doubleToInt(this.getY()), this.doubleToInt(this.getZ()), this.getPathDestPoint().getiX(), this.getPathDestPoint().getiY(), this.getPathDestPoint().getiZ(), this.getPathingConfig());
                     boolean stockGoal = isStockTransferGoal(Goal.goals.get(this.goalKey));
+                    boolean entityGoal = this.tracksLandEntity();
                     for (AStarNode candidate : possibles) {
+                        if (entityGoal && (candidate.x == this.blockPosition().getX()
+                                && candidate.y == this.blockPosition().getY()
+                                && candidate.z == this.blockPosition().getZ())) continue;
+                        if (entityGoal && Math.abs(candidate.y - dest.getiY()) > 1) continue;
                         // The closest geometrical node can be on the other side of a wall.
                         // A genuine stock access node must have line of sight to the stock point.
                         if (!stockGoal || canSeeStockFromNode(candidate.x, candidate.y,
@@ -1496,7 +1534,14 @@ IAStarPathedEntity {
 
     private AStarConfig getPathingConfig() {
         if (this.getActiveGoal() != null) {
-            return this.getActiveGoal().getPathingConfig(this);
+            AStarConfig config = this.getActiveGoal().getPathingConfig(this);
+            if (this.tracksLandEntity() && config.tolerance) {
+                // Exact access node for moving land targets, not the broad
+                // tolerance used by construction and other static workplaces.
+                return new AStarConfig(config.canUseDoors, config.canTakeDiagonals,
+                        config.allowDropping, config.canSwim, config.canClearLeaves);
+            }
+            return config;
         }
         return this.getVillagerPathingConfig();
     }
@@ -2623,7 +2668,7 @@ IAStarPathedEntity {
             if (this.tryGroundRoute(dest)) return;
         }
         if (action == org.millenaire.common.pathing.MovementWatchdog.Action.RECOVER
-                && this.vtype != null && (!this.vtype.noTeleport
+                && !this.tracksLandEntity() && this.vtype != null && (!this.vtype.noTeleport
                     || this.getRecord() != null && this.getRecord().raidingVillage)) {
             if (isStockTransferGoal(goal)) {
                 MillLog.major(this, "NAV-TELEPORT stock recovery: at=" + this.blockPosition()
@@ -2663,7 +2708,8 @@ IAStarPathedEntity {
         Goal goal = Goal.goals.get(this.goalKey);
         int range = goal == null ? 1 : Math.max(1, goal.range(this));
         boolean stockGoal = isStockTransferGoal(goal);
-        Path fallback = this.navigation.createPath(dest.getBlockPos(), Math.min(2, range - 1));
+        boolean entityGoal = this.tracksLandEntity();
+        Path fallback = this.navigation.createPath(dest.getBlockPos(), entityGoal ? 0 : Math.min(2, range - 1));
         boolean reached = fallback != null && fallback.canReach() && fallback.getNodeCount() > 0
                 && new Point(fallback.getEndNode()).horizontalDistanceTo(dest) < range;
         if (reached && stockGoal) {
@@ -2719,6 +2765,8 @@ IAStarPathedEntity {
             // Never accept a short partial approach ending immediately at a wall.
             progressing = false;
         }
+        if (entityGoal && fallback != null && fallback.getNodeCount() <= 1
+                && goal != null && !goal.isWithinActionRange(this, dest)) return false;
         if (!reached && !progressing) return false;
         Node[] nodes = new Node[fallback.getNodeCount()];
         for (int i = 0; i < nodes.length; i++) nodes[i] = fallback.getNode(i);
@@ -2748,7 +2796,7 @@ IAStarPathedEntity {
                     + " distance=" + dest.horizontalDistanceTo((Entity)this));
         }
         if (this.pathFailureRecovery.failed(now)
-            && (!this.vtype.noTeleport || this.getRecord() != null && this.getRecord().raidingVillage)) {
+            && !this.tracksLandEntity() && (!this.vtype.noTeleport || this.getRecord() != null && this.getRecord().raidingVillage)) {
             this.jumpToDest();
         }
     }

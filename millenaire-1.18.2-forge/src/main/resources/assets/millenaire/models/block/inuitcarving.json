@@ -355,7 +355,7 @@
                 },
                 "down": {
                     "uv": [0.0,0.0,1.0,9.5],
-                    "texture": "missingtexture"
+                    "texture": "#1"
                 },
                 "west": {
                     "uv": [0,7,15.5,10],

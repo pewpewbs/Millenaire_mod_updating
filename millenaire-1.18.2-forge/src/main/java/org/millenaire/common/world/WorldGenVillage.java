@@ -169,11 +169,17 @@ public class WorldGenVillage {
             completionRatio = distanceToSpawn > (double)MillConfigValues.villageSpawnCompletionMaxDistance ? (MillConfigValues.villageSpawnCompletionMaxPercentage / 100.0f) : (float)((double)MillConfigValues.villageSpawnCompletionMaxPercentage * ((distanceToSpawn - (double)MillConfigValues.villageSpawnCompletionMinDistance) / (double)MillConfigValues.villageSpawnCompletionMaxDistance) / 100.0);
             completionRatio = (float)(random.nextDouble() * (double)completionRatio);
         }
+        long generationStarted = System.nanoTime();
         try {
             this.generateVillageAtPoint(world, random, chunkX * 16, 0, chunkZ * 16, null, true, false, true, Integer.MAX_VALUE, null, null, null, completionRatio);
         }
         catch (Exception e) {
             MillLog.printException("Exception when attempting to generate village in " + world + " (dimension: " + world.dimension().location() + ")", e);
+        } finally {
+            long elapsed = System.nanoTime() - generationStarted;
+            if (elapsed >= 100_000_000L)
+                MillLog.major(this, "MILL-SLOW stage=village-generation chunk=" + chunkX + "/" + chunkZ
+                        + " ms=" + elapsed / 1_000_000L);
         }
     }
 

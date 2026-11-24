@@ -133,6 +133,14 @@ extends Goal {
     }
 
     @Override
+    protected boolean isStillValidSpecific(MillVillager villager) throws Exception {
+        Entity target = villager.getGoalDestEntity();
+        return target instanceof Sheep sheep && sheep.isAlive() && !sheep.isBaby()
+                && !sheep.isSheared() && villager.getHouse() != null
+                && woolInInventory(villager) < WOOL_DELIVERY_BATCH;
+    }
+
+    @Override
     public boolean performAction(MillVillager villager) throws Exception {
         if (villager.level.isClientSide || villager.getHouse() == null
                 || woolInInventory(villager) >= WOOL_DELIVERY_BATCH) return true;

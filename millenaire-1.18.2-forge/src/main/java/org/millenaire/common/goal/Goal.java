@@ -428,6 +428,11 @@ public abstract class Goal {
     public abstract int priority(MillVillager var1) throws Exception;
 
     public boolean isWithinActionRange(MillVillager villager, Point destination) {
+        Entity target = villager.getGoalDestEntity();
+        if (target != null && !target.isInWater() && !villager.isInWater()) {
+            double reach = this.range(villager);
+            return target.isAlive() && villager.distanceToSqr(target) < reach * reach;
+        }
         return destination != null && destination.horizontalDistanceTo(villager) < this.range(villager);
     }
 
