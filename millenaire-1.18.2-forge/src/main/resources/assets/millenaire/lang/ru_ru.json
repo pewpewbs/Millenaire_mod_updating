@@ -1471,5 +1471,9 @@
   "millenaire.test_tuning.reset": "Сбросить до 1×",
   "millenaire.test_tuning.waiting": "Ожидание ответа сервера…",
   "millenaire.test_tuning.session": "Только текущая сессия • все поселения",
-  "millenaire.test_tuning.denied": "Необходимы права на сервере"
+  "millenaire.test_tuning.denied": "Необходимы права на сервере",
+  "millenaire.goal_diagnostics.title": "Диагностика AI жителей",
+  "millenaire.goal_diagnostics.rescan": "Обновить список жителей",
+  "millenaire.goal_diagnostics.none": "Нет жителей в радиусе 16 блоков.",
+  "millenaire.goal_diagnostics.waiting": "Ожидание данных сервера…"
 }
