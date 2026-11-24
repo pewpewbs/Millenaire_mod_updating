@@ -1471,5 +1471,9 @@
   "millenaire.test_tuning.reset": "Reset to 1×",
   "millenaire.test_tuning.waiting": "Waiting for server…",
   "millenaire.test_tuning.session": "Session only • affects all villages",
-  "millenaire.test_tuning.denied": "Server permission required"
+  "millenaire.test_tuning.denied": "Server permission required",
+  "millenaire.goal_diagnostics.title": "Villager AI diagnostics",
+  "millenaire.goal_diagnostics.rescan": "Scan nearby villagers",
+  "millenaire.goal_diagnostics.none": "No villagers within 16 blocks.",
+  "millenaire.goal_diagnostics.waiting": "Waiting for server observation…"
 }
