@@ -116,6 +116,7 @@ public class GoalGenericTendFurnace extends GoalGeneric {
             for (Point point : destination.getResManager().firepits)
                 if (needsFuel(villager, destination, point.getFirePit(villager.level))) return packDest(point, destination);
         }
+        org.millenaire.common.goal.GoalDiagnostics.note(villager, this, "NO_COLLECTABLE_OUTPUT_OR_REFILLABLE_FUEL_SLOT");
         return null;
     }
     @Override public ItemStack[] getHeldItemsTravelling(MillVillager villager) {
