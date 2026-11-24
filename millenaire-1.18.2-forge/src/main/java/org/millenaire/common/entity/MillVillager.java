@@ -3292,19 +3292,19 @@ IAStarPathedEntity {
 
     public int takeFromBuilding(Building building, Item item, int meta, int nb) {
         if (nb <= 0) return 0;
-        if (item == Blocks.OAK_LOG.asItem() && meta == -1) {
+        if (meta == -1) {
+            // Do not turn a wildcard request into an actual inventory item.
+            InvItem requested = InvItem.createInvItem(item, meta);
             int total = 0;
-            for (org.millenaire.common.block.WoodVariant wood : org.millenaire.common.block.WoodVariant.values()) {
-                if (total == nb) break;
-                Item log = wood.log().asItem();
-                int taken = building.takeGoods(log, 0, nb - total);
-                if (taken > 0) this.addToInv(log, 0, taken);
-                total += taken;
+            for (InvItem actual : building.stockKeys()) {
+                if (total >= nb) break;
+                if (actual.meta == -1 || !requested.matches(actual)) continue;
+                total += this.takeFromBuilding(building, actual.getItem(), actual.meta, nb - total);
             }
             return total;
         }
         nb = building.takeGoods(item, meta, nb);
-        this.addToInv(item, meta, nb);
+        if (nb > 0) this.addToInv(item, meta, nb);
         return nb;
     }
 
