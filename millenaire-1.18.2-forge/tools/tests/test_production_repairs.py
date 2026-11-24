@@ -161,5 +161,54 @@ class ProductionRepairs(unittest.TestCase):
             wife.values("bringbackhomegood")))
 
 
+    def test_japanese_sand_supply_and_glass_chain(self):
+        from audit_production import csv_items
+        root = DATA / "cultures/japanese"
+        for name in ("japanese_miner", "japanese_loneminer"):
+            cfg = read_config(root / "villagers" / (name + ".txt"))
+            self.assertTrue({"minesand", "minestone", "minegravel", "cooksand",
+                             "tendfurnace", "bringbackresourceshome"}.issubset(cfg.values("goal")))
+            self.assertIn("sand", cfg.values("bringbackhomegood"))
+        self.assertIn("sand,16", read_config(root / "villagers/japanese_miner.txt").values("requiredgood"))
+        self.assertIn("sand", csv_items(read_config(root / "shops/lonemine.txt"), "buys"))
+        goals, _ = load_goals(DATA, DEFAULT_JAVA)
+        self.assertEqual(goals["minesand"].source, "minecraft:sand")
+        self.assertIn("sand", goals["minesand"].outputs)
+        self.assertIn("sand", goals["cooksand"].inputs)
+        self.assertIn("glass", goals["cooksand"].outputs)
+
+    def test_japanese_sand_markers_and_support(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("Pillow not installed")
+        root = DATA / "cultures/japanese/buildings"
+        palette = markers(DATA)
+        self.assertEqual(palette.get((200, 20, 20)), "sandsource")
+        self.assertEqual(palette.get((180, 20, 20)), "stonesource")
+        self.assertEqual(palette.get((60, 60, 60)), "gravelsource")
+        for stem, stride, points, support, shift, min_stone, min_gravel in (
+            ("core/japanesequarry_A", 16, [(25, 11), (27, 16)], (155, 155, 155), 1, 22, 8),
+            ("lone/lonemine_A", 21, [(151, 4)], (109, 71, 35), 2, 4, 2),
+        ):
+            with self.subTest(plan=stem):
+                with Image.open(root / (stem + "0.png")) as raw:
+                    image = raw.convert("RGB")
+                    counts = {p: n for n, p in image.getcolors(image.width * image.height)}
+                    self.assertEqual(counts.get((200, 20, 20)), len(points))
+                    self.assertGreaterEqual(counts.get((180, 20, 20), 0), min_stone)
+                    self.assertGreaterEqual(counts.get((60, 60, 60), 0), min_gravel)
+                    for x, y in points:
+                        self.assertEqual(image.getpixel((x, y)), (200, 20, 20))
+                        self.assertEqual(image.getpixel((x - stride, y)), support)
+                        self.assertEqual(image.getpixel((x + stride, y)), (255, 255, 255))
+                # White pixels are unchanged in the existing upgrade plans.
+                for level in range(1, 4):
+                    with Image.open(root / (stem + str(level) + ".png")) as raw:
+                        image = raw.convert("RGB")
+                        for x, y in points:
+                            self.assertEqual(image.getpixel((x + shift * stride, y)), (255, 255, 255))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

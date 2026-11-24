@@ -14,6 +14,7 @@ goal=gorest
 goal=gopray
 goal=minestone
 goal=minegravel
+goal=minesand
 goal=cookstone
 goal=cooksand
 goal=tendfurnace
