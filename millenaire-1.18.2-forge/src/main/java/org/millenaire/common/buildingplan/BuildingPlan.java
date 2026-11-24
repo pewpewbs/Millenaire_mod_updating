@@ -1618,7 +1618,14 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
          totalWorldCall += System.nanoTime() - nanoStart;
          nanoStart = System.nanoTime();
          Block block = blockState.getBlock();
-         if ((blockState == bb.getBlockstate() && special == 0 || block == Blocks.GRASS_BLOCK && bb.block == Blocks.DIRT) && bb.special == 0) {
+         // A simulated earlier plan operation has no live neighbourhood yet.
+         // For real blocks compare against the current native connected shape,
+         // not the legacy disconnected plan state.
+         boolean sameState = bbmap.containsKey(ip)
+            ? blockState == bb.getBlockstate()
+            : org.millenaire.common.utilities.ConnectedBlockPlacement.matchesPlan(
+                  world, bb.p.getBlockPos(), blockState, bb.getBlockstate());
+         if ((sameState && special == 0 || block == Blocks.GRASS_BLOCK && bb.block == Blocks.DIRT) && bb.special == 0) {
             toDelete[i] = true;
             deleteSameBlock++;
             if (deletionLogs) {

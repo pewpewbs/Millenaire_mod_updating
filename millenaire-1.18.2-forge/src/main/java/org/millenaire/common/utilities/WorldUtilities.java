@@ -479,11 +479,7 @@ public class WorldUtilities {
                 WorldUtilities.playSoundBlockBreaking(world, p, oldBlock, 1.0f);
             }
         }
-        if (notify) {
-            world.setBlockAndUpdate(p.getBlockPos(), block.defaultBlockState());
-        } else {
-            world.setBlock(p.getBlockPos(), block.defaultBlockState(), 2);
-        }
+        ConnectedBlockPlacement.place(world, p.getBlockPos(), block.defaultBlockState(), notify);
         if (playSound && block != Blocks.AIR && block.defaultBlockState().getSoundType() != null) {
             if (block.defaultBlockState().getSoundType() == SoundType.GRAVEL) {
                 WorldUtilities.playSoundBlockBreaking(world, p, block, 0.5f);
@@ -520,7 +516,7 @@ public class WorldUtilities {
         Point p = new Point(x, y, z);
         BlockState state = p.getBlockActualState(world);
         state = LegacyWorldMetadata.write(state.getBlock(), metadata);
-        return world.setBlock(p.getBlockPos(), state, notify ? 3 : 2);
+        return ConnectedBlockPlacement.place(world, p.getBlockPos(), state, notify);
     }
 
     public static boolean setBlockMetadata(Level world, Point p, int metadata) {
@@ -533,16 +529,8 @@ public class WorldUtilities {
 
     public static boolean setBlockstate(Level world, Point p, BlockState bs, boolean b, boolean c) {
         if (world.isOutsideBuildHeight(p.getBlockPos()) || !Level.isInSpawnableBounds(p.getBlockPos())) return false;
-        // Programmatic placement bypasses FenceBlock.getStateForPlacement.
-        // Initialize this fence's connections as well as notifying its neighbours.
-        if (bs.getBlock() instanceof net.minecraft.world.level.block.FenceBlock
-                || bs.getBlock() instanceof net.minecraft.world.level.block.WallBlock
-                || bs.getBlock() instanceof net.minecraft.world.level.block.FenceGateBlock
-                || bs.getBlock() instanceof org.millenaire.common.block.BlockMillWall) {
-            bs = Block.updateFromNeighbourShapes(bs, world, p.getBlockPos());
-        }
-        BlockState previous=world.getBlockState(p.getBlockPos());
-        boolean changed=world.setBlock(p.getBlockPos(),bs,b?3:2);
+        BlockState previous = world.getBlockState(p.getBlockPos());
+        boolean changed = ConnectedBlockPlacement.place(world, p.getBlockPos(), bs, b);
         if (changed && c) {
             if (!previous.isAir()) playSoundBlockBreaking(world,p,previous.getBlock(),1);
             if (!bs.isAir()) playSoundBlockPlaced(world,p,bs.getBlock(),2);

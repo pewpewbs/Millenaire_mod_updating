@@ -192,7 +192,8 @@ public class BuildingBlock {
         if (this.special != 0) {
             return false;
         }
-        return world.getBlockState(this.p.getBlockPos()).equals(this.blockState);
+        return org.millenaire.common.utilities.ConnectedBlockPlacement.matchesPlan(
+                world, this.p.getBlockPos(), world.getBlockState(this.p.getBlockPos()), this.blockState);
     }
 
     public boolean build(Level world, Building townHall, boolean worldGeneration, boolean wandimport) {
