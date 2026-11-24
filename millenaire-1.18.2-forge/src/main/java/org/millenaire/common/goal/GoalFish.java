@@ -100,10 +100,9 @@ extends Goal {
 
     @Override
     public int priority(MillVillager villager) throws Exception {
-        Goal.GoalInformation destination = getDestination(villager);
-        if (destination == null) return 0;
-        // Use the actual fishing destination and home stock, not the
-        // previously active goal (which can refer to an unrelated building).
+        // Availability already checks the actual fishing destination.
+        // Use home stock, not the previously active goal's destination,
+        // and do not repeat the fishing-spot search just for a priority.
         Building home = villager.getHouse();
         if (home == null) return 20;
         long raw = (long)home.countGoods(Items.COD) + villager.countInv(InvItem.createInvItem(Items.COD, 0));
