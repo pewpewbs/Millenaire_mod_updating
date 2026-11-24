@@ -24,7 +24,21 @@ import org.millenaire.common.village.BuildingLocation;
 
 /** Read-only map description. Never runs a goal, changes stock or requests chunks. */
 final class BuildingMapTooltip {
-    record Line(String text, int color) {}
+    record Line(String text, int color, List<ItemStack> icons) {
+        Line(String text, int color) { this(text, color, List.of()); }
+    }
+
+    /** Keep actual stacks (including metadata/NBT), not translated names. */
+    private static final class Goods {
+        final List<ItemStack> icons = new ArrayList<>();
+        final Set<String> fallback = new TreeSet<>();
+        boolean isEmpty() { return icons.isEmpty() && fallback.isEmpty(); }
+        void removeAll(Goods other) {
+            icons.removeIf(stack -> other.icons.stream().anyMatch(
+                    candidate -> ItemStack.isSameItemSameTags(stack, candidate)));
+            fallback.removeAll(other.fallback);
+        }
+    }
     private static final int NORMAL = 0xE0E0E0;
     private static final int GOLD = 0xFFAA00;
     private static final int MUTED = 0xAAAAAA;
@@ -39,14 +53,34 @@ final class BuildingMapTooltip {
     private static void add(List<Line> lines, String text, int color) {
         if (text != null && !text.isBlank()) lines.add(new Line(text, color));
     }
-    private static void addItem(Set<String> result, InvItem item) {
-        if (item != null) {
+    private static void addItem(Goods result, InvItem item) {
+        if (item == null) return;
+        ItemStack stack = item.getItemStack();
+        if (stack != null && !stack.isEmpty()) {
+            addStack(result, stack);
+        } else {
             String name = item.getName();
-            if (name != null && !name.isBlank()) result.add(name);
+            if (name != null && !name.isBlank()) result.fallback.add(name);
         }
     }
-    private static void addStack(Set<String> result, ItemStack stack) {
-        if (stack != null && !stack.isEmpty()) result.add(stack.getHoverName().getString());
+
+    private static void addStack(Goods result, ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return;
+        for (ItemStack existing : result.icons) {
+            if (ItemStack.isSameItemSameTags(existing, stack)) return;
+        }
+        ItemStack icon = stack.copy();
+        icon.setCount(1);
+        result.icons.add(icon);
+    }
+
+    private static void section(List<Line> lines, String title, Goods goods) {
+        if (goods.isEmpty()) return;
+        goods.icons.sort(java.util.Comparator.comparing(stack -> stack.getHoverName().getString()));
+        lines.add(new Line(title, NORMAL, List.copyOf(goods.icons)));
+        // Special trade abstractions (e.g. any enchanted item) have no stack.
+        // Only those retain a text description.
+        for (String fallback : goods.fallback) add(lines, fallback, MUTED);
     }
 
     static List<Line> describe(BuildingLocation loc, Building townHall, String nativeName, boolean construction) {
@@ -100,7 +134,8 @@ final class BuildingMapTooltip {
             }
         }
         workers.addAll(residents);
-        Set<String> produced = new TreeSet<>();
+        Goods produced = new Goods();
+        Goods extracted = new Goods();
         Set<String> activities = new TreeSet<>();
         for (VillagerType type : workers) {
             for (Goal goal : type.goals) {
@@ -109,14 +144,14 @@ final class BuildingMapTooltip {
                     // Legacy goals have no generic output table. Describe only
                     // products whose destination contract is explicit in code.
                     if (goal instanceof GoalLumbermanChopTrees && hasTag(loc, building, plan, "grove")) {
-                        addItem(produced, InvItem.createInvItem(Items.OAK_LOG, -1));
+                        addItem(extracted, InvItem.createInvItem(Items.OAK_LOG, -1));
                     } else if (goal instanceof GoalFishInuit && hasTag(loc, building, plan, "fishingspot")) {
-                        addStack(produced, new ItemStack(Items.COD));
-                        addStack(produced, new ItemStack(Items.BONE_BLOCK));
+                        addStack(extracted, new ItemStack(Items.COD));
+                        addStack(extracted, new ItemStack(Items.BONE_BLOCK));
                     } else if (goal instanceof GoalFish && hasTag(loc, building, plan, "fishingspot")) {
-                        addStack(produced, new ItemStack(Items.COD));
+                        addStack(extracted, new ItemStack(Items.COD));
                     } else if (goal instanceof GoalIndianHarvestSugarCane && hasTag(loc, building, plan, "sugarplantation")) {
-                        addStack(produced, new ItemStack(Items.SUGAR_CANE));
+                        addStack(extracted, new ItemStack(Items.SUGAR_CANE));
                     } else if (goal instanceof GoalIndianGatherBrick && hasTag(loc, building, plan, "brickkiln")) {
                         addItem(produced, InvItem.createInvItem(org.millenaire.common.block.MillBlocks.BS_MUD_BRICK));
                     } else if (goal instanceof GoalMinerMineResource miner
@@ -129,20 +164,20 @@ final class BuildingMapTooltip {
                             if (source == null) continue;
                             var block = source.getBlock();
                             if (LegacyBlockStates.matchesName(block, "minecraft:sand"))
-                                addStack(produced, new ItemStack(Blocks.SAND));
+                                addStack(extracted, new ItemStack(Blocks.SAND));
                             else if (LegacyBlockStates.matchesName(block, "minecraft:stone"))
-                                addItem(produced, block == Blocks.STONE ? InvItem.createInvItem(Blocks.COBBLESTONE) : InvItem.createInvItem(source));
+                                addItem(extracted, block == Blocks.STONE ? InvItem.createInvItem(Blocks.COBBLESTONE) : InvItem.createInvItem(source));
                             else if (LegacyBlockStates.matchesName(block, "minecraft:sandstone"))
-                                addStack(produced, new ItemStack(Blocks.SANDSTONE));
-                            else if (block == Blocks.CLAY) addStack(produced, new ItemStack(Items.CLAY_BALL));
-                            else if (block == Blocks.GRAVEL) addStack(produced, new ItemStack(Blocks.GRAVEL));
-                            else if (block == Blocks.SNOW) addStack(produced, new ItemStack(MillBlocks.SNOW_BRICK));
-                            else if (block == Blocks.ICE) addStack(produced, new ItemStack(MillBlocks.ICE_BRICK));
+                                addStack(extracted, new ItemStack(Blocks.SANDSTONE));
+                            else if (block == Blocks.CLAY) addStack(extracted, new ItemStack(Items.CLAY_BALL));
+                            else if (block == Blocks.GRAVEL) addStack(extracted, new ItemStack(Blocks.GRAVEL));
+                            else if (block == Blocks.SNOW) addStack(extracted, new ItemStack(MillBlocks.SNOW_BRICK));
+                            else if (block == Blocks.ICE) addStack(extracted, new ItemStack(MillBlocks.ICE_BRICK));
                         }
                     } else if (goal instanceof GoalHarvestWarts && home) {
-                        addStack(produced, new ItemStack(Items.NETHER_WART));
+                        addStack(extracted, new ItemStack(Items.NETHER_WART));
                     } else if (goal instanceof GoalShearSheep && home && hasTag(loc, building, plan, "sheeps")) {
-                        produced.add(label("Wool (various colours)", "Вовна (різних кольорів)", "Шерсть (разных цветов)"));
+                        addStack(extracted, new ItemStack(Blocks.WHITE_WOOL));
                     } else if (goal instanceof GoalBrewPotions && home) {
                         addStack(produced, net.minecraft.world.item.alchemy.PotionUtils.setPotion(
                                 new ItemStack(Items.POTION), net.minecraft.world.item.alchemy.Potions.AWKWARD));
@@ -163,14 +198,14 @@ final class BuildingMapTooltip {
                 if (generic instanceof GoalGenericCrafting crafting) {
                     crafting.output.forEach((item, count) -> { if (count != null && count > 0) addItem(produced, item); });
                 } else if (generic instanceof GoalGenericMining mining) {
-                    mining.loots.forEach((item, count) -> { if (count != null && count > 0) addItem(produced, item); });
+                    mining.loots.forEach((item, count) -> { if (count != null && count > 0) addItem(extracted, item); });
                 } else if (generic instanceof GoalGenericHarvestCrop harvest) {
-                    for (var bonus : harvest.harvestItem) addItem(produced, bonus.item);
-                    addItem(produced, harvest.irrigationBonusCrop);
+                    for (var bonus : harvest.harvestItem) addItem(extracted, bonus.item);
+                    addItem(extracted, harvest.irrigationBonusCrop);
                 } else if (generic instanceof GoalGenericGatherBlocks gather) {
-                    for (var bonus : gather.harvestItem) addItem(produced, bonus.item);
+                    for (var bonus : gather.harvestItem) addItem(extracted, bonus.item);
                 } else if (generic instanceof GoalGenericSlaughterAnimal slaughter) {
-                    for (var bonus : slaughter.bonusItem) addItem(produced, bonus.item);
+                    for (var bonus : slaughter.bonusItem) addItem(extracted, bonus.item);
                 } else if (generic instanceof GoalGenericCooking cooking && cooking.itemToCook != null
                         && cooking.itemToCook.staticStack != null && townHall.world != null) {
                     var input = new SimpleContainer(cooking.itemToCook.staticStack.copy());
@@ -182,25 +217,24 @@ final class BuildingMapTooltip {
 
         // Declared abstract production is a distinct planning figure, not proof
         // that a real NPC recipe currently produces this item.
-        Set<String> planned = new TreeSet<>();
+        Goods planned = new Goods();
         if (plan != null) plan.abstractedProduction.forEach((item, count) -> {
             if (count != null && count > 0) addItem(planned, item);
         });
         planned.removeAll(produced);
-        Set<String> sells = new TreeSet<>();
+        planned.removeAll(extracted);
+        Goods sells = new Goods();
         if (loc.culture != null && loc.shop != null) {
             var goods = loc.culture.shopSells.get(loc.shop);
             if (goods != null) for (var good : goods) if (good != null) addItem(sells, good.item);
         }
-        if (!produced.isEmpty()) add(lines, label("Can produce: ", "Може виготовляти: ", "Может производить: ")
-                + String.join(", ", produced), NORMAL);
-        if (!planned.isEmpty()) add(lines, label("Declared production: ", "Виробництво за планом: ", "Производство по плану: ")
-                + String.join(", ", planned), NORMAL);
-        if (!sells.isEmpty()) add(lines, label("Sells (assortment): ", "Продає (асортимент): ", "Продаёт (ассортимент): ")
-                + String.join(", ", sells), NORMAL);
+        section(lines, label("Produces:", "Виробляє:", "Производит:"), produced);
+        section(lines, label("Extracts / gathers:", "Добуває / збирає:", "Добывает / собирает:"), extracted);
+        section(lines, label("Declared production:", "Виробництво за планом:", "Производство по плану:"), planned);
+        section(lines, label("Sells:", "Продає:", "Продаёт:"), sells);
 
         List<String> effects = loc.getBuildingEffects(townHall.world);
-        if (produced.isEmpty() && planned.isEmpty() && sells.isEmpty()) {
+        if (produced.isEmpty() && extracted.isEmpty() && planned.isEmpty() && sells.isEmpty()) {
             Set<String> roles = new LinkedHashSet<>(effects);
             roles.addAll(activities);
             if (!residents.isEmpty()) roles.add(label("Housing for villagers", "Житло для мешканців", "Жильё для жителей"));
