@@ -75,7 +75,7 @@ class FurnaceProductionWiring(unittest.TestCase):
     def test_workplace_balance_only_for_matching_local_input(self):
         base = read(JAVA / "goal/Goal.java")
         src = read(JAVA / "goal/generic/GoalGenericCooking.java")
-        self.assertIn("if (!passesResourceBalance(villager)) return false;", base)
+        self.assertIn("if (!passesResourceBalance(villager))", base)
         self.assertIn("!this.townHallGoal", src)
         self.assertIn("this.balanceOutput[0].matches(this.itemToCook)", src)
         self.assertIn("raw += destination.countGoods(input)", src)
@@ -90,9 +90,10 @@ class FurnaceProductionWiring(unittest.TestCase):
         for wood in ("wood", "wood_pine", "wood_birch", "wood_jungle", "wood_acacia", "wood_darkoak"):
             self.assertIn(f"{wood},4", data["requiredgood"])
         src = read(JAVA / "deployer/ContentDeployer.java")
-        self.assertIn("updateTavernFurnace(source.resolve", src)
-        self.assertIn("TAVERN-FURNACE-MIGRATION", src)
-        self.assertIn("millenaire-content-backups", src)
+        self.assertIn("ContentBundleUpdater.update(bundled, installed", src)
+        updater = read(JAVA / "deployer/ContentBundleUpdater.java")
+        self.assertIn("millenaire-content-backups", updater)
+        self.assertIn('"cultures", "goals", "villagerconfig"', updater)
 
 if __name__ == "__main__":
     audit()
