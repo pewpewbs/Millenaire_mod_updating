@@ -42,11 +42,40 @@ extends GoalGeneric {
         this.lookAtGoal = true;
     }
 
+    private boolean usesWorkplaceBalance() {
+        return !this.townHallGoal && this.itemToCook != null
+                && this.balanceOutput != null && this.balanceOutput.length > 1
+                && this.balanceOutput[0].matches(this.itemToCook);
+    }
+
+    @Override
+    protected boolean passesResourceBalance(MillVillager villager) {
+        // Matching input/output pairs are evaluated against each actual
+        // workplace below; unrelated balance pairs retain the original policy.
+        return usesWorkplaceBalance() || super.passesResourceBalance(villager);
+    }
+
+    private boolean passesWorkplaceBalance(MillVillager villager, Building destination) {
+        if (!usesWorkplaceBalance()) return super.passesResourceBalance(villager);
+        Building townHall = villager.getTownHall();
+        if (townHall == null) return false;
+        InvItem input = this.balanceOutput[0], output = this.balanceOutput[1];
+        long raw = (long)townHall.nbGoodAvailable(input, false, false, false)
+                + villager.countInv(input);
+        long cooked = (long)townHall.nbGoodAvailable(output, false, false, false)
+                + villager.countInv(output);
+        if (destination != townHall) {
+            raw += destination.countGoods(input);
+            cooked += destination.countGoods(output);
+        }
+        return raw >= cooked;
+    }
+
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
         List<Building> buildings = this.getBuildings(villager);
         for (Building dest : buildings) {
-            if (!this.isDestPossible(villager, dest)) continue;
+            if (!this.isDestPossible(villager, dest) || !passesWorkplaceBalance(villager, dest)) continue;
             int countGoods = dest.countGoods(this.itemToCook) + villager.countInv(this.itemToCook);
             for (Point p : dest.getResManager().furnaces) {
                 FurnaceBlockEntity furnace = p.getFurnace(villager.level);
