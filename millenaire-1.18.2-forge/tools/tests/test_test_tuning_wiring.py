@@ -38,7 +38,7 @@ class TestTuningWiring(unittest.TestCase):
         self.assertIn("TestTuning.RESET", screen)
         self.assertIn("this.minecraft.player.hasPermissions(2)", menu)
         self.assertIn("new GuiTestTuning(this)", menu)
-        self.assertIn('PROTOCOL="1.18.2-4"', read("common/network/MillNetwork.java"))
+        self.assertIn('PROTOCOL="1.18.2-5"', read("common/network/MillNetwork.java"))
 
     def test_separate_speed_factors(self):
         source = read("common/config/TestTuning.java")
