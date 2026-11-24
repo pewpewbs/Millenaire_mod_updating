@@ -105,6 +105,43 @@ public final class ContentBundleUpdater {
                 log.accept("MILL-CONTENT-CONFLICT: " + key + " (local retained; incoming: " + backup.resolve("incoming").resolve(key) + ")");
             }
         }
+        // These three retired stock paths predate the manifest. On a first
+        // sync, remove only known unmodified copies (and always back them up).
+        // Otherwise an old recipe can keep overwriting the shared global ID.
+        var retired = Map.of(
+                "goals/genericcrafting/seljuk/MakeSandstone.txt", Set.of(
+                        "455cd8bfcd8d2f409663183bc13d96a96685210b7eba4f419ceb562c17d1e0d7",
+                        "28c87956096c8c93b686d73beb2d986b0108a42f30b109d1b70dbae4c1220ece"),
+                "goals/genericcrafting/seljuk/MakeSugar.txt", Set.of(
+                        "400c8eae9da15edff0829859ac43ed4946a65d0dc32456d675d3c438b7333395",
+                        "3f34cff9a201a465db68b1e8900ce99fed7fa7510ee412a5e4af88a029396deb"));
+        for (var entry : retired.entrySet()) {
+            String key = entry.getKey();
+            if (current.containsKey(key) || previous.containsKey(key)) continue;
+            Path target = safePath(installed, key);
+            if (!Files.isRegularFile(target)) continue;
+            if (entry.getValue().contains(hash(target))) {
+                replace(target, safePath(backup.resolve("removed"), key));
+                Files.delete(target); removed++;
+            } else {
+                preserved++;
+                log.accept("MILL-CONTENT-CONFLICT: retired locally modified goal " + key + "; retained, review duplicate ID manually");
+            }
+        }
+        String duplicate = "goals/genericcrafting/inuit/makebonemeal.txt";
+        String canonical = "goals/genericcrafting/makebonemeal.txt";
+        if (!current.containsKey(duplicate) && !previous.containsKey(duplicate) && current.containsKey(canonical)) {
+            Path target = safePath(installed, duplicate);
+            if (Files.isRegularFile(target)) {
+                if (hash(target).equals(hash(current.get(canonical)))) {
+                    replace(target, safePath(backup.resolve("removed"), duplicate));
+                    Files.delete(target); removed++;
+                } else {
+                    preserved++;
+                    log.accept("MILL-CONTENT-CONFLICT: retired locally modified goal " + duplicate + "; retained, review duplicate ID manually");
+                }
+            }
+        }
         for (String key : previous.stringPropertyNames()) {
             if (!managed(key) || current.containsKey(key)) continue;
             Path target = safePath(installed, key);
