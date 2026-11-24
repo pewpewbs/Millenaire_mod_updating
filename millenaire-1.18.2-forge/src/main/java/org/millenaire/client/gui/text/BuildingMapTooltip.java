@@ -13,7 +13,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 import org.millenaire.common.buildingplan.BuildingPlan;
 import org.millenaire.common.config.MillConfigValues;
 import org.millenaire.common.culture.VillagerType;
-import org.millenaire.common.goal.Goal;
+import org.millenaire.common.goal.*;
 import org.millenaire.common.goal.generic.*;
 import org.millenaire.common.item.InvItem;
 import org.millenaire.common.village.Building;
@@ -49,7 +49,7 @@ final class BuildingMapTooltip {
     static List<Line> describe(BuildingLocation loc, Building townHall, String nativeName) {
         List<Line> lines = new ArrayList<>();
         add(lines, nativeName, NORMAL);
-        add(lines, loc.getGameName(), NORMAL);
+        if (loc.getIBuildingPlan() != null) add(lines, loc.getGameName(), NORMAL);
         Building building = loc.getBuilding(townHall.world);
         BuildingPlan plan = loc.getPlan();
 
@@ -95,8 +95,31 @@ final class BuildingMapTooltip {
         Set<String> produced = new TreeSet<>();
         for (VillagerType type : workers) {
             for (Goal goal : type.goals) {
-                if (!(goal instanceof GoalGeneric generic)) continue;
                 boolean home = residents.contains(type);
+                if (!(goal instanceof GoalGeneric generic)) {
+                    // Legacy goals have no generic output table. Describe only
+                    // products whose destination contract is explicit in code.
+                    if (goal instanceof GoalLumbermanChopTrees && hasTag(loc, building, plan, "grove")) {
+                        addItem(produced, InvItem.createInvItem(Items.OAK_LOG, -1));
+                    } else if (goal instanceof GoalFishInuit && hasTag(loc, building, plan, "fishingspot")) {
+                        addStack(produced, new ItemStack(Items.COD));
+                        addStack(produced, new ItemStack(Items.BONE_BLOCK));
+                    } else if (goal instanceof GoalFish && hasTag(loc, building, plan, "fishingspot")) {
+                        addStack(produced, new ItemStack(Items.COD));
+                    } else if (goal instanceof GoalIndianHarvestSugarCane && hasTag(loc, building, plan, "sugarplantation")) {
+                        addStack(produced, new ItemStack(Items.SUGAR_CANE));
+                    } else if (goal instanceof GoalIndianGatherBrick && hasTag(loc, building, plan, "brickkiln")) {
+                        addItem(produced, InvItem.createInvItem(org.millenaire.common.block.MillBlocks.BS_MUD_BRICK));
+                    } else if (goal instanceof GoalHarvestWarts && home) {
+                        addStack(produced, new ItemStack(Items.NETHER_WART));
+                    } else if (goal instanceof GoalShearSheep && home && hasTag(loc, building, plan, "sheeps")) {
+                        produced.add(label("Wool (various colours)", "Вовна (різних кольорів)", "Шерсть (разных цветов)"));
+                    } else if (goal instanceof GoalBrewPotions && home) {
+                        addStack(produced, net.minecraft.world.item.alchemy.PotionUtils.setPotion(
+                                new ItemStack(Items.POTION), net.minecraft.world.item.alchemy.Potions.AWKWARD));
+                    }
+                    continue;
+                }
                 boolean central = building != null && building.isTownhall;
                 if (generic.townHallGoal ? !central
                         : generic.buildingTag == null ? !home : !hasTag(loc, building, plan, generic.buildingTag)) continue;
@@ -145,6 +168,10 @@ final class BuildingMapTooltip {
             Set<String> roles = new LinkedHashSet<>(effects);
             if (!residents.isEmpty()) roles.add(label("Housing for villagers", "Житло для мешканців", "Жильё для жителей"));
             if (!loc.getVisitors().isEmpty()) roles.add(label("Accommodation for visitors", "Помешкання для відвідувачів", "Жильё для посетителей"));
+            if (hasTag(loc, building, plan, "grove")) roles.add(label("Forestry", "Лісозаготівля", "Лесозаготовка"));
+            if (hasTag(loc, building, plan, "fishingspot")) roles.add(label("Fishing", "Рибальство", "Рыболовство"));
+            if (hasTag(loc, building, plan, "sugarplantation")) roles.add(label("Sugar cane cultivation", "Вирощування цукрової тростини", "Выращивание сахарного тростника"));
+            if (hasTag(loc, building, plan, "brickkiln")) roles.add(label("Brick drying", "Сушіння цегли", "Сушка кирпича"));
             if (roles.isEmpty()) roles.add(label("Purpose not specified in available data", "Призначення не вказано в доступних даних", "Назначение не указано в доступных данных"));
             add(lines, label("Purpose: ", "Призначення: ", "Назначение: ") + String.join("; ", roles), MUTED);
         } else {
