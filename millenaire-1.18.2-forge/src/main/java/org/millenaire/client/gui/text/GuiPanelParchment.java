@@ -24,6 +24,10 @@ import java.util.Arrays;
 import java.util.List;
 import net.minecraft.client.gui.components.Button;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.platform.Lighting;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.util.FormattedCharSequence;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.GameRenderer;
@@ -69,6 +73,10 @@ extends GuiText {
     private String tooltipLanguage;
     private long tooltipRefreshNanos;
     private List<BuildingMapTooltip.Line> tooltipDetails = List.of();
+    private boolean showBuildingTooltip;
+    private record TooltipText(FormattedCharSequence text, int color, int y) {}
+    private record TooltipIcon(ItemStack stack, int x, int y) {}
+    private record TooltipLayout(List<TooltipText> text, List<TooltipIcon> icons, int width, int height) {}
     private final Player player;
     ResourceLocation backgroundParchment = new ResourceLocation("millenaire", "textures/gui/parchment.png");
     ResourceLocation backgroundPanel = new ResourceLocation("millenaire", "textures/gui/panel.png");
@@ -362,46 +370,9 @@ extends GuiText {
                 tooltipLanguage = language;
                 tooltipRefreshNanos = now;
             }
-            var details = tooltipDetails;
-            // The pose is already translated to the parchment origin. Measure and
-            // wrap each line, preserving the gold colour of the maximum level.
-            var wrapped = new ArrayList<net.minecraft.util.FormattedCharSequence>();
-            var colors = new ArrayList<Integer>();
-            int availableWidth = Math.max(40, this.width - 20);
-            int maxWidth = Math.min(320, availableWidth);
-            int stringWidth = 0;
-            // Prefer a compact tooltip, but widen it for very long shop lists.
-            for (int attempt = 0; attempt < 2; attempt++) {
-                wrapped.clear();
-                colors.clear();
-                stringWidth = 0;
-                for (var line : details) {
-                    for (var part : this.font.split(new net.minecraft.network.chat.TextComponent(line.text()), maxWidth)) {
-                        wrapped.add(part);
-                        colors.add(line.color());
-                        stringWidth = Math.max(stringWidth, this.font.width(part));
-                    }
-                }
-                if (wrapped.size() * 11 <= this.height - 20 || maxWidth == availableWidth) break;
-                maxWidth = availableWidth;
-            }
-            int tooltipHeight = wrapped.size() * 11;
-            float fit = Math.min(1.0f, Math.max(1, this.height - 20) / (float)Math.max(1, tooltipHeight));
-            int screenWidth = (int)Math.ceil(stringWidth * fit);
-            int screenHeight = (int)Math.ceil(tooltipHeight * fit);
-            int left = Math.max(5, Math.min(i + 10, this.width - screenWidth - 5)) - xStart;
-            int top = Math.max(5, Math.min(j + 10, this.height - screenHeight - 5)) - yStart;
-            framePose.pushPose();
-            try {
-                framePose.translate(left, top, 200);
-                framePose.scale(fit, fit, 1);
-                this.drawGradient(-3, -3, stringWidth + 3, tooltipHeight + 3, 0xF0101010, 0xF0101010);
-                for (int n = 0; n < wrapped.size(); n++) {
-                    this.font.draw(framePose, wrapped.get(n), 0, 11 * n, colors.get(n));
-                }
-            } finally {
-                framePose.popPose();
-            }
+            // ItemRenderer uses screen coordinates, not the translated parchment pose.
+            // Defer the complete tooltip until GuiText has rendered the map and widgets.
+            showBuildingTooltip = true;
         }
 
 
@@ -409,6 +380,92 @@ extends GuiText {
 
 
 
+    }
+
+    @Override
+    public void render(PoseStack pose, int mouseX, int mouseY, float partialTicks) {
+        showBuildingTooltip = false;
+        super.render(pose, mouseX, mouseY, partialTicks);
+        if (showBuildingTooltip && !tooltipDetails.isEmpty()) {
+            drawBuildingTooltip(pose, mouseX, mouseY);
+        }
+    }
+
+    private TooltipLayout layoutBuildingTooltip(int maxWidth) {
+        List<TooltipText> texts = new ArrayList<>();
+        List<TooltipIcon> icons = new ArrayList<>();
+        int usedWidth = 0;
+        int y = 0;
+        int columns = Math.max(1, maxWidth / 18);
+        for (var line : tooltipDetails) {
+            if (!line.icons().isEmpty()) y += 3;
+            for (var part : font.split(new net.minecraft.network.chat.TextComponent(line.text()), maxWidth)) {
+                texts.add(new TooltipText(part, line.color(), y));
+                usedWidth = Math.max(usedWidth, font.width(part));
+                y += 11;
+            }
+            if (!line.icons().isEmpty()) {
+                int count = line.icons().size();
+                for (int n = 0; n < count; n++) {
+                    int x = (n % columns) * 18;
+                    icons.add(new TooltipIcon(line.icons().get(n), x, y + (n / columns) * 18));
+                }
+                usedWidth = Math.max(usedWidth, Math.min(columns, count) * 18);
+                y += ((count + columns - 1) / columns) * 18;
+            }
+        }
+        return new TooltipLayout(texts, icons, usedWidth, y);
+    }
+
+    private void drawBuildingTooltip(PoseStack pose, int mouseX, int mouseY) {
+        int availableWidth = Math.max(18, this.width - 20);
+        int availableHeight = Math.max(1, this.height - 20);
+        TooltipLayout layout = layoutBuildingTooltip(Math.min(240, availableWidth));
+        if (layout.height() > availableHeight && availableWidth > 240)
+            layout = layoutBuildingTooltip(availableWidth);
+        // In unusually small windows or very large assortments, scale both
+        // the text and the actual item models by the same factor.
+        float fit = Math.min(1.0f, availableHeight / (float)Math.max(1, layout.height()));
+        int w = (int)Math.ceil(layout.width() * fit);
+        int h = (int)Math.ceil(layout.height() * fit);
+        int left = mouseX + 12 + w + 5 <= this.width
+                ? mouseX + 12 : mouseX - w - 12;
+        left = Math.max(5, Math.min(left, this.width - w - 5));
+        int top = Math.max(5, Math.min(mouseY + 8, this.height - h - 5));
+
+        pose.pushPose();
+        try {
+            pose.translate(left, top, 200);
+            pose.scale(fit, fit, 1);
+            fillGradient(pose, -3, -3, layout.width() + 3, layout.height() + 3,
+                    0xF0101010, 0xF0101010);
+            for (var row : layout.text())
+                font.draw(pose, row.text(), 0, row.y(), row.color());
+        } finally {
+            pose.popPose();
+        }
+
+        // Vanilla's inventory renderer draws the real item model, including
+        // custom Millenaire assets, resource packs and NBT-dependent variants.
+        if (layout.icons().isEmpty()) return;
+        PoseStack modelView = RenderSystem.getModelViewStack();
+        float oldOffset = itemRenderer.blitOffset;
+        modelView.pushPose();
+        try {
+            modelView.translate(left, top, 0);
+            modelView.scale(fit, fit, 1);
+            RenderSystem.applyModelViewMatrix();
+            Lighting.setupFor3DItems();
+            RenderSystem.enableDepthTest();
+            itemRenderer.blitOffset = 300.0f;
+            for (var icon : layout.icons())
+                itemRenderer.renderAndDecorateItem(icon.stack(), icon.x(), icon.y());
+        } finally {
+            itemRenderer.blitOffset = oldOffset;
+            modelView.popPose();
+            RenderSystem.applyModelViewMatrix();
+            Lighting.setupFor3DItems();
+        }
     }
 
     @Override
