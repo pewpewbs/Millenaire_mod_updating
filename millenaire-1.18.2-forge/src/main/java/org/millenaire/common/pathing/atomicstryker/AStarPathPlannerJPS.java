@@ -169,9 +169,7 @@ public class AStarPathPlannerJPS {
                         AStarNode from = path.get(i), to = path.get(i - 1);
                         // Keep the validation ordered and single-pass so
                         // diagnostics never repeat expensive collision queries.
-                        if (Math.abs(to.y - from.y) > 1
-                                || Math.abs(to.x - from.x) > 1
-                                || Math.abs(to.z - from.z) > 1) {
+                        if (!isCacheEdgeAdjacent(from, to)) {
                             rejection = "NON_ADJACENT_EDGE";
                         } else if (!AStarStatic.isViable(this.world, to, 0, this.config)) {
                             rejection = "BLOCKED_NODE";
@@ -232,6 +230,13 @@ public class AStarPathPlannerJPS {
         return best;
     }
 
+    /** Structural contract shared by cache admission and replay. */
+    private static boolean isCacheEdgeAdjacent(AStarNode from, AStarNode to) {
+        return Math.abs(to.y - from.y) <= 1
+                && Math.abs(to.x - from.x) <= 1
+                && Math.abs(to.z - from.z) <= 1;
+    }
+
     private void rememberPath(ArrayList<AStarNode> path) {
         if (this.world == null || path == null || path.size() < 2
                 || path.size() > 96 || this.lastStart == null || this.lastEnd == null
@@ -239,6 +244,12 @@ public class AStarPathPlannerJPS {
                 || !path.get(0).equals(this.lastEnd)) return;
         ArrayList<org.millenaire.common.pathing.RouteMemory.Cell> cells =
                 new ArrayList<>(path.size());
+        // A fresh route may contain a macroedge which cache replay cannot
+        // represent. Do not cache it until the route format is normalized.
+        // This does not change the route delivered to the villager.
+        for (int i = 1; i < path.size(); i++) {
+            if (!isCacheEdgeAdjacent(path.get(i), path.get(i - 1))) return;
+        }
         for (AStarNode node : path) cells.add(cell(node));
         routes(this.world).remember(this.world.getGameTime(), routeOptions(this.config), cells);
         org.millenaire.common.pathing.NavigationMetrics.routeStored();
