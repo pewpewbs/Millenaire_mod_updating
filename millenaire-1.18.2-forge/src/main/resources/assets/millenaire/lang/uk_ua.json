@@ -1471,5 +1471,9 @@
   "millenaire.test_tuning.reset": "Скинути до 1×",
   "millenaire.test_tuning.waiting": "Очікування відповіді сервера…",
   "millenaire.test_tuning.session": "Лише поточна сесія • усі поселення",
-  "millenaire.test_tuning.denied": "Необхідні права на сервері"
+  "millenaire.test_tuning.denied": "Необхідні права на сервері",
+  "millenaire.goal_diagnostics.title": "Діагностика AI жителів",
+  "millenaire.goal_diagnostics.rescan": "Оновити список жителів",
+  "millenaire.goal_diagnostics.none": "Немає жителів у радіусі 16 блоків.",
+  "millenaire.goal_diagnostics.waiting": "Очікування даних сервера…"
 }
