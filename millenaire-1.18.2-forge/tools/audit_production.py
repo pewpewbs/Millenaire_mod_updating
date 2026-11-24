@@ -26,14 +26,25 @@ JAVA_OUTPUT = {
     "fish": {"fishraw"}, "fishinuit": {"fishraw", "boneblock"},
     "choptrees": {"wood", "wood_pine", "wood_birch", "wood_jungle", "wood_acacia", "wood_darkoak"}, "gathersilk": {"silk"},
     "gathersnails": {"dye_purple"}, "harvestcocoa": {"dye_brown"},
+    "gatherbrick": {"mudbrick"},
     "harvestwarts": {"netherwart"}, "harvestsugarcane": {"sugarcane"},
 }
+# Potential vanilla drops, not explicit loot guarantees. The role's collectGood
+# determines whether it can pick these up (MillVillager also collects on tick).
+ANIMAL_DROPS = {
+    "cow": {"beefraw", "leather"}, "chicken": {"chickenmeat", "feather"},
+    "pig": {"porkchops"}, "sheep": {"mutton", "wool_white", "wool_black",
+                                  "wool_gray", "wool_lightgray", "wool_brown", "wool_pink"},
+    "squid": {"dye_black"}, "rabbit": {"rabbit", "rabbit_hide"},
+}
+MONSTER_DROPS = {"bone", "rottenflesh", "arrow", "string", "gunpowder"}
 SOURCE_MARKERS = {
     "minecraft:" + block: block + "source"
     for block in ("stone", "sand", "sandstone", "clay", "gravel", "granite",
                   "diorite", "andesite", "snow", "ice", "red_sandstone", "quartz")
 }
 SOURCE_MARKERS["minecraft:red_sandstone"] = "redsandstonesource"
+SOURCE_MARKERS["minecraft:nether_quartz_ore"] = "quartzsource"
 TRANSPORT = {"bringbackresourceshome", "gathergoods", "deliverresourcesshop",
              "delivergoodshousehold", "gethousethresources", "getgoodshousehold"}
 
@@ -174,6 +185,7 @@ class Goal:
     inventory: bool = False
     source: str = ""
     uncertain: bool = False
+    drop_outputs: set[str] = field(default_factory=set)
 
 def load_goals(data, java):
     result, duplicates = {}, []
@@ -182,6 +194,8 @@ def load_goals(data, java):
         name = norm(name)
         result[name] = Goal(name, "java", None, outputs=JAVA_OUTPUT.get(name, set()),
                             inventory=name in JAVA_OUTPUT and name != "harvestwarts", uncertain=True)
+    if "huntmonster" in result:
+        result["huntmonster"].drop_outputs = MONSTER_DROPS
     for path in txts(data / "goals"):
         kind = path.relative_to(data / "goals").parts[0]
         if not kind.startswith("generic"):
@@ -201,6 +215,8 @@ def load_goals(data, java):
             goal.outputs = items(cfg, "harvestitem", "irrigationbonuscrop", "bonusitem")
             goal.inventory = cfg.last("collectinbuilding") != "true"
             goal.uncertain = True
+            if kind == "genericslaughteranimal":
+                goal.drop_outputs = ANIMAL_DROPS.get(cfg.last("animalkey").split(":")[-1], set())
         elif kind == "genericplanting":
             goal.inputs = items(cfg, "seed")
         elif kind == "generictakefrombuilding":
@@ -242,7 +258,7 @@ def scan_plans(root, palette):
         with Image.open(path) as image:
             colors = image.convert("RGBA").getcolors(image.width * image.height)
         for _, (r, g, b, a) in colors or []:
-            if a and (r, g, b) in palette:
+            if a == 255 and (r, g, b) in palette:
                 evidence[match[1]].add(palette[(r, g, b)])
     return evidence
 
@@ -314,21 +330,36 @@ def audit(data, java, scan_png=False):
             active = assigned[r]
             inputs = items(cfg, "requiredgood")
             returned = items(cfg, "bringbackhomegood")
+            collected = items(cfg, "collectgood")
+            planting_inputs = set().union(*(goals[g].inputs for g in active
+                if g in goals and goals[g].kind == "genericplanting"))
             for name in sorted(active):
                 goal = goals.get(name)
                 if goal is None:
                     emit("ERROR", "UNKNOWN_GOAL", culture, cfg, name, "goal")
                     continue
                 inputs.update(goal.inputs)
-                for output in goal.outputs:
+                # Drops are possible supply only if a matching collector is declared.
+                # Sheep can have arbitrary dyes; count natural/declared wool variants
+                # rather than claim that every color is actually available.
+                pickup_outputs = {i for i in goal.drop_outputs if i in aliases and covered(i, collected, aliases)}
+                direct_outputs = set(goal.outputs)
+                if name == "shearsheep":
+                    direct_outputs.update(i for i in aliases if i.startswith("wool_") and
+                        (i == "wool_white" or covered(i, collected | returned, aliases)))
+                for output in sorted(direct_outputs | pickup_outputs):
+                    inventory_output = goal.inventory or output in pickup_outputs or name == "shearsheep"
+                    retained_seed = inventory_output and covered(output, planting_inputs, aliases)
                     producers[output].add(r)
                     edges.append(dict(culture=culture, role=r, goal=name, output=output,
                                       inputs=sorted(goal.inputs), source=goal.source,
-                                      inferred=goal.uncertain))
-                    if goal.inventory and "bringbackresourceshome" in active and not covered(output, returned, aliases):
+                                      inferred=goal.uncertain or output in pickup_outputs or name == "shearsheep",
+                                      collection="potential_drop" if output in pickup_outputs else "direct",
+                                      retained_planting_input=retained_seed))
+                    if inventory_output and not retained_seed and "bringbackresourceshome" in active and not covered(output, returned, aliases):
                         emit("REVIEW", "MISSING_HOME_RETURN", culture, cfg,
                              f"{name} -> {output}; no matching bringBackHomeGood", "goal")
-                    elif goal.inventory and not active.intersection(TRANSPORT):
+                    elif inventory_output and not retained_seed and not active.intersection(TRANSPORT):
                         emit("REVIEW", "NO_KNOWN_TRANSPORT_GOAL", culture, cfg,
                              f"{name} -> {output}; may be consumed directly", "goal")
                 if goal.kind == "genericmining" and png is not None:
@@ -414,6 +445,7 @@ def audit(data, java, scan_png=False):
                                  foreign_listing=sorted(foreign), png_scanned=png is not None)
     findings.sort(key=lambda f: (f["level"] != "ERROR", f["culture"], f["code"], f["file"], f["message"]))
     catalog = {key: dict(kind=g.kind, inputs=sorted(g.inputs), outputs=sorted(g.outputs),
+                         possible_entity_drops=sorted(g.drop_outputs),
                          source=g.source, inferred=g.uncertain,
                          config=g.cfg.path.relative_to(data).as_posix() if g.cfg else None,
                          constraints={k: g.cfg.values(k) for k in ("priority", "priorityrandom",
