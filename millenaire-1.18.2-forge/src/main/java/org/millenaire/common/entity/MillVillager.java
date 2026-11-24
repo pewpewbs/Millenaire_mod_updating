@@ -756,7 +756,7 @@ IAStarPathedEntity {
                     MillLog.minor(this, "Starting action: " + this.actionStart);
                 }
             }
-            if (this.level.getGameTime() - this.actionStart >= (long)goal.actionDuration(this)) {
+            if (this.level.getGameTime() - this.actionStart >= (long)org.millenaire.common.config.TestTuning.duration(this, goal, goal.actionDuration(this))) {
                 if (goal.performAction(this)) {
                     this.clearGoal();
                     this.goalKey = goal.nextGoal(this);
@@ -2356,6 +2356,7 @@ IAStarPathedEntity {
                 super.tick();
                 return;
             }
+            org.millenaire.common.config.TestTuning.applyMovement(this);
             if (Math.abs(this.level.getGameTime() + (long)this.hashCode()) % 10L == 2L) {
                 this.sendVillagerPacket();
             }
