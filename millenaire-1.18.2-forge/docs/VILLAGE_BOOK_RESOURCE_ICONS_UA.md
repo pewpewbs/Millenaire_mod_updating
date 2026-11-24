@@ -7,3 +7,16 @@ The quarry tooltip previously read ResManager.sourceTypes on the client, but the
 Network protocol changed from 1.18.2-2 to 1.18.2-3; client and dedicated server must be updated together. Singleplayer integrated server uses the same jar. Save format unchanged. The packet read and write order is symmetric, before optional marvel data. Does not prove a particular food-oriented Mayan village has a sandstone source. External culture definitions and actual settlement data are required for that determination.
 
 Verification: open village book with a waiting goal and null issue; with a missing plan; with a resource shortage; during construction; verify sandstone and clay icons on known extraction buildings. Full Forge compilation and runtime testing pending.
+
+## Follow-up: Mayan agricultural villages (Milpa)
+
+Verified the bundled definitions in `src/main/resources/todeploy/millenaire` on the feature branch. `cultures/mayan/villages/agriculture.txt` includes `start=mayanmining` and `core=mayanmining`. `buildings/core/mayanmining_A.txt` assigns `initial.male=mayan_miner`. That villager previously had generic `minestone` and `minesand` goals, not the legacy `mining` goal or `minesandstone`. The existing `goals/genericmining/minesandstone.txt` requires a registered minecraft:sandstone source with a matching live block, yields sandstone, and has a town-hall limit of 1024. Added the missing `goal=minesandstone` to the bundled Mayan miner (commit be85340); its existing bring-back-home list already includes sandstone. Cooking sand produces glass, not sandstone. The town hall buys sandstone and receives deliveries but does not list it among goods sold.
+
+This corrects a missing production task, not merely an icon. The exact source markers in the PNG plans and the current world's registered source coordinates have not been verified; the new goal does not create resources where no matching source exists. Confirm in an existing Milpa and a fresh village after updating deployed culture definitions, including actual inventories, valid source and production. Custom overrides can retain the old villager definition. No changes to prices, trade or resource yield.
+
+## Follow-up: route cache consistency
+
+Commit 2634b9b adds a shared adjacency predicate to replay and admission, preventing caching a route with an edge that replay always rejects as NON_ADJACENT_EDGE. Commit 9f92b0e adds a source-wiring regression check. This avoids the known cache churn only; it does not normalize the fresh route or repair physical stair transitions. Do not interpret this as stage 2 completion.
+
+Village progression diagnostics require `LogBuildingPlan >= 1` and are emitted only when the centre or supplier preference is selected. Absence alone does not prove the planner is inactive. Full Forge build, regression suites, and live-world acceptance still pending.
+
