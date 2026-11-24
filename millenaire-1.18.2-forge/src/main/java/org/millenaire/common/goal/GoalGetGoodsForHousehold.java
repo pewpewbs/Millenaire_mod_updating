@@ -76,8 +76,7 @@ extends Goal {
         if (source == home) return true; // nextGoal performs the deposit
         for (var entry : LocalLogistics.householdTargets(villager).entrySet()) {
             InvItem item = entry.getKey();
-            int amount = LocalLogistics.householdPickup(villager,source,item,entry.getValue());
-            if (amount > 0) villager.takeFromBuilding(source,item.getItem(),item.meta,amount);
+            LocalLogistics.collectHousehold(villager,source,item,entry.getValue());
         }
         return true;
     }
