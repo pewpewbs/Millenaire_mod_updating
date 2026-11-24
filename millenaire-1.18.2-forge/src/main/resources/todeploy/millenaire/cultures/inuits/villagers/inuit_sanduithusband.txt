@@ -45,6 +45,7 @@ collectGood=bone
 bringBackHomeGood=beefraw
 bringBackHomeGood=leather
 bringBackHomeGood=bone
+bringBackHomeGood=rottenflesh
 
 startinginv=leatherHelmet,1
 startinginv=leatherChest,1

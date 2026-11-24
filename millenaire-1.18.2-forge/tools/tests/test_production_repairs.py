@@ -71,5 +71,21 @@ class ProductionRepairs(unittest.TestCase):
             self.assertTrue({"wood_acacia","wood_darkoak"}.issubset(profile.values("bringbackhomegood")))
 
 
+    def test_remaining_inventory_outputs_are_delivered(self):
+        root = DATA / "cultures"
+        cases = [
+            ("indian/villagers/indian_adivasipeasant.txt", "feather"),
+            ("japanese/villagers/japanese_peasant.txt", "feather"),
+            ("inuits/villagers/inuit_sanduithusband.txt", "rottenflesh"),
+            ("seljuk/villagers/male/turk_peasant.txt", "mudbrick"),
+            ("seljuk/villagers/male/turk_stonecrafter.txt", "mudbrick"),
+        ]
+        for path, item in cases:
+            with self.subTest(path=path, item=item):
+                profile = read_config(root / path)
+                self.assertIn("bringbackresourceshome", profile.values("goal"))
+                self.assertIn(item, profile.values("bringbackhomegood"))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

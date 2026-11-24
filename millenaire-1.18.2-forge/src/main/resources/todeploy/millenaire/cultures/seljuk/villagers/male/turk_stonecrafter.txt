@@ -60,6 +60,7 @@ goal=cookstone
 goal=tendfurnace
 
 goal=bringBackResourcesHome
+bringBackHomeGood=mudbrick
 
 requiredGood=wood,8
 requiredGood=mudbrick,16

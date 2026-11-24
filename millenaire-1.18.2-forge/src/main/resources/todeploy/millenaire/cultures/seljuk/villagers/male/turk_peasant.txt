@@ -76,6 +76,7 @@ collectGood=wheat
 
 bringBackHomeGood=sugarcane
 bringBackHomeGood=wheat
+bringBackHomeGood=mudbrick
 startingInv=seeds,32
 startingInv=sugarcane,3
 

@@ -48,6 +48,7 @@ bringBackHomeGood=mudbrick
 bringBackHomeGood=rice
 bringBackHomeGood=turmeric
 bringBackHomeGood=chickenmeat
+bringBackHomeGood=feather
 bringBackHomeGood=sugarcane
 bringBackHomeGood=chickenmeatcooked
 

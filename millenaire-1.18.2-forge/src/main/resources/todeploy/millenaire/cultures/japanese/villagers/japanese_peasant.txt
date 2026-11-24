@@ -35,6 +35,7 @@ toolneededclass=shovels
 toolneededclass=pickaxes
 
 bringBackHomeGood=chickenmeat
+bringBackHomeGood=feather
 bringBackHomeGood=Rice
 
 requiredGood=seeds,10
