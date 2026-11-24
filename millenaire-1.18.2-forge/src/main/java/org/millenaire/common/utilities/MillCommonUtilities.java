@@ -501,14 +501,11 @@ public class MillCommonUtilities {
          for (int i = 0; i < maxSlot && nb < toPut; i++) {
             ItemStack stack = chest.getItem(i);
             if (org.millenaire.common.item.LegacyItemStacks.matches(stack, item, meta)) {
-               if (stack.getMaxStackSize() - stack.getCount() >= toPut - nb) {
-                  stack.setCount(stack.getCount() + toPut - nb);
-                  nb = toPut;
-               } else {
-                  nb += stack.getMaxStackSize() - stack.getCount();
-                  stack.setCount(stack.getMaxStackSize());
-               }
-
+               int room = Math.max(0, Math.min(chest.getMaxStackSize(), stack.getMaxStackSize()) - stack.getCount());
+               int amount = Math.min(room, toPut - nb);
+               if (amount <= 0) continue;
+               stack.grow(amount);
+               nb += amount;
                chest.setItem(i, stack);
             }
          }
@@ -521,14 +518,11 @@ public class MillCommonUtilities {
                   ((InvItem.IItemInitialEnchantmens)stack.getItem()).applyEnchantments(stack);
                }
 
-               if (toPut - nb <= stack.getMaxStackSize()) {
-                  stack.setCount(toPut - nb);
-                  nb = toPut;
-               } else {
-                  stack.setCount(stack.getMaxStackSize());
-                  nb += stack.getCount();
-               }
-
+               if (stack.isEmpty()) continue;
+               int amount = Math.min(toPut - nb, Math.min(chest.getMaxStackSize(), stack.getMaxStackSize()));
+               if (amount <= 0) continue;
+               stack.setCount(amount);
+               nb += amount;
                chest.setItem(ix, stack);
             }
          }
