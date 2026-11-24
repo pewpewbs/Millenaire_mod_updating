@@ -43,6 +43,7 @@ collectGood=leather
 collectGood=seeds
 
 bringBackHomeGood=beefraw
+bringBackHomeGood=bone
 bringBackHomeGood=leather
 bringBackHomeGood=wheat
 
