@@ -182,5 +182,49 @@ class ProductionAuditTests(unittest.TestCase):
         Image.new("RGB", (1, 1), (0, 0, 0)).save(path)
         self.assertFalse(any(e["goal"] == "mining" for e in audit(self.data, self.java, True)["edges"]))
 
+
+    def test_supply_review_context_preserves_findings_and_distinguishes_channels(self):
+        self.put(self.data, "cultures/test/shops/workshop.txt",
+                 "deliverto=sand,glass,gravel,fishraw\nbuysoptional=fishraw\n")
+        self.put(self.data, "cultures/test/villages/demo.txt",
+                 "centre=quarry\npathmaterial=gravel\n")
+        self.put(self.data, "cultures/test/villagers/miner.txt",
+                 "goal=minesand\ngoal=bringbackresourceshome\nbringBackHomeGood=sand\n"
+                 "requiredGood=fuel,2\nrequiredGood=glass,1\nrequiredGood=fishraw,1\n")
+        result = self.run_audit()
+        findings = result["findings"]
+        routes = {f["context"]["item"]: f for f in findings
+                  if f["code"] == "SHOP_SUPPLY_UNCONFIRMED"}
+        self.assertEqual(routes["gravel"]["context"]["category"], "delivery_route_only")
+        self.assertEqual(routes["gravel"]["context"]["configured_path_villages"],
+                         ["cultures/test/villages/demo.txt"])
+        self.assertEqual(routes["fishraw"]["context"]["category"], "shop_trade_and_delivery")
+        self.assertEqual(routes["fishraw"]["context"]["recipe_consumers"], ["miner"])
+        self.assertEqual(routes["gravel"]["level"], "REVIEW")
+        start = {f["context"]["item"]: f["context"] for f in findings
+                 if f["code"] == "STARTING_SUPPLY_UNCONFIRMED"}
+        self.assertEqual(start["fuel"]["category"], "external_price_listed")
+        self.assertEqual(start["glass"]["category"], "later_producer")
+        self.assertEqual(start["glass"]["later_roles"], ["crafter"])
+        self.assertEqual(start["fishraw"]["category"], "source_unconfirmed")
+        supply = {f["context"]["item"]: f["context"] for f in findings
+                  if f["code"] == "NO_CONFIGURED_PRODUCER"}
+        self.assertTrue(supply["fuel"]["player_price"])
+        self.assertEqual(supply["fuel"]["player_buy_shops"], [])
+        self.assertEqual(supply["fishraw"]["player_buy_shops"], ["workshop"])
+        self.assertEqual(result["summary"]["review_context_counts"]
+                         ["SHOP_SUPPLY_UNCONFIRMED:delivery_route_only"], 1)
+
+    def test_path_material_default_and_zero_price_trade_entry(self):
+        self.put(self.data, "cultures/test/villagers/miner.txt",
+                 "goal=minesand\ngoal=bringbackresourceshome\nbringBackHomeGood=sand\n"
+                 "requiredGood=gravel,1\n")
+        self.put(self.data, "cultures/test/traded_goods.txt", "gravel,0,0,0,0,0\n")
+        result = self.run_audit()
+        self.assertEqual(result["cultures"]["test"]["villages"][0]["path_materials"], ["pathgravel"])
+        finding = next(f for f in result["findings"] if f["code"] == "STARTING_SUPPLY_UNCONFIRMED"
+                       and f["context"]["item"] == "gravel")
+        self.assertEqual(finding["context"]["category"], "trade_entry_without_positive_price")
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

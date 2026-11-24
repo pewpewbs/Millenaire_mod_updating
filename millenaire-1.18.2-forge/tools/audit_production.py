@@ -277,10 +277,13 @@ def audit(data, java, scan_png=False):
     aliases = index_items(data / "itemlist.txt")
     goals, duplicates = load_goals(data, java)
     findings, cultures, edges = [], {}, []
-    def emit(level, code, culture, cfg, message, key="", village=""):
-        findings.append(dict(level=level, code=code, culture=culture, village=village,
-                             file=cfg.path.relative_to(data).as_posix(), line=cfg.line(key),
-                             message=message))
+    def emit(level, code, culture, cfg, message, key="", village="", context=None):
+        finding = dict(level=level, code=code, culture=culture, village=village,
+                       file=cfg.path.relative_to(data).as_posix(), line=cfg.line(key),
+                       message=message)
+        if context is not None:
+            finding["context"] = context
+        findings.append(finding)
     for cfg, name in duplicates:
         emit("ERROR", "DUPLICATE_GOAL", "", cfg, name)
     for name, goal in sorted(goals.items()):
@@ -411,11 +414,23 @@ def audit(data, java, scan_png=False):
                              f"{name}: scope={scope(goal.cfg)}; check other workers", "goal")
             for item in inputs:
                 consumers[item].add(r)
+        villages = [read_config(p) for p in txts(root / "villages") + txts(root / "lonebuildings")]
+        # VillageType defaults to pathgravel when no pathmaterial is configured.
+        path_materials = {cfg.path.relative_to(data).as_posix():
+                          csv_items(cfg, "pathmaterial") or {"pathgravel"} for cfg in villages}
         for shop in shops:
             for item in sorted(csv_items(shop, "deliverto")):
                 if not covered(item, producers, aliases) and not covered(item, buy | foreign, aliases):
+                    sold = covered(item, csv_items(shop, "sells"), aliases)
+                    bought = covered(item, csv_items(shop, "buys", "buysoptional"), aliases)
                     emit("REVIEW", "SHOP_SUPPLY_UNCONFIRMED", culture, shop,
-                         f"{item}; no indexed local producer or player/foreign price", "deliverto")
+                         f"{item}; no indexed local producer or player/foreign price", "deliverto",
+                         context=dict(category="shop_trade_and_delivery" if sold or bought else "delivery_route_only",
+                                      item=item, sold=sold, bought=bought,
+                                      configured_path_villages=sorted(p for p, goods in path_materials.items()
+                                          if covered(item, goods, aliases)),
+                                      recipe_consumers=sorted({r for good, rs in consumers.items()
+                                          if matches(item, good, aliases) for r in rs})))
         culture_edges = edges[first_edge:]
         if any(goals[g].kind == "genericcooking" for gs in assigned.values() for g in gs if g in goals):
             if not covered("wood_any", set(producers) | buy | foreign, aliases):
@@ -429,9 +444,14 @@ def audit(data, java, scan_png=False):
             channel = "player purchase" if covered(item, buy, aliases) else (
                 "foreign merchant listing" if covered(item, foreign, aliases) else (
                 "trade listing only" if covered(item, trade_goods, aliases) else "not identified"))
+            player_shops = sorted(s.path.stem for s in shops
+                                  if covered(item, csv_items(s, "buys", "buysoptional"), aliases))
             emit("REVIEW", "NO_CONFIGURED_PRODUCER", culture, roles[sorted(needing)[0]],
-                 f"{item}; consumers={', '.join(sorted(needing))}; supply={channel}; Java/loot/import may cover")
-        villages = [read_config(p) for p in txts(root / "villages") + txts(root / "lonebuildings")]
+                 f"{item}; consumers={', '.join(sorted(needing))}; supply={channel}; Java/loot/import may cover",
+                 context=dict(category="external_price_listed" if covered(item, buy | foreign, aliases)
+                              else "external_price_unconfirmed", item=item,
+                              player_price=covered(item, buy, aliases), foreign_price=covered(item, foreign, aliases),
+                              player_buy_shops=player_shops))
         village_rows = []
         for cfg in villages:
             name = norm(cfg.path.stem)
@@ -451,13 +471,19 @@ def audit(data, java, scan_png=False):
                 channel = "later building" if later else ("trade listed" if covered(item, trade_goods, aliases) else "unknown")
                 emit("REVIEW", "STARTING_SUPPLY_UNCONFIRMED", culture, cfg,
                      f"{item}; starting roles={sorted(needing & initial_roles)}; {channel}; not a runtime deadlock proof",
-                     village=name)
+                     village=name,
+                     context=dict(category="later_producer" if later else (
+                         "external_price_listed" if covered(item, buy | foreign, aliases) else (
+                         "trade_entry_without_positive_price" if covered(item, trade_goods, aliases) else "source_unconfirmed")),
+                         item=item, later_roles=sorted(later), player_price=covered(item, buy, aliases),
+                         foreign_price=covered(item, foreign, aliases)))
             internal = reachable(culture_edges, possible_roles, aliases)
             assisted = reachable(culture_edges, possible_roles, aliases, buy | foreign)
             needed = {item for item, rs in consumers.items() if rs.intersection(possible_roles)}
             village_rows.append(dict(name=name, file=cfg.path.relative_to(data).as_posix(),
                                      initial_buildings=sorted(initial), possible_buildings=sorted(possible),
                                      initial_roles=sorted(initial_roles), possible_roles=sorted(possible_roles),
+                                     path_materials=sorted(path_materials[cfg.path.relative_to(data).as_posix()]),
                                      potential_internal_outputs=sorted(internal),
                                      potential_external_assisted_outputs=sorted(assisted - (buy | foreign)),
                                      unresolved_recipe_inputs=sorted(i for i in needed if not covered(i, assisted, aliases))))
@@ -481,7 +507,10 @@ def audit(data, java, scan_png=False):
                              if g.cfg and g.cfg.values(k)}) for key,g in sorted(goals.items())}
     return dict(schema=1, scope="bundled static data, not live world", goal_catalog=catalog,
                 summary=dict(cultures=len(cultures), profiles=sum(c["profiles"] for c in cultures.values()),
-                             goals=len(goals), findings=dict(Counter(f["level"] for f in findings))),
+                             goals=len(goals), findings=dict(Counter(f["level"] for f in findings)),
+                             review_context_counts=dict(sorted(Counter(
+                                 f["code"] + ":" + f["context"]["category"] for f in findings
+                                 if f["level"] == "REVIEW" and "context" in f).items()))),
                 cultures=cultures, edges=edges, findings=findings)
 
 def main():
