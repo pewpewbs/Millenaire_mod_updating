@@ -31,6 +31,11 @@ extends GuiText {
 
     @Override
     protected void onButtonPressed(Button guibutton) throws IOException {
+        if (guibutton instanceof TestTuningButton) {
+            if (this.minecraft.player != null && this.minecraft.player.hasPermissions(2))
+                this.minecraft.setScreen(new GuiTestTuning(this));
+            return;
+        }
         if (guibutton instanceof ConfigButton) {
             ConfigButton configButton = (ConfigButton)guibutton;
             int valPos = -1;
@@ -83,6 +88,8 @@ extends GuiText {
         for (int i = 0; i < MillConfigValues.configPages.size(); ++i) {
             text.add(new TextLine(new ConfigPageButton(i)));
         }
+        if (this.minecraft.player != null && this.minecraft.player.hasPermissions(2))
+            text.add(new TextLine(new TestTuningButton()));
         pages.add(text);
         return this.bookManager.convertAndAdjustLines(pages);
     }
@@ -143,6 +150,10 @@ extends GuiText {
         else { pageId=-1; pageNum=0; textBook=getData(); buttonPagination(); }
     }
 
+
+    private static class TestTuningButton extends GuiText.MillGuiButton {
+        TestTuningButton() { super(0, 0, 0, 0, 0, new net.minecraft.network.chat.TranslatableComponent("millenaire.test_tuning.title").getString()); }
+    }
 
     public static class ConfigPageButton
     extends GuiText.MillGuiButton {
