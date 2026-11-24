@@ -19,9 +19,9 @@ public class GoalFishInuit
 extends GoalFish {
     @Override
     protected void addFishResults(MillVillager villager) {
-        villager.addToInv(Items.COD, 1);
+        super.addFishResults(villager);
         if (MillCommonUtilities.chanceOn(4)) {
-            villager.addToInv(Blocks.BONE_BLOCK, 1);
+            villager.addToInv(Blocks.BONE_BLOCK, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
         }
     }
 }
