@@ -52,9 +52,64 @@ public class ContentDeployer {
                 if (folder.equals("millenaire")) Files.writeString(version, Mill.VERSION_NUMBER);
             }
             LanguageBundleUpdater.update(source.resolve("millenaire"), mods.resolve("millenaire"));
+            updateMayanSandstoneGoal(source.resolve("millenaire"), mods.resolve("millenaire"));
         } catch (IOException error) {
             throw new IllegalStateException("Unable to deploy Millenaire content", error);
         }
+    }
+
+    /**
+     * Same-version ports keep their deployed content. Migrate just the missing
+     * stock Mayan miner task, without replacing the rest of the culture or
+     * touching millenaire-custom. Safe to run again after every startup.
+     */
+    private static void updateMayanSandstoneGoal(java.nio.file.Path bundled,
+            java.nio.file.Path installed) throws IOException {
+        var relative = java.nio.file.Path.of("cultures", "mayan", "villagers", "mayan_miner.txt");
+        var target = installed.resolve(relative);
+        var stock = bundled.resolve(relative);
+        var goalRelative = java.nio.file.Path.of("goals", "genericmining", "minesandstone.txt");
+        if (!Files.isRegularFile(stock) || !Files.isRegularFile(target)) return;
+        String stockText = Files.readString(stock);
+        if (!stockText.lines().anyMatch(line -> line.trim().equalsIgnoreCase("goal=minesandstone"))) return;
+        String original = Files.readString(target);
+        if (original.lines().anyMatch(line -> line.trim().equalsIgnoreCase("goal=minesandstone"))) return;
+        // Do not alter a locally rewritten miner lacking the standard stone task.
+        var anchor = java.util.regex.Pattern.compile("(?im)^[ \\t]*goal[ \\t]*=[ \\t]*minestone[ \\t]*(?=\\r?$)").matcher(original);
+        if (!anchor.find()) {
+            Mill.LOGGER.warn("Mayan sandstone migration skipped: deployed miner has no standard minestone goal");
+            return;
+        }
+        String newline = original.contains("\\r\\n") ? "\\r\\n" : "\\n";
+        String updated = original.substring(0, anchor.end()) + newline
+                + "goal=minesandstone" + original.substring(anchor.end());
+        var installedGoal = installed.resolve(goalRelative);
+        if (!Files.isRegularFile(installedGoal)) {
+            var bundledGoal = bundled.resolve(goalRelative);
+            if (!Files.isRegularFile(bundledGoal)) {
+                Mill.LOGGER.warn("Mayan sandstone migration skipped: minesandstone goal definition missing");
+                return;
+            }
+            Files.createDirectories(installedGoal.getParent());
+            Files.copy(bundledGoal, installedGoal);
+        }
+        var backup = installed.resolveSibling("millenaire-content-backups")
+                .resolve(java.util.UUID.randomUUID().toString()).resolve(relative);
+        Files.createDirectories(backup.getParent());
+        Files.copy(target, backup);
+        var staged = Files.createTempFile(target.getParent(), "mayan-miner-", ".tmp");
+        try {
+            Files.writeString(staged, updated);
+            try {
+                Files.move(staged, target, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
+                Files.move(staged, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(staged);
+        }
+        Mill.LOGGER.info("MAYAN-SANDSTONE-MIGRATION: installed missing minesandstone goal; original backed up");
     }
 
     private static final String DEV_VERSION_NUMBER = "@VERSION@";
