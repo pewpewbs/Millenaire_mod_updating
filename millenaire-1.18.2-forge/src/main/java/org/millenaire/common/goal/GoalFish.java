@@ -60,6 +60,7 @@ extends Goal {
             closest = b;
         }
         if (closest == null || closest.getResManager().fishingspots.size() == 0) {
+            GoalDiagnostics.note(villager, this, "NO_ELIGIBLE_FISHING_SPOT");
             return null;
         }
         return this.packDest(closest.getResManager().fishingspots.get(MillCommonUtilities.randomInt(closest.getResManager().fishingspots.size())), closest);
@@ -74,8 +75,14 @@ extends Goal {
             // Include unreturned catch so a fishing trip cannot overrun the
             // configured stock target before goods reach the chest.
             long stock = (long)home.countGoods(item) + villager.countInv(item);
-            if (stock >= entry.getValue()) return false;
-            if (destination != home && destination.countGoods(item) >= entry.getValue()) return false;
+            if (stock >= entry.getValue()) {
+                if (GoalDiagnostics.recording(villager, this)) GoalDiagnostics.note(villager, this, "FISH_HOME_STOCK_LIMIT " + item + " " + stock + "/" + entry.getValue());
+                return false;
+            }
+            if (destination != home && destination.countGoods(item) >= entry.getValue()) {
+                if (GoalDiagnostics.recording(villager, this)) GoalDiagnostics.note(villager, this, "FISH_DESTINATION_STOCK_LIMIT " + item + " limit=" + entry.getValue());
+                return false;
+            }
         }
         return true;
     }
