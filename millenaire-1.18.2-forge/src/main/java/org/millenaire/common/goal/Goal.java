@@ -311,9 +311,7 @@ public abstract class Goal {
                 if (villager.getTownHall().nbGoodAvailable(item, false, false, false) <= this.villageLimit.get(item)) continue;
                 return false;
             }
-            if (this.balanceOutput != null && this.balanceOutput.length > 1 && villager.getTownHall().nbGoodAvailable(InvItem.createInvItem(this.balanceOutput[0].item, this.balanceOutput[0].meta), false, false, false) < villager.getTownHall().nbGoodAvailable(InvItem.createInvItem(this.balanceOutput[1].item, this.balanceOutput[1].meta), false, false, false)) {
-                return false;
-            }
+            if (!passesResourceBalance(villager)) return false;
             if (this.maxSimultaneousTotal > 0) {
                 int nbSame = 0;
                 for (MillVillager v : villager.getTownHall().getKnownVillagers()) {
@@ -330,6 +328,13 @@ public abstract class Goal {
             MillLog.printException("Exception in isPossible() for goal: " + this.key + " and villager: " + villager, e);
             return false;
         }
+    }
+
+    /** Override only when a goal must evaluate balance at its selected workplace. */
+    protected boolean passesResourceBalance(MillVillager villager) {
+        return this.balanceOutput == null || this.balanceOutput.length < 2
+                || villager.getTownHall().nbGoodAvailable(InvItem.createInvItem(this.balanceOutput[0].item, this.balanceOutput[0].meta), false, false, false)
+                >= villager.getTownHall().nbGoodAvailable(InvItem.createInvItem(this.balanceOutput[1].item, this.balanceOutput[1].meta), false, false, false);
     }
 
     protected boolean isPossibleSpecific(MillVillager villager) throws Exception {
