@@ -515,7 +515,7 @@ public class MillCommonUtilities {
 
          for (int ix = 0; ix < maxSlot && nb < toPut; ix++) {
             ItemStack stack = chest.getItem(ix);
-            if (stack == ItemStack.EMPTY) {
+            if (stack.isEmpty()) {
                stack = org.millenaire.common.item.LegacyItemStacks.stack(item, 1, meta);
                if (stack.getItem() instanceof InvItem.IItemInitialEnchantmens) {
                   ((InvItem.IItemInitialEnchantmens)stack.getItem()).applyEnchantments(stack);
