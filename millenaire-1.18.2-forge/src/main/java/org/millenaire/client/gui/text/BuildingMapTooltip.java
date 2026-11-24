@@ -46,7 +46,7 @@ final class BuildingMapTooltip {
         if (stack != null && !stack.isEmpty()) result.add(stack.getHoverName().getString());
     }
 
-    static List<Line> describe(BuildingLocation loc, Building townHall, String nativeName) {
+    static List<Line> describe(BuildingLocation loc, Building townHall, String nativeName, boolean construction) {
         List<Line> lines = new ArrayList<>();
         add(lines, nativeName, NORMAL);
         if (loc.getIBuildingPlan() != null) add(lines, loc.getGameName(), NORMAL);
@@ -54,7 +54,9 @@ final class BuildingMapTooltip {
         BuildingPlan plan = loc.getPlan();
 
         // Plan index zero is the initial completed building, not upgrade one.
-        if (loc.level < 0) {
+        if (construction) {
+            add(lines, label("Under construction", "Будується", "Строится"), MUTED);
+        } else if (loc.level < 0) {
             add(lines, label("Not built yet", "Ще не збудовано", "Ещё не построено"), MUTED);
         } else if (loc.isCustomBuilding) {
             add(lines, label("Custom building (no standard upgrades)", "Власна будівля (без стандартних покращень)", "Пользовательская постройка (без стандартных улучшений)"), MUTED);
