@@ -83,7 +83,8 @@ extends GoalGeneric {
                 if (countGoods >= this.minimumToCook && (furnace.getItem(0) == ItemStack.EMPTY || furnace.getItem(0).getItem() == Items.AIR || furnace.getItem(0).getItem() == this.itemToCook.getItem() && furnace.getItem(0).getDamageValue() == this.itemToCook.meta && furnace.getItem(0).getCount() < 32)) {
                     return this.packDest(p, dest);
                 }
-                if (furnace.getItem(2) == null || furnace.getItem(2).getCount() < this.minimumToCook) continue;
+                // Only schedule output-only visits when the building can actually store the output.
+                if (!GoalGenericTendFurnace.canStoreOutput(dest, furnace.getItem(2))) continue;
                 return this.packDest(p, dest);
             }
             boolean firepitBurnable = TileEntityFirePit.isFirePitBurnable(villager.level, this.itemToCook.staticStack);
@@ -100,7 +101,7 @@ extends GoalGeneric {
                 }
                 for (slotNb = 0; slotNb < 3; ++slotNb) {
                     stack = firepit.outputs.getStackInSlot(slotNb);
-                    if (stack == null || stack.getCount() < this.minimumToCook) continue;
+                    if (!GoalGenericTendFurnace.canStoreOutput(dest, stack)) continue;
                     return this.packDest(p, dest);
                 }
             }
