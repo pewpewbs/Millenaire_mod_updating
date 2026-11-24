@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.millenaire.common.utilities.MillLog;
 import org.millenaire.common.utilities.Point;
 import org.millenaire.common.village.Building;
-import org.millenaire.common.village.BuildingResManager;
+import org.millenaire.common.village.buildingmanagers.ResManager;
 
 /** Upgrade only the explicitly changed stock-plan resource points, never rebuild a village. */
 public final class ProductionSourceRepair {
@@ -37,12 +37,12 @@ public final class ProductionSourceRepair {
                 || k < 0 || k >= plan.plan[floor][j].length) return null;
         return plan.plan[floor][j][k];
     }
-    private static boolean registered(BuildingResManager manager, BlockState type, Point point) {
+    private static boolean registered(ResManager manager, BlockState type, Point point) {
         for (int i=0; i<Math.min(manager.sources.size(),manager.sourceTypes.size()); i++)
             if (manager.sourceTypes.get(i)==type && manager.sources.get(i).contains(point)) return true;
         return false;
     }
-    private static void register(BuildingResManager manager, BlockState desired, Point point) {
+    private static void register(ResManager manager, BlockState desired, Point point) {
         // Keep unrelated registrations and list indices intact.
         for (int i=0; i<Math.min(manager.sources.size(),manager.sourceTypes.size()); i++)
             if (manager.sourceTypes.get(i)==Blocks.STONE.defaultBlockState())
