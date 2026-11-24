@@ -135,13 +135,13 @@ extends GoalGeneric {
                 float irrigation = villager.getTownHall().getVillageIrrigation();
                 double rand = Math.random();
                 if (rand < (double)(irrigation / 100.0f)) {
-                    villager.addToInv(this.irrigationBonusCrop, 1);
+                    villager.addToInv(this.irrigationBonusCrop, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
                 }
             }
             Building dest = villager.getGoalBuildingDest();
             for (AnnotedParameter.BonusItem bonusItem : this.harvestItem) {
                 if (bonusItem.tag != null && (dest == null || !dest.containsTags(bonusItem.tag)) || MillCommonUtilities.randomInt(100) > bonusItem.chance) continue;
-                villager.addToInv(bonusItem.item, 1);
+                villager.addToInv(bonusItem.item, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             }
             if (villager.getBlock(villager.getGoalDestPoint().getAbove()) instanceof DoublePlantBlock) {
                 villager.setBlockAndMetadata(villager.getGoalDestPoint().getAbove(), Blocks.AIR, 0);
