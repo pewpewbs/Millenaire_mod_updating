@@ -10,6 +10,11 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 25.11.2026 — VALIDATOR: stale progression assertion
+
+- Локальний запуск користувача на 0aba3e4: 163/164 Python tests passed, усі 5 village-generation wiring tests passed. Один застарілий assertion у test_operational_priority_is_soft шукав прямий return тернарного виразу, хоча після додавання діагностики значення зберігається в chosen і повертається без зміни логіки.
+- Оновлено лише тест: перевірка тернарного вибору й return chosen у межах select, з нечутливістю до пробілів; production Java не змінено. Валідатор зупинився перед Java smoke/Forge build, тому їхній результат у цьому запуску невідомий. Потрібен повторний повний запуск.
+
 ### 25.11.2026 — VILLAGE-PREP: adaptive natural village area preparation (experimental)
 
 - User approved generation independent of low client render distance. Preserve original fast path for ready areas and existing biome, distance, spawn protection, territory, terrain and layout checks. Only incomplete-area rejection of ordinary natural generation submits a candidate. Explicit player spawning, custom settlements, lone buildings, hamlets and other dimensions retain original paths. Candidate admission checks player proximity (200 blocks horizontally), distance and generation settings; eligibility/type selected only with FULL centre available, checked again before construction. Does not change authored village types, trade specialization or deferred ideas.
