@@ -38,6 +38,10 @@ def main():
             JAVA / "world/VillageGenerationProbe.java",
             ROOT / "tools/tests/VillageGenerationProbeSmoke.java")
         run("java","-cp",classes,"org.millenaire.common.world.VillageGenerationProbeSmoke")
+        run("javac","--release","17","-d",classes,
+            JAVA / "world/VillagePreparationPolicy.java",
+            ROOT / "tools/tests/VillagePreparationPolicySmoke.java")
+        run("java","-cp",classes,"org.millenaire.common.world.VillagePreparationPolicySmoke")
     from audit_production import audit, DEFAULT_DATA, DEFAULT_JAVA
     result = audit(DEFAULT_DATA, DEFAULT_JAVA, True)
     output = ROOT / "tools/reports/production_audit.json"
