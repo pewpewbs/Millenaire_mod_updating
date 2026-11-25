@@ -151,14 +151,91 @@ final class VillageProgression {
             Candidate supplier = prerequisite(v,options,target,affordable);
             if (supplier != null) return supplier;
         }
-        return preferred;
+        Candidate operating = operatingSupplier(v,options,preferred.plan(),ignoreCost);
+        return operating == null ? preferred : operating;
     }
 
     static Candidate replacement(Building v, List<BuildingProject> projects, BuildingPlan waiting, boolean ignoreCost) {
         StyleGate gate = styleGate(v,ignoreCost);
         if (gate.blocks(waiting) && !busy(v,gate.centre().project())) return gate.centre();
-        if (ignoreCost || v.canAffordProgression(waiting,false)) return null;
-        return prerequisite(v,candidates(v,projects,false,false,gate),waiting,false);
+        List<Candidate> options=candidates(v,projects,false,ignoreCost,gate);
+        if (!ignoreCost && !v.canAffordProgression(waiting,false)) {
+            Candidate buildingSupplier=prerequisite(v,options,waiting,false);
+            if(buildingSupplier!=null)return buildingSupplier;
+        }
+        return operatingSupplier(v,options,waiting,ignoreCost);
+    }
+
+    // Operational inputs are separate from the one-time construction cost.
+    // Prefer an available local producer, but never block specialized settlements
+    // that lack a feasible local supplier (imports or player delivery remain valid).
+    private static Set<InvItem> operatingNeeds(Building v, BuildingPlan plan) {
+        Set<InvItem> needs=new LinkedHashSet<>();
+        if(plan==null||plan.culture==null)return needs;
+        Set<String> residents=new LinkedHashSet<>(plan.maleResident);
+        residents.addAll(plan.femaleResident);
+        Set<String> tags=tags(plan);
+        for(String key:residents){
+            VillagerType type=plan.culture.getVillagerType(key);
+            if(type==null)continue;
+            for(Goal goal:type.goals){
+                if(goal instanceof GoalBreedAnimals){
+                    // Explicit supplies from this resident's configuration, not all
+                    // household consumption (clothing, food for residents, etc.).
+                    for(var e:type.requiredGoods.entrySet()){
+                        var item=e.getKey().getItem();
+                        boolean cereal=item==Items.WHEAT||item==org.millenaire.common.item.MillItems.RICE||item==org.millenaire.common.item.MillItems.MAIZE;
+                        boolean feed=(cereal&&(tags.contains("cattle")||tags.contains("sheeps")||tags.contains("chicken")))
+                            ||(item==Items.CARROT&&tags.contains("pigs"))
+                            ||(item==Items.WHEAT_SEEDS&&(tags.contains("sheeps")||tags.contains("chicken")));
+                        boolean alternative=cereal&&(v.progressionAvailable(InvItem.createInvItem(Items.WHEAT))>=2
+                            ||v.progressionAvailable(InvItem.createInvItem(org.millenaire.common.item.MillItems.RICE))>=2
+                            ||v.progressionAvailable(InvItem.createInvItem(org.millenaire.common.item.MillItems.MAIZE))>=2);
+                        if(feed&&!alternative&&v.progressionAvailable(e.getKey())<2)needs.add(e.getKey());
+                    }
+                }else if(goal instanceof GoalGeneric generic&&!generic.townHallGoal
+                        &&(generic.buildingTag==null||tags.contains(generic.buildingTag))
+                        &&(generic.requiredTag==null||tags.contains(generic.requiredTag))){
+                    if(generic instanceof GoalGenericCrafting craft)missing(v,craft.input,needs);
+                    else if(generic instanceof GoalGenericCooking cook&&cook.itemToCook!=null
+                            &&v.progressionAvailable(cook.itemToCook)<1)needs.add(cook.itemToCook);
+                }
+            }
+        }
+        return needs;
+    }
+
+    private static Candidate operatingSupplier(Building v,List<Candidate> options,BuildingPlan target,boolean ignoreCost){
+        Set<InvItem> needs=operatingNeeds(v,target);
+        if(needs.isEmpty())return null;
+        Set<VillagerType> workers=new HashSet<>();
+        for(var record:v.getVillagerRecords().values())
+            if(!record.killed&&record.getType()!=null)workers.add(record.getType());
+        List<InvItem> existing=new ArrayList<>();
+        for(BuildingProject p:v.getFlatProjectList())
+            if(p.getExistingPlan()!=null)
+                for(Recipe r:recipes(v,p.getExistingPlan(),p,workers))existing.add(r.output());
+        needs.removeIf(n->matches(existing,n));
+        if(needs.isEmpty())return null;
+        Candidate best=null;
+        int score=Integer.MIN_VALUE;
+        for(Candidate c:options){
+            if(Objects.equals(c.plan().buildingKey,target.buildingKey))continue;
+            if(!ignoreCost&&!v.canAffordProgression(c.plan(),false))continue;
+            List<Recipe> outputs=recipes(v,c.plan(),c.project(),workers);
+            int benefit=0;
+            for(InvItem need:needs)
+                if(outputs.stream().anyMatch(r->r.output().matches(need)))benefit++;
+            if(benefit==0)continue;
+            // Avoid replacing a project with another which itself needs missing
+            // operating inputs; fall back to ordinary progression in cycles.
+            if(!operatingNeeds(v,c.plan()).isEmpty())continue;
+            int candidateScore=benefit*1000+rank(c);
+            if(candidateScore>score){score=candidateScore;best=c;}
+        }
+        if(best!=null&&MillConfigValues.LogBuildingPlan>=1)
+            MillLog.major(v,"VILLAGE-PROGRESSION operatingSupplier="+best.project().key+" target="+target.buildingKey+" missing="+needs.size());
+        return best;
     }
 
     private static void output(List<Recipe> out, InvItem item, Map<InvItem,Integer> inputs) {

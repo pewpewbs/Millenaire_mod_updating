@@ -851,6 +851,9 @@ public class PanelContentGenerator {
                has = goalPlan.resCost.get(key);
             }
 
+            if (house.getConstructionsInProgress().stream().noneMatch(cip ->
+                  cip.getBuildingLocation()!=null && cip.getBuildingLocation().planKey.equals(house.buildingGoal)))
+               has=Math.min(goalPlan.resCost.get(key),house.availableForCurrentProject(key));
             resHas.put(key, has);
          }
 
@@ -1050,6 +1053,9 @@ public class PanelContentGenerator {
                has = goal.resCost.get(key);
             }
 
+            if (townHall.getConstructionsInProgress().stream().noneMatch(cip ->
+                  cip.getBuildingLocation()!=null && cip.getBuildingLocation().planKey.equals(townHall.buildingGoal)))
+               has=Math.min(goal.resCost.get(key),townHall.availableForCurrentProject(key));
             resHas.put(key, has);
          }
 

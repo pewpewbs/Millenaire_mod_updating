@@ -1002,6 +1002,12 @@ public class Building {
       return true;
    }
 
+   /** Same stock rule as canAffordProject for an unstarted current goal. */
+   public int availableForCurrentProject(InvItem item) {
+      return Math.max(0,VillageProgression.enabled(this)
+            ? this.nbGoodAvailable(item,true,false,false,false) : this.countGoods(item));
+   }
+
    int progressionAvailable(InvItem item) {
       return this.nbGoodAvailable(item, true, false, false, false);
    }
