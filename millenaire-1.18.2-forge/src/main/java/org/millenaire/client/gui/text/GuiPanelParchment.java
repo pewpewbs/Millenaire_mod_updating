@@ -627,7 +627,7 @@ extends GuiText {
             // for one item. Keep the same model-view transform as the icons.
             // Render every model first so another model cannot cover a count.
             for(var item:recipeIcons)itemRenderer.renderGuiItemDecorations(font,item.stack(),item.x(),item.y(),
-                    Integer.toString(item.stack().getCount()));
+                    item.stack().getCount()>1?Integer.toString(item.stack().getCount()):null);
         }finally{itemRenderer.blitOffset=old;model.popPose();RenderSystem.applyModelViewMatrix();Lighting.setupFor3DItems();}
     }
 
