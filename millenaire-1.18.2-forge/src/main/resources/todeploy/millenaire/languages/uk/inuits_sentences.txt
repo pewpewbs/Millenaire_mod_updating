@@ -1,58 +1,58 @@
 
-boy.greeting=anaanaga miqsurunnaqtunga / Моя мама може зашивати діри у твоїх одязі.
-boy.greeting=pinnguarumajunga / Я хочу грати.
-boy.greeting=qanuippit. / Як ти? - Добре.
+boy.greeting=anaanaga miqsurunnaqtunga / Моя мама може зашити дірки на твоєму одязі.
+boy.greeting=pinnguarumajunga / Хочу погратися.
+boy.greeting=qanuippit. / Як справи?
 
-chef.greeting=niqłiuqtunga. inuuhiqatsiaq! / Я люблю готувати.  Їж, їж!
+chef.greeting=niqłiuqtunga. inuuhiqatsiaq! / Мені подобається готувати. Їж, їж!
 chef.greeting=nirinnaqsijuq. / Час їсти.
 
-farmer.greeting=nunanniapaa, itjuujaq! / Я люблю сільське господарство, особливо картоплі!
+farmer.greeting=nunanniapaa, itjuujaq! / Люблю землеробство, особливо вирощувати картоплю!
 
-fisherman.greeting=ukiukkut iqalliariaksaq quviagijara. / Я люблю зимовий рибалка.
+fisherman.greeting=ukiukkut iqalliariaksaq quviagijara. / Люблю рибалити взимку.
 
 girl.greeting=mumirunnaqtunga / Я вмію танцювати.
-girl.greeting=qanuippit. / Як ти? - Добре.
-girl.greeting=ullagunnaqtunga. / Я можу бігти.
+girl.greeting=qanuippit. / Як справи?
+girl.greeting=ullagunnaqtunga. / Я вмію бігати.
 
-hunter.greeting=qimuksiqpakpit? / Ви подорожуєте собакою?
-hunter.greeting=ukiakkut angunasukłuni quviagijara. / Я люблю мислити восень.
+hunter.greeting=qimuksiqpakpit? / Ти подорожуєш на собачій упряжці?
+hunter.greeting=ukiakkut angunasukłuni quviagijara. / Люблю полювати восени.
 
-husband.greeting=iqqanaijariariaqaliqtunga. / Мені потрібно почати виконувати свої завдання на сьогодні.
+husband.greeting=iqqanaijariariaqaliqtunga. / Час братися за сьогоднішні справи.
 
-lumberman.greeting=napaaktuk aglinigaktuk sayakturuk, tanakuuruk. / Дерева ростуть настільки сильними і сильними тут дуже швидко, що за чудова країна.
+lumberman.greeting=napaaktuk aglinigaktuk sayakturuk, tanakuuruk. / Тут дерева так швидко ростуть і стають могутніми й міцними. Який чудовий край!
 
-oldlady.greeting=amaamak irinaliut iqsijuq iglu imakkuutuq / Вона прокляла їх, щоб втекти з її доміну.
-oldlady.greeting=angu isivrivriuqpuq mamivuq! / Не дивиться їм у очі!
-oldlady.greeting=irinaliut qitirut tamanna!? / Прокляті нас оточують!?
+oldlady.greeting=amaamak irinaliut iqsijuq iglu imakkuutuq / Вона прокляла їх, щоб вони забралися з її володінь.
+oldlady.greeting=angu isivrivriuqpuq mamivuq! / Не дивися їм у вічі!
+oldlady.greeting=irinaliut qitirut tamanna!? / Прокляті оточили нас?!
 
-shaman.greeting=tuurngaq tutsiaqatigiinniq. / Духи дають вам благословення.
-shaman.greeting=uqariaqaqtunga tuurngaq. / Я мушу поговорити з духами.
+shaman.greeting=tuurngaq tutsiaqatigiinniq. / Нехай духи благословлять тебе.
+shaman.greeting=uqariaqaqtunga tuurngaq. / Мені потрібно поговорити з духами.
 
-sodder.greeting=qaijariaqaqtunga miqqapik / Мені потрібно зібратись на згубки.
+sodder.greeting=qaijariaqaqtunga miqqapik / Мені потрібно зібрати дерен.
 
 villager.greeting=ainngai, $name! / Привіт, $name!
-villager.greeting=aqsarniit takuminaqtut. / Північне світло було дуже красивим.
-villager.greeting=ilatit qanuippat? / Як твоя сім'я?
+villager.greeting=aqsarniit takuminaqtut. / Яке прекрасне було північне сяйво!
+villager.greeting=ilatit qanuippat? / Як твоя родина?
 villager.greeting=katigatkit quvianaq. / Приємно познайомитися.
 villager.greeting=nani nunaqaqqpit? / Звідки ти?
-villager.greeting=niriqqauvit? / Ти вже їла?
-villager.greeting=sinittiaqqaugaluaqpit? / Ти добре спав?
-villager.greeting=takunasaaqpagit. / Я не бачив вас багато років.
-villager.greeting=tunngasugit / Вітаю вас.
-villager.greeting=ullaakuut. / Добрий день.
+villager.greeting=niriqqauvit? / Ти вже поїв?
+villager.greeting=sinittiaqqaugaluaqpit? / Добре спалося?
+villager.greeting=takunasaaqpagit. / Давно тебе не бачили.
+villager.greeting=tunngasugit / Ласкаво просимо.
+villager.greeting=ullaakuut. / Доброго дня!
 
-wife.greeting=kaayuk sinaiyaurug, masu aniruk! / Ця грунт настільки плодородна, що рослини ростуть як божевілля!
-wife.greeting=silasiqanuippa? / Яка погода там, де ви?
+wife.greeting=kaayuk sinaiyaurug, masu aniruk! / Тут така родюча земля, що рослини ростуть як на дріжджах!
+wife.greeting=silasiqanuippa? / Яка погода у твоїх краях?
 
-art_merchant.greeting=Aucune ville dans le monde n'est comparable à Constantinople. / Жоден місто в світі не може порівнятися з Константинополем!
-art_merchant.greeting=Les gens ici sont des barbares. / Люди тут варвари.
+art_merchant.greeting=Aucune ville dans le monde n'est comparable à Constantinople. / Жодне місто світу не зрівняється з Константинополем!
+art_merchant.greeting=Les gens ici sont des barbares. / Тутешні люди — варвари.
 
-oriental_merchant.greeting=Ce pays est riche, mais fallait il vraiment qu'il soit si froid? / Ця земля багата, але чи має бути так холодно?
-oriental_merchant.greeting=Etes vous allez à Cordoue? Ca, c'est une ville civilisée. / Ти був у Кордобі?  Це цивілізовано.
+oriental_merchant.greeting=Ce pays est riche, mais fallait il vraiment qu'il soit si froid? / Цей край багатий, але невже тут обов’язково має бути так холодно?
+oriental_merchant.greeting=Etes vous allez à Cordoue? Ca, c'est une ville civilisée. / Бував у Кордові? Оце справді цивілізоване місце!
 
 plant_merchant.greeting=Some people say I'm a dreamer, but I'm not the only one... / 
 
-viking_merchant.greeting=Aujourd'hui je vient commercer. Demain... / Сьогодні я прийшов на торгівлю.  Завтра...
-viking_merchant.greeting=Cette terre appartient aux vikings. L'Angleterre aussi. La Sicile aussi. Vive nous! / Ця земля - земля вікінгів.  Англія - країна вікінгів.  Сіцилія - це вікінгська країна.  Ми владуємо!
+viking_merchant.greeting=Aujourd'hui je vient commercer. Demain... / Сьогодні я прийшов торгувати. Завтра…
+viking_merchant.greeting=Cette terre appartient aux vikings. L'Angleterre aussi. La Sicile aussi. Vive nous! / Ця земля належить вікінгам. Англія теж. І Сицилія. Ми пануємо!
 
-weapon_merchant.greeting=Vous voulez vraiment savoir comment j'ai survécu toutes ces années voyageant seul avec des marchandises précieuses? / Хочеш знати, як я пережила всі ті роки, подорожуючи одна з цінними товарами?
+weapon_merchant.greeting=Vous voulez vraiment savoir comment j'ai survécu toutes ces années voyageant seul avec des marchandises précieuses? / Хочеш дізнатися, як мені вдавалося виживати всі ці роки, подорожуючи наодинці з цінним товаром?
