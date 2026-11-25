@@ -155,7 +155,15 @@ final class BuildingMapTooltip {
                 : goal instanceof GoalGenericHarvestCrop || goal instanceof GoalHarvestWarts || goal instanceof GoalIndianHarvestSugarCane
                 ? label("Harvests crops","Збирає врожай","Собирает урожай")
                 : goal instanceof GoalGenericGatherBlocks
-                ? label("Gathers resources","Збирає ресурси","Собирает ресурсы") : source;
+                ? label("Gathers resources","Збирає ресурси","Собирает ресурсы")
+                : goal instanceof GoalGenericSlaughterAnimal
+                ? label("Slaughters animals","Забиває тварин","Забивает животных")
+                : goal instanceof GoalGenericPlantCrop
+                ? label("Plants crops","Садить культури","Сажает культуры")
+                : goal instanceof GoalGenericPlantSapling
+                ? label("Plants saplings","Садить саджанці","Сажает саженцы")
+                : goal instanceof GoalBreedAnimals
+                ? label("Breeds animals","Розводить тварин","Разводит животных") : source;
         addStack(actions,actionIcon(goal));
     }
     private static boolean productive(VillagerType type){
@@ -225,7 +233,7 @@ final class BuildingMapTooltip {
                 String level = label("Upgrade level: ", "Рівень покращення: ", "Уровень улучшения: ") + loc.level + "/" + maximum;
                 boolean max = loc.level == maximum;
                 if (max) level += label(" (MAX)", " (МАКС.)", " (МАКС.)");
-                add(lines, level, max ? GOLD : NORMAL);
+                if(maximum>0)add(lines, level, max ? GOLD : NORMAL);
             } else {
                 add(lines, label("Upgrade level: ", "Рівень покращення: ", "Уровень улучшения: ") + loc.level, NORMAL);
             }
@@ -334,6 +342,10 @@ final class BuildingMapTooltip {
                 if (generic.townHallGoal ? !central
                         : generic.buildingTag == null ? !home : !hasTag(loc, building, plan, generic.buildingTag)) continue;
                 if (generic.requiredTag != null && !hasTag(loc, building, plan, generic.requiredTag)) continue;
+                if(generic instanceof GoalGenericPlantCrop plant
+                        && !org.millenaire.common.village.ProductionCapability.hasCrop(plan,building,plant.cropType))continue;
+                if(generic instanceof GoalGenericHarvestCrop harvest
+                        && !org.millenaire.common.village.ProductionCapability.hasCrop(plan,building,harvest.cropType))continue;
                 // A configured workplace can also have a non-producing role:
                 // planting, visiting, tending equipment or collecting supplies.
                 if (!generic.leasure) {
@@ -358,13 +370,15 @@ final class BuildingMapTooltip {
                 } else if (generic instanceof GoalGenericHarvestCrop harvest) {
                     extracted.source=null;
                     for (var bonus : harvest.harvestItem) addItem(extracted, bonus.item);
-                    extracted.source=label("Irrigation bonus","Бонус зрошення","Бонус орошения");
                     addItem(extracted, harvest.irrigationBonusCrop);
                 } else if (generic instanceof GoalGenericGatherBlocks gather) {
                     for (var bonus : gather.harvestItem) addItem(extracted, bonus.item);
                 } else if (generic instanceof GoalGenericSlaughterAnimal slaughter) {
+                    for(var good:org.millenaire.common.village.ProductionCapability.animalGoods(slaughter.animalKey,type))
+                        addItem(extracted,good);
                     extracted.source=label("Chance-based drops","Імовірнісна здобич","Вероятностная добыча");
-                    for (var bonus : slaughter.bonusItem) addItem(extracted, bonus.item);
+                    for (var bonus : slaughter.bonusItem)
+                        if(bonus.tag==null||hasTag(loc,building,plan,bonus.tag))addItem(extracted, bonus.item);
                 } else if (generic instanceof GoalGenericCooking cooking && cooking.itemToCook != null
                         && cooking.itemToCook.staticStack != null && townHall.world != null) {
                     produced.source=null;
@@ -407,7 +421,9 @@ final class BuildingMapTooltip {
         if (actions.isEmpty() && produced.isEmpty() && extracted.isEmpty() && planned.isEmpty() && sells.isEmpty()) {
             Set<String> roles = new LinkedHashSet<>(effects);
 
-            if (!residents.isEmpty()) roles.add(label("Housing for villagers", "Житло для мешканців", "Жильё для жителей"));
+            if(hasTag(loc,building,plan,"inn"))
+                roles.add(label("Accommodation for travelling merchants; inter-village trade","Прихисток для мандрівних торговців; міжселищна торгівля","Приют для странствующих торговцев; межпоселенческая торговля"));
+            else if (!residents.isEmpty()) roles.add(label("Housing for villagers", "Житло для мешканців", "Жильё для жителей"));
             if (!loc.getVisitors().isEmpty()) roles.add(label("Accommodation for visitors", "Помешкання для відвідувачів", "Жильё для посетителей"));
             if (hasTag(loc, building, plan, "grove")) roles.add(label("Forestry", "Лісозаготівля", "Лесозаготовка"));
             if (hasTag(loc, building, plan, "fishingspot")) roles.add(label("Fishing", "Рибальство", "Рыболовство"));
