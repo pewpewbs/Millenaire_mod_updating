@@ -10,6 +10,13 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 25.11.2026 — JAPANESE-WHEAT-BOOTSTRAP
+
+- Isesake: торгівельний тип з центром sakebrewery не мав доступу до пшеничної ферми. Перевірено конфігурації nogyo, gunji, seiji, trading, japanese_controlled, japanese_customcontrolled: тільки trading серед стандартних типів містив never=japanesefarm; інші вже мають start=japanesefarm і start=japanesegrove. Це обмеження контенту, а не помилка ранжування VillageProgression.
+- trading.txt: замінено заборону japanesefarm на одну стартову ферму, нарівні з гаєм. WorldGenVillage.generateVillage читає startBuildings для звичайної природної генерації та створення гравцем. Не змінено решту типів, інші культури, хутори, рецепт, торгівлю, AI. Власноруч спланований japanese_customcontrolled збережено без автоматичної забудови.
+- japanese_farmer (Hyakushou) і japanese_farmwife (Tsuma) мають harvestwheathome/plantwheathome. japanese_farmwife та japanese_peasantwife мають makethatch і requiredGood=wheat,16. Потреба в запасі не є розміром рецепта. Пшениця — сировина для покрівлі, не блок сіна.
+- Зміна для нової генерації; наявні поселення не отримують готову ферму від цього патча. Додаткова обов'язкова ділянка 20x14 може підвищити вимоги до придатності стартового планування; не послаблювали геометрію. Потрібно перевірити нове торговельне поселення та реальне вирощування пшениці. Додано два конфігураційні regression tests; Forge-збірку і повний тестовий набір не запускали.
+
 ### 25.11.2026 — NAV-TRAP-LOOP / CHAT-PATH-RATE / TICKET-BATCH / PROGRESSION-TRACE / ENTITY-ICONS / LEGACY-CONFIG
 
 - Сесія latest(20261125-151108).log без дослідження нових чанків: 201 NAV-TRAP-RESCUE (200 Ami Tanaka), 0 DOOR-BLOCKED, 6 MILL-SLOW на старті світу (дві будівлі 927/1813 мс, вкладені підсумки); один Can't keep up 2972 мс. 1999 записів про chat path searches; 718128 скопійованих секцій за діагностикою попереднього аналізу. Ці дані не підтверджують швидкість генерації нових територій.
