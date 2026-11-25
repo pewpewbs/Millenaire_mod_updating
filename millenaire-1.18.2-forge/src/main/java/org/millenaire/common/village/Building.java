@@ -2313,6 +2313,32 @@ public class Building {
       return this.resManager.getDefendingPos();
    }
 
+   private boolean validateCoreReservation(BuildingProject project, BuildingPlan plan) {
+      if(project==null||project.location==null||project.location.level>=0
+            ||project.projectTier!=BuildingProject.EnumProjects.CORE)return true;
+      BuildingLocation site=project.location;
+      int status=this.winfo.validateReservedSite(site,plan,this.location.pos);
+      if(status==1)return true;
+      if(status==0){
+         project.location=null;
+         // Rebuild all occupancy references, including in-progress sites.
+         List<BuildingLocation> occupied=new ArrayList<>(this.getLocations());
+         for(ConstructionIP cip:this.getConstructionsInProgress())if(cip.getBuildingLocation()!=null)occupied.add(cip.getBuildingLocation());
+         try{this.winfo.update(this.world,occupied,this.location.pos,this.villageType.radius);}
+         catch(MillLog.MillenaireException error){MillLog.printException(error);}
+         this.markSaveNeeded();
+      }
+      this.projectSiteCooldown.defer(project.key,this.world.getGameTime());
+      MillLog.major(this,"VILLAGE-SITE-RESERVATION-DEFER project="+project.key+" status="+status);
+      if(project.key.equals(this.buildingGoal)){
+         this.buildingGoal=null;
+         this.buildingGoalLocation=null;
+         this.buildingGoalIssue="ui.nospace";
+         this.noProjectsLeft=false;
+      }
+      return false;
+   }
+
    private boolean findBuildingConstruction(boolean ignoreCost) {
       if (this.buildingGoal == null) {
          return false;
@@ -2412,6 +2438,7 @@ public class Building {
                   if (!ignoreCost && !this.canAffordProject(goalProject.getPlan(this.buildingGoalVariation, this.buildingGoalLevel))) {
                      this.buildingGoalIssue = "ui.lackingresources";
                   } else {
+                      if(!this.validateCoreReservation(goalProject,pendingPlan))return false;
                      BuildingLocation blx;
                      if (this.buildingGoalLocation != null) {
                         blx = this.buildingGoalLocation;
@@ -2541,6 +2568,7 @@ public class Building {
                               this.winfo, this.regionMapper, this.location.pos, this.villageType.radius, MillCommonUtilities.getRandom(), -1
                            );
                         } else if (newProject.location != null) {
+                           if(!this.validateCoreReservation(newProject,plan))return false;
                            location = newProject.location.createLocationForLevel(0);
                         }
                      }
@@ -2901,7 +2929,7 @@ public class Building {
 
             for (BuildingProject project : projectsLevel) {
                project.projectTier = ep;
-               if (project.location == null && this.projectSiteCooldown.deferred(project.key,this.world.getGameTime())) continue;
+               if ((project.location == null || project.location.level < 0) && this.projectSiteCooldown.deferred(project.key,this.world.getGameTime())) continue;
                if ((project.location == null || project.location.level < 0)
                     && (!foundNewBuildingsLevel || VillageProgression.enabled(this))) {
                   if (this.isValidProject(project)) {

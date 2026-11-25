@@ -226,6 +226,11 @@ public class WorldGenVillage {
         }
     }
 
+    private static long layoutArea(BuildingPlan p){
+        return (long)(p.length+p.areaToClearLengthBefore+p.areaToClearLengthAfter)
+            *(p.width+p.areaToClearWidthBefore+p.areaToClearWidthAfter);
+    }
+
     private boolean generateVillage(Point targetPos, Level world, VillageType villageType, Player player, Player closestPlayer, Random random, int minDistance, String name, Point parentVillage, float completionRatio, boolean testBiomeValidity, boolean alwaysSpawn) throws MillLog.MillenaireException {
         List<BuildingLocation> wallLocations;
         boolean biomeValidity;
@@ -331,8 +336,13 @@ public class WorldGenVillage {
             }
         }
         boolean couldBuildKeyBuildings = true;
-        for (BuildingPlanSet planSet : villageType.startBuildings) {
-            location = planSet.getRandomStartingPlan().findBuildingLocation(winfo, regionMapper, thPos, villageType.radius, random, -1);
+        List<BuildingPlan> startingPlans=new ArrayList<>();
+        for(BuildingPlanSet set:villageType.startBuildings)startingPlans.add(set.getRandomStartingPlan());
+        // Preserve the authored order when a starting plan has a proximity dependency.
+        if(startingPlans.stream().noneMatch(p->!p.closeToTag.isEmpty()||!p.farFromTag.isEmpty()))
+            startingPlans.sort(java.util.Comparator.comparingLong(WorldGenVillage::layoutArea).reversed());
+        for(BuildingPlan startingPlan:startingPlans){
+            location=startingPlan.findBuildingLocation(winfo,regionMapper,thPos,villageType.radius,random,-1);
             if (location != null) {
                 plannedBuildings.add(location);
                 areaChanged = winfo.update(world, plannedBuildings, thPos, villageType.radius);
@@ -342,7 +352,7 @@ public class WorldGenVillage {
             }
             couldBuildKeyBuildings = false;
             if (MillConfigValues.LogWorldGeneration < 2) continue;
-            MillLog.minor(this, "Couldn't build " + planSet.key + ".");
+            MillLog.minor(this, "Couldn't build " + startingPlan.buildingKey + ".");
         }
         if (MillConfigValues.LogWorldGeneration >= 3) {
             MillLog.debug(this, "Time taken for finding if building possible: " + (System.nanoTime() - startTime));
@@ -359,6 +369,35 @@ public class WorldGenVillage {
         if (MillConfigValues.LogWorldGeneration >= 1) {
             for (BuildingLocation bl : plannedBuildings) {
                 MillLog.major(this, "Building " + bl.planKey + ": " + bl.minx + "/" + bl.minz + " to " + bl.maxx + "/" + bl.maxz);
+            }
+        }
+        // Bounded future core plot reservation, separate from physical initial builds.
+        List<BuildingLocation> futureSites=new ArrayList<>();
+        if(!villageType.playerControlled&&villageType.isRegularVillage()){
+            List<BuildingPlan> futurePlans=new ArrayList<>();
+            java.util.Set<String> keys=new java.util.HashSet<>();
+            for(BuildingPlanSet set:villageType.coreBuildings){
+                BuildingPlan p=set.getFirstStartingPlan();
+                if(p==null||!keys.add(p.buildingKey)||p.priority<=0||p.price>0||p.isgift||p.isSubBuilding||p.isWallSegment
+                    ||p.requiredGlobalTag!=null||!p.requiredTags.isEmpty()||!p.requiredVillageTags.isEmpty()
+                    ||!p.requiredParentTags.isEmpty()||!p.forbiddenTagsInVillage.isEmpty()
+                    ||!p.closeToTag.isEmpty()||!p.farFromTag.isEmpty())continue;
+                // Avoid ambiguous duplicate keys on save/load (including start/extra/player).
+                if(java.util.Collections.frequency(villageType.coreBuildings,set)>1
+                    ||villageType.startBuildings.stream().anyMatch(x->x.key.equals(set.key))
+                    ||villageType.centreBuilding.key.equals(set.key))continue;
+                futurePlans.add(p);
+            }
+            futurePlans.sort(java.util.Comparator.comparingInt((BuildingPlan p)->p.maleResident.isEmpty()&&p.femaleResident.isEmpty()?0:1)
+                .thenComparingLong(WorldGenVillage::layoutArea).reversed());
+            int probes=0;
+            for(BuildingPlan p:futurePlans){
+                if(futureSites.size()>=3||probes++>=5)break;
+                BuildingLocation reserved=p.findBuildingLocation(winfo,regionMapper,thPos,villageType.radius,random,-1);
+                if(reserved==null)continue;
+                reserved.level=-1;
+                futureSites.add(reserved);
+                winfo.addBuildingLocationToMap(reserved);
             }
         }
         startTime = System.nanoTime();
@@ -407,7 +446,18 @@ public class WorldGenVillage {
                 townHallEntity.registerBuildingLocation(lbp.location);
             }
         }
+        // Native level -1 reservation; bind to original CORE project, never add duplicate EXTRA.
+        var coreProjects=townHallEntity.buildingProjects.get(BuildingProject.EnumProjects.CORE);
+        if(coreProjects!=null)for(BuildingLocation reserved:futureSites){
+            for(BuildingProject project:coreProjects){
+                if(project.location!=null||!project.key.equals(reserved.planKey))continue;
+                project.location=reserved;
+                MillLog.major(townHallEntity,"VILLAGE-SITE-RESERVED project="+project.key+" pos="+reserved.pos);
+                break;
+            }
+        }
         townHallEntity.initialiseVillage();
+        if(!futureSites.isEmpty())townHallEntity.markSaveNeeded();
         if (completionRatio > 0.0f && !villageType.playerControlled) {
             int nbBuildingRushed;
             int nbRushed;

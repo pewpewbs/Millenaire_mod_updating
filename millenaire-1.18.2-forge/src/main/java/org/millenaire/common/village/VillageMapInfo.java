@@ -329,6 +329,37 @@ implements Cloneable {
         }
     }
 
+    /** 1 = valid, 0 = loaded terrain changed, -1 = cannot safely evaluate now. */
+    public int validateReservedSite(BuildingLocation site, org.millenaire.common.buildingplan.BuildingPlan plan, Point centre) {
+        if(world==null||topGround==null||plan==null)return -1;
+        int x=site.pos.getiX()-mapStartX,z=site.pos.getiZ()-mapStartZ;
+        int a=plan.length+plan.areaToClearLengthBefore+plan.areaToClearLengthAfter+2;
+        int d=plan.width+plan.areaToClearWidthBefore+plan.areaToClearWidthAfter+2;
+        int hx=(site.orientation%2==0?a:d)/2,hz=(site.orientation%2==0?d:a)/2;
+        if(x-hx<0||z-hz<0||x+hx>=length||z+hz>=width)return 0;
+        try {
+            VillageMapInfo fresh=this.clone();
+            fresh.buildingLocations.removeIf(l->l.isSameLocation(site));
+            List<BuildingLocation> others=new ArrayList<>(fresh.buildingLocations);
+            fresh.buildingLocations.clear();
+            for(BuildingLocation[] row:fresh.buildingLocRef)java.util.Arrays.fill(row,null);
+            for(BuildingLocation l:others)fresh.addBuildingLocationToMap(l);
+            for(int ix=(x-hx)/16;ix<=(x+hx)/16;ix++)for(int iz=(z-hz)/16;iz<=(z+hz)/16;iz++){
+                int cx=chunkStartX+ix,cz=chunkStartZ+iz;
+                for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++)
+                    if(!world.hasChunk(cx+dx,cz+dz))return -1;
+                if(world instanceof net.minecraft.server.level.ServerLevel server
+                    && server.getChunkSource().getChunkNow(cx,cz)==null)return -1;
+                fresh.updateChunk(ix*16,iz*16);
+            }
+            var result=plan.testSpot(fresh,null,centre,x,z,new java.util.Random(0L),
+                Math.floorMod(site.orientation-plan.buildingOrientation,4),false);
+            return result.location!=null&&result.location.pos.getiY()==site.pos.getiY()?1:0;
+        }catch(CloneNotSupportedException|ThreadSafeUtilities.ChunkAccessException error){
+            MillLog.printException(error);return -1;
+        }
+    }
+
     public void updateNextChunk() {
         if (world == null || length == 0 || width == 0) return;
         updateCounter = (updateCounter + 1) % Math.max(1, frequency);
