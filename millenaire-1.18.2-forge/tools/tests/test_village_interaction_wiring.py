@@ -46,11 +46,31 @@ class VillageInteractionWiring(unittest.TestCase):
         map_info = read("client/gui/text/BuildingMapTooltip.java")
         self.assertIn("record.getHousePos().equals(building.getPos())", map_info)
         self.assertIn("townHall.mw.getVillagerById(record.getVillagerId())", map_info)
-        self.assertIn("crafting.input.entrySet()", map_info)
+        self.assertIn("recipeStacks(crafting.input)", map_info)
         self.assertIn("Live status unavailable", map_info)
         ui = read("client/gui/text/GuiPanelParchment.java")
         self.assertIn("drawPinnedDetail(", ui)
         self.assertIn("pinnedLocation=null;tooltipRefreshNanos=0", ui)
+
+    def test_map_pin_and_overlay(self):
+        ui = read("client/gui/text/GuiPanelParchment.java")
+        self.assertIn("pinLeft=panelLeft;pinTop=panelTop", ui)
+        self.assertIn("closeX=left+w-closeSize", ui)
+        self.assertIn("framePose.translate(left,top,600)", ui)
+        self.assertIn("itemRenderer.blitOffset=700", ui)
+
+    def test_action_groups_and_real_recipes(self):
+        code = read("client/gui/text/BuildingMapTooltip.java")
+        self.assertIn("goal instanceof GoalGenericCooking||goal instanceof GoalGenericTendFurnace", code)
+        self.assertIn("recipeStacks(crafting.output)", code)
+        self.assertIn("recipe.getResultItem().copy()", code)
+
+    def test_ukrainian_goal_labels(self):
+        lang = ROOT.parents[2] / "resources/todeploy/millenaire/languages/uk/strings.txt"
+        data = lang.read_text(encoding="utf-8-sig")
+        for value in ("goal.construction=Будує", "goal.shearsheep=Стриже овець",
+                      "goal.breed=Розводить тварин", "goal.cooksteak=Готує стейки"):
+            self.assertIn(value, data)
 
 if __name__ == "__main__":
     unittest.main()

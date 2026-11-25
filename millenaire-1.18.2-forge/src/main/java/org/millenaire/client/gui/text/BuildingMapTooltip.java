@@ -96,8 +96,6 @@ final class BuildingMapTooltip {
     }
 
     private static void section(List<Line> lines, String title, Goods goods) {
-        if (goods.isEmpty()) return;
-        goods.icons.sort(java.util.Comparator.comparing(stack -> stack.getHoverName().getString()));
         section(lines,title,goods,false);
     }
     private static void section(List<Line> lines,String title,Goods goods,boolean action) {
@@ -338,8 +336,7 @@ final class BuildingMapTooltip {
                 } else if (generic instanceof GoalGenericGatherBlocks gather) {
                     for (var bonus : gather.harvestItem) addItem(extracted, bonus.item);
                 } else if (generic instanceof GoalGenericSlaughterAnimal slaughter) {
-                    extracted.source=source+" | "+label("Animal: ","Тварина: ","Животное: ")+slaughter.animalKey
-                        +" | "+label("Adult herd surplus; chance-based drops","Надлишок дорослого стада; імовірнісна здобич","Избыток взрослого стада; вероятностная добыча");
+                    extracted.source=source+" | "+label("Chance-based drops","Імовірнісна здобич","Вероятностная добыча");
                     for (var bonus : slaughter.bonusItem) addItem(extracted, bonus.item);
                 } else if (generic instanceof GoalGenericCooking cooking && cooking.itemToCook != null
                         && cooking.itemToCook.staticStack != null && townHall.world != null) {
