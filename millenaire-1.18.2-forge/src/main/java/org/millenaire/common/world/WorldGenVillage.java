@@ -423,7 +423,9 @@ public class WorldGenVillage {
         startTime = System.nanoTime();
         TreeClearer.cumulatedTimeTreeFinding = 0L;
         TreeClearer.cumulatedTimeLeaveDecay = 0L;
+        long phase=System.nanoTime();
         List<BuildingPlan.LocationBuildingPair> lbps = villageType.centreBuilding.buildLocation(mw, villageType, (BuildingLocation)plannedBuildings.get(0), true, true, null, false, false, player);
+        reportGenerationStage("build-centre",thPos,phase);
         Building townHallEntity = lbps.get((int)0).building;
         if (MillConfigValues.LogWorldGeneration >= 1) {
             MillLog.major(this, "Registering building: " + townHallEntity);
@@ -437,6 +439,7 @@ public class WorldGenVillage {
             townHallEntity.registerBuildingEntity(lbp.building);
             townHallEntity.registerBuildingLocation(lbp.location);
         }
+        phase=System.nanoTime();
         for (int i = 1; i < plannedBuildings.size(); ++i) {
             BuildingLocation bl = (BuildingLocation)plannedBuildings.get(i);
             BuildingPlanSet planSet = villageType.culture.getBuildingPlanSet(bl.planKey);
@@ -466,6 +469,7 @@ public class WorldGenVillage {
                 townHallEntity.registerBuildingLocation(lbp.location);
             }
         }
+        reportGenerationStage("build-start-buildings",thPos,phase);
         // Native level -1 reservation; bind to original CORE project, never add duplicate EXTRA.
         var coreProjects=townHallEntity.buildingProjects.get(BuildingProject.EnumProjects.CORE);
         if(coreProjects!=null)for(BuildingLocation reserved:futureSites){
@@ -476,7 +480,10 @@ public class WorldGenVillage {
                 break;
             }
         }
+        phase=System.nanoTime();
         townHallEntity.initialiseVillage();
+        reportGenerationStage("initialise-village",thPos,phase);
+        phase=System.nanoTime();
         if(!futureSites.isEmpty())townHallEntity.markSaveNeeded();
         if (completionRatio > 0.0f && !villageType.playerControlled) {
             int nbBuildingRushed;
@@ -502,6 +509,7 @@ public class WorldGenVillage {
             townHallEntity.resetConstructionsAndGoals();
             MillLog.temp(townHallEntity, "Finished rushing at " + nbBuildingRushed + " on " + nbRushedBuildingsTarget + ".");
         }
+        reportGenerationStage("rush-construction",thPos,phase);
         String playerName = null;
         if (closestPlayer != null) {
             playerName = closestPlayer.getName().getString();
