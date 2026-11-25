@@ -141,6 +141,27 @@ public class MillEventController {
                 && !event.getPlayer().isShiftKeyDown()) event.setCanceled(true);
     }
 
+    private static final String NPC_ANIMAL_KILL = "millenaire:npc_animal_kill";
+
+    // Capture the actual fatal damage source, not the most recent player hit.
+    // XP may be emitted later during death ticking.
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
+    public void markNpcAnimalDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
+        LivingEntity victim = event.getEntityLiving();
+        if (victim.level.isClientSide) return;
+        boolean animal = victim instanceof net.minecraft.world.entity.animal.Animal
+                || victim instanceof net.minecraft.world.entity.animal.WaterAnimal;
+        victim.getPersistentData().putBoolean(NPC_ANIMAL_KILL,
+                animal && event.getSource().getEntity() instanceof MillVillager);
+    }
+
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
+    public void suppressNpcAnimalExperience(net.minecraftforge.event.entity.living.LivingExperienceDropEvent event) {
+        if (event.getEntityLiving().level.isClientSide) return;
+        if (event.getEntityLiving().getPersistentData().getBoolean(NPC_ANIMAL_KILL))
+            event.setDroppedExperience(0);
+    }
+
     @SubscribeEvent
     public void addInuitDrops(LivingDropsEvent event) {
         if (event.getEntityLiving().level.isClientSide) return;

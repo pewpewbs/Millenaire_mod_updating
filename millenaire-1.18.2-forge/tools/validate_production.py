@@ -30,6 +30,10 @@ def main():
             JAVA / "village/PenAllocationRules.java",
             ROOT / "tools/tests/VillageInteractionRulesSmoke.java")
         run("java","-cp",classes,"VillageInteractionRulesSmoke")
+        run("javac","--release","17","-d",classes,
+            JAVA / "goal/generic/SeedSurplusPolicy.java",
+            ROOT / "tools/tests/SeedSurplusSmoke.java")
+        run("java","-cp",classes,"SeedSurplusSmoke")
     from audit_production import audit, DEFAULT_DATA, DEFAULT_JAVA
     result = audit(DEFAULT_DATA, DEFAULT_JAVA, True)
     output = ROOT / "tools/reports/production_audit.json"

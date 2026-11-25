@@ -48,6 +48,9 @@ extends GoalGeneric {
     @ConfigAnnotations.ConfigField(type=AnnotedParameter.ParameterType.INVITEM)
     @ConfigAnnotations.FieldDocumentation(explanation="Boons for irrigated villages.")
     public InvItem irrigationBonusCrop = null;
+    @ConfigAnnotations.ConfigField(type=AnnotedParameter.ParameterType.INVITEM, paramName="surplusseed")
+    @ConfigAnnotations.FieldDocumentation(explanation="Optional secondary seed output capped by planting/feed/trade stock demand. Never designate the main crop.")
+    public InvItem surplusSeed = null;
     @ConfigAnnotations.ConfigField(type=AnnotedParameter.ParameterType.BLOCKSTATE)
     @ConfigAnnotations.FieldDocumentation(explanation="Blockstate the crop must have to be harvested. If not set, must have a meta of 7.")
     public BlockState harvestBlockState = null;
@@ -141,7 +144,13 @@ extends GoalGeneric {
             Building dest = villager.getGoalBuildingDest();
             for (AnnotedParameter.BonusItem bonusItem : this.harvestItem) {
                 if (bonusItem.tag != null && (dest == null || !dest.containsTags(bonusItem.tag)) || MillCommonUtilities.randomInt(100) > bonusItem.chance) continue;
-                villager.addToInv(bonusItem.item, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
+                int amount = org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1);
+                if (this.surplusSeed != null && this.surplusSeed.matches(bonusItem.item)
+                        && !this.harvestItem.isEmpty() && !this.surplusSeed.matches(this.harvestItem.get(0).item)
+                        && (this.irrigationBonusCrop == null || !this.surplusSeed.matches(this.irrigationBonusCrop))) {
+                    amount = SeedStockBudget.allowed(villager, dest, this.cropType, bonusItem.item, amount);
+                }
+                if (amount > 0) villager.addToInv(bonusItem.item, amount);
             }
             if (villager.getBlock(villager.getGoalDestPoint().getAbove()) instanceof DoublePlantBlock) {
                 villager.setBlockAndMetadata(villager.getGoalDestPoint().getAbove(), Blocks.AIR, 0);
