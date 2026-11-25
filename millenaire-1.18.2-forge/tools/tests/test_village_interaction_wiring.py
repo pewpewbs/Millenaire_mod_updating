@@ -47,7 +47,7 @@ class VillageInteractionWiring(unittest.TestCase):
 
     def test_map_details_use_real_records_and_recipe_inputs(self):
         map_info = read("client/gui/text/BuildingMapTooltip.java")
-        self.assertIn("record.getHousePos().sameBlock(loc.pos)", map_info)
+        self.assertIn("record.getHousePos().sameBlock(loc.chestPos)", map_info)
         self.assertIn("townHall.mw.getVillagerById(record.getVillagerId())", map_info)
         self.assertIn("recipeStacks(crafting.input)", map_info)
         self.assertIn("Live status unavailable", map_info)
@@ -87,7 +87,10 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertIn("point.getSpecialType()", code)
         self.assertIn("getPreviousBuildingPlan()", code)
         self.assertIn("woodspawnTypes.values()", code)
-        self.assertIn("DyeColor.values()", code)
+        self.assertNotIn("DyeColor.values()", code)
+        self.assertIn("new ItemStack(Items.WHITE_WOOL)",code)
+        self.assertIn("Colour depends on the sheep",code)
+        self.assertIn("animal.getColor().getName()",read("common/goal/GoalShearSheep.java"))
         self.assertNotIn("getChunk(", code)
 
     def test_portraits_and_count_overlay_use_synced_data_and_vanilla_renderer(self):
@@ -120,7 +123,8 @@ class VillageInteractionWiring(unittest.TestCase):
             self.assertIn("ProductionCapability.animalGoods(", source)
         self.assertIn('label("Slaughters animals","Забиває тварин"', ui)
         self.assertIn('label("Plants crops","Садить культури"', ui)
-        self.assertIn("if(maximum>0)add", ui)
+        self.assertIn("if(maximum>0){",ui)
+        self.assertIn("if(loc.level==maximum)nameColor=GOLD",ui)
         self.assertNotIn('label("Irrigation bonus"', ui)
         self.assertIn('hasTag(loc,building,plan,"inn")', ui)
         self.assertIn("getCount()>1?Integer.toString", read("client/gui/text/GuiPanelParchment.java"))
@@ -129,7 +133,7 @@ class VillageInteractionWiring(unittest.TestCase):
         ui = read("client/gui/text/BuildingMapTooltip.java")
         staff = ui.split("private static void staff(",1)[1].split("static List<Line> describe(",1)[0]
         self.assertIn("townHall.getMapResidentRecords()",staff)
-        self.assertIn("record.getHousePos().sameBlock(loc.pos)",staff)
+        self.assertIn("record.getHousePos().sameBlock(loc.chestPos)",staff)
         self.assertNotIn("building!=null",staff)
         self.assertIn("records==null",staff)
         self.assertIn("if(type.isChild)children++;else filled++;",staff)
@@ -142,14 +146,37 @@ class VillageInteractionWiring(unittest.TestCase):
 
     def test_map_housing_trade_patrol_and_compact_header(self):
         ui=read("client/gui/text/BuildingMapTooltip.java")
-        self.assertIn("MillItems.DENIER_OR",ui)
+        self.assertIn("MillItems.PURSE",ui)
         self.assertIn('label("Housing","Житло"',ui)
         self.assertIn("Items.WHITE_BED",ui)
-        self.assertIn('hasTag(loc,building,plan,"patrol")',ui)
-        self.assertLess(ui.index("MillItems.DENIER_OR"),ui.index('section(lines,label("Purpose:"'))
+        self.assertIn('visitPurpose(loc,building,plan,"patrol")',ui)
+        self.assertLess(ui.index("MillItems.PURSE"),ui.index('section(lines,label("Purpose:"'))
         gui=read("client/gui/text/GuiPanelParchment.java")
         self.assertIn("int y = 0; // keep the title",gui)
         self.assertIn("headerReserve=y<12?16:0",gui)
+
+    def test_map_uses_house_registration_key_and_distinct_resource_groups(self):
+        ui=read("client/gui/text/BuildingMapTooltip.java")
+        self.assertIn("record.getHousePos().sameBlock(loc.chestPos)",ui)
+        self.assertNotIn("record.getHousePos().sameBlock(loc.pos)",ui)
+        self.assertIn("if(loc.culture==null||loc.level<0)return;",ui)
+        self.assertIn("this.pos = location.chestPos",read("common/village/Building.java"))
+        self.assertIn("getBuilding(this.chestPos)",read("common/village/BuildingLocation.java"))
+        for label in ("Може добувати:","Може збирати:","Може отримувати:","Вирощує:"):
+            self.assertIn(label,ui)
+        self.assertNotIn("Імовірнісна здобич",ui)
+        self.assertNotIn("Може добувати / збирати",ui)
+        self.assertIn("Items.IRON_SHOVEL",ui)
+        self.assertIn("GoalGenericTakeFromBuilding)continue",ui)
+        self.assertIn("visit.targetVillagerGoals==null",ui)
+        self.assertIn("residents.isEmpty()&&workers.stream()",ui)
+
+    def test_lone_building_discovery_includes_ordinary_structures(self):
+        world=read("common/world/MillWorldData.java")
+        registration=world.split("public void registerLoneBuildingsLocation(",1)[1].split("public void registerVillageLocation(",1)[0]
+        self.assertIn("command.newlonebuildingfound",registration)
+        self.assertNotIn("!type.keyLonebuilding",registration)
+        self.assertIn("!newVillage || world.isClientSide",registration)
 
     def test_current_stock_overrides_stale_missing_label_not_other_status(self):
         panel=read("common/village/buildingmanagers/PanelContentGenerator.java")
