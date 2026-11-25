@@ -41,6 +41,29 @@ class SessionStability(unittest.TestCase):
         self.assertIn("MILL-SLOW stage=village-tickets",code)
         self.assertIn("this.chunkLoader.chunksLoaded",read("common/village/Building.java"))
 
+    def test_loaded_area_gate_and_slow_building_stages(self):
+        code=read("common/village/Building.java")
+        gate=code.split("boolean isVillageChunksLoaded()",1)[1].split("private void killMobs()",1)[0]
+        self.assertIn("this.winfo.width<=0",gate)
+        self.assertIn("chunkProvider.getChunkNow(x,z)==null",gate)
+        self.assertNotIn("chunkProvider.hasChunk(",gate)
+        for stage in ("activation","grove","pens","signs","initial-packets","refresh-goods"):
+            self.assertIn('reportSlowBuildingPart("'+stage+'"',code)
+
+    def test_compact_acacia_is_scoped_and_respects_growth_veto(self):
+        building=read("common/village/Building.java")
+        self.assertIn('family==WoodVariant.ACACIA && this.containsTags("grove")',building)
+        self.assertIn('"acaciaspawn".equals(this.resManager.woodspawnTypes.get',building)
+        code=read("common/village/GroveAcaciaGrowth.java")
+        self.assertIn("getChunkNow(x,z)==null",code)
+        self.assertNotIn("getChunk(",code)
+        self.assertIn("!world.getBlockState(p).isAir()",code)
+        self.assertIn("sapling.canSurvive(world,pos)",code)
+        self.assertIn("ForgeEventFactory.blockGrowFeature",code)
+        self.assertIn("event.getResult()==Event.Result.DENY",code)
+        self.assertIn("if(!grown&&world.getBlockState(pos).isAir())world.setBlock(pos,sapling,4)",code)
+        self.assertIn("new StraightTrunkPlacer(4,0,0)",code)
+
     def test_progression_decisions_and_retired_config(self):
         planner=read("common/village/VillageProgression.java")
         for reason in ("no-eligible-project","centre-style","construction-supplier","operating-supplier","rank"):
