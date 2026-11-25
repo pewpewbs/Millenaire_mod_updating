@@ -59,6 +59,13 @@ public class WorldGenVillage {
         return chunkCoordsTried.computeIfAbsent(world, ignored -> new java.util.HashSet<>());
     }
 
+    private void reportGenerationStage(String stage, Point pos, long started) {
+        long elapsed = System.nanoTime() - started;
+        if (elapsed >= 100_000_000L)
+            MillLog.major(this, "MILL-SLOW stage=village-" + stage + " pos=" + pos
+                    + " ms=" + elapsed / 1_000_000L);
+    }
+
     private static net.minecraft.core.BlockPos spawnPosition(Level world) {
         var data = world.getLevelData();
         return new net.minecraft.core.BlockPos(data.getXSpawn(), data.getYSpawn(), data.getZSpawn());
@@ -233,28 +240,33 @@ public class WorldGenVillage {
 
     private boolean generateVillage(Point targetPos, Level world, VillageType villageType, Player player, Player closestPlayer, Random random, int minDistance, String name, Point parentVillage, float completionRatio, boolean testBiomeValidity, boolean alwaysSpawn) throws MillLog.MillenaireException {
         List<BuildingLocation> wallLocations;
-        boolean biomeValidity;
-        if (testBiomeValidity && !(biomeValidity = this.isInValidBiomes(world, villageType, targetPos))) {
-            return false;
-        }
+        long stageStarted = System.nanoTime();
+        boolean validBiome = !testBiomeValidity || this.isInValidBiomes(world, villageType, targetPos);
+        reportGenerationStage("biome", targetPos, stageStarted);
+        if (!validBiome) return false;
         VillageMapInfo winfo = new VillageMapInfo();
         ArrayList<BuildingLocation> plannedBuildings = new ArrayList<BuildingLocation>();
         MillWorldData mw = Mill.getMillWorld(world);
         targetPos = new Point(targetPos.x, WorldUtilities.findTopSoilBlock(world, targetPos.getiX(), targetPos.getiZ()), targetPos.z);
         // Claim radii, not just centre-to-centre limits, must not intersect.
         if (overlapsExistingVillageTerritory(mw, targetPos, villageType)) return false;
+        stageStarted = System.nanoTime();
         for (int x = targetPos.getChunkX() - villageType.radius / 16 - 1; x <= targetPos.getChunkX() + villageType.radius / 16; ++x) {
             for (int z = targetPos.getChunkZ() - villageType.radius / 16 - 1; z <= targetPos.getChunkZ() + villageType.radius / 16; ++z) {
                 if (world.hasChunk(x, z)) continue;
                 world.getChunk(x, z);
             }
         }
+        reportGenerationStage("chunk-preparation", targetPos, stageStarted);
+        stageStarted = System.nanoTime();
         winfo.update(world, plannedBuildings, targetPos, villageType.radius);
+        reportGenerationStage("terrain-map", targetPos, stageStarted);
         if (!alwaysSpawn && !this.isUsableArea(winfo, targetPos, villageType.radius)) {
             return false;
         }
         long startTime = System.nanoTime();
         BuildingLocation location = villageType.centreBuilding.getRandomStartingPlan().findBuildingLocation(winfo, null, targetPos, villageType.radius, random, 3);
+        reportGenerationStage("centre-site", targetPos, startTime);
         if (location == null) {
             if (MillConfigValues.LogWorldGeneration >= 2) {
                 MillLog.minor(this, "Could not find place for central building: " + villageType.centreBuilding);
@@ -313,6 +325,7 @@ public class WorldGenVillage {
         if (MillConfigValues.LogWorldGeneration >= 2) {
             MillLog.minor(this, "Place found for TownHall (village type: " + villageType.key + "). Checking for the rest.");
         }
+        stageStarted = System.nanoTime();
         plannedBuildings.add(location);
         winfo.update(world, plannedBuildings, thPos, villageType.radius);
         RegionMapper regionMapper = new RegionMapper();
@@ -350,13 +363,17 @@ public class WorldGenVillage {
                 regionMapper.createConnectionsTable(winfo, thPos);
                 continue;
             }
+            // One missing mandatory start building already rejects the entire layout.
+            // Do not scan the remaining plans of a village that cannot be generated.
             couldBuildKeyBuildings = false;
-            if (MillConfigValues.LogWorldGeneration < 2) continue;
-            MillLog.minor(this, "Couldn't build " + startingPlan.buildingKey + ".");
+            if (MillConfigValues.LogWorldGeneration >= 2)
+                MillLog.minor(this, "Couldn't build " + startingPlan.buildingKey + ".");
+            break;
         }
         if (MillConfigValues.LogWorldGeneration >= 3) {
             MillLog.debug(this, "Time taken for finding if building possible: " + (System.nanoTime() - startTime));
         }
+        reportGenerationStage("start-layout", thPos, stageStarted);
         if (!couldBuildKeyBuildings) {
             if (player != null) {
                 ServerSender.sendTranslatedSentence(player, '6', "ui.generatenotenoughspacevillage", new String[0]);
@@ -372,6 +389,7 @@ public class WorldGenVillage {
             }
         }
         // Bounded future core plot reservation, separate from physical initial builds.
+        stageStarted = System.nanoTime();
         List<BuildingLocation> futureSites=new ArrayList<>();
         if(!villageType.playerControlled&&villageType.isRegularVillage()){
             List<BuildingPlan> futurePlans=new ArrayList<>();
@@ -400,6 +418,7 @@ public class WorldGenVillage {
                 winfo.addBuildingLocationToMap(reserved);
             }
         }
+        reportGenerationStage("reserve-sites", thPos, stageStarted);
         startTime = System.nanoTime();
         TreeClearer.cumulatedTimeTreeFinding = 0L;
         TreeClearer.cumulatedTimeLeaveDecay = 0L;
@@ -498,6 +517,8 @@ public class WorldGenVillage {
         if (MillConfigValues.LogWorldGeneration >= 1) {
             MillLog.major(this, "New village generated at " + thPos + ", took: " + (System.nanoTime() - startTime) / 1000000L + " ms, of which tree finding: " + TreeClearer.cumulatedTimeTreeFinding / 1000000L + "ms and leave & log decay: " + TreeClearer.cumulatedTimeLeaveDecay / 1000000L + "ms.");
         }
+        reportGenerationStage("build-and-register", thPos, startTime);
+        stageStarted = System.nanoTime();
         for (String key : villageType.hamlets) {
             VillageType hamlet = villageType.culture.getVillageType(key);
             if (hamlet == null) continue;
@@ -506,6 +527,7 @@ public class WorldGenVillage {
             }
             this.generateHamlet(world, hamlet, townHallEntity.getPos(), townHallEntity.getVillageNameWithoutQualifier(), random, completionRatio);
         }
+        reportGenerationStage("hamlets", thPos, stageStarted);
         return true;
     }
 
@@ -679,14 +701,19 @@ public class WorldGenVillage {
     }
 
     private Point generateVillageAtPoint_checkForUnloaded(Level world, int x, int y, int z, Player generatingPlayer, Point p, int villageRadius) {
+        long started = System.nanoTime();
         boolean areaLoaded = false;
         int chunkRadius = villageRadius / 16 + 2;
-        if (!WorldUtilities.checkChunksGenerated(world, x - 16 * chunkRadius, z - 16 * chunkRadius, x + 16 * chunkRadius, z + 16 * chunkRadius)) {
+        // The 17x17 candidate grid contains heavily overlapping rectangles.
+        // Cache both results only for this read-only attempt, not across ticks.
+        VillageGenerationProbe probe = new VillageGenerationProbe(
+                (cx, cz) -> WorldUtilities.isChunkGenerated(world, cx, cz));
+        if (!probe.checkArea(x - 16 * chunkRadius, z - 16 * chunkRadius, x + 16 * chunkRadius, z + 16 * chunkRadius)) {
             for (int i = -8; i <= 8 && !areaLoaded; ++i) {
                 for (int j = -8; j <= 8 && !areaLoaded; ++j) {
                     int tx = x + i * 16;
                     int tz = z + j * 16;
-                    if (triedChunks(world).contains(this.computeChunkCoordsHash(tx, tz)) || !WorldUtilities.checkChunksGenerated(world, tx - 16 * chunkRadius, tz - 16 * chunkRadius, tx + 16 * chunkRadius, tz + 16 * chunkRadius)) continue;
+                    if (triedChunks(world).contains(this.computeChunkCoordsHash(tx, tz)) || !probe.checkArea(tx - 16 * chunkRadius, tz - 16 * chunkRadius, tx + 16 * chunkRadius, tz + 16 * chunkRadius)) continue;
                     areaLoaded = true;
                     p = new Point((tx >> 4) * 16 + 8, 0.0, (tz >> 4) * 16 + 8);
                 }
@@ -694,6 +721,11 @@ public class WorldGenVillage {
         } else {
             areaLoaded = true;
         }
+        long elapsed = System.nanoTime() - started;
+        if (elapsed >= 100_000_000L)
+            MillLog.major(this, "MILL-SLOW stage=village-area-check pos=" + x + "/" + z
+                    + " ms=" + elapsed / 1_000_000L + " probes=" + probe.uniqueChecks()
+                    + " cacheHits=" + probe.cacheHits() + " found=" + areaLoaded);
         if (!areaLoaded) {
             if (generatingPlayer != null) {
                 ServerSender.sendTranslatedSentence(generatingPlayer, '6', "ui.worldnotgenerated", new String[0]);
