@@ -16,6 +16,8 @@
 - Prepare one FULL chunk per active loader via temporary vanilla ticket; promote to original Forge ticking ticket only when getChunkNow succeeds. Shared per-world admission budget, slows >=40 MSPT, pauses >=50; timeout and release on inactivity. Cache required rectangle while stable. Fix activation axis mismatch; avoid cold chest link reads and duplicate lookup. Add diagnostic timings for save, chest links, inn, visitors, spawn, unlock, exploration, terrain refresh and construction queue.
 - Cache terrain classifications per synchronous chunk scan only, preserve state-dependent log tags and terrain criteria. No changes to construction transaction, navigation or other mods. Source guards updated; build and in-game tests not yet run; original 1482 stalls not declared fixed. Forge promotion/removal can still have synchronous costs.
 
+- Added subsystem timings MILL-STARTUP and final generation phase timings for centre, initial buildings, village initialization, rush construction. Chest guard checks actual FULL via getChunkNow. Startup and final synchronous build are measured, not claimed optimized in full; no unsafe background registry/world mutations.
+
 ### 25.11.2026 — MAP-SEMANTICS / GROVE-ACACIA / LIVE-GENERATION
 
 - Звіт користувача: 17 скриншотів Hagios Nikolaos і latest(20261125-212112).log (21:24:59–22:20:44, 33 721 рядків). VILLAGE-PREP: 13 кандидатів, 4 завершені підготовки, 3 layout-rejected, 1 успішна генерація (byzantines/religiousvillage, -3615/71/2623; build 4311 ms), 65 pause/65 resume. View distance 8, simulation distance 10. Три окремі споруди: lonedislogcabin (Inuit), loneinn і abandonedmill (Norman). Це підтверджує роботу черги, але не гарантує частоту спавну на 2–4 чанках і не усуває синхронний фінальний build.
