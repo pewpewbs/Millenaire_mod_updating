@@ -23,6 +23,19 @@ final class VillageProgression {
     private static final Map<BuildingPlan, Set<String>> PALETTES = new WeakHashMap<>();
     private static final Map<BuildingPlan, Set<InvItem>> QUARRY_OUTPUTS = new WeakHashMap<>();
     private VillageProgression() {}
+    private static final Map<Building,Long> LAST_DECISION_LOG=new WeakHashMap<>();
+    private static void decision(Building v,String reason,Candidate chosen,BuildingPlan target,int count){
+        long now=v.world.getGameTime();
+        Long last=LAST_DECISION_LOG.get(v);
+        if(last!=null&&now>=last&&now-last<200L)return;
+        LAST_DECISION_LOG.put(v,now);
+        Set<InvItem> missing=new LinkedHashSet<>();
+        if(target!=null)missing(v,target.resCost,missing);
+        MillLog.major(v,"VILLAGE-PROGRESSION decision="+reason+" selected="
+                +(chosen==null?"none":chosen.project().key+"/"+chosen.plan().level)
+                +" target="+(target==null?"none":target.buildingKey+"/"+target.level)
+                +" candidates="+count+" missing="+missing);
+    }
 
     static boolean enabled(Building v) {
         return v != null && v.isTownhall && v.villageType != null && v.villageType.isRegularVillage()
@@ -132,7 +145,7 @@ final class VillageProgression {
                             boolean affordable, boolean ignoreCost) {
         StyleGate gate = styleGate(v,ignoreCost);
         List<Candidate> options = candidates(v,projects,affordable,ignoreCost,gate);
-        if (options.isEmpty()) return null;
+        if (options.isEmpty()) {decision(v,"no-eligible-project",null,waiting,0);return null;}
         if (gate.centre() != null && !gate.locked().isEmpty()) {
             boolean dependent = v.getFlatProjectList().stream().anyMatch(p ->
                     p.planSet != null && gate.blocks(p.getNextBuildingPlan(false)));
@@ -141,6 +154,7 @@ final class VillageProgression {
                     if (MillConfigValues.LogBuildingPlan >= 1)
                         MillLog.major(v, "VILLAGE-PROGRESSION centre=" + c.project().key
                                 + " level=" + c.plan().level + " lockedStyles=" + gate.locked());
+                    decision(v,"centre-style",c,waiting,options.size());
                     return c;
                 }
         }
@@ -149,10 +163,12 @@ final class VillageProgression {
         BuildingPlan target = waiting != null ? waiting : preferred.plan();
         if (!ignoreCost && !v.canAffordProgression(target,false)) {
             Candidate supplier = prerequisite(v,options,target,affordable);
-            if (supplier != null) return supplier;
+            if (supplier != null) {decision(v,"construction-supplier",supplier,target,options.size());return supplier;}
         }
         Candidate operating = operatingSupplier(v,options,preferred.plan(),ignoreCost);
-        return operating == null ? preferred : operating;
+        Candidate chosen=operating==null?preferred:operating;
+        decision(v,operating==null?"rank":"operating-supplier",chosen,target,options.size());
+        return chosen;
     }
 
     static Candidate replacement(Building v, List<BuildingProject> projects, BuildingPlan waiting, boolean ignoreCost) {
