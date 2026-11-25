@@ -35,28 +35,43 @@ class SessionStability(unittest.TestCase):
 
     def test_chunk_ticket_batch_and_activation_gate(self):
         code=read("common/forge/BuildingChunkLoader.java")
-        self.assertIn("getChunkNow(pending.x,pending.z)==null",code)
-        self.assertIn("addRegionTicket(PREPARE,chunk,0,owner.asLong())",code)
-        self.assertIn("removeRegionTicket(PREPARE,pending,0,owner.asLong())",code)
-        self.assertIn("if(!takeBudget(world,tick))return;",code)
-        self.assertIn("mspt>=50",code)
-        self.assertIn("cachedLength!=info.length",code)
+        self.assertIn("MAX_READY_PER_TICK=4",code)
+        self.assertIn("getChunkNow(chunk.x,chunk.z)==null",code)
+        self.assertEqual(code.count("claim(world,cold,tick)"),1)
+        self.assertNotIn("getAverageTickTime()",code)
+        self.assertNotIn("addRegionTicket",code)
         self.assertIn("if(lastLoadTick==tick)return",code)
         self.assertIn("forcedChunks.containsAll(required)",code)
         self.assertIn("MILL-SLOW stage=village-tickets",code)
-        self.assertIn("this.chunkLoader.chunksLoaded",read("common/village/Building.java"))
 
     def test_loaded_area_gate_and_slow_building_stages(self):
         code=read("common/village/Building.java")
-        gate=code.split("boolean isVillageChunksLoaded()",1)[1].split("private void killMobs()",1)[0]
-        self.assertIn("this.winfo.width<=0",gate)
+        gate=code.split("boolean isVillageChunksLoaded(",1)[1].split("private void killMobs()",1)[0]
         self.assertIn("chunkProvider.getChunkNow(x,z)==null",gate)
         self.assertNotIn("chunkProvider.hasChunk(",gate)
-        self.assertIn("mapStartX+this.winfo.length-1",gate)
-        self.assertIn("mapStartZ+this.winfo.width-1",gate)
+        self.assertIn("bounds.startX()+bounds.length()/16",gate)
+        self.assertIn("bounds.startZ()+bounds.width()/16",gate)
         self.assertIn("getChunkNow(p.getChunkX(),p.getChunkZ())==null)continue;",code)
         for stage in ("activation","grove","pens","signs","initial-packets","refresh-goods"):
             self.assertIn('reportSlowBuildingPart("'+stage+'"',code)
+
+    def test_cold_saved_village_bootstraps_before_active_gate(self):
+        code=read("common/village/Building.java")
+        bounds=code.split("ActivationBounds getActivationBounds()",1)[1].split("private boolean isVillageChunksLoaded(",1)[0]
+        self.assertIn("return VillageMapInfo.activationBounds(this.activationLocations()",bounds)
+        update=code.split("public void updateBuildingServer()",1)[1].split("private boolean updateConstructionQueue",1)[0]
+        self.assertLess(update.index("this.loadChunks(bounds)"),update.index("this.isVillageChunksLoaded(bounds)"))
+        self.assertLess(update.index("this.updateWorldInfo()"),update.index("this.isActive = true"))
+        self.assertLess(update.index("this.isActive = true"),update.index("if (!this.isActive)"))
+        self.assertNotIn("this.chunkLoader.chunksLoaded",update)
+        self.assertIn("MILL-ACTIVATION waiting",update)
+        self.assertIn("MILL-ACTIVATION active",update)
+        terrain=read("common/village/VillageMapInfo.java")
+        geometry=terrain.split("static ActivationBounds activationBounds(",1)[1].split("public boolean update(",1)[0]
+        self.assertNotIn("getChunk",geometry)
+        self.assertIn("location.length/2",geometry)
+        self.assertIn("location.width/2",geometry)
+        self.assertIn("ActivationBounds bounds=activationBounds(locations,centre,radius)",terrain)
 
     def test_compact_acacia_is_scoped_and_respects_growth_veto(self):
         building=read("common/village/Building.java")
