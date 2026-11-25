@@ -328,6 +328,11 @@ public class MillConfigValues {
         return result;
     }
 
+    private static boolean isRetiredConfig(String key){
+        return java.util.Set.of("village_list_key","quest_list_key","escort_key",
+                "generate_colour_chart","generate_goods_list").contains(key);
+    }
+
     private static boolean readConfigFile(File file, boolean defaultFile) {
         if (!file.exists()) {
             return false;
@@ -416,6 +421,7 @@ public class MillConfigValues {
                     validationKey = Long.parseLong(value.trim());
                     continue;
                 }
+                if(isRetiredConfig(key))continue;
                 MillLog.error(null, "Unknown config on line: " + line);
             }
             reader.close();
@@ -520,6 +526,10 @@ public class MillConfigValues {
                             configsWritten.add(configParameters.get(key));
                             handled = true;
                         }
+                    } else if (isRetiredConfig(key)) {
+                        // Preserve old values as comments rather than silently deleting them.
+                        toWrite.add("// Legacy (unused in Forge port): "+line);
+                        handled=true;
                     } else if (key.equals("random_uid")) {
                         if (Long.parseLong((String)value) > 0L) {
                             randomUidSaved = true;
