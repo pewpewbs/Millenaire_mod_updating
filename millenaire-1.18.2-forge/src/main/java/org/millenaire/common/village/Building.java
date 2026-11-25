@@ -6063,7 +6063,7 @@ public class Building {
                   if (MillCommonUtilities.chanceOn(100)) {
                      long began=System.nanoTime();
                      for (Point p : this.resManager.chests) {
-                        if(!this.world.hasChunkAt(p.getBlockPos()))continue;
+                        if(((ServerLevel)this.world).getChunkSource().getChunkNow(p.getChunkX(),p.getChunkZ())==null)continue;
                         TileEntityLockedChest chest=p.getMillChest(this.world);
                         if(chest!=null)chest.buildingPos=this.getPos();
                      }
