@@ -138,6 +138,24 @@ class VillageInteractionWiring(unittest.TestCase):
         send = building.split("public void sendMapInfo(Player player)",1)[1].split("public void sendShopPacket",1)[0]
         self.assertIn("this.getTownHall().sendBuildingPacket(player,false)",send)
 
+    def test_map_housing_trade_patrol_and_compact_header(self):
+        ui=read("client/gui/text/BuildingMapTooltip.java")
+        self.assertIn("MillItems.DENIER_OR",ui)
+        self.assertIn('label("Housing","Житло"',ui)
+        self.assertIn("Items.WHITE_BED",ui)
+        self.assertIn('hasTag(loc,building,plan,"patrol")',ui)
+        self.assertLess(ui.index("MillItems.DENIER_OR"),ui.index('section(lines,label("Purpose:"'))
+        gui=read("client/gui/text/GuiPanelParchment.java")
+        self.assertIn("int y = 0; // keep the title",gui)
+        self.assertIn("headerReserve=y<12?16:0",gui)
+
+    def test_current_stock_overrides_stale_missing_label_not_other_status(self):
+        panel=read("common/village/buildingmanagers/PanelContentGenerator.java")
+        self.assertIn('"ui.lackingresources".equals(house.buildingGoalIssue)',panel)
+        self.assertIn('"ui.lackingresources".equals(townHall.buildingGoalIssue)',panel)
+        self.assertEqual(panel.count("res.stream().allMatch(key->resHas.get(key)>=resCost.get(key))"),2)
+        self.assertIn('"поза спостереженням"',panel)
+
     def test_ukrainian_goal_labels(self):
         lang = ROOT.parents[2] / "resources/todeploy/millenaire/languages/uk/strings.txt"
         data = lang.read_text(encoding="utf-8-sig")
