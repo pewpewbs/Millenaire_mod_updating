@@ -2,35 +2,35 @@
 //* First half of the line (till the /) is in the villagers' language and must be kept as-is, second part should be translated
 
 newchat;key:sun,tag:notraining,weigth:18
-v1;0;Latreuo tis ilióloustes méres! / Я люблю сонячні дні!
-v2;30;Se poion den aresoun? / А хто не любить?
+v1;0;Latreuo tis ilióloustes méres! / Люблю сонячні дні!
+v2;30;Se poion den aresoun? / А хто їх не любить?
 
 newchat;key:nicevillage,weigth:10
-v1;0;Einai panta efxaristo na xazeueis to xorio mas, etsi den einai? / Завжди приємно побачити нашу чарівну маленьку селищу, чи не так?
-v2;30;Fysiká, kai eínai etsi logo ton terástion prospatheión mas! / Очевидно, це результат наших зусиль!
+v1;0;Einai panta efxaristo na xazeueis to xorio mas, etsi den einai? / Завжди приємно милуватися нашим чарівним селом, чи не так?
+v2;30;Fysiká, kai eínai etsi logo ton terástion prospatheión mas! / Звісно, це плід наших зусиль!
 
 newchat;key:sunZombie,tag:notraining,weigth:2
-v1;0;latreuo tis ilióloustes méres! / Я люблю сонячні дні!
-v2;30;Se poion den aresoun? / А хто не любить?
-v1;60;Se emena. / А я — ні.
+v1;0;latreuo tis ilióloustes méres! / Люблю сонячні дні!
+v2;30;Se poion den aresoun? / А хто їх не любить?
+v1;60;Se emena. / Я не люблю.
 v2;120;Giatí óchi? / Чому?
-v1;150;O ílios kaíei! Misó tin kapsa! / Сонце пече!  Не люблю бути надворі!
+v1;150;O ílios kaíei! Misó tin kapsa! / Сонце пече! Ненавиджу виходити надвір!
 v2;180;Fainesai psofios! / Ти поводишся як зомбі!
-v1;210;Ísos eímai ... / Можливо, я...
+v1;210;Ísos eímai ... / Може, я і є зомбі…
 
 newchat;key:nothomeyet,weigth:6
-v1;0;Einai panta efxaristo na xazeueis to xorio mas, etsi den einai? / Завжди приємно побачити нашу мілу селищу, чи не так?
-v2;30;Fysiká eínai! Éxoume ksodépsei tóso polý chróno douleuontas se aftó to méros. / Звичайно, це так!  Ми багато часу працювали над цим місцем.
-v1;60;Eínai sxedón san tin mitropoli, ópos prin erthoume edó. / Це майже як удома, як до того, як ми прийшли сюди.
-v2;90;Aftó eínai to spíti mas tóra, aplá prépei na to apodextoúme. / Це наш дім зараз, ми просто повинні це прийняти.
-v1;120;Kséro, tha to dextó me ton kairó ... / Знаю, з часом я змирюся...
+v1;0;Einai panta efxaristo na xazeueis to xorio mas, etsi den einai? / Завжди приємно милуватися нашим гарним селом, чи не так?
+v2;30;Fysiká eínai! Éxoume ksodépsei tóso polý chróno douleuontas se aftó to méros. / Авжеж! Ми стільки часу працювали над ним.
+v1;60;Eínai sxedón san tin mitropoli, ópos prin erthoume edó. / Майже як удома, до того, як ми сюди потрапили.
+v2;90;Aftó eínai to spíti mas tóra, aplá prépei na to apodextoúme. / Тепер це наш дім. Треба лише змиритися із цим.
+v1;120;Kséro, tha to dextó me ton kairó ... / Знаю, з часом звикну…
 
 newchat;key:ishome,weigth:6
-v1;0;Einai panta efxaristo na xazeueis to xorio mas, etsi den einai? / Завжди приємно побачити нашу мілу селищу, чи не так?
-v2;30;Fysiká eínai! Éxoume ksodépsei tóso polý chróno douleuontas se aftó to méros. / Звичайно, це так!  Ми багато часу працювали над цим місцем.
-v1;60;Eínai schedón san sto spíti, akrivós ópos prin írthame edó. / Це майже як удома, як до того, як ми прийшли сюди.
-v2;90;Aftó eínai to spíti mas tóra, aplá prépei na to apodextoúme. / Це наш дім зараз, ми просто повинні це прийняти.
-v1;120;Pragmati einai, aftí i syzítisi me ékane na to syneiditopoiíso. / Це дійсно так, ця розмова змусила мене це усвідомити.
+v1;0;Einai panta efxaristo na xazeueis to xorio mas, etsi den einai? / Завжди приємно милуватися нашим гарним селом, чи не так?
+v2;30;Fysiká eínai! Éxoume ksodépsei tóso polý chróno douleuontas se aftó to méros. / Авжеж! Ми стільки часу працювали над ним.
+v1;60;Eínai schedón san sto spíti, akrivós ópos prin írthame edó. / Майже як удома, до того, як ми сюди потрапили.
+v2;90;Aftó eínai to spíti mas tóra, aplá prépei na to apodextoúme. / Тепер це наш дім. Треба лише змиритися із цим.
+v1;120;Pragmati einai, aftí i syzítisi me ékane na to syneiditopoiíso. / Так і є. Завдяки цій розмові я це усвідомив.
 
 //newchat;key:goodharvest1,v1:adult,v2:adult,v2:notvtype:pastor_byzantine-metropolit_byzantine,building:farm,building:vineyard,notbuilding:taverna,weigth:24
 //v1;0;To sitári kai ta stafýlia mas afksánontai polý fétos. / Our wheat and grapes have been growing very well this year.
@@ -55,58 +55,58 @@ v1;120;Pragmati einai, aftí i syzítisi me ékane na to syneiditopoiíso. / Ц�
 //v2;130;Pánta na píneis romaïkí ousía! ROMAÏKÍ OUSÍA! / Always drink Roman stuff! ROMAN STUFF!
 
 newchat;key:harvest,weigth:10
-v1;0;I sodeia ton sitiron paei kala fetos, opos kai ton stafylion. Euge! / Цього року пшениця росте дуже добре, так само як і виногради.  Геніальне, чи не так?
-v2;30;Pragamati, etsi faínetai: Éxoume to períergo kairo edo na efcharistísoume. / Так, здається так: ми маємо тут дивне погоду, за що треба подякувати.
-v1;60;Akoma kai an den bgazei noima! / Навіть якщо це не має ніякого сенсу для мене!
+v1;0;I sodeia ton sitiron paei kala fetos, opos kai ton stafylion. Euge! / Цього року пшениця чудово росте, та й виноград теж. Чудово, правда?
+v2;30;Pragamati, etsi faínetai: Éxoume to períergo kairo edo na efcharistísoume. / Так, схоже, за це слід дякувати тутешній дивній погоді.
+v1;60;Akoma kai an den bgazei noima! / Хоча я її геть не розумію!
 
 newchat;key:lightning,weigth:7
-v1;0;Thymáste tin kataigída tis proales? Milao gia ekeinon ton kolokairo! / Пам'ятаєте грозу, який ми мали?  Маю на увазі ту дуже сильну!
-v2;30;Fysiká. Sxedon katastráfike olokliri i synkomidí mas. O Theos na mas prostateuei. / Звичайно.  Майже зруйнував наш урожай.  Природа досить вражає, а?
-v1;60;Megalo to onoma tou! Paraligo na me xtipisei o satanas me kerauno! / Враження - це одне.  Але в мене ледь не влучила блискавка!
-v2;100;Katse ore sto spiti sou xristiane! Afou ekso itan epikyndina! / Ти не був у своєму домі?  Ви знаєте, що на вулиці небезпечно під час шторму!
-v1;120;En bio mathisi... / Живи і вчись.
+v1;0;Thymáste tin kataigída tis proales? Milao gia ekeinon ton kolokairo! / Пам’ятаєш ту грозу? Ту, особливо сильну!
+v2;30;Fysiká. Sxedon katastráfike olokliri i synkomidí mas. O Theos na mas prostateuei. / Авжеж. Ледь не знищила наш урожай. Природа вражає, чи не так?
+v1;60;Megalo to onoma tou! Paraligo na me xtipisei o satanas me kerauno! / Вражає — це одне. А в мене ледь блискавка не влучила!
+v2;100;Katse ore sto spiti sou xristiane! Afou ekso itan epikyndina! / Ти не був удома? Знаєш же, що під час грози надворі небезпечно!
+v1;120;En bio mathisi... / Вік живи — вік учись.
 
 newchat;key:lightningPig,weigth:1,v1:adult,v2:adult
-v1;0;Den aisthánomai kalá ... / Я не відчуваю себе добре...
-v2;30;Ti tréxei? Eísai árrostos? / Що з тобою?  Ти хворий?
-v1;60;Oxi, ego m-m-molis thymithika kati. / Ні, я тільки що щось згадав.
-v2;100;Den akougetai kala. Eísai sígouros oti den eísai árrostos? / Ти звучиш дуже погано.  Ти впевнений, що ти не хворий?
-v1;120;O-oxi, ego aplá ai-aisthánomai fovisménos. / Ні, я просто боюся.
-v2;150;Ti synévi? / Що ж сталося?
-v1;180;Katá ti diárkeia tis t-teleftaía kataigídas, perpátisa ékso apo to chorio-o, íksera oti den mporoúsa na páo píso sto xorio prin teliosei i kataigída. Etsi krýftika káto apo éna déntro. / Під час останнього грозу.  Я вийшов з селі, знаючи, що не зможу повернутися до селі перед штормом.  Тож я сховалася під деревом.
-v2;210;Pas kala more? tha mporouses na eixes pethanei! / Ти ризикував своїм життям за межами села!  Ти міг померти!
-v1;240;Loipon, ímoun asfalís. Sti synécheia,pou les, eída éna gouroúni. Mpam! To xtypise keraunos . Kai ... a-afto sikothike kai kiníthike l-san ki emás, Kai me kinygise me mia spatha! / Ну, я був в безпеці.  Але потім я побачив свині.  У неї влучила блискавка.  І мертва с-свиня...  В-вона підвелася й пішла, я-як ми, і п-погналася за мною з блискучим м-мечем!
-v2;290;Anoïsies.  Itan énas aplos efiáltis. / Ти говориш безглуздь.  Це, мабуть, був кошмар.
-v1;320;Ítan alítheia! Ma ton aï-Gianni! / Це правда!  Це правда!  Це правда!  Це правда!
-v2;350;Trelathikes ore. Pane pies kana potiri, na iremiseis. / Ти божевільний.  Випий трохи вина й заспокойся.
-v1;380;Opos thes, ma einai alitheia! / Я це зроблю.  Можливо, це допоможе.
+v1;0;Den aisthánomai kalá ... / Мені щось недобре…
+v2;30;Ti tréxei? Eísai árrostos? / Що з тобою? Ти захворів?
+v1;60;Oxi, ego m-m-molis thymithika kati. / Ні, я п-п-просто дещо зг-згадав.
+v2;100;Den akougetai kala. Eísai sígouros oti den eísai árrostos? / Ти зовсім погано звучиш. Точно не хворий?
+v1;120;O-oxi, ego aplá ai-aisthánomai fovisménos. / Н-ні, мені просто с-страшно.
+v2;150;Ti synévi? / То що сталося?
+v1;180;Katá ti diárkeia tis t-teleftaía kataigídas, perpátisa ékso apo to chorio-o, íksera oti den mporoúsa na páo píso sto xorio prin teliosei i kataigída. Etsi krýftika káto apo éna déntro. / Під час о-останньої грози я вийшов за межі с-с-села. Знав, що не встигну повернутися до грози, тому сховався під деревом.
+v2;210;Pas kala more? tha mporouses na eixes pethanei! / Ти ризикував життям за межами села! Міг загинути!
+v1;240;Loipon, ímoun asfalís. Sti synécheia,pou les, eída éna gouroúni. Mpam! To xtypise keraunos . Kai ... a-afto sikothike kai kiníthike l-san ki emás, Kai me kinygise me mia spatha! / Мені нічого не загрожувало. Але я побачив свиню. У неї влучила блискавка. І мертва с-свиня… в-встала й пішла, як ми, пог-гналася за мною з блискучим м-мечем!
+v2;290;Anoïsies.  Itan énas aplos efiáltis. / Ти говориш нісенітниці. Напевно, то був кошмар.
+v1;320;Ítan alítheia! Ma ton aï-Gianni! / Це правда! Правда! Правда! Правда!
+v2;350;Trelathikes ore. Pane pies kana potiri, na iremiseis. / Ти збожеволів. Випий вина й заспокойся.
+v1;380;Opos thes, ma einai alitheia! / Т-так і зроблю. Мо-може, допоможе.
 
 newchat;key:souvlaki,v1:adult,v2:adult,v1:male,v2:female,weigth:10
-v1;0;Ax ... Souvláki, to éna kai monadiko fagito! / А...  Сувлакі — найкраща їжа!
-v2;30;...I panagia na mas exei kala ... / Свята Марія охороняє нас...
-v1;60;Agia trias fyllaton emas! / Свята Трійця дайте нам сили!
-v2;100;Amin / Амін
-v1;130;Amin... / Амін...
-v2;190;...Pou ebala to alati? / Куди ж я поклав сіль?
+v1;0;Ax ... Souvláki, to éna kai monadiko fagito! / Ах… Сувлакі, єдина справжня їжа!
+v2;30;...I panagia na mas exei kala ... / Пресвята Маріє, захисти нас…
+v1;60;Agia trias fyllaton emas! / Свята Трійце, дай нам сили!
+v2;100;Amin / Амінь.
+v1;130;Amin... / Амінь…
+v2;190;...Pou ebala to alati? / Так, де ж я поклав сіль?
 
 newchat;key:loneVillage,weigth:10
-v1;0;Variemai. Ola eínai pánta to ídio edo. / Нудно.  Тут все завжди те саме.
-v2;30;Touláxiston i zoi edo eínai eirinikí. / Принаймні, це мирно.
-v1;60;Típota to idiaítero gia éna apomakrysméno xorio san to diko mas! / Нічого особливого для такої віддаленої села, як наша!
+v1;0;Variemai. Ola eínai pánta to ídio edo. / Нудно. Тут завжди все однакове.
+v2;30;Touláxiston i zoi edo eínai eirinikí. / Зате спокійно.
+v1;60;Típota to idiaítero gia éna apomakrysméno xorio san to diko mas! / Нічого дивного для такого віддаленого села, як наше!
 
 newchat;key:city,v1:adult,v2:adult,weigth:2
-v1;0;Otan ímoun mikros, íthela na eínai énas exerevnitís, na anakalýpsoun néa edáfi kai na pliroún endiaférontes néous anthropous. Allá tora? Eímai kollísei se afto to apomakrysméno chorioudáki. Thélo na páo kai na episkeftheíte néa méri. / Коли я був молодим, я хотів стати дослідником, відкрити нові землі і познайомитися з цікавими новими людьми.  Але тепер?  Я застряг у цій віддаленній маленькій селі.  Я хочу відвідати нові місця.
-v2;30;Allá den tha vreíte megáli diaforá sto állo chorio. Eímaste oloi lígo polý to ídio. / Але в іншому селі ви не знайдете багато відмінностей.  Ми всі майже однакові.
-v1;60;Den milo gia ta choriá. Milo gia tis poleis, í akoma kai i Poli! / Я не кажу про села.  Я кажу про міста, або навіть про місто!
-v2;90;Tin Poli?  / Місто?  Ти маєш на увазі Константинополь?
-v1;120;Nai! To kéntro tis éndoxis aftokratorías mas. Eínai to thávma tou kosmou. / Так, так!  Центр нашої славної імперії.  Це дива світу.
-v1;150;Ypárchoun perissoteroi apo 500 000 ánthropoi pou zoun ekeí, boreíte na imangine afto?! / Там живе більше 500 000 людей, чи можна це визнати?!
-v2;180;Akoúgetai adýnato gia ména. 500 000 ánthropoi se éna méros? / Мені це здається неможливим. 500 тисяч людей в одному місці?  Мрій далі!
+v1;0;Otan ímoun mikros, íthela na eínai énas exerevnitís, na anakalýpsoun néa edáfi kai na pliroún endiaférontes néous anthropous. Allá tora? Eímai kollísei se afto to apomakrysméno chorioudáki. Thélo na páo kai na episkeftheíte néa méri. / У дитинстві я мріяв стати дослідником, відкривати нові землі й зустрічати цікавих людей. А тепер? Застряг у цьому глухому селі. Хочу побачити нові місця.
+v2;30;Allá den tha vreíte megáli diaforá sto állo chorio. Eímaste oloi lígo polý to ídio. / Але в інших селах мало що відрізняється. Ми всі майже однакові.
+v1;60;Den milo gia ta choriá. Milo gia tis poleis, í akoma kai i Poli! / Я не про села. Я про містечка або навіть про саме Місто!
+v2;90;Tin Poli?  / Саме Місто? Ти про Константинополь?
+v1;120;Nai! To kéntro tis éndoxis aftokratorías mas. Eínai to thávma tou kosmou. / Так! Центр нашої славетної імперії. Диво світу.
+v1;150;Ypárchoun perissoteroi apo 500 000 ánthropoi pou zoun ekeí, boreíte na imangine afto?! / Там живе понад 500 000 людей, уявляєш?!
+v2;180;Akoúgetai adýnato gia ména. 500 000 ánthropoi se éna méros? / Не віриться. 500 000 людей в одному місці? Мрій далі!
 
 newchat;key:wine,v1:adult,v2:adult,v1:male,v2:male,weigth:10
-v1;0;Min pieíte krasí mono! / Не п'йте вина один!
+v1;0;Min pieíte krasí mono! / Не пий вино на самоті!
 v2;30;To na pineis mazí eínai pio diaskedastiko! / Разом пити веселіше!
-v1;50;Cheers gia to krasí! / Вип'ємо за вино!
+v1;50;Cheers gia to krasí! / За вино!
 v2;70;Cheers! / Будьмо!
 
 //newchat;key:boyvillagechief,v1:child,v1:vtype:baron_byzantine-centurio_byzantine-metropolit_byzantine,v1:male,weigth:5
@@ -119,215 +119,215 @@ v2;70;Cheers! / Будьмо!
 
 newchat;key:kids1,v1:child,v2:child,notrel:sibling,weigth:10
 v1;0;O pateras mou eínai pio dynatos apo ton diko sas. / Мій тато сильніший за твого.
-v2;30;Ochi! O patir mou eínai o pio dynatos sto chorio! / Ні, ні!  Мій батько - найсильніший у селі!
-v1;60;Ochi! O pateras mou eínai o pio dynatos stin Autokratoría! / Ні, ні, ні!  Мій батько - найсильніший у імперії!
-v2;90;Nai kala! O patir mou eínai o pio dynatos ston kosmo! / Це неможливо!  Мій батько - найсильніший у світі!
-v1;120;Sígoura o pateras mou tha mporoúse na nikísei ton diko sou se ligotero apo dýo chtypímata! / Закладаюся, мій тато переможе твого одним ударом!
-v2;150;Auto tha to doume flore! / Приготуй свого батька до бою!
+v2;30;Ochi! O patir mou eínai o pio dynatos sto chorio! / Ні! Мій тато найсильніший у селі!
+v1;60;Ochi! O pateras mou eínai o pio dynatos stin Autokratoría! / Неправда! Мій тато найсильніший в імперії!
+v2;90;Nai kala! O patir mou eínai o pio dynatos ston kosmo! / Неможливо! Мій тато найсильніший у світі!
+v1;120;Sígoura o pateras mou tha mporoúse na nikísei ton diko sou se ligotero apo dýo chtypímata! / Закладаюся, мій тато здолає твого менш ніж за два удари!
+v2;150;Auto tha to doume flore! / Нехай твій тато готується до бійки!
 
 newchat;key:kids2,v1:child,v1:male,v2:child,v2:female,weigth:10
-v1;0;Ta korítsia eínai ilíthia. / Дівчата - дурні.
+v1;0;Ta korítsia eínai ilíthia. / Дівчата дурні.
 
 newchat;key:kids3,v2:child,v2:male,v1:child,v1:female,weigth:10
-v1;0;Échete dei pouthená tin koúkla mou? Den boro na to vro ... / Ти ніде не бачив мою ляльку?  Я не можу його знайти...
-v2;30;Dose mou píso to spathí mou kai tha tin páreis píso! / Віддай мені мій меч, і ти його отримаєш!
-v3;60;To éklepse! Kléfti! / Ти його вкрала!  Злодій!
+v1;0;Échete dei pouthená tin koúkla mou? Den boro na to vro ... / Не бачив моєї ляльки? Ніяк не можу знайти…
+v2;30;Dose mou píso to spathí mou kai tha tin páreis píso! / Поверни мій меч, тоді отримаєш її назад!
+v3;60;To éklepse! Kléfti! / Це ти її вкрав! Злодій!
 
 newchat;key:clothes1,v1:adult,v1:female,v2:adult,v2:female,weigth:10
 v1;0;Écheis dei ta kainoúrgia roúcha mou? / Бачила моє нове вбрання?
-v2;30;Eíste mia pragmatikí desposini agapiti mou. Ta panta sou tairiázoun! / Ти справді красива, моя дорога.  Все вам підходить!
-v1;60;Allá den eímai toso omorfi oso eseis! / Але я не так красива, як ти!
-v2;90;Ohh afto den eínai alítheia, $targetfirstname! / О, це неправда. $targetfirstname!
+v2;30;Eíste mia pragmatikí desposini agapiti mou. Ta panta sou tairiázoun! / Ти справжня красуня, люба. Тобі все пасує!
+v1;60;Allá den eímai toso omorfi oso eseis! / Але я не така гарна, як ти!
+v2;90;Ohh afto den eínai alítheia, $targetfirstname! / Ой, це неправда, $targetfirstname!
 
 newchat;key:clothes2,v1:adult,v1:female,v2:adult,v2:female,weigth:1
 v1;0;Échete dei néa roúcha mou? / Бачила моє нове вбрання?
-v2;30;Eiste mia pragmatikí desposini agapiti mou. Ta panta sou tairiázoun, agapité $targetfirstname mou! / Ти прекрасна.  Все підходить тобі, моя дорога. $targetfirstname!
-v1;60;Allá den eímai toso omorfi oso eseis! / Але я не так красива, як ти!
+v2;30;Eiste mia pragmatikí desposini agapiti mou. Ta panta sou tairiázoun, agapité $targetfirstname mou! / Ти красуня. Тобі все пасує, люба $targetfirstname!
+v1;60;Allá den eímai toso omorfi oso eseis! / Але я не така гарна, як ти!
 v2;90;Sosta. / Це правда.
 v1;100;!!!
 
 newchat;key:clothes3,v1:adult,v1:female,v2:adult,v2:male,weigth:5
-v1;0;Écheis dei ta kainoúrgia roúcha mou, $targetfirstname? / Ви бачили мої нові одяг, $targetfirstname?
-v2;30;Nomízo oti paliá roúcha sas fainotan polý kalýtera pano sás. / Гадаю, старе вбрання тобі личило більше.
-v1;60;TI? / Що ж?
-v2;70;Ochi. ochi! Eíste omorfi! Mou arései afto to néo ... prágma! / Ні, ні.  Ні, ні!  Ти прекрасна!  Мені подобається ця нова... штука!
+v1;0;Écheis dei ta kainoúrgia roúcha mou, $targetfirstname? / Бачив моє нове вбрання, $targetfirstname?
+v2;30;Nomízo oti paliá roúcha sas fainotan polý kalýtera pano sás. / Гадаю, старе пасувало тобі значно краще.
+v1;60;TI? / ЩО?!
+v2;70;Ochi. ochi! Eíste omorfi! Mou arései afto to néo ... prágma! / Ні… Ні! Ти прекрасна! Мені подобається це нове… вбрання!
 
 newchat;key:clothes4,v1:adult,v1:female,v2:adult,v2:male,weigth:5
-v1;0;Sou arései to néo mou forema? / Тобі подобається моє нове плаття?
-v2;30;To palio sas tairiáze kalýtera. / Стара тобі личила більше.
-v1;60;TI? / Що ж?
-v2;70;Bre $targetfirstname, eínai aplá i gnomi mou. / Привіт. $targetfirstname, це просто моя думка.
+v1;0;Sou arései to néo mou forema? / То як тобі моя нова сукня?
+v2;30;To palio sas tairiáze kalýtera. / Стара пасувала тобі краще.
+v1;60;TI? / ЩО?!
+v2;70;Bre $targetfirstname, eínai aplá i gnomi mou. / Слухай, $targetfirstname, це лише моя думка.
 v1;90;Touláchiston eísai eilikrinís! / Принаймні ти чесний!
 
 newchat;key:girl,v1:adult,v1:female,v2:child,v2:male,rel:parent,weigth:5
 v2;0;Ti prépei na kánete otan sas arései éna korítsi? / Що робити, коли тобі подобається дівчина?
-v1;30;Káne kompliménta kai panta na tin kalopianeis. / Роби їй компліменти й будь до неї добрим.
-v2;60;Ochi! Afto eínai adýnaton! Ti tha skéftontai oi alloi gia ména tote? / Ні, ні!  Це неможливо!  Що тоді подумають про мене інші?
-v1;90;An tin agapoúses pragmatiká, den tha noiázontai gia tous állous. / Якщо б ти її дійсно любила, то не турбувала б про інших.
+v1;30;Káne kompliménta kai panta na tin kalopianeis. / Роби їй компліменти й будь до неї привітним.
+v2;60;Ochi! Afto eínai adýnaton! Ti tha skéftontai oi alloi gia ména tote? / Ні! Це неможливо! Що тоді про мене подумають інші?
+v1;90;An tin agapoúses pragmatiká, den tha noiázontai gia tous állous. / Якби ти справді її любив, тобі було б байдуже до думки інших.
 
 newchat;key:householdTry,v1:adult,v1:female,v2:child,v2:female,rel:parent,weigth:10
-v1;0;Írthe i ora na sas didáxei pos na frontísei éna spíti. / Настав час навчити тебе доглядати за домом.
-v2;30;Oraia, me ti tha archísoume? Boro na ftiaxo souvláki? Pleaaase! / Чудово, з чого починаємо?  Я можу приготувати сувляки?  Будь ласка!
-v1;60;As doúme poso kaloí eíste sto na kánei ton katharismo prota. / Подивимося, як добре ти спочатку чистиш.
-v2;90;Entáxei, allá tha mou deíxei pos na ftiachno souvláki argotera, etsi? / Добре, але ти покажеш мені, як приготувати сувляки пізніше, обіцяно?
+v1;0;Írthe i ora na sas didáxei pos na frontísei éna spíti. / Час навчити тебе вести господарство.
+v2;30;Oraia, me ti tha archísoume? Boro na ftiaxo souvláki? Pleaaase! / Чудово! З чого почнемо? Можна приготувати сувлакі? Ну будь ласочка!
+v1;60;As doúme poso kaloí eíste sto na kánei ton katharismo prota. / Спочатку перевіримо, як добре ти вмієш прибирати.
+v2;90;Entáxei, allá tha mou deíxei pos na ftiachno souvláki argotera, etsi? / Добре, але потім покажеш мені, як готувати сувлакі? Обіцяєш?
 v1;120;Kala. / Обіцяю.
 
 newchat;key:doll,v1:adult,v1:male,v2:child,v2:female,rel:parent,weigth:5
-v2;0;Boreís na mou agorásei aftin tin koúkla? Olloi oi alloi exoun kainourgies, ektos apo emena ... / Купиш мені цю нову ляльку?  У всіх є новий, крім мене...
-v1;30;Poia eínai i magikí léxi ? / Яке це чарівне слово?
-v2;60;Boreíte sas parakalo na mou agorásete mia néa koúkla? / Купи мені нову ляльку, БУДЬ ЛАСКА!
-v1;90;Entáxei, allá tha prépei na  yposchetheis pos den tha antimilas! / Добре, але обіцяй, що більше не відповісти!
+v2;0;Boreís na mou agorásei aftin tin koúkla? Olloi oi alloi exoun kainourgies, ektos apo emena ... / Можеш купити мені нову ляльку? У всіх є нова, крім мене…
+v1;30;Poia eínai i magikí léxi ? / Яке чарівне слово?
+v2;60;Boreíte sas parakalo na mou agorásete mia néa koúkla? / Ну БУДЬ ЛАСКА, купиш мені нову ляльку?
+v1;90;Entáxei, allá tha prépei na  yposchetheis pos den tha antimilas! / Гаразд, але пообіцяй більше не огризатися!
 v2;120;Yposchomai! / Обіцяю!
 
 newchat;key:woodSword,v1:adult,v1:male,v2:child,v2:male,rel:parent,weigth:5
-v2;0;Оуууу...
-v1;30;Eísai Xalia! Ti synévi? / Ти виглядаєш жахливо!  Що сталося?
-v2;60;Loipon, o kathénas échei éna xýlino spathí, allá eména. / Ну, у всіх є дерев'яні мечі, крім мене.
+v2;0;Ой...
+v1;30;Eísai Xalia! Ti synévi? / Ти жахливо виглядаєш! Що сталося?
+v2;60;Loipon, o kathénas échei éna xýlino spathí, allá eména. / У всіх є дерев’яні мечі, крім мене.
 v2;80;Étsi apofásisan na mou epitethoún! / Тож вони вирішили напасти на мене!
-v2;100;Tha prépei na páro kai ego éna! / Ти теж повинен мені купити!
-v1;120;Echeis chrisimopoiísei chroma gia ta simádia kai tis pligés sou. Kalí prospátheia! / Я бачу, ви використовували фарбу на шрамах і ранях.  Добра спроба!
-v2;150;Télos pánton! Se parakalo dose mou éna spathí! / В будь-якому випадку!  Будь ласка, дай мені меч!
-v1;180;Ta spathía eínai epikíndyna. Parata mas! / Мечі небезпечні.  Нема меча для тебе!
+v2;100;Tha prépei na páro kai ego éna! / Ти маєш купити мені такий самий!
+v1;120;Echeis chrisimopoiísei chroma gia ta simádia kai tis pligés sou. Kalí prospátheia! / Бачу, ти намалював собі шрами й рани фарбою. Гарна спроба!
+v2;150;Télos pánton! Se parakalo dose mou éna spathí! / Хай там як! Ну дай мені меча!
+v1;180;Ta spathía eínai epikíndyna. Parata mas! / Мечі небезпечні. Не буде тобі меча!
 
 newchat;key:pride1,v1:adult,v1:male,v2:adult,v2:male,v1:vtype:architect_byzantine,weigth:3
-v1;0;Ktíria mas eínai toso omorfa! Den mporeis na ta xortaseis! / Наші будівлі настільки красиві, що завжди приємно бачити нашу роботу!
-v2;30;Kai oi Máya xtizoun oraia ktiria. / Ці майя також будують дуже гарні структури.
-v1;60;Nai kala... Ta ktíriá mas faínontai polý kalýtera! / Не дразніть мене такими диваками.  Наші будівлі виглядають набагато краще!
-v2;90;Eh ... / Ну, що ж...
-v1;100;Prodoti! Den echeis kamía ethnikí yperifáneia? / Зрадник!  У вас немає національної гордісті?
+v1;0;Ktíria mas eínai toso omorfa! Den mporeis na ta xortaseis! / Наші будівлі такі прекрасні! Завжди приємно милуватися нашою працею.
+v2;30;Kai oi Máya xtizoun oraia ktiria. / Народ мая теж зводить дуже гарні споруди.
+v1;60;Nai kala... Ta ktíriá mas faínontai polý kalýtera! / Не дратуй мене згадками про тих диваків. Наші будівлі набагато кращі!
+v2;90;Eh ... / Ну…
+v1;100;Prodoti! Den echeis kamía ethnikí yperifáneia? / Зраднику! У тебе що, немає національної гордості?
 
 newchat;key:pride2,weigth:10
-v1;0;Emeís oi Romaíoi eimaste poli yperífanoi gia ta osa échoume petýchei! / Ми, римляни, дуже пишаємося тим, що досягли!
-v2;30;Fysiká! o,ti blepeis égine apo emás! / Звичайно!  Все, що ви бачите, було зроблено нами!
-v1;60;I pio ischyrí Autokratoría stin istoría! / Найсильніша імперія в історії світу!
-v2;90;Álla éthni tha apoláfsoun tin doxa mas. / Інші народи будуть радіти нашою славою.
-v1;120;Prepei! Eímaste oi Kyríarchoi! / Вони повинні!  Ми правителі!
+v1;0;Emeís oi Romaíoi eimaste poli yperífanoi gia ta osa échoume petýchei! / Ми, римляни, справді можемо пишатися своїми здобутками!
+v2;30;Fysiká! o,ti blepeis égine apo emás! / Авжеж! Усе, що бачиш, створено нами!
+v1;60;I pio ischyrí Autokratoría stin istoría! / Наймогутніша імперія в історії світу!
+v2;90;Álla éthni tha apoláfsoun tin doxa mas. / Нехай інші народи купаються в променях нашої слави.
+v1;120;Prepei! Eímaste oi Kyríarchoi! / Муситимуть! Ми — володарі!
 
 newchat;key:pride3,weigth:10
-v1;0;I Romaïkí autokratoría tha kyvernísei ton kosmo gia álli mia forá! / Римська імперія знову править світом!
-v2;30;Pragmati! / Ми будемо!
-v1;60;Kai ola tha eínai kalýtera! / Тоді все буде краще!
-v2;90;Pragmati! / Так, так!
+v1;0;I Romaïkí autokratoría tha kyvernísei ton kosmo gia álli mia forá! / Римська імперія знову правитиме світом!
+v2;30;Pragmati! / Так і буде!
+v1;60;Kai ola tha eínai kalýtera! / Тоді все стане краще!
+v2;90;Pragmati! / Так!
 v1;100;Zito i autokratoría! / За імперію!
 v2;110;Zito! / Будьмо!
 
 newchat;key:rain,tag:notraining,weigth:10
-v1;0;Tha vréxei. Sýntoma. / Буде дощ.  Скоро.
+v1;0;Tha vréxei. Sýntoma. / Скоро піде дощ.
 v2;30;To aisthánomai kai ego. / Я теж це відчуваю.
-v1;60;Períergo. Eínai pánta o idios arithoms imeron méchri na vréxei. / Дивно.  Завжди триває однаково багато днів, поки не дождь.
+v1;60;Períergo. Eínai pánta o idios arithoms imeron méchri na vréxei. / Дивно. До наступного дощу завжди минає однакова кількість днів.
 v2;100;Etsi den einai? / Ти теж так думаєш?
-v2;125;Períergos kairos edo, étsi den eínai? / Тут дивне життя, чи не так?
-v1;155;Sígoura! / Зрозуміло!
+v2;125;Períergos kairos edo, étsi den eínai? / Дивне тут життя, чи не так?
+v1;155;Sígoura! / Авжеж!
 
 newchat;key:weird1,v2:child,weigth:1
-v1;0;Koíta afto to gouroúni! Eínai charitoméno, étsi den eínai? / Подивіться на цю свинью!  Це гарне, чи не так?
-v2;30;MPANAGIA MOU! / Ааааа, геть звідси!
+v1;0;Koíta afto to gouroúni! Eínai charitoméno, étsi den eínai? / Поглянь на цю свинку! Мила, правда?
+v2;30;MPANAGIA MOU! / А-А-А-А! Геть звідси!
 v1;60;Fovásai ton choíron? / Ти боїшся свиней?
-v2;80;O-ochi! / Ні, ні!  Я не!
-v1;110;Hahahahahaha! Tora afto eínai asteío! / Хахахаха!  Це смішно!
+v2;80;O-ochi! / Н-ні! Не боюся!
+v1;110;Hahahahahaha! Tora afto eínai asteío! / Ха-ха-ха! Оце так сміхота!
 
 newchat;key:weird2,weigth:1
-v2;0;Aaa ... Kalo souvláki. Thélete mia boukiá? / Ах...  Хороші сувляки.  Хочеш скуштувати?
-v1;30;*Bites* / *Кусає*
-v1;40;Sas efcharisto! Agapo ta souvlákia. / Дякую!  Я люблю сувляків.
-v2;70;Poios den ta latreuei?! / А хто ж не любить!
-v1;100;Échete poté prospathísei na paspalisete me xoma to souvláki? / Ти коли-небудь намагався кинути на Сувляка бруду?
+v2;0;Aaa ... Kalo souvláki. Thélete mia boukiá? / Ах… Які смачні сувлакі. Хочеш скуштувати?
+v1;30;*Bites* / *Відкушує*
+v1;40;Sas efcharisto! Agapo ta souvlákia. / Дякую! Обожнюю сувлакі.
+v2;70;Poios den ta latreuei?! / А хто їх не любить!
+v1;100;Échete poté prospathísei na paspalisete me xoma to souvláki? / А ти колись пробував посипати сувлакі землею?
 v2;140;...
-v2;150;Ochi? / - Ні, ні.
-v1;170;Merikés forés to káno ... Ach .. ola xekínisan otan souvláki mou épese sto édafos pérysi ... Exaireto! / Іноді я...  А..  Все почалося, коли мій сувляк упав на землю минулого року...  Смакота!
-v2;220;Periménete! Epese to souvláki sou stin vromiá kai to efages? Ti sto diáolo ..? / Зачекай!  Ти кладеш сувляки в бруд і їсти його?  Що за чорт...?
-v1;260;Oraia gevontan! / Але він смачний!
+v2;150;Ochi? / Ні?
+v1;170;Merikés forés to káno ... Ach .. ola xekínisan otan souvláki mou épese sto édafos pérysi ... Exaireto! / Я іноді так роблю… Ах… Усе почалося торік, коли мої сувлакі впали на землю… Смакота!
+v2;220;Periménete! Epese to souvláki sou stin vromiá kai to efages? Ti sto diáolo ..? / Стривай! Ти занурюєш сувлакі в землю, а тоді їси? Що за чортівня?
+v1;260;Oraia gevontan! / Але ж смачно!
 v2;280;Reee eisai trelos re. / Ти справді збожеволів.
 
 newchat;key:weird3,weigth:1
-v1;0;Thélo na kabaliso éna gouroúni! / Я хочу їздити на свині!
-v2;30;Giatí? / Чому?
+v1;0;Thélo na kabaliso éna gouroúni! / Хочу покататися верхи на свині!
+v2;30;Giatí? / Навіщо?
 v1;60;Eínai diaskedastiko! / Це весело!
-v2;80;Giatí sto kalo na odigíseis éna gouroúni? / Чому, чорт, ти їздиш на свині?
-v1;110;Epeidí eínai diaskédastiko! / Тому що це весело!
+v2;80;Giatí sto kalo na odigíseis éna gouroúni? / Якого біса тобі кататися верхи на свині?
+v1;110;Epeidí eínai diaskédastiko! / Бо це весело!
 v2;120;Eísai trelos. / Ти божевільний.
 
 newchat;key:chatter1,v1:female,v2:female,v1:adult,v2:adult,weigth:15
-v1;0;Échete akoúsei gia to mystiko tou xylokopou? / Ви вже чули про секрет лісору?
-v2;30;Ochi, gia pes! / Ні, що з ним не так?
-v1;60;Faínetai na syllégoun ta míla, kai ta poloún stous Normandoús! / Здається, він збирає яблуки і продає їх норманнам!
-v2;90;No way! Kai kratán ta chrímata? / Ні в якому разі!  І він зберігає гроші?
-v1;120;Fysiká! / Звичайно!
+v1;0;Échete akoúsei gia to mystiko tou xylokopou? / Ти вже чула про таємницю лісоруба?
+v2;30;Ochi, gia pes! / Ні, а що з ним?
+v1;60;Faínetai na syllégoun ta míla, kai ta poloún stous Normandoús! / Схоже, він збирає яблука й продає їх тим норманам!
+v2;90;No way! Kai kratán ta chrímata? / Не може бути! А гроші залишає собі?
+v1;120;Fysiká! / Авжеж!
 
 newchat;key:chatter2,v1:female,v2:female,v1:adult,v2:adult,weigth:15
-v1;0;O sýzygos mou eípe oti énas Eparxos tha episkeftheí to chorio mas sýntoma! / Мій чоловік сказав, що барон скоро відвідає нашу селищу!
-v2;30;Giatí na érthei edo? / Чому він прийде сюди?
-v2;40;Éna tétoios ischyros, arenopos kai omorfos ántras ... / Такий потужний, сильний і гарний чоловік...
-v1;70;Ti? Sou arései? / - Що ж?  Ти їх любиш?
-v2;100;Prépei na paradechto pos... eínai elkystikos! / Ви повинні визнати, що вони привабливі!
+v1;0;O sýzygos mou eípe oti énas Eparxos tha episkeftheí to chorio mas sýntoma! / Мій чоловік сказав, що незабаром наше село відвідає барон!
+v2;30;Giatí na érthei edo? / Чого б йому сюди їхати?
+v2;40;Éna tétoios ischyros, arenopos kai omorfos ántras ... / Такий могутній, сильний і вродливий чоловік…
+v1;70;Ti? Sou arései? / Що? Тобі такі подобаються?
+v2;100;Prépei na paradechto pos... eínai elkystikos! / Погодься, вони привабливі!
 
 newchat;key:chatter3,v1:female,v2:female,v1:adult,v2:adult,v1:hasspouse,v2:hasspouse,weigth:15
-v1;0;Ypárchei mia poutana sto geitoniko chorio! / У сусідній селі є розпущена жінка!
-v1;20;Sýmfona me tous ischyrismoús, akomi kai oi ándres tou chorioú mas échoun páei ekeí! / Зазначається, що навіть чоловіки нашої села йшли там!
-v2;60;Kaka mantata! Écho na amfisvitísei ton ántra mou! / Страшні новини!  Я повинен допитувати свого чоловіка!
-v1;90;O dikos faínetai na eínai athoos. Den eímai sígourii gia to diko sas, agapiti mou! / Мій, здається, ні в чому не винен.  Не впевнений у твоїй, дорогая!
-v2;120;Elpízo na eínai kai autos. / Я сподіваюся, що і він так.  Краще б так і було.
+v1;0;Ypárchei mia poutana sto geitoniko chorio! / У сусідньому селі живе жінка легкої поведінки!
+v1;20;Sýmfona me tous ischyrismoús, akomi kai oi ándres tou chorioú mas échoun páei ekeí! / Кажуть, навіть чоловіки з нашого села до неї ходили!
+v2;60;Kaka mantata! Écho na amfisvitísei ton ántra mou! / Жахлива новина! Треба розпитати мого чоловіка!
+v1;90;O dikos faínetai na eínai athoos. Den eímai sígourii gia to diko sas, agapiti mou! / Мій, здається, невинний. А щодо твого не впевнена, люба!
+v2;120;Elpízo na eínai kai autos. / Сподіваюся, він теж. Краще б так і було.
 
 newchat;key:chatter4,v1:female,v2:female,v1:adult,v2:adult,,v1:hasspouse,weigth:15
-v1;0;Mou arései na vlépo paidiá na paízoun! / Я люблю бачити дітей, які грають!
-v1;20;Tha me kánei pánta na thélo na écho éna kai ego! / Це завжди змушує мене хотіти дитини!
-v2;50;Eíste sígouroi oti eíste se thési na to antéxete oikonomiká? / Ви впевнені, що можете собі це дозволити?
-v2;70;Ta paidiá eínai akrivá! / Діти дорогі!
-v1;100;Den me anisycheí auto! O antras mou échei arketá chrímata. / Нічого не хвилюйтеся!  Мій чоловік має більше, ніж достатньо грошей.
+v1;0;Mou arései na vlépo paidiá na paízoun! / Люблю дивитися, як граються діти!
+v1;20;Tha me kánei pánta na thélo na écho éna kai ego! / Мені щоразу хочеться народити дитину!
+v2;50;Eíste sígouroi oti eíste se thési na to antéxete oikonomiká? / Ти впевнена, що можете собі це дозволити?
+v2;70;Ta paidiá eínai akrivá! / Діти дорого обходяться!
+v1;100;Den me anisycheí auto! O antras mou échei arketá chrímata. / Не хвилюйся! У мого чоловіка грошей більш ніж достатньо.
 
 newchat;key:chatter5,v1:female,v2:female,v1:adult,v2:adult,v2:hasspouse,weigth:15
-v1;0;Agapiti mou, o ánthropos sas eínai énas méthysos! / Люба, твій чоловік — п'яниця!
-v2;15;Pos mporeís na to les afto? / Як ти можеш так сказати?
-v1;45;O sýzygos sas írthe methysménos sto spíti mas chthes to vrády! / Ваш чоловік прийшов до нас вчора вдома п'яним!
-v1;70;Eípe oti thélei na pantrefteí éna provato. / Він сказав, що хоче одружитися на вівці.
-v1;100;Kai oti tha ypárxei mia terástia gamilia teleti! / І що там буде величезне весілля!
-v1;130;Se Parakalo, balte ton se mia seira! / Будь ласка, поверніть контроль над своїм чоловіком.
-v1;150;Eínai pragmatiká anatrichiastiko. / Це дійсно жахливо.
+v1;0;Agapiti mou, o ánthropos sas eínai énas méthysos! / Люба, твій чоловік — п’яниця!
+v2;15;Pos mporeís na to les afto? / Як ти можеш таке казати?
+v1;45;O sýzygos sas írthe methysménos sto spíti mas chthes to vrády! / Учора вночі твій чоловік прийшов до нас п’яний!
+v1;70;Eípe oti thélei na pantrefteí éna provato. / Сказав, що хоче одружитися з вівцею.
+v1;100;Kai oti tha ypárxei mia terástia gamilia teleti! / І що буде грандіозне весілля!
+v1;130;Se Parakalo, balte ton se mia seira! / Будь ласка, візьми свого чоловіка під контроль.
+v1;150;Eínai pragmatiká anatrichiastiko. / Це справді моторошно.
 v2;180;Entáxei, entáxei, tha ton timoríso! / Гаразд, гаразд, я його покараю!
-v2;210;Komeno to krasi! / Залишиться без вина!
+v2;210;Komeno to krasi! / Жодного вина йому!
 
 newchat;key:chatter6,v1:female,v2:female,v1:adult,v2:adult,weigth:15
-v1;0;To psomí sas eínai toso nostimo! Poio eínai to mystiko sas? / Ваш хліб так смачний!  У чому ваша таємниця?
-v2;30;Aplá prosthéste lígi záchari mésa. / Просто додайте трохи цукру.
-v1;60;Alítheia? Típota perissotero? / - Справді?  Нічого більше?
-v2;90;Nai! Tha gefteíte tin diaforá. / Ось і все!  Ви відчуєте різницю.
+v1;0;To psomí sas eínai toso nostimo! Poio eínai to mystiko sas? / Твій хліб такий смачний! У чому секрет?
+v2;30;Aplá prosthéste lígi záchari mésa. / Просто додай трохи цукру.
+v1;60;Alítheia? Típota perissotero? / Справді? І більше нічого?
+v2;90;Nai! Tha gefteíte tin diaforá. / От і все! Відчуєш різницю.
 
 newchat;key:chatter7,v1:female,v2:female,v1:adult,v2:adult,v2:hasspouse,weigth:15
-v1;0;Poios ítan o ántras pou σε episkeftheíke echthes to brády? / Хто був чоловік, який відвідав вас вчора?
+v1;0;Poios ítan o ántras pou σε episkeftheíke echthes to brády? / Хто той чоловік, що приходив до тебе минулої ночі?
 v2;30;Poios ánthropos? / Який чоловік?
-v1;40;O ánthropos pou sýrthike éxo apo to paráthyro sou! / Той, що вилазив із твого вікна!
-v1;45;Min nomízeis oti den tha to paratirousa! / Не думай, що я не помітив!
-v2;60;Pos tolmás ..? Ímoun kai tha eímai pánta pistí sto sýzygo mou! / Як ти посмеєш...?  Я була і завжди вірна своєму чоловікові.
-v1;80;Nai, nai. Dikaiologies. / Так, так, так.  Я б так і сказав, якби був на твоєму місці.
-v2;110;Afto den eínai díkaio! Min diadídeis fímes gia eména! / Це несправедливо!  Не розповсюджуйте про мене чутки.
+v1;40;O ánthropos pou sýrthike éxo apo to paráthyro sou! / Той, що виліз із твого вікна!
+v1;45;Min nomízeis oti den tha to paratirousa! / Не думай, що я цього не помітила!
+v2;60;Pos tolmás ..? Ímoun kai tha eímai pánta pistí sto sýzygo mou! / Як ти смієш?.. Я завжди була й залишаюся вірною своєму чоловікові.
+v1;80;Nai, nai. Dikaiologies. / Так-так. На твоєму місці я сказала б те саме.
+v2;110;Afto den eínai díkaio! Min diadídeis fímes gia eména! / Це несправедливо! Не розпускай про мене чуток.
 
 newchat;key:chatter8,v1:female,v2:female,v1:adult,v2:adult,weigth:15
-v1;0;Aftá ta néa ergaleía mageirikís eínai exairetika! / Ці нові інструменти приготування їжі - надзвичайні!
-v2;30;Nai, kánei to mageírema toso éfkolo! Eínai diaskedastiko! / Так, це робить приготування їжі настільки легким!  Це весело!
-v1;60;Efcharisto pigaínei stous Smiths kai technítes, oi opoíoi skefteí tétoia prágmata! / Дякуємо ковалям і ремісникам, які це вигадали!
-v2;90;Nai! Gi 'afto mou arései na Romaïkí. / Так, так!  Ось чому я люблю бути римлянином.
+v1;0;Aftá ta néa ergaleía mageirikís eínai exairetika! / Це нове кухонне начиння просто неймовірне!
+v2;30;Nai, kánei to mageírema toso éfkolo! Eínai diaskedastiko! / Так, з ним готувати так легко! Одне задоволення!
+v1;60;Efcharisto pigaínei stous Smiths kai technítes, oi opoíoi skefteí tétoia prágmata! / Треба подякувати ковалям і ремісникам, які його придумали!
+v2;90;Nai! Gi 'afto mou arései na Romaïkí. / Так! Ось чому я люблю бути римлянкою.
 
 newchat;key:chatter9,v1:female,v2:female,v1:adult,v2:adult,v1:notvtype:lady_byzantine,v2:notvtype:lady_byzantine,weigth:15
-v1;0;Eímai ziliáris afton ton plousíon. / Я заздрю на тих багатих людей.
-v1;20;Échoun tétoia oraía roúcha apo metáxi! / У них таке гарне шовкове вбрання!
-v2;50;Afto den eínai pragmatiká díkaios. Den kánoun típota kai na párete ta kalýtera prágmata pou oútos í állos. / Це справді несправедливо.  Вони нічого не роблять і отримують найкращі речі.
+v1;0;Eímai ziliáris afton ton plousíon. / Я заздрю багатіям.
+v1;20;Échoun tétoia oraía roúcha apo metáxi! / У них такий гарний шовковий одяг!
+v2;50;Afto den eínai pragmatiká díkaios. Den kánoun típota kai na párete ta kalýtera prágmata pou oútos í állos. / Це справді несправедливо. Нічого не роблять, а все найкраще дістається їм.
 
 newchat;key:chatter10,v1:female,v2:female,v1:adult,v2:adult,weigth:1
-v1;0;Échete akoúsei gia afto to Eparxo se éna geitoniko chorio? / Ви чули про барона в сусідній селі?
-v2;30;Nai, afto eínai to éna tou opoíou i gynaíka vréthike dolofoniméni? / Так, це той, чия дружина була знайдена вбитою?
-v1;60;Akrivos! O sýzygos mou mou eípe oti o Eparxos dolofonise ti gynaíka tou! / Так і було!  Мій чоловік сказав мені, що сам барон вбив свою дружину!
-v2;100; .. Ti? / Що?
-v2;130;Pánta íxera oti gialize to mati tou! / Я завжди знала, що він це зробить!
-v2;150;Allá kaneís den me písteve ..! / Але ніхто мені не повірив!
+v1;0;Échete akoúsei gia afto to Eparxo se éna geitoniko chorio? / Чула про того барона із сусіднього села?
+v2;30;Nai, afto eínai to éna tou opoíou i gynaíka vréthike dolofoniméni? / Так, це той, чию дружину знайшли вбитою?
+v1;60;Akrivos! O sýzygos mou mou eípe oti o Eparxos dolofonise ti gynaíka tou! / Саме так! Мій чоловік щойно розповів, що барон сам убив свою дружину!
+v2;100; .. Ti? / Що?..
+v2;130;Pánta íxera oti gialize to mati tou! / Я завжди знала, що він на таке здатний!
+v2;150;Allá kaneís den me písteve ..! / Але мені ніхто не вірив…!
 
 newchat;key:chatter11,v1:female,v2:female,v1:adult,v2:adult,v1:hasspouse,weigth:15
-v1;0;Échete poté skefteí gia to pos tha ítan an eíchame ton polemo? / Ви коли-небудь думали про те, як би було, якби у нас була війна?
-v1;30;Ypárchoun akomi kai tora oi ándres pou agonízontai gia ti chora mas! / Навіть зараз там борються чоловіки за нашу країну!
-v1;55;Thavmázo pragmatiká tin pisti tous! / Я дійсно захоплююся ними!
+v1;0;Échete poté skefteí gia to pos tha ítan an eíchame ton polemo? / Ти колись думала, як би це було, якби почалася війна?
+v1;30;Ypárchoun akomi kai tora oi ándres pou agonízontai gia ti chora mas! / Навіть зараз є чоловіки, які борються за нашу країну!
+v1;55;Thavmázo pragmatiká tin pisti tous! / Я справді ними захоплююся!
 v2;80;Énas polemos tha eínai tromeros. / Війна була б жахливою.
-v2;110;Mallon sou aresoun oi skoutatoi. / Я думаю, ти просто любиш солдатів.
-v2;140;Allá échete énan ántra! / Але ти маєш чоловіка!
-v1;170;Enan tempéli kai sychná methysméno! / Але ленивий і часто п'яний!
+v2;110;Mallon sou aresoun oi skoutatoi. / Гадаю, тобі просто подобаються воїни.
+v2;140;Allá échete énan ántra! / Але ж у тебе є чоловік!
+v1;170;Enan tempéli kai sychná methysméno! / Та він ледачий і часто п’яний!
 
 //newchat;key:talking1,v1:male,v2:male,v1:adult,v2:adult,v1:hasspouse,v2:notvtype:metropolit_byzantine-pastor_byzantine,weigth:15
 //v1;0;Xérete tin despinida sto geitoniko chorio? / Do you know the beauty in the neighbouring village?
@@ -342,18 +342,18 @@ v1;170;Enan tempéli kai sychná methysméno! / Але ленивий і час�
 //v2;100;Symfono. / I agree.
 
 newchat;key:talking3,v1:male,v2:male,v1:adult,v2:adult,v1:hasspouse,v2:hasspouse,weigth:15
-v1;0;Den échoume arketo krasí se afto to chorio! / У нас не достатньо вина в цій селі!
-v2;30;Symfono! Prépei na chtísoume perissotera ampélia! / Я згоден!  Нам потрібно побудувати більше виноградників!
-v1;60;Kai perissoteres tavérnes! / І більше шинків!
-v2;90;Na anoiksoume dikí mas tavérna? / А як щодо відкриття власної таверни?
-v1;120;Exochi idéa!. / Чудова ідея!  Давайте плануємо це.
-v2;150;Allá poú na archísoume? / Але звідки почати?
-v1;180;Kai oi gynaíkes mas den tha eínai eftychís otan to akousoun! / І наші дружини не будуть раді це почути!
-v2;210;Ochi,i polisi romaïkou krasíou eínai pánta mia kali dikaiología! / Ні, продаж римського вина завжди є виправданням!
-v1;240;Entáxei! Sti synécheia, afíste mas na exoikonomísete chrímata mas. / Так, добре!  Тоді давайте заощадимо гроші.
-v1;270;Otan échoume kerdísei arketá, as ekplirosoume to schédio mas! / Коли ми отримаємо достатньо, давайте виконаємо наш план!
-v2;300;Tha échoume ti megalýteri tavérna se oli tin autokratoría! / У нас буде найкраща таверна в всій імперії!
-v1;325;Sígoura! / Зрозуміло!
+v1;0;Den échoume arketo krasí se afto to chorio! / У нашому селі не вистачає вина!
+v2;30;Symfono! Prépei na chtísoume perissotera ampélia! / Згоден! Треба облаштувати більше виноградників!
+v1;60;Kai perissoteres tavérnes! / І більше таверн!
+v2;90;Na anoiksoume dikí mas tavérna? / А що, як відкрити власну таверну?
+v1;120;Exochi idéa!. / Чудова ідея! Сплануймо все.
+v2;150;Allá poú na archísoume? / Але з чого почати?
+v1;180;Kai oi gynaíkes mas den tha eínai eftychís otan to akousoun! / І наші дружини не зрадіють, коли про це дізнаються!
+v2;210;Ochi,i polisi romaïkou krasíou eínai pánta mia kali dikaiología! / Ні, торгівля римським вином — завжди поважна причина!
+v1;240;Entáxei! Sti synécheia, afíste mas na exoikonomísete chrímata mas. / Гаразд! Тоді почнімо відкладати гроші.
+v1;270;Otan échoume kerdísei arketá, as ekplirosoume to schédio mas! / Коли заробимо достатньо, втілимо наш задум!
+v2;300;Tha échoume ti megalýteri tavérna se oli tin autokratoría! / У нас буде найкраща таверна в усій імперії!
+v1;325;Sígoura! / Авжеж!
 
 //newchat;key:talking4,v1:male,v2:male,v1:adult,v2:adult,v1:vtype:miner_byzantine-farmiller_byzantine-lumberman_byzantine,v2:vtype:miner_byzantine-farmiller_byzantine-lumberman_byzantine,weigth:15
 //v1;0;Échete dokimásei poté Normandika ergaleía? / Have you ever tried Norman tools?
@@ -370,103 +370,103 @@ v1;325;Sígoura! / Зрозуміло!
 //v2;100;Gia auto mporoúme na eímaste yperífanoi pou eimaste Romaíoi! / That's why we can be proud to be Romans!
 
 newchat;key:talking6,v1:male,v2:male,v1:adult,v2:adult,weigth:15
-v1;0;Yperoxo fagito, panysxira opla, exaisia téchni - afto eínai to éthnos mas! / Чудова їжа, чудова зброя, чудова мистецтво - це те, про що йдеться наш народ!
-v2;30;Kai kalo krasí! / І чудовий віно!
+v1;0;Yperoxo fagito, panysxira opla, exaisia téchni - afto eínai to éthnos mas! / Чудова їжа, чудова зброя, чудове мистецтво — ось чим славиться наш народ!
+v2;30;Kai kalo krasí! / І чудове вино!
 
 newchat;key:talking7,v1:male,v2:male,v1:adult,v2:adult,v1:hasspouse,v2:hasspouse,weigth:15
-v1;0;Echo varetheí ti sýzygo mou. Thélo na écho mia kainoúrgia! / Мені нуда моя дружина.  Я хочу отримати нову!
-v2;30;Poios den thelei? / А хто не любить?
-v1;60;Ísos prépei na afísoume xafniká to chorio kai sti synécheia na psáxoume gia néa! / Можливо, нам слід раптом покинути село і шукати нові!
-v2;90;Nai! Oi Máya kai oi Indoí échoun tétoies omorfes gynaíkes, échete dei? / Так, так!  Майя та індіанці мають такі гарні дружини, бачив?
-v2;140;Allá ... To chorio chánetai chorís emás. / Але...  Ця селя втрачена без нас.
-v2;160;Kai min xechnáte ta paidiá mas! / І не забувайте про наших дітей!
-v1;180;Urgh! Ta paidiá mas! Den tha epiviosoun chorís patéra! / Ух! Ух!  Наші діти!  Вони не зможуть вижити без батька!
-v1;220;Allá ... afto simaínei oti prépei na synechísoume tin varetí zoí mas edo? / Але... чи це означає, що ми повинні продовжувати нашу нудну життя тут?
-v2;255;Ypothéto oti aftos eínai o kalýteros tropos. / Думаю, це найкращий спосіб.
+v1;0;Echo varetheí ti sýzygo mou. Thélo na écho mia kainoúrgia! / Моя дружина мені набридла. Хочу іншу!
+v2;30;Poios den thelei? / А хто не хоче?
+v1;60;Ísos prépei na afísoume xafniká to chorio kai sti synécheia na psáxoume gia néa! / Може, нам варто раптово покинути село й пошукати нових дружин!
+v2;90;Nai! Oi Máya kai oi Indoí échoun tétoies omorfes gynaíkes, échete dei? / Так! У мая та індійців такі вродливі жінки, ти бачив?
+v2;140;Allá ... To chorio chánetai chorís emás. / Але… без нас це село пропаде.
+v2;160;Kai min xechnáte ta paidiá mas! / І не забувай про наших дітей!
+v1;180;Urgh! Ta paidiá mas! Den tha epiviosoun chorís patéra! / Ех! Наші діти! Без батька вони не виживуть!
+v1;220;Allá ... afto simaínei oti prépei na synechísoume tin varetí zoí mas edo? / Але… невже це означає, що нам доведеться й далі жити тут нудним життям?
+v2;255;Ypothéto oti aftos eínai o kalýteros tropos. / Гадаю, так буде найкраще.
 
 newchat;key:talking8,v1:male,v2:male,v1:adult,v2:adult,v2:vtype:silkfarmer_byzantine,weigth:15
-v1;0;Eínai apístefto poso leptomerí einai eikones sas. / Досить неймовірне, як детально виглядають ваші ікони.
-v2;30;Fysiká, eínai i lampri romaïkí téchni! / Звичайно, як це велика римська мистецтво!
-v1;60;Opos kai o, ti kánoume. Koitáxte ta omorfa spítia mas! / Все, що ми робимо.  Подивіться на наші прекрасні будинки!
-v2;90;Kai min xechnáte tin éndoxi istoría mas! / І не забувайте про нашу славну історію!
+v1;0;Eínai apístefto poso leptomerí einai eikones sas. / Неймовірно, наскільки детально промальовані твої ікони.
+v2;30;Fysiká, eínai i lampri romaïkí téchni! / Авжеж, адже це величне римське мистецтво!
+v1;60;Opos kai o, ti kánoume. Koitáxte ta omorfa spítia mas! / Як і все, що ми робимо. Поглянь на наші чудові будинки!
+v2;90;Kai min xechnáte tin éndoxi istoría mas! / І не забувай про нашу славну історію!
 
 newchat;key:talking9,v1:male,v2:male,v1:adult,v2:adult,weigth:15
-v1;0;Thymáste to korítsi pou polémousame stin paidikí mas ilikía mas? / Пам'ятаєш дівчину, за яку ми боролися у дитинстві?
-v2;30; Nai ... kaloi kairoi. Pali kala pou teliosan. / Так, я...  Це був дуже поганий час.  Добре, що це закінчилося.
-v1;60;Chaíromai pou to akoúo, giatí mou eípe oti tis aresa apo pánta! / Я радий, що чую, бо вона сказала мені, що мені завжди подобаюся!
-v2;90;Ti? Afto den eínai alítheia! / - Що ж?  Це неправда!
+v1;0;Thymáste to korítsi pou polémousame stin paidikí mas ilikía mas? / Пам’ятаєш дівчину, через яку ми билися в дитинстві?
+v2;30; Nai ... kaloi kairoi. Pali kala pou teliosan. / Так… То були дуже погані часи. Добре, що все позаду.
+v1;60;Chaíromai pou to akoúo, giatí mou eípe oti tis aresa apo pánta! / Радий це чути, бо вона щойно сказала мені, що завжди любила мене!
+v2;90;Ti? Afto den eínai alítheia! / Що? Це неправда!
 
 newchat;key:flirt1,v1:male,v2:female,v1:adult,v2:adult,v1:hasspouse,v2:nospouse,notrel:sibling,notrel:child,notrel:parent,weigth:5
-v1;0;Geia sou omorfiá, sas arései afto pou vlépete? / Гара, тобі подобається те, що ти бачиш?
+v1;0;Geia sou omorfiá, sas arései afto pou vlépete? / Гей, красуне, подобається те, що бачиш?
 v2;20;*chastoúki* / *Ляпас*
 v2;25;Échete eidi gynaíka. / У тебе є дружина.
 
 newchat;key:flirt2,v1:male,v2:female,v1:adult,v2:adult,notrel:sibling,notrel:child,notrel:parent,weigth:5
-v1;0;Geia sou, koitás polý oraía símera $targetfirstname! / Гей, ти виглядаєш дуже добре сьогодні $targetfirstname!
+v1;0;Geia sou, koitás polý oraía símera $targetfirstname! / Гей, ти сьогодні дуже гарна, $targetfirstname!
 v2;30;Sas efcharisto! / Дякую!
-v1;60;Opos pánta, agapité mou! / Як завжди, моя дорога!
+v1;60;Opos pánta, agapité mou! / Як завжди, люба!
 
 newchat;key:flirt3,v1:male,v2:female,v1:adult,v2:adult,v1:hasspouse,v2:hasspouse,notrel:sibling,notrel:child,notrel:parent,weigth:5
-v1;0;Hey $targetfirstname mia omorfiá opos eseís prepei na echei enan omorfo ántras san ki eména! / Привіт. $targetfirstnameЧи красива жінка, як ти, хоче гарного хлопця, як я?
-v2;40;Eíste pantreménos, opos kai ego. / Ти одружений, і я теж.
-v2;60;Ypothéto oti den eíste pistoí! Tha po sti gynaíka sas! / Я думаю, ти не вірний!  Я скажу вашій дружині!
-v1;75;OCHI - Min kánete tha- / Ні. - Не робіть так...
+v1;0;Hey $targetfirstname mia omorfiá opos eseís prepei na echei enan omorfo ántras san ki eména! / Гей, $targetfirstname, чи не потрібен такій красуні такий красень, як я?
+v2;40;Eíste pantreménos, opos kai ego. / Ти одружений, і я теж заміжня.
+v2;60;Ypothéto oti den eíste pistoí! Tha po sti gynaíka sas! / Бачу, ти не дуже вірний! Я розповім твоїй дружині!
+v1;75;OCHI - Min kánete tha- / НІ! Не роби цьо…
 v1;85;Eímai to kako giouftopouli! / Я його злий брат-близнюк!
-v2;120;Fysiká eíste! To ídio kako gioftopouli pou katouraei ston mpaxtse mou kathe sabbato! / Звичайно, що ви!  Той самий злий близнюк, який завжди п'яний!
+v2;120;Fysiká eíste! To ídio kako gioftopouli pou katouraei ston mpaxtse mou kathe sabbato! / Звісно! Той самий злий близнюк, який завжди п’яний!
 
 newchat;key:flirt4,v1:male,v2:female,v1:adult,v2:adult,notrel:sibling,notrel:child,notrel:parent,weigth:10
-v1;0;Pos pane ta pragmata me tin gynaíka sas? / Як ти поживаєш з твоїми жінковими штучками?
-v2;30;Kala,  ektos apo kapoia pragmata ... / Добре, добре, за винятком того, що відчуваю себе трохи погано...
-v1;60;Oh, ochi, ti synévi? / О, ні, що сталося?
-v2;90;O sýzygos mou moú fonaxe. / Мій чоловік крикнув на мене.
-v1;120;Pos boreí o ídios se mia tétoia omorfiá? / Як він може до такої краси?
-v2;150;Sas efcharistoúme gia epeffimíes sas, $targetfirstname! / Дякую, що підбадьорювали мене. $targetfirstname!
+v1;0;Pos pane ta pragmata me tin gynaíka sas? / Як твої жіночі справи?
+v2;30;Kala,  ektos apo kapoia pragmata ... / Добре, добре, от тільки трохи сумно…
+v1;60;Oh, ochi, ti synévi? / Ой, що сталося?
+v2;90;O sýzygos mou moú fonaxe. / Мій чоловік накричав на мене.
+v1;120;Pos boreí o ídios se mia tétoia omorfiá? / Як він міг так вчинити з такою красунею?
+v2;150;Sas efcharistoúme gia epeffimíes sas, $targetfirstname! / Дякую, що підбадьорив мене, $targetfirstname!
 
 newchat;key:flirt5,v1:male,v2:female,v1:adult,v2:adult,notrel:sibling,notrel:child,notrel:parent,weigth:10
-v2;0;*Ург*
-v1;30;Eísai entáxei, $targetfirstname? / Ти добре? $targetfirstname?
-v2;50;Nai, afto eínai mono i sklirí douleiá! / Так, це просто важка робота!
-v1;70;Boro na sas voithíso? Tha aisthantheíte kalýtera sti synécheia? / Я можу вам допомогти?  Тоді ти почуваєшся краще?
-v2;90;Fysiká! Sas efcharisto! / Звичайно!  Дякую!
+v2;0;*Зітхає*
+v1;30;Eísai entáxei, $targetfirstname? / Усе гаразд, $targetfirstname?
+v2;50;Nai, afto eínai mono i sklirí douleiá! / Так, просто важка праця!
+v1;70;Boro na sas voithíso? Tha aisthantheíte kalýtera sti synécheia? / Можу тобі допомогти? Тобі стане краще?
+v2;90;Fysiká! Sas efcharisto! / Звісно! Дякую!
 
 newchat;key:flirt6,v1:male,v2:female,v1:adult,v2:adult,,weigth:10
-v1;0;Ola kala? / Як все?
-v2;30;Ola eínai mia chará, esi? / Все в порядку, а що з тобою?
-v1;60;Pára polý! Efcharisto gia tin erotisi. / І це теж!  Дякую, що запитали.
-v1;75;Allá vlépo oti ypárchei káti pou se enochleí! / Але я бачу, що вас щось турбує!
-v2;90;Eínai - típota. / Це - ніщо.
-v1;110;Parakalo peíte mou! / Будь ласка, скажіть мені!
-v2;130;Eínai mono oti i zoí mou edo eínai toso varetí. / Це тільки те, що моє життя тут так нудно.
-v2;160;Efchomai pragmatiká na eícha apofasísei na páei se mia poli otan ímoun néos! / Я дуже хотів би, щоб я вирішив поїхати в місто, коли був молодим!
+v1;0;Ola kala? / Як справи?
+v2;30;Ola eínai mia chará, esi? / Усе добре, а в тебе?
+v1;60;Pára polý! Efcharisto gia tin erotisi. / Теж добре! Дякую, що запитуєш.
+v1;75;Allá vlépo oti ypárchei káti pou se enochleí! / Але бачу, що тебе щось непокоїть!
+v2;90;Eínai - típota. / Та нічого…
+v1;110;Parakalo peíte mou! / Ну скажи мені!
+v2;130;Eínai mono oti i zoí mou edo eínai toso varetí. / Просто моє життя тут таке одноманітне.
+v2;160;Efchomai pragmatiká na eícha apofasísei na páei se mia poli otan ímoun néos! / Шкодую, що замолоду не вирішив переїхати до міста!
 
 newchat;key:brothertalk1,v1:male,v1:adult,v2:male,v2:adult,rel:sibling,weigth:10
-v1;0;Adelfe $targetfirstname, eínai kalo na sas doúme! / Брат $targetfirstnameЯ рад, що тебе бачу!
-v1;30;Vríka ton palio xýlino spathí mas! / Я тільки що знайшов наш старий дерев'яний меч!
-v1;50;Thymáste? / Пам'ятаєте?
-v2;80;Periménete! Eínai afto to xífos tou patéra mas,auto pou mas édose? / Зачекай!  Це той меч, який нам дав наш батько?
-v1;110;Eínai! Thymáste tous agones mas me afto? / Це так!  Пам'ятаєте наші боротьби з ним?
-v2;140;Pos tha boroúsa na tous xecháso! Exakoloutho na écho kápoia simádia. / Як я могла забути!  У мене ще є шрами.
-v2;170;An skéfteste perissotero gi 'afto ... / Подумуючи більше про це...
-v2;200;Ítan skliro pou o patéras mas mas edose mono ena! / Це було жорстоко від нашого батька дати нам лише один меч!
-v2;240;Íxere oti tha agonistoúme gia afto! / Він знав, що ми будемо боротися за це!
-v1;270;Ypothéto oti eínai entáxei! / Думаю, все в порядку!
-v2;300;Epeidí to krátisa! / Тому що ти його зберіг!
+v1;0;Adelfe $targetfirstname, eínai kalo na sas doúme! / Брате $targetfirstname, радий тебе бачити!
+v1;30;Vríka ton palio xýlino spathí mas! / Я щойно знайшов наш старий дерев’яний меч!
+v1;50;Thymáste? / Пам’ятаєш?
+v2;80;Periménete! Eínai afto to xífos tou patéra mas,auto pou mas édose? / Стривай! Це той меч, який подарував нам батько?
+v1;110;Eínai! Thymáste tous agones mas me afto? / Так! Пам’ятаєш наші битви з ним?
+v2;140;Pos tha boroúsa na tous xecháso! Exakoloutho na écho kápoia simádia. / Як я можу забути! У мене досі залишилися шрами.
+v2;170;An skéfteste perissotero gi 'afto ... / Якщо тепер подумати…
+v2;200;Ítan skliro pou o patéras mas mas edose mono ena! / Було трохи жорстоко з боку батька подарувати нам лише один меч!
+v2;240;Íxere oti tha agonistoúme gia afto! / Він же знав, що ми за нього битимемося!
+v1;270;Ypothéto oti eínai entáxei! / Гадаю, усе гаразд!
+v2;300;Epeidí to krátisa! / Бо ти його зберіг!
 
 newchat;key:sistertalk1,v1:female,v1:adult,v2:female,v2:adult,rel:sibling,weigth:10
-v1;0;Thymáste ton iníocho pou agápise toso polý stin paidikí ilikía mas? / Пам'ятаєш візника, яким ми так захоплювалися в дитинстві?
-v2;30;Thymamai adelfi. Ímastan oi megalýteroi opadoí tou! / Звичайно, сестра.  Ми були найбільшими шанувальниками!
+v1;0;Thymáste ton iníocho pou agápise toso polý stin paidikí ilikía mas? / Пам’ятаєш візничого, яким ми так захоплювалися в дитинстві?
+v2;30;Thymamai adelfi. Ímastan oi megalýteroi opadoí tou! / Авжеж, сестро. Ми були його найбільшими шанувальниками!
 v1;60;Anarotiémai ti na synévi s 'afton. / Цікаво, що з ним сталося.
-v1;90;Den akouo típota gi 'afton pia ... / Ти більше нічого не чуєш про нього...
-v2;120;Eínai pithanon na enkatastáthike s 'éna chorio san to diko mas kai tora na echei mia sýzygo kai paidiá. / Він, ймовірно, оселився в такій селі, як і у нас, і мав дружину і дітей.
-v1;150;Télos pánton exakoloutho na elpízo oti tha ton synantíso kápoia stigmí! / Я все ще сподіваюся зустрітися з ним коли-небудь!
+v1;90;Den akouo típota gi 'afton pia ... / Про нього більше нічого не чути…
+v2;120;Eínai pithanon na enkatastáthike s 'éna chorio san to diko mas kai tora na echei mia sýzygo kai paidiá. / Мабуть, оселився в такому селі, як наше, одружився й завів дітей.
+v1;150;Télos pánton exakoloutho na elpízo oti tha ton synantíso kápoia stigmí! / Усе одно сподіваюся колись із ним зустрітися!
 v2;180;Ki ego! / Я теж!
 
 newchat;key:brothersister,v1:male,v1:adult,v2:female,v2:adult,v2:hasspouse,rel:sibling,weigth:10
-v1;0;$targetfirstname, adelfí mou, pánta anarotiomoun giatí pantréftike afto to ypokeimeno. / $targetfirstnameСестра моя, я завжди хотіла знати, чому ти вийшла за нього заміж.
-v2;30;Epeidí ton agapo! / Тому що я його люблю!
-v1;60;Kai tora to onomá sas eínai $targetlastname. $targetlastname! Akoúgetai toso aschymo! / А тепер твоє ім'я $targetlastname. $targetlastname! Звучить так жахливо!
-v2;90;Hey! Min ginesai kakia! Eseís eisastan pou xekínisate tin sýnkrousi. / Привітання!  Не будь таким злим!  Це ти почав конфлікт.
-v2;110; Eisoun methysméni! / Ти був п'яний!
+v1;0;$targetfirstname, adelfí mou, pánta anarotiomoun giatí pantréftike afto to ypokeimeno. / $targetfirstname, сестро, я завжди хотів знати, чому ти вийшла заміж за цього дурня.
+v2;30;Epeidí ton agapo! / Бо я його кохаю!
+v1;60;Kai tora to onomá sas eínai $targetlastname. $targetlastname! Akoúgetai toso aschymo! / І тепер твоє прізвище — $targetlastname. $targetlastname! Як же погано воно звучить!
+v2;90;Hey! Min ginesai kakia! Eseís eisastan pou xekínisate tin sýnkrousi. / Гей! Не будь таким злим! Це ж ти почав сварку.
+v2;110; Eisoun methysméni! / Ти був п’яний!
 
 //newchat;key:religious1,v1:vtype:metropolit_byzantine-pastor_byzantine,v2:male,weigth:10
 //v1;0;$targetfirstname, gie mou, ego den se eída na proséfchesai símera! / $targetfirstname, my son, I did not see you praying today!
@@ -498,13 +498,13 @@ v2;110; Eisoun methysméni! / Ти був п'яний!
  
 
 newchat;key:seljuks,v1:adult,v2:adult,weigth:10
-v1;0;Échete akoúsei gia tous Tourkalades apó ti stigmí pou ftásame edó? / Ви чули про Сельджуків з тих пір, як ми приїхали сюди?
-v2;30;Óchi, nomizeis oti mas akolouthisan? / Ні, я не, ти думав, що вони прийшли з нами до цієї землі?
-v1;60;Amfivállo, échoume ídi akoúsei apó anthrópous pou den gnorízame óti ypírchan. / Я сумніваюся, ми вже чули від людей, про які не знали, що існують.
-v2;90;Ypothéto óti prépei na kánoume néous echthroús se aftí ti gi. / Думаю, ми повинні створити нових ворогів у цій землі.
-v1;120;Échoume akóma tous Normandoús na antimetopísoume. / Ми все ще маємо справу з норманнами.
-v2;150;Loipón, eímaste Romaíoi! Boroúme éfkola na nikísoume tétoious epidromeís, sti Rómi! / Ну, ми римляни!  Ми можемо легко перемогти таких рейдерів, до Риму!
-v1;165;Sti Rómi! / До Риму!
+v1;0;Échete akoúsei gia tous Tourkalades apó ti stigmí pou ftásame edó? / Ти щось чув про сельджуків відтоді, як ми сюди потрапили?
+v2;30;Óchi, nomizeis oti mas akolouthisan? / Ні. Думаєш, вони теж потрапили до цих земель разом із нами?
+v1;60;Amfivállo, échoume ídi akoúsei apó anthrópous pou den gnorízame óti ypírchan. / Сумніваюся. Ми вже чули про народи, про існування яких навіть не знали.
+v2;90;Ypothéto óti prépei na kánoume néous echthroús se aftí ti gi. / Гадаю, у цих землях нам доведеться знайти нових ворогів.
+v1;120;Échoume akóma tous Normandoús na antimetopísoume. / У нас досі є нормани, з якими треба розібратися.
+v2;150;Loipón, eímaste Romaíoi! Boroúme éfkola na nikísoume tétoious epidromeís, sti Rómi! / Що ж, ми римляни! Легко здолаємо таких нападників. За Рим!
+v1;165;Sti Rómi! / За Рим!
 
 //newchat;key:noBakery,building:farm,notbuilding:windmill,v1:adult,v2:adult,weigth:15
 //v1;0;Ach, poios den thélei frésko, nóstimo psomí apó to agróktima sitarioú? / Ah, who doesn't want fresh, yummy bread from the wheat farm?
@@ -516,26 +516,26 @@ v1;165;Sti Rómi! / До Риму!
 //v1;180;Chreiazómaste éna artopoieío, aftó eínai simantikó. / We need a bakery, that's what matters.
 
 newchat;key:normans,v1:adult,v2:adult,weigth:6
-v1;0;Akoúsate gia to kontinó Normandiko chorió? / Ви чули про сусідню нормандську село?
-v2;30;Aftó den eínai kaló, thymámai óti synéchizan na epitíthentai sti nótia Italía protoú ftásoume edó. / Це не добре, я пам'ятаю, що вони продовжували атакувати Південну Італію, перш ніж ми прийшли сюди.
-v1;60;As elpísoume óti den tha mas epitethoún. / Сподіваємося, що вони не нападуть на нас.
-v2;90;To elpízo kai egó. / Я теж сподіваюся.
+v1;0;Akoúsate gia to kontinó Normandiko chorió? / Чув про норманське село неподалік?
+v2;30;Aftó den eínai kaló, thymámai óti synéchizan na epitíthentai sti nótia Italía protoú ftásoume edó. / Це недобре. Пам’ятаю, як вони постійно нападали на Південну Італію, перш ніж ми сюди потрапили.
+v1;60;As elpísoume óti den tha mas epitethoún. / Сподіваймося, вони на нас не нападуть.
+v2;90;To elpízo kai egó. / Я теж на це сподіваюся.
 
 newchat;key:constantinople,v1:adult,v2:adult,weigth:9
 v1;0;Anarotiémai ti synévi stin Konstantinoúpoli? / Цікаво, що сталося з Константинополем?
-v2;30;Nomízo óti írthe edó mazí mas se aftí ti néa gi. / Я думаю, він прийшов з нами до цієї нової землі.
+v2;30;Nomízo óti írthe edó mazí mas se aftí ti néa gi. / Гадаю, він потрапив сюди разом із нами, до цих нових земель.
 v1;60;Giatí to pistéveis aftó? / Чому ти так думаєш?
-v2;90;Ézisa kontá sti megáli póli kai me odígisan edó. / Я жив біля великого міста і мене забрали сюди.
-v1;120;Eínai alítheia, allá échei tósous polloús anthrópous. Tha to eíchame akoúsei méchri tóra. / Це правда, але там так багато людей.  Ми вже чули б про це.
-v2;150;Tha boroúse na eínai polý makriá. / Це може бути дуже далеко.
-v1;180;Nai, allá i dóxa kai i megaloprépeia tis Konstantinoúpolis ítan tóso megáli pou akómi kai ánthropoi stin Kína ákousan gi 'aftin. / Так, але слава Константинополя настільки велика, що навіть люди в Китаї чули про це.
-v2;210;Mi mou peíte óti pistévete se aftés tis istoríes gia tin Kína? / Не скажи мені, що ти віриш у ті історії про Китай?
-v1;240;Pistévo óti ypárchei kápoia alítheia se aftá. / Я вважаю, що у них є істина.
-v2;270;Allá ypárchoun tósa pollá mystíria gia tin Kína pou den boroúme na ypothésoume an ypárchei kápoia alítheia se aftá. / Але в Китаї є стільки загадків, що ми не можемо припустити, чи є у них правда.
-v1;300;Ypárchei tósa pollá mystíria an i Konstantinoúpoli eínai edó, étsi den boroúme na to ypothésoume. / Якщо тут Константинополь, то є стільки загадків, що і це не можна вважати.
-v2;330;Loipón, nai, allá akóma ki an i Konstantinoúpoli den eínai edó. Prépei na megalósoume kai na prostatépsoume ti Romaïkí Aftokratoría. / Ну, так, але навіть якщо Константинополя тут немає.  Ми повинні вирости і захистити Римську імперію.
-v1;360;Tóra boró na symfoníso mazí sas gia aftó! / Тепер я з тобою згодна!
-v2;390;Ithe i Rómi na diarkesei gia pánta! / Хай Рим живе вічно!
+v2;90;Ézisa kontá sti megáli póli kai me odígisan edó. / Я жив неподалік великого міста, і мене перенесло сюди.
+v1;120;Eínai alítheia, allá échei tósous polloús anthrópous. Tha to eíchame akoúsei méchri tóra. / Правда, але там стільки людей. Ми б уже про нього почули.
+v2;150;Tha boroúse na eínai polý makriá. / Він може бути дуже далеко.
+v1;180;Nai, allá i dóxa kai i megaloprépeia tis Konstantinoúpolis ítan tóso megáli pou akómi kai ánthropoi stin Kína ákousan gi 'aftin. / Так, але слава й велич Константинополя такі великі, що про нього чули навіть у Китаї.
+v2;210;Mi mou peíte óti pistévete se aftés tis istoríes gia tin Kína? / Не кажи, що віриш у ті розповіді про Китай!
+v1;240;Pistévo óti ypárchei kápoia alítheia se aftá. / Гадаю, у них є частка правди.
+v2;270;Allá ypárchoun tósa pollá mystíria gia tin Kína pou den boroúme na ypothésoume an ypárchei kápoia alítheia se aftá. / Але про Китай відомо так мало, що ми не можемо бути впевнені в правдивості цих розповідей.
+v1;300;Ypárchei tósa pollá mystíria an i Konstantinoúpoli eínai edó, étsi den boroúme na to ypothésoume. / Так само невідомо, чи є тут Константинополь, тож і цього не можна стверджувати.
+v2;330;Loipón, nai, allá akóma ki an i Konstantinoúpoli den eínai edó. Prépei na megalósoume kai na prostatépsoume ti Romaïkí Aftokratoría. / Ну так, але навіть якщо Константинополя тут немає, ми маємо розвивати й захищати Римську імперію.
+v1;360;Tóra boró na symfoníso mazí sas gia aftó! / Ось із цим я з тобою згоден!
+v2;390;Ithe i Rómi na diarkesei gia pánta! / Нехай Рим існує вічно!
 
 //newchat;key:baron1,v1:adult,v1:vtype:baron_byzantine,v2:adult,v2:male,v2:notvtype:pastor_byzantine,weigth:10
 //v1;0;Óra na plirósete tous fórous sas. / Time for you to pay your taxes.
@@ -546,15 +546,15 @@ v2;390;Ithe i Rómi na diarkesei gia pánta! / Хай Рим живе вічно
 //v2;120;Entáxei, entáxei. / Okay, okay.
 
 newchat;key:Inuit,v1:adult,v2:adult,weigth:10
-v1;0;Norítera, miloúsa me énan byzantinó émporo kai mou eípe gia choriá makriná sto chióni. / Раніше я розмовляв з візантийським торговцем і він розповів мені про села далеко в снігу.
-v2;30;Choriá sto chióni? / Сели в снігу?
-v1;60;Nai, onomázontai "Inuites". / Так, їх називають "Інуїтами".
-v2;90;Inuites? Ti paráxeno ónoma, pos ítan?/ Інуїти?  Що за дивне ім'я, як вони були?
-v1;120;O émporos eípe óti den dexonte chrímata. / Трейдер сказав, що вони не вірять у гроші.
-v2;150;Den dexonte chrímata ?! Pós tha boroúsan na zísoun? / Не вірите в гроші?!  Як вони могли жити?
-v1;180;Óloi moirástikan ta pánta exísou. Itane polý dýskoli i diapragmátefsi mazí tous. / Вони всі поділяли все однаково.  Це дуже складно було торгувати з ними.
-v2;210;Katakaimene empore. Touláchiston eínai píso sti Romaïkí Aftokratoría, makriá apó aftoús tous bárbarous. / Бідолашний торговець.  Принаймні він повернувся до Римської імперії, далеко від цих варварів.
-v1;240;Symfonó! I Romaïkí Aftokratoría eínai i kalýteri gi gia empório! / Я згоден!  Римська імперія - найкраща країна для торгівлі!
+v1;0;Norítera, miloúsa me énan byzantinó émporo kai mou eípe gia choriá makriná sto chióni. / Нещодавно я розмовляв із візантійським купцем, і він розповів мені про далекі села серед снігів.
+v2;30;Choriá sto chióni? / Села серед снігів?
+v1;60;Nai, onomázontai "Inuites". / Так, їхніх жителів називають інуїтами.
+v2;90;Inuites? Ti paráxeno ónoma, pos ítan?/ Інуїти? Яка дивна назва. Які вони?
+v1;120;O émporos eípe óti den dexonte chrímata. / Купець сказав, що вони не визнають грошей.
+v2;150;Den dexonte chrímata ?! Pós tha boroúsan na zísoun? / Не визнають грошей?! Як же вони живуть?
+v1;180;Óloi moirástikan ta pánta exísou. Itane polý dýskoli i diapragmátefsi mazí tous. / Вони просто ділять усе порівну. Через це торгувати з ними було дуже важко.
+v2;210;Katakaimene empore. Touláchiston eínai píso sti Romaïkí Aftokratoría, makriá apó aftoús tous bárbarous. / Бідолашний купець. Принаймні він повернувся до Римської імперії, подалі від тих варварів.
+v1;240;Symfonó! I Romaïkí Aftokratoría eínai i kalýteri gi gia empório! / Згоден! Римська імперія — найкраща земля для торгівлі!
 
 //newchat;key:notavern,v1:adult,v1:male,v2:adult,v2:male,notbuilding:taverna,weigth:25
 //v1;0;Geiá sou! Den faínetai na eíste polý efcharistiménoi símera / Hello! You don't seem to be very happy today.
@@ -589,22 +589,22 @@ v1;240;Symfonó! I Romaïkí Aftokratoría eínai i kalýteri gi gia empório! /
 //v2;360;Akoúgetai perissótero ópos o Theós thélei na syntaxiodotitheíte ... / Sounds more like God wants you to retire...
 
 newchat;key:soldiers2,v1:adult,v1:male,v1:vtype:soldier_byzantine,v2:adult,v2:male,v2:vtype:soldier_byzantine,weigth:3
-v1;0;Elpízo óti den tha chreiasteí na bgoúme éxo kai na polemísoume opoiondípote bárbaro ópote sýntoma. / Я сподіваюся, що нам не доведеться змагатися з варварами.
-v2;30;Ti? Eímaste stratiótes, i douleiá mas eínai na bgoúme éxo kai na skotósoume bárbarous. Giatí tha beíte ston strató an den sas arései na agonízeste? / - Що ж?  Ми солдати, наша робота - вийти і вбити варварів.  Чому ви приєдналися до армії, якщо не любите воювати?
-v1;60;Skéftika óti o stratiótis tha ítan efkolóteros, to móno pou perímena na káno eínai na stamatíso kai na skotóso lígous óchlous kai to peristasiakó várvaro. Allá tóra ótan skotóno éna várvaro, koitázo to prósopó tou kai skéftomai, "Ísos den prépei na skotónoume aftoús tous anthrópous". / Я думав, що бути солдатом буде легше, все, що я очікував зробити, це стояти навколо і вбивати кілька мафій і іноді варвар.  Але тепер, коли я вбиваю варвара, я дивлюся на його обличчя і думаю: "Можливо, ми не повинні вбивати цих людей".
-v2;120;Skéftesai pára polý! Vgeíte éxo kai skotóste várvarous gia ti Rómi. Tha mas skotósoun kai tha katastrépsoun ta spítia mas! Eínai móno asyneíditoi ágrioi. / Ти занадто багато думаєш!  Вийди і вбивай варварів для Риму.  Вони б нас вбили і знищили наші будинки!  Вони лише нецивілізовані дикарі.
-v1;150;Synantísate aftoús tous anthrópous pou kirýttete na skotónete? Óchi, den échete, ísos eínai diaforetikoí apó aftó pou mas eípan. / Ти зустрічав цих людей, яких проповідуєш, щоб вбити?  Ні, ні, можливо, вони відрізняються від того, що нам сказали.
+v1;0;Elpízo óti den tha chreiasteí na bgoúme éxo kai na polemísoume opoiondípote bárbaro ópote sýntoma. / Сподіваюся, найближчим часом нам не доведеться вирушати на бій із варварами.
+v2;30;Ti? Eímaste stratiótes, i douleiá mas eínai na bgoúme éxo kai na skotósoume bárbarous. Giatí tha beíte ston strató an den sas arései na agonízeste? / Що? Ми воїни, наша робота — вирушати в бій і вбивати варварів. Навіщо ти вступив до війська, якщо не любиш битися?
+v1;60;Skéftika óti o stratiótis tha ítan efkolóteros, to móno pou perímena na káno eínai na stamatíso kai na skotóso lígous óchlous kai to peristasiakó várvaro. Allá tóra ótan skotóno éna várvaro, koitázo to prósopó tou kai skéftomai, "Ísos den prépei na skotónoume aftoús tous anthrópous". / Я думав, бути воїном простіше: стояти на варті, вбивати кількох монстрів та зрідка варварів. Але тепер, коли вбиваю варвара, дивлюся йому в обличчя й думаю: «Може, не варто вбивати цих людей».
+v2;120;Skéftesai pára polý! Vgeíte éxo kai skotóste várvarous gia ti Rómi. Tha mas skotósoun kai tha katastrépsoun ta spítia mas! Eínai móno asyneíditoi ágrioi. / Ти надто багато думаєш! Іди й бийся з варварами за Рим. Вони вбили б нас і зруйнували наші домівки! Це лише нецивілізовані дикуни.
+v1;150;Synantísate aftoús tous anthrópous pou kirýttete na skotónete? Óchi, den échete, ísos eínai diaforetikoí apó aftó pou mas eípan. / Ти зустрічав тих людей, яких закликаєш убивати? Ні. Можливо, вони не такі, як нам розповідали.
 v2;180;Eínai alítheia óti tha boroúsan na eínai polý cheirótera. / Правда, вони можуть бути набагато гіршими.
-v1;210;Den nomízo óti katalavaínete tis sképseis kai ta deiná pou pernáo. / Я не думаю, що ти розумієш думки і труднощі, які я переживаю.
-v2;240;Eímai stratiótis, óchi filósofos. Tha prépei na páte na prosefchitheíte sto Theó gia kathodígisi, kathós safós chreiázeste kápoio. / Я солдат, не філософ.  Ви повинні молитися до Бога про керівництво, оскільки вам їх дуже потрібні.
-v1;270;Den écho típota perissótero apó ton Theó. Ótan prosefchómoun, émeina me to ídio sympérasma ópos écho kai tóra. / У мене вже є, і я більше нічого не отримав від Бога.  Коли я молився, я прийшов до такого ж висновку, як і зараз.
-v2;300;Ti? Échete afísei safós ton Theó gia na min sas pei tin alítheia! Pigaínete píso stin prosefchí méchri na borésete na skotósete kai páli tous varvárous! / - Що ж?  Ви ж покинули Бога, щоб не розповідати вам правду!  Поверніться до молитви, поки не зможете знову вбити варварів!
-v1;330;Ísos aftó eínai to sympérasma pou o Theós símane gia ména na écho! Tha páo na proséfchitho tóra. / Можливо, Бог хотів, щоб я прийшов до такого висновку!
-v2;360;Akoúgetai perissótero san o Theós na thélei na syntaxiodotitheíte ... / Здається, Бог хоче, щоб ти пішов на пенсію...
+v1;210;Den nomízo óti katalavaínete tis sképseis kai ta deiná pou pernáo. / Не думаю, що ти розумієш мої думки й переживання.
+v2;240;Eímai stratiótis, óchi filósofos. Tha prépei na páte na prosefchitheíte sto Theó gia kathodígisi, kathós safós chreiázeste kápoio. / Я воїн, а не філософ. Іди помолися Богові про настанову, вона тобі явно потрібна.
+v1;270;Den écho típota perissótero apó ton Theó. Ótan prosefchómoun, émeina me to ídio sympérasma ópos écho kai tóra. / Я вже молився, але Бог не дав мені іншої відповіді. Після молитви я дійшов того самого висновку, що й зараз.
+v2;300;Ti? Échete afísei safós ton Theó gia na min sas pei tin alítheia! Pigaínete píso stin prosefchí méchri na borésete na skotósete kai páli tous varvárous! / Що? Ти, мабуть, зрікся Бога, якщо Він не відкрив тобі істину! Молися, доки знову не зможеш убивати варварів!
+v1;330;Ísos aftó eínai to sympérasma pou o Theós símane gia ména na écho! Tha páo na proséfchitho tóra. / А може, саме до цього висновку Бог хотів мене привести!
+v2;360;Akoúgetai perissótero san o Theós na thélei na syntaxiodotitheíte ... / Схоже, Бог хоче, щоб ти пішов у відставку…
 
 newchat;key:kidsBos,v1:child,v2:child,weigth:5
-v1;0;Bahh… Bahhh… Eimai o Boskokratoras!/ Я король пастухів!
-v2;30;Stamáta to! Tha ton kalésete me aftón ton tropo! / Припини!  Ти його так призовеш!
-v1;60;O Boskokrátor, sas xtizo énan ieró tópo… / О Боскократор, я будую тобі священне місце...
-v2;90;Skáse! Den xérete ti symvaínei ston mýtho? / Замовкни!  Ти не знаєш, що відбувається в легенді?
-v1;120;$targetfirstname, klápse moró! Eínai móno aftó! Enas mýthos! / $targetfirstname, плаксію!  Це все!  Легенда!
+v1;0;Bahh… Bahhh… Eimai o Boskokratoras!/ Бе-е-е… Бе-е-е… Я цар вівчарів!
+v2;30;Stamáta to! Tha ton kalésete me aftón ton tropo! / Припини! Ти так його прикличеш!
+v1;60;O Boskokrátor, sas xtizo énan ieró tópo… / О Боскократоре, я зведу тобі святилище…
+v2;90;Skáse! Den xérete ti symvaínei ston mýtho? / Замовкни! Хіба ти не знаєш, що сталося за легендою?
+v1;120;$targetfirstname, klápse moró! Eínai móno aftó! Enas mýthos! / $targetfirstname, плаксію! Це всього лише легенда!
