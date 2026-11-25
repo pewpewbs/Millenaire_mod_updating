@@ -57,21 +57,6 @@ public final class VillageDoorAccess {
         return pos;
     }
 
-    /** Partner is inferred only from a matching side, material, facing and outside hinge. */
-    private static BlockPos pairedDoor(ServerLevel level,BlockPos pos,BlockState state){
-        if(!BlockItemUtilities.isWoodenDoor(state.getBlock()))return null;
-        var facing=state.getValue(DoorBlock.FACING);
-        var hinge=state.getValue(DoorBlock.HINGE);
-        var left=net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT;
-        BlockPos other=pos.offset(org.millenaire.common.buildingplan.DoorPairRules.partnerX(facing.getStepX(),facing.getStepZ(),hinge==left),0,
-                org.millenaire.common.buildingplan.DoorPairRules.partnerZ(facing.getStepX(),facing.getStepZ(),hinge==left));
-        if(!level.hasChunkAt(other))return null;
-        BlockState s=level.getBlockState(other);
-        return s.getBlock()==state.getBlock()&&s.getValue(DoorBlock.HALF)==DoubleBlockHalf.LOWER
-            &&s.getValue(DoorBlock.FACING)==facing&&s.getValue(DoorBlock.HINGE)!=hinge
-            &&!s.getValue(DoorBlock.POWERED)&&!state.getValue(DoorBlock.POWERED)?other:null;
-    }
-
     private static void remember(ServerLevel level, BlockPos pos) {
         remember(level, pos, null, "LEGACY");
     }
@@ -143,18 +128,6 @@ public final class VillageDoorAccess {
         PLAYER_CONTROL.computeIfAbsent(level, ignored -> new HashMap<>())
             .put(pos.immutable(), level.getGameTime() + PLAYER_CONTROL_TICKS);
         trace(level, pos, "PLAYER-OVERRIDE state=" + state);
-        // Vanilla toggles the clicked leaf after this event. Mirror that
-        // resulting state on the paired leaf without cancelling vanilla use.
-        if(wooden&&event.getPlayer().isShiftKeyDown())return;
-        BlockPos partner=pairedDoor(level,pos,state);
-        if(partner!=null&&event.getHand()==net.minecraft.world.InteractionHand.MAIN_HAND
-                &&event.getUseBlock()!=net.minecraftforge.eventbus.api.Event.Result.DENY){
-            Map<BlockPos,Long> leases=OPENED.get(level);
-            if(leases!=null)leases.remove(partner);
-            PLAYER_CONTROL.computeIfAbsent(level,ignored->new HashMap<>()).put(partner.immutable(),level.getGameTime()+PLAYER_CONTROL_TICKS);
-            BlockState pair=level.getBlockState(partner);
-            ((DoorBlock)pair.getBlock()).setOpen(event.getPlayer(),level,pair,partner,!state.getValue(DoorBlock.OPEN));
-        }
     }
 
     /** Adopt an old saved door-to-close hint after upgrading from per-villager handling. */
@@ -178,17 +151,6 @@ public final class VillageDoorAccess {
         openForResident(world, raw, null, "UNKNOWN");
     }
 
-    private static void openPartner(ServerLevel level,BlockPos pos,BlockState state,LivingEntity actor,String source){
-        BlockPos partner=pairedDoor(level,pos,state);
-        if(partner==null||isPlayerControlled(level,partner))return;
-        BlockState pair=level.getBlockState(partner);
-        Map<BlockPos,Long> leases=OPENED.get(level);
-        if(!pair.getValue(DoorBlock.OPEN)){
-            ((DoorBlock)pair.getBlock()).setOpen(null,level,pair,partner,true);
-            if(level.getBlockState(partner).getValue(DoorBlock.OPEN))remember(level,partner,actor,source+"-PAIR");
-        }else if(leases!=null&&leases.containsKey(partner))remember(level,partner,actor,source+"-PAIR");
-    }
-
     /** Actor and reason are recorded ONLY on successful first opening. */
     public static void openForResident(Level world, BlockPos raw,
             LivingEntity actor, String source) {
@@ -210,7 +172,6 @@ public final class VillageDoorAccess {
             } else if (registered != null && registered.containsKey(pos)) {
                 remember(level, pos, actor, source);
             }
-            openPartner(level,pos,state,actor,source);
         } else if (state.getBlock() instanceof FenceGateBlock) {
             if (state.getValue(FenceGateBlock.POWERED)) return;
             if (!state.getValue(FenceGateBlock.OPEN)) {
