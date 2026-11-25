@@ -45,7 +45,7 @@ class VillageInteractionWiring(unittest.TestCase):
 
     def test_map_details_use_real_records_and_recipe_inputs(self):
         map_info = read("client/gui/text/BuildingMapTooltip.java")
-        self.assertIn("record.getHousePos().equals(building.getPos())", map_info)
+        self.assertIn("record.getHousePos().sameBlock(loc.pos)", map_info)
         self.assertIn("townHall.mw.getVillagerById(record.getVillagerId())", map_info)
         self.assertIn("recipeStacks(crafting.input)", map_info)
         self.assertIn("Live status unavailable", map_info)
@@ -69,8 +69,8 @@ class VillageInteractionWiring(unittest.TestCase):
     def test_map_purpose_is_compact_and_distinct(self):
         code = read("client/gui/text/BuildingMapTooltip.java")
         self.assertIn('label("Purpose:","Призначення:"', code)
-        self.assertIn('label("Workers: ","Працівники: "', code)
-        self.assertIn("if(expected.isEmpty())return;", code)
+        self.assertIn('label("Residents: ","Мешканці: "', code)
+        self.assertIn("if(roles.isEmpty())return;", code)
         self.assertIn("if(!roles.isEmpty())add", code)
         self.assertIn("new ItemStack(Items.IRON_HOE)", code)
         self.assertIn("new ItemStack(Items.WHEAT)", code)
@@ -122,6 +122,21 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertNotIn('label("Irrigation bonus"', ui)
         self.assertIn('hasTag(loc,building,plan,"inn")', ui)
         self.assertIn("getCount()>1?Integer.toString", read("client/gui/text/GuiPanelParchment.java"))
+
+    def test_resident_roster_does_not_require_loaded_house_or_entity(self):
+        ui = read("client/gui/text/BuildingMapTooltip.java")
+        staff = ui.split("private static void staff(",1)[1].split("static List<Line> describe(",1)[0]
+        self.assertIn("townHall.getMapResidentRecords()",staff)
+        self.assertIn("record.getHousePos().sameBlock(loc.pos)",staff)
+        self.assertNotIn("building!=null",staff)
+        self.assertIn("records==null",staff)
+        self.assertIn("if(type.isChild)children++;else filled++;",staff)
+        self.assertIn("record.texture",staff)
+        building = read("common/village/Building.java")
+        self.assertIn("building.mapResidentSnapshot=Map.copyOf(vrecords)",building)
+        self.assertIn("this.mapResidentSnapshot==null?null",building)
+        send = building.split("public void sendMapInfo(Player player)",1)[1].split("public void sendShopPacket",1)[0]
+        self.assertIn("this.getTownHall().sendBuildingPacket(player,false)",send)
 
     def test_ukrainian_goal_labels(self):
         lang = ROOT.parents[2] / "resources/todeploy/millenaire/languages/uk/strings.txt"
