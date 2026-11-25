@@ -4,8 +4,6 @@ import java.util.Set;
 import java.util.ArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.TicketType;
-import java.util.WeakHashMap;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.common.world.ForgeChunkManager;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -14,6 +12,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.millenaire.common.config.MillConfigValues;
 import org.millenaire.common.utilities.MillLog;
 import org.millenaire.common.village.Building;
+import org.millenaire.common.village.VillageMapInfo;
 
 @Mod.EventBusSubscriber(modid="millenaire",bus=Mod.EventBusSubscriber.Bus.MOD)
 public class BuildingChunkLoader {
@@ -21,26 +20,14 @@ public class BuildingChunkLoader {
     private final BlockPos owner;
     private final Set<ChunkPos> forcedChunks=new LinkedHashSet<>();
     public boolean chunksLoaded;
-    private static final TicketType<Long> PREPARE=TicketType.create("millenaire_active_village",Long::compare);
-    private static final WeakHashMap<ServerLevel,Long> LAST_ADMISSION=new WeakHashMap<>();
-    private static final int WAIT_LIMIT=1200;
-    private long lastLoadTick=Long.MIN_VALUE, pendingSince, retryAfter;
-    private ChunkPos pending;
+    // Recovery: no global MSPT admission gate or pending-ticket wait that
+    // could starve a village. Fast path for FULL chunks, at most one cold
+    // Forge admission per village/tick. Keep the ticking-ticket semantics.
+    private static final int MAX_READY_PER_TICK=4;
+    private long lastLoadTick=Long.MIN_VALUE;
+    private long lastWarning=Long.MIN_VALUE;
     private Set<ChunkPos> required=Set.of();
-    private int cachedX,cachedZ,cachedLength,cachedWidth;
-    private boolean hasRequired;
-    private boolean takeBudget(ServerLevel world,long tick) {
-        float mspt=world.getServer().getAverageTickTime();
-        if(!Float.isFinite(mspt)||mspt>=50)return false;
-        Long previous=LAST_ADMISSION.get(world);
-        if(previous!=null&&tick>=previous&&tick-previous<(mspt>=40?10:1))return false;
-        LAST_ADMISSION.put(world,tick);
-        return true;
-    }
-    private void releasePending(ServerLevel world) {
-        if(pending!=null)world.getChunkSource().removeRegionTicket(PREPARE,pending,0,owner.asLong());
-        pending=null;
-    }
+    private VillageMapInfo.ActivationBounds cachedBounds;
     public BuildingChunkLoader(Building townHall) {
         this.townHall=townHall;var pos=townHall.getPos();owner=new BlockPos(pos.getiX(),pos.getiY(),pos.getiZ());
     }
@@ -54,49 +41,39 @@ public class BuildingChunkLoader {
             for(int z=startZ-1;z<startZ+width/16+1;z++)result.add(new ChunkPos(x,z));
         return result;
     }
-    public void loadChunks() {
-        if(!(townHall.world instanceof ServerLevel world) || townHall.winfo==null)return;
+    public void loadChunks(VillageMapInfo.ActivationBounds bounds) {
+        if(!(townHall.world instanceof ServerLevel world)||bounds==null)return;
         long tick=world.getGameTime();
         if(lastLoadTick==tick)return;
         lastLoadTick=tick;
         long started=System.nanoTime();
-        var info=townHall.winfo;
-        if(!hasRequired||cachedX!=info.chunkStartX||cachedZ!=info.chunkStartZ
-                ||cachedLength!=info.length||cachedWidth!=info.width){
-            cachedX=info.chunkStartX;cachedZ=info.chunkStartZ;
-            cachedLength=info.length;cachedWidth=info.width;
-            required=requiredChunks(cachedX,cachedZ,cachedLength,cachedWidth);
-            hasRequired=true;
-            if(pending!=null&&!required.contains(pending))releasePending(world);
+        if(!bounds.equals(cachedBounds)){
+            cachedBounds=bounds;
+            required=requiredChunks(bounds.startX(),bounds.startZ(),bounds.length(),bounds.width());
             for(ChunkPos chunk:new ArrayList<>(forcedChunks))if(!required.contains(chunk)){
                 ForgeChunkManager.forceChunk(world,"millenaire",owner,chunk.x,chunk.z,false,true);
                 forcedChunks.remove(chunk);
             }
             chunksLoaded=forcedChunks.containsAll(required);
         }
-        if(chunksLoaded||tick<retryAfter)return;
+        if(chunksLoaded)return;
         int attempted=0;
-        if(pending!=null){
-            if(tick-pendingSince>=WAIT_LIMIT){
-                releasePending(world);retryAfter=tick+100;return;
+        ChunkPos cold=null;
+        for(ChunkPos chunk:required){
+            if(forcedChunks.contains(chunk))continue;
+            if(world.getChunkSource().getChunkNow(chunk.x,chunk.z)==null){
+                if(cold==null)cold=chunk;
+                continue;
             }
-            if(world.getChunkSource().getChunkNow(pending.x,pending.z)==null)return;
-            if(!takeBudget(world,tick))return;
-            ChunkPos ready=pending;
-            try {
-                attempted++;
-                if(ForgeChunkManager.forceChunk(world,"millenaire",owner,ready.x,ready.z,true,true))
-                    forcedChunks.add(ready);
-                else retryAfter=tick+100;
-            } finally {releasePending(world);}
-        }else{
-            for(ChunkPos chunk:required)if(!forcedChunks.contains(chunk)){
-                if(!takeBudget(world,tick))return;
-                pending=chunk;pendingSince=tick;
-                world.getChunkSource().addRegionTicket(PREPARE,chunk,0,owner.asLong());
-                attempted++;
-                break;
-            }
+            attempted++;
+            claim(world,chunk,tick);
+            if(attempted>=MAX_READY_PER_TICK)break;
+        }
+        // Give cold chunks guaranteed progress, even if MSPT is high. Do not
+        // batch multiple synchronous cold loads in one village update.
+        if(cold!=null&&attempted<MAX_READY_PER_TICK){
+            attempted++;
+            claim(world,cold,tick);
         }
         chunksLoaded=forcedChunks.containsAll(required);
         long elapsed=System.nanoTime()-started;
@@ -104,13 +81,21 @@ public class BuildingChunkLoader {
                 +" attempted="+attempted+" forced="+forcedChunks.size()+" required="+required.size());
         if(chunksLoaded&&MillConfigValues.LogChunkLoader>=1)MillLog.major(townHall,"Force-loaded "+forcedChunks.size()+" village chunks.");
     }
-    public void unloadChunks() {
-        if(forcedChunks.isEmpty()&&!chunksLoaded&&pending==null)return;
-        if(townHall.world instanceof ServerLevel world){
-            releasePending(world);
-            for(ChunkPos chunk:forcedChunks)ForgeChunkManager.forceChunk(world,"millenaire",owner,chunk.x,chunk.z,false,true);
+    private void claim(ServerLevel world,ChunkPos chunk,long tick){
+        if(ForgeChunkManager.forceChunk(world,"millenaire",owner,chunk.x,chunk.z,true,true)){
+            forcedChunks.add(chunk);
+        }else if(lastWarning==Long.MIN_VALUE||tick-lastWarning>=100){
+            lastWarning=tick;
+            MillLog.warning(townHall,"Could not force-load village chunk "+chunk);
         }
-        forcedChunks.clear();chunksLoaded=false;retryAfter=0;
+    }
+    public int forcedCount(){return forcedChunks.size();}
+    public int requiredCount(){return required.size();}
+    public void unloadChunks() {
+        if(forcedChunks.isEmpty()&&!chunksLoaded)return;
+        if(townHall.world instanceof ServerLevel world)
+            for(ChunkPos chunk:forcedChunks)ForgeChunkManager.forceChunk(world,"millenaire",owner,chunk.x,chunk.z,false,true);
+        forcedChunks.clear();chunksLoaded=false;
         if(MillConfigValues.LogChunkLoader>=1)MillLog.major(townHall,"Unloaded the village chunks.");
     }
     public static class ChunkLoaderCallback implements ForgeChunkManager.LoadingValidationCallback {
