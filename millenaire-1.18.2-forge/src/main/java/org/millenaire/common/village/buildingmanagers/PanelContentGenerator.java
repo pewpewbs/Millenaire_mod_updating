@@ -294,7 +294,12 @@ public class PanelContentGenerator {
                } else if (vr.raidingVillage) {
                   error = " (" + LanguageUtilities.string("panels.raider").toLowerCase() + ")";
                } else {
-                  error = " (" + LanguageUtilities.string("panels.missing").toLowerCase() + ")";
+                  // A client roster entry without a tracked entity does not
+                  // establish that the resident disappeared on the server.
+                  String lang=MillConfigValues.effective_language;
+                  error = " (" + (townHall.world.isClientSide
+                        ? (lang!=null&&lang.startsWith("uk")?"поза спостереженням":lang!=null&&lang.startsWith("ru")?"вне наблюдения":"not tracked")
+                        : LanguageUtilities.string("panels.missing").toLowerCase()) + ")";
                }
 
                if (MillConfigValues.LogVillagerSpawn >= 1 && Mill.serverWorlds.size() > 0) {
@@ -889,7 +894,9 @@ public class PanelContentGenerator {
                status = LanguageUtilities.string("ui.upgrading") + " (" + projectCIP.getBuildingLocation().level + ")";
             }
          } else {
-            status = LanguageUtilities.string(house.buildingGoalIssue);
+            status = "ui.lackingresources".equals(house.buildingGoalIssue)
+                  && res.stream().allMatch(key->resHas.get(key)>=resCost.get(key))
+                  ? "" : LanguageUtilities.string(house.buildingGoalIssue);
          }
 
          page.addLine(name + (status.isBlank() ? "" : " - " + status));
@@ -1034,7 +1041,6 @@ public class PanelContentGenerator {
             status = LanguageUtilities.string(townHall.buildingGoalIssue);
          }
 
-         page.addLine(LanguageUtilities.string("panels.buildingproject") + " " + goal.nativeName + " " + goal.getNameTranslated() + (status.isBlank() ? "" : ": " + status));
          List<InvItem> res = new ArrayList<>();
          HashMap<InvItem, Integer> resCost = new HashMap<>();
          HashMap<InvItem, Integer> resHas = new HashMap<>();
@@ -1059,7 +1065,9 @@ public class PanelContentGenerator {
                has=Math.min(goal.resCost.get(key),townHall.availableForCurrentProject(key));
             resHas.put(key, has);
          }
-
+         if(goalCIP==null && "ui.lackingresources".equals(townHall.buildingGoalIssue)
+               && res.stream().allMatch(key->resHas.get(key)>=resCost.get(key)))status="";
+         page.addLine(LanguageUtilities.string("panels.buildingproject") + " " + goal.nativeName + " " + goal.getNameTranslated() + (status.isBlank() ? "" : ": " + status));
          page.addLine("");
          page.addLine(LanguageUtilities.string("panels.resourcesneeded") + ":");
          page.addLine("");
