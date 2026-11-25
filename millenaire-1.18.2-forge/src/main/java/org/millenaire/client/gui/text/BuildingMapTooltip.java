@@ -146,6 +146,7 @@ final class BuildingMapTooltip {
         if(goal instanceof GoalFish)return new ItemStack(Items.FISHING_ROD);
         if(goal instanceof GoalBrewPotions)return new ItemStack(Items.BREWING_STAND);
         if(goal instanceof GoalGenericCrafting)return new ItemStack(Blocks.CRAFTING_TABLE);
+        if(goal instanceof GoalGenericGatherBlocks gather&&softGather(gather))return new ItemStack(Items.IRON_SHOVEL);
         if(goal instanceof GoalGenericGatherBlocks||goal instanceof GoalGenericTakeFromBuilding)return new ItemStack(Blocks.CHEST);
         return new ItemStack(Items.BOOK);
     }
@@ -155,7 +156,7 @@ final class BuildingMapTooltip {
                 ? label("Crafts resources","Виготовляє ресурси","Изготавливает ресурсы")
                 : goal instanceof GoalGenericCooking || goal instanceof GoalGenericTendFurnace
                 ? label("Processes resources in a furnace","Переробляє ресурси в печі","Перерабатывает ресурсы в печи")
-                : goal instanceof GoalGenericMining || goal instanceof GoalMinerMineResource
+                : goal instanceof GoalGenericMining || goal instanceof GoalMinerMineResource || (goal instanceof GoalGenericGatherBlocks gather&&softGather(gather))
                 ? label("Extracts resources","Добуває ресурси","Добывает ресурсы")
                 : goal instanceof GoalGenericHarvestCrop || goal instanceof GoalHarvestWarts || goal instanceof GoalIndianHarvestSugarCane
                 ? label("Harvests crops","Збирає врожай","Собирает урожай")
@@ -346,7 +347,7 @@ final class BuildingMapTooltip {
                     continue;
                 }
                 boolean central = loc.chestPos!=null&&loc.chestPos.sameBlock(townHall.getPos());
-                if(home&&generic.buildingTag!=null
+                if(home&&hasTag(loc,building,plan,"farm")&&generic.buildingTag!=null
                         &&(generic instanceof GoalGenericPlantCrop||generic instanceof GoalGenericHarvestCrop)
                         &&!hasTag(loc,building,plan,generic.buildingTag))externalFarm=true;
                 if (generic.townHallGoal ? !central
@@ -385,7 +386,7 @@ final class BuildingMapTooltip {
                         if(bonus.tag==null||hasTag(loc,building,plan,bonus.tag))addItem(gathered,bonus.item);
                     addItem(gathered, harvest.irrigationBonusCrop);
                 } else if (generic instanceof GoalGenericGatherBlocks gather) {
-                    Goods destination=fruitTree&&fruitGather(gather)?grown:gathered;
+                    Goods destination=fruitTree&&fruitGather(gather)?grown:softGather(gather)?extracted:gathered;
                     for (var bonus : gather.harvestItem)
                         if(bonus.tag==null||hasTag(loc,building,plan,bonus.tag))addItem(destination,bonus.item);
                 } else if (generic instanceof GoalGenericSlaughterAnimal slaughter) {
@@ -457,7 +458,8 @@ final class BuildingMapTooltip {
         }
         if(fruitTree&&!grown.isEmpty()){
             actions.source=label("Fruit growing","Вирощування плодів","Выращивание плодов");
-            addStack(actions,new ItemStack(Items.OAK_SAPLING));
+            addStack(actions,new ItemStack(grown.icons.stream().anyMatch(s->s.is(org.millenaire.common.item.MillItems.OLIVES))
+                    ? MillBlocks.LEAVES_OLIVETREE : Blocks.OAK_LEAVES));
         }
         if(visitPurpose(loc,building,plan,"patrol")){
             actions.source=label("Patrol point","Місце патрулювання","Место патрулирования");
@@ -498,6 +500,12 @@ final class BuildingMapTooltip {
             for (String effect : effects) add(lines, effect, MUTED);
         }
         return lines;
+    }
+
+    private static boolean softGather(GoalGenericGatherBlocks gather){
+        if(gather.gatherBlockState==null)return false;
+        var block=gather.gatherBlockState.getBlock();
+        return block==Blocks.SAND||block==Blocks.RED_SAND||block==Blocks.GRAVEL||block==Blocks.CLAY;
     }
 
     private static boolean fruitGather(GoalGenericGatherBlocks gather){
