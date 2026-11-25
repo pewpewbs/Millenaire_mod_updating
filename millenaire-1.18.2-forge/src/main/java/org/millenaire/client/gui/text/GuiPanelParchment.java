@@ -588,8 +588,13 @@ extends GuiText {
         framePose.pushPose();
         try{
             framePose.translate(left,top,850);framePose.scale(fit,fit,1);
+            // The SEE_THROUGH text render type disables depth testing for the
+            // count itself, including when the item model has written depth.
+            var counts=net.minecraft.client.renderer.MultiBufferSource.immediate(new BufferBuilder(256));
             for(var item:recipeIcons){String count=Integer.toString(item.stack().getCount());
-                font.drawShadow(framePose,count,item.x()+16-font.width(count),item.y()+10,0xffffff);}
+                font.drawInBatch(count,item.x()+16-font.width(count),item.y()+10,0xffffff,true,
+                        framePose.last().pose(),counts,true,0,0xF000F0);}
+            counts.endBatch();
         }finally{framePose.popPose();}
     }
 
