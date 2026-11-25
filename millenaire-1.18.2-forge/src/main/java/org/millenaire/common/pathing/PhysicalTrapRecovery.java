@@ -26,6 +26,9 @@ public final class PhysicalTrapRecovery {
     }
 
     public static boolean isTrapped(MillVillager villager) {
+        // Sleeping models intentionally lie across their standing collision box.
+        // Do not relocate an NPC while it is in that pose; waking rechecks normally.
+        if (villager.isVillagerSleeping()) return false;
         if (villager.isInWall()) return true;
         // A full two-block wall (or a one-block wall with a low solid roof)
         // is qualitatively different from a blocked route through a doorway.
