@@ -78,6 +78,10 @@ extends GuiText {
     private boolean hoveredConstruction,tooltipPinned;
     private int hoverX,hoverY,panelLeft,panelTop,panelWidth,panelHeight,pinLeft,pinTop,closeX,closeY,closeSize;
     private boolean panelVisible;
+    private final java.util.Map<ResourceLocation,Boolean> portraitResources=new java.util.HashMap<>();
+    private boolean portraitAvailable(ResourceLocation texture){
+        return texture!=null&&portraitResources.computeIfAbsent(texture,t->minecraft.getResourceManager().hasResource(t));
+    }
     private record TooltipText(FormattedCharSequence text, int color, int y,String detail) {}
     private record TooltipIcon(ItemStack stack,int x,int y,String detail,List<BuildingMapTooltip.RecipeView> recipes,boolean action,BuildingMapTooltip.Portrait portrait) {
         TooltipIcon(ItemStack stack,int x,int y,String detail,List<BuildingMapTooltip.RecipeView> recipes,boolean action){
@@ -489,7 +493,7 @@ extends GuiText {
         int top = Math.max(5, Math.min(mouseY + 8, this.height - h - 5));
         if(pinnedLocation!=null){left=Math.max(5,Math.min(pinLeft,this.width-w-5));top=Math.max(5,Math.min(pinTop,this.height-h-5));}
         panelLeft=left;panelTop=top;panelWidth=w;panelHeight=h;panelVisible=true;
-        closeSize=Math.max(10,(int)Math.ceil(12*fit));closeX=left+w-closeSize;closeY=top;
+        closeSize=Math.max(1,(int)Math.ceil(12*fit));closeX=left+w-closeSize;closeY=top;
 
         pose.pushPose();
         try {
@@ -526,7 +530,7 @@ extends GuiText {
             for (var icon : layout.icons()){
                 if(icon.portrait()!=null){
                     var texture=icon.portrait().texture();
-                    if(texture==null||!minecraft.getResourceManager().hasResource(texture))
+                    if(!portraitAvailable(texture))
                         itemRenderer.renderAndDecorateItem(new ItemStack(net.minecraft.world.item.Items.PLAYER_HEAD),icon.x(),icon.y());
                 }else itemRenderer.renderAndDecorateItem(icon.stack(), icon.x(), icon.y());
             }
@@ -545,7 +549,7 @@ extends GuiText {
             for(var icon:layout.icons()){
                 if(icon.portrait()==null)continue;
                 var texture=icon.portrait().texture();
-                if(texture==null||!minecraft.getResourceManager().hasResource(texture))continue;
+                if(!portraitAvailable(texture))continue;
                 RenderSystem.setShader(GameRenderer::getPositionTexShader);
                 RenderSystem.setShaderTexture(0,texture);
                 RenderSystem.setShaderColor(1,1,1,1);
@@ -637,6 +641,7 @@ extends GuiText {
 
     @Override
     public void initData() {
+        portraitResources.clear();
         this.textBook = this.bookManager.adjustTextBookLineLength(this.textBook);
         if (this.mapType == 1 && this.townHall != null) {
             ClientSender.requestMapInfo(this.townHall);
