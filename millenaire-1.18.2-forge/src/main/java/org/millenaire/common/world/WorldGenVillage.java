@@ -164,6 +164,7 @@ public class WorldGenVillage {
         if (!world.dimension().equals(Level.OVERWORLD)) {
             return;
         }
+        if (VillagePreparationQueue.suppressNatural(world,chunkX,chunkZ)) return;
         StackTraceElement[] trace = Thread.currentThread().getStackTrace();
         for (int i = 2; i < trace.length; ++i) {
             if (!trace[i].getClassName().equals(this.getClass().getName())) continue;
@@ -580,6 +581,10 @@ public class WorldGenVillage {
                 }
                 if ((p = this.generateVillageAtPoint_checkForUnloaded(world, x, y, z, generatingPlayer, p, villageRadius)) == null) {
                     if(MillConfigValues.LogWorldGeneration>=2)MillLog.major(this,"VILLAGE-GEN-REJECT reason=area-incomplete x="+x+" z="+z+" radius="+villageRadius);
+                    if(world instanceof net.minecraft.server.level.ServerLevel server && generatingPlayer==null
+                            && specificVillageType==null && parentVillage==null && !alwaysGenerate
+                            && minDistance==Integer.MAX_VALUE)
+                        VillagePreparationQueue.offer(server,mw,this,x>>4,z>>4,random.nextLong(),completionRatio);
                     return false;
                 }
             }
@@ -750,6 +755,34 @@ public class WorldGenVillage {
             return null;
         }
         return p;
+    }
+
+    boolean preparationDistanceValid(net.minecraft.server.level.ServerLevel world,MillWorldData mw,
+                                     int chunkX,int chunkZ,VillageType type){
+        Point p=new Point(chunkX*16,0,chunkZ*16);
+        return !WorldGenVillage.isWithinSpawnRadiusProtection(world,type,p)
+                && generateVillageAtPoint_canAttemptVillage(world,null,Integer.MAX_VALUE,mw,p,System.nanoTime())
+                && (type==null||!overlapsExistingVillageTerritory(mw,p,type));
+    }
+
+    VillageType selectPreparationType(net.minecraft.server.level.ServerLevel world,MillWorldData mw,
+                                      int chunkX,int chunkZ,long seed) throws IllegalAccessException{
+        Random previous=MillCommonUtilities.random;
+        try{
+            MillCommonUtilities.random=new Random(seed);
+            return generateVillageAtPoint_findVillageType(world,chunkX*16,chunkZ*16,mw,
+                    world.getNearestPlayer(chunkX*16,64,chunkZ*16,200,false));
+        }finally{MillCommonUtilities.random=previous;}
+    }
+
+    boolean preparationTypeValid(net.minecraft.server.level.ServerLevel world,MillWorldData mw,
+                                 int chunkX,int chunkZ,VillageType type) throws IllegalAccessException{
+        if(type.lonebuilding || type.customCentre!=null || type.getChoiceWeight(null)<=0
+                || !preparationDistanceValid(world,mw,chunkX,chunkZ,type))return false;
+        HashMap<String,Integer> counts=new HashMap<>();
+        for(String key:mw.villagesList.types)counts.merge(key,1,Integer::sum);
+        return type.isValidForGeneration(mw,world.getNearestPlayer(chunkX*16,64,chunkZ*16,200,false),
+                counts,new Point(chunkX*16,60,chunkZ*16),getBiomeNameAtPos(world,chunkX*16,chunkZ*16),false);
     }
 
     private VillageType generateVillageAtPoint_findVillageType(Level world, int x, int z, MillWorldData mw, Player closestPlayer) throws IllegalArgumentException, IllegalAccessException {
