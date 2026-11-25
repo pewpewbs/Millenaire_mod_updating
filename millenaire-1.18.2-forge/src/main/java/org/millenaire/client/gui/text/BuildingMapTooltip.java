@@ -127,7 +127,7 @@ final class BuildingMapTooltip {
     private static ItemStack actionIcon(Goal goal){
         if(goal instanceof GoalGenericCooking||goal instanceof GoalGenericTendFurnace)return new ItemStack(Blocks.FURNACE);
         if(goal instanceof GoalGenericSlaughterAnimal)return new ItemStack(Items.IRON_SWORD);
-        if(goal instanceof GoalBreedAnimals)return new ItemStack(Blocks.HAY_BLOCK);
+        if(goal instanceof GoalBreedAnimals)return new ItemStack(Items.WHEAT);
         if(goal instanceof GoalShearSheep)return new ItemStack(Items.SHEARS);
         if(goal instanceof GoalGenericPlantCrop)return new ItemStack(Items.WHEAT_SEEDS);
         if(goal instanceof GoalGenericHarvestCrop)return new ItemStack(Items.WHEAT);
@@ -141,9 +141,12 @@ final class BuildingMapTooltip {
         return new ItemStack(Items.BOOK);
     }
     private static void activity(Goods actions,Goal goal,String source,RecipeView recipe){
-        actions.source=source;actions.recipe=recipe;
+        // Activity icons describe the category, not the products or their recipes.
+        actions.source=goal instanceof GoalGenericCrafting
+                ? label("Crafts resources","Виготовляє ресурси","Изготавливает ресурсы")
+                : goal instanceof GoalGenericCooking || goal instanceof GoalGenericTendFurnace
+                ? label("Works with a furnace","Працює з піччю","Работает с печью") : source;
         addStack(actions,actionIcon(goal));
-        actions.recipe=null;
     }
     private static boolean productive(VillagerType type){
         return type!=null&&!type.isChild&&type.goals.stream().anyMatch(g->!g.leasure&&(g instanceof GoalGeneric
@@ -298,7 +301,9 @@ final class BuildingMapTooltip {
                         activities.add(source);
                         extracted.source=label("Shear an adult sheep with wool","Стрижка дорослої вівці з вовною","Стрижка взрослой овцы с шерстью");
                         addStack(extracted, new ItemStack(Blocks.WHITE_WOOL));
-                    } else if (goal instanceof GoalBreedAnimals && home) {
+                    } else if (goal instanceof GoalBreedAnimals && home
+                            && (hasTag(loc, building, plan, "sheeps") || hasTag(loc, building, plan, "cattle")
+                                || hasTag(loc, building, plan, "pigs") || hasTag(loc, building, plan, "chicken"))) {
                         activity(actions,goal,source,null);
                         activities.add(source);
                     } else if (goal instanceof GoalBrewPotions && home) {
@@ -324,8 +329,16 @@ final class BuildingMapTooltip {
                     RecipeView recipe=inputs.isEmpty()||outputs.isEmpty()?null:new RecipeView(inputs,outputs);
                     activity(actions,goal,source,recipe);
                     produced.recipe=recipe;
-                    produced.source=source;
-                    crafting.output.forEach((item,count)->{if(count!=null&&count>0)addItem(produced,item);});
+                    crafting.output.forEach((item,count)->{
+                        if(count==null||count<=0)return;
+                        // Some configured goals deliberately consume no ingredients.
+                        // Report that fact and the batch size, not the repeated goal name.
+                        produced.source=crafting.input.isEmpty()
+                                ? label("No ingredients consumed","Без витрат сировини","Без расхода сырья")
+                                    + "; " + count + label(" per cycle"," шт. за цикл"," шт. за цикл")
+                                : recipe==null ? label("Recipe not available","Рецепт не відображено","Рецепт не отображается") : null;
+                        addItem(produced,item);
+                    });
                 } else if (generic instanceof GoalGenericMining mining) {
                     mining.loots.forEach((item, count) -> { if (count != null && count > 0) addItem(extracted, item); });
                 } else if (generic instanceof GoalGenericHarvestCrop harvest) {
