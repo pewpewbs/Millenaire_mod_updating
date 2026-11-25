@@ -74,8 +74,11 @@ extends GuiText {
     private long tooltipRefreshNanos;
     private List<BuildingMapTooltip.Line> tooltipDetails = List.of();
     private boolean showBuildingTooltip;
-    private record TooltipText(FormattedCharSequence text, int color, int y) {}
-    private record TooltipIcon(ItemStack stack, int x, int y) {}
+    private BuildingLocation hoveredLocation,pinnedLocation;
+    private boolean hoveredConstruction,pinnedConstruction;
+    private int hoverX,hoverY,panelLeft,panelTop,panelWidth,panelHeight;
+    private record TooltipText(FormattedCharSequence text, int color, int y,String detail) {}
+    private record TooltipIcon(ItemStack stack, int x, int y,String detail) {}
     private record TooltipLayout(List<TooltipText> text, List<TooltipIcon> icons, int width, int height) {}
     private final Player player;
     ResourceLocation backgroundParchment = new ResourceLocation("millenaire", "textures/gui/parchment.png");
@@ -324,6 +327,17 @@ extends GuiText {
                 playerHover = this.player;
             }
         }
+        hoveredLocation=locHover;hoveredConstruction=constructionHover;hoverX=i;hoverY=j;
+        if(pinnedLocation!=null){
+            BuildingLocation found=null;
+            boolean constructing=false;
+            for(ConstructionIP cip:constructionsIP)if(cip.getBuildingLocation()!=null&&cip.getBuildingLocation().isSameLocation(pinnedLocation)){
+                found=cip.getBuildingLocation();constructing=true;break;
+            }
+            if(found==null)for(BuildingLocation location:locations)if(location.isSameLocation(pinnedLocation)){found=location;break;}
+            pinnedLocation=found;
+            if(found!=null){locHover=found;constructionHover=constructing;villagerHover=null;playerHover=null;}
+        }
         if (villagerHover != null) {
             boolean gameString;
             org.millenaire.common.goal.Goal activeGoal = org.millenaire.common.goal.Goal.goals.get(villagerHover.goalKey);
@@ -362,7 +376,7 @@ extends GuiText {
                     || !java.util.Objects.equals(tooltipTitle, title)
                     || !java.util.Objects.equals(tooltipLanguage, language)
                     || now - tooltipRefreshNanos >= 500_000_000L) {
-                tooltipDetails = BuildingMapTooltip.describe(locHover, this.townHall, title, constructionHover);
+                tooltipDetails = BuildingMapTooltip.describe(locHover, this.townHall, title, constructionHover,pinnedLocation!=null);
                 tooltipLocation = locHover;
                 tooltipLevel = locHover.level;
                 tooltipConstruction = constructionHover;
@@ -385,10 +399,30 @@ extends GuiText {
     @Override
     public void render(PoseStack pose, int mouseX, int mouseY, float partialTicks) {
         showBuildingTooltip = false;
+        if(pageNum!=0){pinnedLocation=null;hoveredLocation=null;}
         super.render(pose, mouseX, mouseY, partialTicks);
         if (showBuildingTooltip && !tooltipDetails.isEmpty()) {
             drawBuildingTooltip(pose, mouseX, mouseY);
         }
+    }
+
+    @Override public boolean mouseClicked(double x,double y,int button){
+        if(mapType==VILLAGE_MAP&&pageNum==0&&button==0){
+            if(pinnedLocation!=null&&x>=panelLeft-3&&x<=panelLeft+panelWidth+3&&y>=panelTop-3&&y<=panelTop+panelHeight+3)return true;
+            if(hoveredLocation!=null&&Math.abs(x-hoverX)<=3&&Math.abs(y-hoverY)<=3){
+                pinnedLocation=pinnedLocation!=null&&pinnedLocation.isSameLocation(hoveredLocation)?null:hoveredLocation;
+                pinnedConstruction=hoveredConstruction;
+                tooltipRefreshNanos=0;
+                return true;
+            }
+        }
+        return super.mouseClicked(x,y,button);
+    }
+    @Override public boolean keyPressed(int key,int scan,int modifiers){
+        if(key==org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE&&pinnedLocation!=null){
+            pinnedLocation=null;tooltipRefreshNanos=0;return true;
+        }
+        return super.keyPressed(key,scan,modifiers);
     }
 
     private TooltipLayout layoutBuildingTooltip(int maxWidth) {
@@ -400,7 +434,7 @@ extends GuiText {
         for (var line : tooltipDetails) {
             if (!line.icons().isEmpty()) y += 3;
             for (var part : font.split(new net.minecraft.network.chat.TextComponent(line.text()), maxWidth)) {
-                texts.add(new TooltipText(part, line.color(), y));
+                texts.add(new TooltipText(part, line.color(), y,line.detail()));
                 usedWidth = Math.max(usedWidth, font.width(part));
                 y += 11;
             }
@@ -408,7 +442,7 @@ extends GuiText {
                 int count = line.icons().size();
                 for (int n = 0; n < count; n++) {
                     int x = (n % columns) * 18;
-                    icons.add(new TooltipIcon(line.icons().get(n), x, y + (n / columns) * 18));
+                    icons.add(new TooltipIcon(line.icons().get(n), x, y + (n / columns) * 18,n<line.iconDetails().size()?line.iconDetails().get(n):null));
                 }
                 usedWidth = Math.max(usedWidth, Math.min(columns, count) * 18);
                 y += ((count + columns - 1) / columns) * 18;
@@ -432,6 +466,8 @@ extends GuiText {
                 ? mouseX + 12 : mouseX - w - 12;
         left = Math.max(5, Math.min(left, this.width - w - 5));
         int top = Math.max(5, Math.min(mouseY + 8, this.height - h - 5));
+        if(pinnedLocation!=null){left=Math.max(5,this.width-w-8);top=8;}
+        panelLeft=left;panelTop=top;panelWidth=w;panelHeight=h;
 
         pose.pushPose();
         try {
@@ -447,7 +483,10 @@ extends GuiText {
 
         // Vanilla's inventory renderer draws the real item model, including
         // custom Millenaire assets, resource packs and NBT-dependent variants.
-        if (layout.icons().isEmpty()) return;
+        if (layout.icons().isEmpty()) {
+            if(pinnedLocation!=null)drawPinnedDetail(layout,mouseX,mouseY,fit);
+            return;
+        }
         PoseStack modelView = RenderSystem.getModelViewStack();
         float oldOffset = itemRenderer.blitOffset;
         modelView.pushPose();
@@ -465,6 +504,20 @@ extends GuiText {
             modelView.popPose();
             RenderSystem.applyModelViewMatrix();
             Lighting.setupFor3DItems();
+        }
+        if(pinnedLocation!=null)drawPinnedDetail(layout,mouseX,mouseY,fit);
+    }
+
+    private void drawPinnedDetail(TooltipLayout layout,int mouseX,int mouseY,float fit){
+        if(fit<=0)return;
+        float x=(mouseX-panelLeft)/fit,y=(mouseY-panelTop)/fit;
+        if(x<0||x>layout.width()||y<0||y>layout.height())return;
+        for(var icon:layout.icons())if(x>=icon.x()&&x<icon.x()+16&&y>=icon.y()&&y<icon.y()+16){
+            drawItemStackTooltip(icon.stack(),mouseX,mouseY,true,icon.detail());return;
+        }
+        for(var line:layout.text())if(line.detail()!=null&&y>=line.y()&&y<line.y()+11){
+            renderComponentTooltip(framePose,java.util.List.of(new net.minecraft.network.chat.TextComponent(line.detail())),mouseX,mouseY,ItemStack.EMPTY);
+            return;
         }
     }
 

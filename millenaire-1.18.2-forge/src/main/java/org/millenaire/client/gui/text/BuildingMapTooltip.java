@@ -24,14 +24,21 @@ import org.millenaire.common.village.BuildingLocation;
 
 /** Read-only map description. Never runs a goal, changes stock or requests chunks. */
 final class BuildingMapTooltip {
-    record Line(String text, int color, List<ItemStack> icons) {
-        Line(String text, int color) { this(text, color, List.of()); }
+    record Line(String text, int color, List<ItemStack> icons,List<String> iconDetails,String detail) {
+        Line(String text,int color){this(text,color,List.of(),List.of(),null);}
+        Line(String text,int color,String detail){this(text,color,List.of(),List.of(),detail);}
     }
 
     /** Keep actual stacks (including metadata/NBT), not translated names. */
     private static final class Goods {
         final List<ItemStack> icons = new ArrayList<>();
         final Set<String> fallback = new TreeSet<>();
+        final java.util.Map<ItemStack,Set<String>> details=new java.util.IdentityHashMap<>();
+        String source;
+        String detail(ItemStack stack){
+            Set<String> sources=details.get(stack);
+            return sources==null?label("Source not specified","Джерело не уточнено","Источник не указан"):String.join("; ",sources);
+        }
         boolean isEmpty() { return icons.isEmpty() && fallback.isEmpty(); }
         void removeAll(Goods other) {
             icons.removeIf(stack -> other.icons.stream().anyMatch(
@@ -67,23 +74,69 @@ final class BuildingMapTooltip {
     private static void addStack(Goods result, ItemStack stack) {
         if (stack == null || stack.isEmpty()) return;
         for (ItemStack existing : result.icons) {
-            if (ItemStack.isSameItemSameTags(existing, stack)) return;
+            if (ItemStack.isSameItemSameTags(existing, stack)){
+                if(result.source!=null)result.details.computeIfAbsent(existing,k->new LinkedHashSet<>()).add(result.source);
+                return;
+            }
         }
         ItemStack icon = stack.copy();
         icon.setCount(1);
         result.icons.add(icon);
+        if(result.source!=null)result.details.computeIfAbsent(icon,k->new LinkedHashSet<>()).add(result.source);
     }
 
     private static void section(List<Line> lines, String title, Goods goods) {
         if (goods.isEmpty()) return;
         goods.icons.sort(java.util.Comparator.comparing(stack -> stack.getHoverName().getString()));
-        lines.add(new Line(title, NORMAL, List.copyOf(goods.icons)));
+        lines.add(new Line(title,NORMAL,List.copyOf(goods.icons),goods.icons.stream().map(goods::detail).toList(),null));
         // Special trade abstractions (e.g. any enchanted item) have no stack.
         // Only those retain a text description.
         for (String fallback : goods.fallback) add(lines, fallback, MUTED);
     }
 
-    static List<Line> describe(BuildingLocation loc, Building townHall, String nativeName, boolean construction) {
+    private static boolean productive(VillagerType type){
+        return type!=null&&!type.isChild&&type.goals.stream().anyMatch(g->!g.leasure&&(g instanceof GoalGeneric
+            ||g instanceof GoalBreedAnimals||g instanceof GoalShearSheep||g instanceof GoalMinerMineResource
+            ||g instanceof GoalFish||g instanceof GoalLumbermanChopTrees||g instanceof GoalHarvestWarts
+            ||g instanceof GoalIndianHarvestSugarCane||g instanceof GoalIndianGatherBrick||g instanceof GoalBrewPotions));
+    }
+
+    private static void staff(List<Line> lines,BuildingLocation loc,Building townHall,Building building,boolean expanded){
+        if(loc.culture==null)return;
+        java.util.Map<VillagerType,Integer> expected=new java.util.LinkedHashMap<>();
+        List<String> roles=new ArrayList<>(loc.getMaleResidents());roles.addAll(loc.getFemaleResidents());
+        for(String key:roles){VillagerType type=loc.culture.getVillagerType(key);if(productive(type))expected.merge(type,1,Integer::sum);}
+        if(expected.isEmpty()){
+            add(lines,label("No fixed production posts specified","Окремі робочі місця не задано","Отдельные рабочие места не заданы"),MUTED);
+            return;
+        }
+        int total=expected.values().stream().mapToInt(Integer::intValue).sum(),filled=0;
+        List<org.millenaire.common.village.VillagerRecord> staff=new ArrayList<>();
+        java.util.Map<VillagerType,Integer> counts=new java.util.HashMap<>();
+        if(building!=null&&loc.level>=0)for(var record:townHall.getVillagerRecords().values()){
+            if(record.killed||record.getHousePos()==null||!record.getHousePos().equals(building.getPos()))continue;
+            VillagerType type=record.getType();
+            if(!expected.containsKey(type))continue;
+            if(counts.merge(type,1,Integer::sum)<=expected.get(type))filled++;
+            staff.add(record);
+        }
+        add(lines,label("Resident workers: ","Працівники-резиденти: ","Работники-резиденты: ")+filled+"/"+total,filled==0?0xFF7777:filled<total?GOLD:0x88DD88);
+        if(filled==0)add(lines,label("No resident workers","Немає працівників-резидентів","Нет работников-резидентов"),0xFF7777);
+        if(!expanded)return;
+        for(var record:staff){
+            var npc=townHall.mw.getVillagerById(record.getVillagerId());
+            String status;
+            if(npc==null||!npc.isAlive())status=label("Live status unavailable","Поточний стан невідомий","Текущее состояние неизвестно");
+            else{
+                var goal=npc.getCurrentGoal();
+                status=goal==null?label("No current task","Немає поточного завдання","Нет текущего задания"):goal.gameName(npc);
+            }
+            lines.add(new Line(record.getName()+" — "+record.getGameOccupation(),NORMAL,label("Current task: ","Що робить: ","Что делает: ")+status));
+        }
+        if(filled<total)add(lines,label("Vacant posts: ","Вільні робочі місця: ","Свободные рабочие места: ")+(total-filled),0xFF7777);
+    }
+
+    static List<Line> describe(BuildingLocation loc, Building townHall, String nativeName, boolean construction,boolean expanded) {
         List<Line> lines = new ArrayList<>();
         add(lines, nativeName, NORMAL);
         if (loc.getIBuildingPlan() != null) add(lines, loc.getGameName(), NORMAL);
@@ -115,6 +168,8 @@ final class BuildingMapTooltip {
         // Planned residents describe home-based production; village worker types
         // describe tagged workplaces and the central building. These are potential
         // outputs, not a promise of current workers, stock or actual throughput.
+        staff(lines,loc,townHall,building,expanded);
+        if(expanded)add(lines,label("Pinned • Esc to close","Закріплено • Esc — закрити","Закреплено • Esc — закрыть"),MUTED);
         Set<VillagerType> residents = new LinkedHashSet<>();
         Set<VillagerType> workers = new LinkedHashSet<>();
         if (loc.culture != null) {
@@ -140,6 +195,9 @@ final class BuildingMapTooltip {
         for (VillagerType type : workers) {
             for (Goal goal : type.goals) {
                 boolean home = residents.contains(type);
+                String action=goal.gameName();
+                String source=(action==null||action.isBlank()||action.startsWith("goal."))?goal.getClass().getSimpleName():action;
+                produced.source=source;extracted.source=source;
                 if (!(goal instanceof GoalGeneric generic)) {
                     // Legacy goals have no generic output table. Describe only
                     // products whose destination contract is explicit in code.
@@ -177,7 +235,11 @@ final class BuildingMapTooltip {
                     } else if (goal instanceof GoalHarvestWarts && home) {
                         addStack(extracted, new ItemStack(Items.NETHER_WART));
                     } else if (goal instanceof GoalShearSheep && home && hasTag(loc, building, plan, "sheeps")) {
+                        activities.add(source);
+                        extracted.source=label("Shear an adult sheep with wool","Стрижка дорослої вівці з вовною","Стрижка взрослой овцы с шерстью");
                         addStack(extracted, new ItemStack(Blocks.WHITE_WOOL));
+                    } else if (goal instanceof GoalBreedAnimals && home) {
+                        activities.add(source);
                     } else if (goal instanceof GoalBrewPotions && home) {
                         addStack(produced, net.minecraft.world.item.alchemy.PotionUtils.setPotion(
                                 new ItemStack(Items.POTION), net.minecraft.world.item.alchemy.Potions.AWKWARD));
@@ -190,24 +252,35 @@ final class BuildingMapTooltip {
                 if (generic.requiredTag != null && !hasTag(loc, building, plan, generic.requiredTag)) continue;
                 // A configured workplace can also have a non-producing role:
                 // planting, visiting, tending equipment or collecting supplies.
-                if (generic.buildingTag != null || generic.townHallGoal) {
+                if (!generic.leasure) {
                     String activity = generic.gameName();
                     if (activity != null && !activity.isBlank() && !activity.startsWith("goal."))
                         activities.add(activity);
                 }
                 if (generic instanceof GoalGenericCrafting crafting) {
-                    crafting.output.forEach((item, count) -> { if (count != null && count > 0) addItem(produced, item); });
+                    String input=crafting.input.entrySet().stream().map(e->e.getValue()+" × "+e.getKey().getName()).sorted().collect(java.util.stream.Collectors.joining(", "));
+                    crafting.output.forEach((item,count)->{
+                        if(count!=null&&count>0){
+                            produced.source=source+" | "+label("Inputs: ","Сировина: ","Сырьё: ")+input+" | "+label("Output: ","Вихід: ","Выход: ")+count;
+                            addItem(produced,item);
+                        }
+                    });
                 } else if (generic instanceof GoalGenericMining mining) {
                     mining.loots.forEach((item, count) -> { if (count != null && count > 0) addItem(extracted, item); });
                 } else if (generic instanceof GoalGenericHarvestCrop harvest) {
+                    extracted.source=source+" | "+label("Crop: ","Культура: ","Культура: ")+harvest.cropType;
                     for (var bonus : harvest.harvestItem) addItem(extracted, bonus.item);
+                    extracted.source+=label(" (irrigation bonus)"," (бонус зрошення)"," (бонус орошения)");
                     addItem(extracted, harvest.irrigationBonusCrop);
                 } else if (generic instanceof GoalGenericGatherBlocks gather) {
                     for (var bonus : gather.harvestItem) addItem(extracted, bonus.item);
                 } else if (generic instanceof GoalGenericSlaughterAnimal slaughter) {
+                    extracted.source=source+" | "+label("Animal: ","Тварина: ","Животное: ")+slaughter.animalKey
+                        +" | "+label("Adult herd surplus; chance-based drops","Надлишок дорослого стада; імовірнісна здобич","Избыток взрослого стада; вероятностная добыча");
                     for (var bonus : slaughter.bonusItem) addItem(extracted, bonus.item);
                 } else if (generic instanceof GoalGenericCooking cooking && cooking.itemToCook != null
                         && cooking.itemToCook.staticStack != null && townHall.world != null) {
+                    produced.source=source+" | "+label("Smelting: ","Переплавлення: ","Переплавка: ")+cooking.itemToCook.getName();
                     var input = new SimpleContainer(cooking.itemToCook.staticStack.copy());
                     townHall.world.getRecipeManager().getRecipeFor(RecipeType.SMELTING, input, townHall.world)
                             .ifPresent(recipe -> addStack(produced, recipe.getResultItem()));
@@ -218,18 +291,21 @@ final class BuildingMapTooltip {
         // Declared abstract production is a distinct planning figure, not proof
         // that a real NPC recipe currently produces this item.
         Goods planned = new Goods();
+        planned.source=label("Abstract plan output; no confirmed runtime recipe","Планове виробництво; фактичний рецепт не підтверджено","Плановое производство; фактический рецепт не подтверждён");
         if (plan != null) plan.abstractedProduction.forEach((item, count) -> {
             if (count != null && count > 0) addItem(planned, item);
         });
         planned.removeAll(produced);
         planned.removeAll(extracted);
         Goods sells = new Goods();
+        sells.source=label("Shop offer, not proof of local production","Торговельна пропозиція, не доказ місцевого виробництва","Торговое предложение, не доказательство местного производства");
         if (loc.culture != null && loc.shop != null) {
             var goods = loc.culture.shopSells.get(loc.shop);
             if (goods != null) for (var good : goods) if (good != null) addItem(sells, good.item);
         }
-        section(lines, label("Produces:", "Виробляє:", "Производит:"), produced);
-        section(lines, label("Extracts / gathers:", "Добуває / збирає:", "Добывает / собирает:"), extracted);
+        if(!activities.isEmpty())add(lines,label("Activities: ","Що робить: ","Что делает: ")+String.join("; ",activities),MUTED);
+        section(lines, label("Potential production:", "Може виробляти:", "Может производить:"), produced);
+        section(lines, label("Can extract / gather:", "Може добувати / збирати:", "Может добывать / собирать:"), extracted);
         section(lines, label("Declared production:", "Виробництво за планом:", "Производство по плану:"), planned);
         section(lines, label("Sells:", "Продає:", "Продаёт:"), sells);
 

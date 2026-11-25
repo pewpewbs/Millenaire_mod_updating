@@ -278,7 +278,12 @@ public class RenderMillVillager extends HumanoidMobRenderer<MillVillager, ModelM
                 this.displayText(pose, buffers, light, villager, "Dead on server!", -1593901056, (float)x, (float)y + height, (float)z);
             }
             if (MillConfigValues.displayNames && !villager.vtype.hideName) {
-                this.displayText(pose, buffers, light, villager, villager.func_70005_c_() + ", " + villager.getNativeOccupationName(), -1593835521, (float)x, (float)y + height, (float)z);
+                String occupation=villager.getNativeOccupationName();
+                if(MillConfigValues.effective_language!=null&&MillConfigValues.effective_language.startsWith("uk")){
+                    var record=villager.getRecord();
+                    if(record!=null&&!record.getLocalizedOccupation().isBlank())occupation=record.getLocalizedOccupation();
+                }
+                this.displayText(pose, buffers, light, villager, villager.func_70005_c_() + ", " + occupation, -1593835521, (float)x, (float)y + height, (float)z);
                 height += 0.32f;
             }
             if (!(specialIcons = this.defineSpecialIcons(villager)).isEmpty()) {
