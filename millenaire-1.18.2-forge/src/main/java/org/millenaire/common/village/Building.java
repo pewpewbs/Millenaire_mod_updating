@@ -229,6 +229,7 @@ public class Building {
    private long lastGoodsRefresh = 0L;
    private boolean refreshGoodsNightActionPerformed;
    private BuildingChunkLoader chunkLoader = null;
+   private long lastActivationWaitLog=Long.MIN_VALUE;
    private final CopyOnWriteArrayList<ConstructionIP> constructionsIP = new CopyOnWriteArrayList<>();
    public List<List<BuildingBlock>> pathsToBuild = null;
    private Building.PathCreatorQueue pathQueue = null;
@@ -3895,26 +3896,32 @@ public class Building {
       }
    }
 
-   private boolean isVillageChunksLoaded() {
-      if (this.world.isClientSide) {
-         MillLog.printException("Trying to check chunk status client side", new Exception());
-         return false;
-      } else {
-         ServerChunkCache chunkProvider = ((ServerLevel)this.world).getChunkSource();
+   private List<BuildingLocation> activationLocations(){
+      List<BuildingLocation> locations=new ArrayList<>(this.getLocations());
+      for(ConstructionIP cip:this.getConstructionsInProgress())
+         if(cip.getBuildingLocation()!=null)locations.add(cip.getBuildingLocation());
+      return locations;
+   }
 
-         if(this.winfo==null||this.winfo.width<=0||this.winfo.length<=0)return false;
-         int minX=this.winfo.mapStartX>>4, maxX=(this.winfo.mapStartX+this.winfo.length-1)>>4;
-         int minZ=this.winfo.mapStartZ>>4, maxZ=(this.winfo.mapStartZ+this.winfo.width-1)>>4;
-         for (int x=minX; x<=maxX; x++) {
-            for (int z=minZ; z<=maxZ; z++) {
-               if (chunkProvider.getChunkNow(x,z)==null) {
-                  return false;
-               }
-            }
-         }
+   private VillageMapInfo.ActivationBounds getActivationBounds(){
+      if(this.location==null||this.villageType==null)return null;
+      // Saved buildings start with a new, empty VillageMapInfo. Never
+      // require that map to exist before requesting its chunks.
+      if(this.winfo!=null&&this.winfo.world!=null&&this.winfo.length>0&&this.winfo.width>0)
+         return new VillageMapInfo.ActivationBounds(this.winfo.chunkStartX,this.winfo.chunkStartZ,this.winfo.length,this.winfo.width);
+      return VillageMapInfo.activationBounds(this.activationLocations(),this.location.pos,this.villageType.radius);
+   }
 
-         return true;
-      }
+   private boolean isVillageChunksLoaded(VillageMapInfo.ActivationBounds bounds) {
+      if(!(this.world instanceof ServerLevel server)||bounds==null)return false;
+      ServerChunkCache chunkProvider=server.getChunkSource();
+      // Terrain scans inspect neighbouring chunks, so require the same
+      // one-chunk border as the ticking tickets.
+      int minX=bounds.startX()-1,maxX=bounds.startX()+bounds.length()/16;
+      int minZ=bounds.startZ()-1,maxZ=bounds.startZ()+bounds.width()/16;
+      for(int x=minX;x<=maxX;x++)for(int z=minZ;z<=maxZ;z++)
+         if(chunkProvider.getChunkNow(x,z)==null)return false;
+      return true;
    }
 
    private void killMobs() {
@@ -3955,16 +3962,10 @@ public class Building {
       }
    }
 
-   private void loadChunks() {
-      if (this.winfo != null && this.winfo.width > 0) {
-         if (this.chunkLoader == null) {
-            this.chunkLoader = new BuildingChunkLoader(this);
-         }
-
-         if (!this.chunkLoader.chunksLoaded) {
-            this.chunkLoader.loadChunks();
-         }
-      }
+   private void loadChunks(VillageMapInfo.ActivationBounds bounds) {
+      if(bounds==null)return;
+      if(this.chunkLoader==null)this.chunkLoader=new BuildingChunkLoader(this);
+      this.chunkLoader.loadChunks(bounds);
    }
 
    public void lockAllBuildingsChests() {
@@ -5945,16 +5946,36 @@ public class Building {
             Player player = this.world.getNearestPlayer(this.pos.getiX(), this.pos.getiY(), this.pos.getiZ(), MillConfigValues.KeepActiveRadius, false);
             if (this.isTownhall) {
                long activationStarted=System.nanoTime();
-               if (player != null && this.getPos().distanceTo(player) < MillConfigValues.KeepActiveRadius) {
-                  this.loadChunks();
-               } else if (player == null || this.getPos().distanceTo(player) > MillConfigValues.KeepActiveRadius + 32) {
+               boolean near=player!=null&&this.getPos().distanceTo(player)<MillConfigValues.KeepActiveRadius;
+               VillageMapInfo.ActivationBounds bounds=(near||this.isActive||this.winfo.world!=null)?this.getActivationBounds():null;
+               if(near){
+                  this.loadChunks(bounds);
+               }else if(player==null||this.getPos().distanceTo(player)>MillConfigValues.KeepActiveRadius+32){
                   this.unloadChunks();
                }
 
-               // Do not activate a cold village until its required tickets have
-               // been requested and its actual map chunks are available.
-               this.isAreaLoaded = this.isVillageChunksLoaded()
-                     && (player==null || this.chunkLoader==null || this.chunkLoader.chunksLoaded);
+               // Availability, not completion of the bookkeeping, is what
+               // gates AI. A village already loaded by the player can start
+               // before every persistent ticket has been registered.
+               this.isAreaLoaded=this.isVillageChunksLoaded(bounds);
+               if(this.isAreaLoaded&&this.winfo.world==null){
+                  try{
+                     this.updateWorldInfo();
+                  }catch(MillLog.MillenaireException error){
+                     this.winfo=new VillageMapInfo();
+                     this.isAreaLoaded=false;
+                     MillLog.printException(error);
+                  }
+               }
+               if(near&&!this.isAreaLoaded){
+                  long now=this.world.getGameTime();
+                  if(this.lastActivationWaitLog==Long.MIN_VALUE||now-this.lastActivationWaitLog>=100){
+                     this.lastActivationWaitLog=now;
+                     MillLog.major(this,"MILL-ACTIVATION waiting pos="+this.getPos()+" tickets="
+                        +(this.chunkLoader==null?"0/0":this.chunkLoader.forcedCount()+"/"+this.chunkLoader.requiredCount())
+                        +" mapReady="+(this.winfo.world!=null)+" tick="+now);
+                  }
+               }
                if (this.isActive && !this.isAreaLoaded) {
                   this.isActive = false;
 
@@ -5969,6 +5990,8 @@ public class Building {
 
                   this.saveTownHall("becoming inactive");
                } else if (!this.isActive && this.isAreaLoaded) {
+                  this.isActive = true;
+                  MillLog.major(this,"MILL-ACTIVATION active pos="+this.getPos()+" tick="+this.world.getGameTime());
                   for (Object o : this.world.players()) {
                      Player p = (Player)o;
                      this.sendBuildingPacket(p, false);
@@ -5978,7 +6001,6 @@ public class Building {
                      MillLog.major(this, "Becoming active");
                   }
 
-                  this.isActive = true;
                }
 
                reportSlowBuildingPart("activation",activationStarted);
@@ -6443,17 +6465,7 @@ public class Building {
       if (this.villageType == null) {
          MillLog.error(this, "updateWorldInfo: villageType is null");
       } else {
-         List<BuildingLocation> locations = new ArrayList<>();
-
-         for (BuildingLocation l : this.getLocations()) {
-            locations.add(l);
-         }
-
-         for (ConstructionIP cip : this.getConstructionsInProgress()) {
-            if (cip.getBuildingLocation() != null) {
-               locations.add(cip.getBuildingLocation());
-            }
-         }
+         List<BuildingLocation> locations=this.activationLocations();
 
          if (this.winfo.world == null) {
             boolean areaChanged = this.winfo.update(this.world, locations, this.location.pos, this.villageType.radius);
