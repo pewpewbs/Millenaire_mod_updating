@@ -1054,6 +1054,41 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
          door.setBlockstate(state.setValue(DoorBlock.HINGE, hinge));
          if (door.special == BuildingBlock.INVERTED_DOOR) door.special = 0;
       }
+      // Normalize only isolated two-leaf groups. A row of three or more
+      // adjacent doors is ambiguous and retains the authored arrangement.
+      java.util.Set<BuildingBlock> paired = new java.util.HashSet<>();
+      for (BuildingBlock door : doors) {
+         if(paired.contains(door))continue;
+         var p=door.p.getBlockPos();
+         var neighbors=doors.stream().filter(other->other!=door && other.block==door.block
+             && other.p.getBlockPos().getY()==p.getY()
+             && Math.abs(other.p.getBlockPos().getX()-p.getX())+Math.abs(other.p.getBlockPos().getZ()-p.getZ())==1).toList();
+         if(neighbors.size()!=1)continue;
+         BuildingBlock other=neighbors.get(0);
+         var q=other.p.getBlockPos();
+         long adjacent=doors.stream().filter(x->x!=other&&x.block==other.block&&x.p.getBlockPos().getY()==q.getY()
+             &&Math.abs(x.p.getBlockPos().getX()-q.getX())+Math.abs(x.p.getBlockPos().getZ()-q.getZ())==1).count();
+         if(adjacent!=1)continue;
+         Direction facing=door.getBlockstate().getValue(DoorBlock.FACING);
+         Direction.Axis pairAxis=p.getX()!=q.getX()?Direction.Axis.X:Direction.Axis.Z;
+         Direction otherFacing=other.getBlockstate().getValue(DoorBlock.FACING);
+         if(facing.getAxis()==pairAxis||otherFacing.getAxis()==pairAxis)continue;
+         // The earlier leaf supplies the common facing, even when the
+         // imported marker encoded the other leaf in the opposite direction.
+         boolean otherOnRight=q.equals(p.relative(facing.getClockWise()));
+         var hinge=net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT;
+         var right=net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT;
+         door.setBlockstate(door.getBlockstate().setValue(DoorBlock.FACING,facing).setValue(DoorBlock.HINGE,otherOnRight?hinge:right));
+         other.setBlockstate(other.getBlockstate().setValue(DoorBlock.FACING,facing).setValue(DoorBlock.HINGE,otherOnRight?right:hinge));
+         for(BuildingBlock leaf:java.util.List.of(door,other)){
+            BuildingBlock upper=map.get(new Point(leaf.p.getBlockPos().above()));
+            if(upper!=null&&upper.block==leaf.block&&upper.getBlockstate().getValue(DoorBlock.HALF)==net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER){
+               upper.setBlockstate(leaf.getBlockstate().setValue(DoorBlock.HALF,net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
+               if(upper.special==BuildingBlock.INVERTED_DOOR)upper.special=0;
+            }
+         }
+         paired.add(door);paired.add(other);
+      }
    }
 
 

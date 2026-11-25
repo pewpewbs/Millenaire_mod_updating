@@ -78,6 +78,15 @@ extends Goal {
         return target;
     }
 
+    private boolean hasBreedingPartner(MillVillager villager,Animal animal,List<Entity> herd) {
+        for(Entity e:herd){
+            if(e==animal||!e.isAlive()||e.getType()!=animal.getType()||!(e instanceof Animal other))continue;
+            if(other.getAge()!=0||other.distanceToSqr(animal)>64.0D)continue;
+            if(org.millenaire.common.village.AnimalPenAccess.connected(villager.level,animal,animal.position(),other.position()))return true;
+        }
+        return false;
+    }
+
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
         if (villager.getHouse() == null) return null;
@@ -111,7 +120,8 @@ extends Goal {
             for (Entity ent : animals) {
                 if (!ent.isAlive()) continue;
                 animal = (Animal)ent;
-                if (animal.getAge() != 0 || animal.isInLove() || villager.isAnimalWorkTargetCoolingDown(ent)) continue;
+                if (animal.getAge() != 0 || animal.isInLove() || villager.isAnimalWorkTargetCoolingDown(ent)
+                        || !this.hasBreedingPartner(villager,animal,animals)) continue;
                 return this.packDest(null, villager.getHouse(), (Entity)animal);
             }
         }
@@ -200,7 +210,8 @@ extends Goal {
                         foundBreedingItem = breedingItem;
                     }
                 }
-                if (!available || animal.isBaby() || animal.isInLove() || animal.getAge() != 0) continue;
+                if (!available || animal.isBaby() || animal.isInLove() || animal.getAge() != 0
+                        || !villager.hasLineOfSight(animal) || !this.hasBreedingPartner(villager,animal,herd)) continue;
                 if (foundBreedingItem != null && villager.getHouse().takeGoods(foundBreedingItem, 1) != 1) continue;
                 animal.setInLove(null);
                 animal.setTarget(null);

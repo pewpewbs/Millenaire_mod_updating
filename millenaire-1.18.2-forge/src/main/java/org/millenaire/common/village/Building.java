@@ -6153,7 +6153,9 @@ public class Building {
             int squid = 0;
             int wolves = 0;
 
-            for (Entity animal : WorldUtilities.getEntitiesWithinAABB(this.world, Mob.class, this.getPos(), 15, 20)) {
+            List<Entity> penAnimals = new ArrayList<>(WorldUtilities.getEntitiesWithinAABB(this.world, Mob.class, this.getPos(), 15, 20));
+            for (Entity animal : penAnimals) {
+               if (!animal.isAlive()) continue;
                if (animal instanceof Sheep) {
                   sheep++;
                } else if (animal instanceof Pig) {
@@ -6191,13 +6193,23 @@ public class Building {
                }
 
                for (int j = 0; j < this.resManager.spawns.get(i).size() * multipliyer - nb; j++) {
+                  if (this.nbAnimalsRespawned >= nbMaxRespawn && !completeRespawn) break;
                   if (completeRespawn || MillCommonUtilities.chanceOn(100)) {
                      EntityType<?> animalType = Registry.ENTITY_TYPE.getOptional(this.resManager.spawnTypes.get(i)).orElse(null);
                      Entity spawned = animalType == null ? null : animalType.create(this.world);
                      if (!(spawned instanceof Mob animalx)) continue;
-                     Point pen = this.resManager.spawns.get(i).get(MillCommonUtilities.randomInt(this.resManager.spawns.get(i).size()));
+                     List<Point> markers=this.resManager.spawns.get(i);
+                     if(markers.isEmpty())continue;
+                     Point pen;
+                     if(animalx instanceof net.minecraft.world.entity.animal.Animal && !(animalx instanceof Wolf))
+                         pen=AnimalPenAccess.choose(this.world,animalx,markers,penAnimals);
+                     else pen=markers.get(MillCommonUtilities.randomInt(markers.size()));
+                     if(pen==null||!this.world.hasChunkAt(pen.getBlockPos()))continue;
                      animalx.setPos(pen.getiX() + 0.5, pen.getiY(), pen.getiZ() + 0.5);
-                     if (this.world.addFreshEntity(animalx)) this.nbAnimalsRespawned++;
+                     if (this.world.addFreshEntity(animalx)) {
+                        this.nbAnimalsRespawned++;
+                        penAnimals.add(animalx);
+                     }
                   }
                }
             }
