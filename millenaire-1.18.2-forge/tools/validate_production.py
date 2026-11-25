@@ -34,6 +34,10 @@ def main():
             JAVA / "goal/generic/SeedSurplusPolicy.java",
             ROOT / "tools/tests/SeedSurplusSmoke.java")
         run("java","-cp",classes,"SeedSurplusSmoke")
+        run("javac","--release","17","-d",classes,
+            JAVA / "world/VillageGenerationProbe.java",
+            ROOT / "tools/tests/VillageGenerationProbeSmoke.java")
+        run("java","-cp",classes,"org.millenaire.common.world.VillageGenerationProbeSmoke")
     from audit_production import audit, DEFAULT_DATA, DEFAULT_JAVA
     result = audit(DEFAULT_DATA, DEFAULT_JAVA, True)
     output = ROOT / "tools/reports/production_audit.json"
