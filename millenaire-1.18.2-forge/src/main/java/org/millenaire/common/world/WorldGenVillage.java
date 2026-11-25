@@ -505,6 +505,8 @@ public class WorldGenVillage {
         if (closestPlayer != null) {
             playerName = closestPlayer.getName().getString();
         }
+        MillLog.major(this,"VILLAGE-GEN-REGISTER kind="+(villageType.lonebuilding?"lone":"village")
+                +" type="+villageType.key+" culture="+villageType.culture.key+" pos="+townHallEntity.getPos());
         if (villageType.lonebuilding) {
             mw.registerLoneBuildingsLocation(world, townHallEntity.getPos(), townHallEntity.getVillageQualifiedName(), townHallEntity.villageType, townHallEntity.culture, true, playerName);
         } else {
@@ -577,14 +579,29 @@ public class WorldGenVillage {
                     villageRadius = specificVillageType.radius;
                 }
                 if ((p = this.generateVillageAtPoint_checkForUnloaded(world, x, y, z, generatingPlayer, p, villageRadius)) == null) {
+                    if(MillConfigValues.LogWorldGeneration>=2)MillLog.major(this,"VILLAGE-GEN-REJECT reason=area-incomplete x="+x+" z="+z+" radius="+villageRadius);
                     return false;
                 }
             }
             long startTime = System.nanoTime();
             triedChunks(world).add(this.computeChunkCoordsHash(p.getiX(), p.getiZ()));
-            if ((generateVillages || alwaysGenerate) && (canAttemptVillage = this.generateVillageAtPoint_canAttemptVillage(world, generatingPlayer, minDistance, mw, p, startTime)) && (villageType = specificVillageType == null ? this.generateVillageAtPoint_findVillageType(world, p.getiX(), p.getiZ(), mw, closestPlayer) : specificVillageType) != null && (result = villageType.customCentre == null ? this.generateVillage(p, world, villageType, generatingPlayer, closestPlayer, random, minDistance, name, parentVillage, completionRatio, testBiomeValidity, alwaysGenerate) : this.generateCustomVillage(p, world, villageType, generatingPlayer, random))) {
-                return true;
+            // Preserve the same short-circuit order and selection rules; make
+            // the rejected stage visible only when generation logging is enabled.
+            String rejectReason="villages-disabled";
+            if(generateVillages||alwaysGenerate){
+                rejectReason="distance";
+                if(this.generateVillageAtPoint_canAttemptVillage(world,generatingPlayer,minDistance,mw,p,startTime)){
+                    rejectReason="no-eligible-type";
+                    villageType=specificVillageType==null?this.generateVillageAtPoint_findVillageType(world,p.getiX(),p.getiZ(),mw,closestPlayer):specificVillageType;
+                    if(villageType!=null){
+                        rejectReason="layout:"+villageType.culture.key+"/"+villageType.key;
+                        if(villageType.customCentre==null
+                                ?this.generateVillage(p,world,villageType,generatingPlayer,closestPlayer,random,minDistance,name,parentVillage,completionRatio,testBiomeValidity,alwaysGenerate)
+                                :this.generateCustomVillage(p,world,villageType,generatingPlayer,random))return true;
+                    }
+                }
             }
+            if(MillConfigValues.LogWorldGeneration>=2)MillLog.major(this,"VILLAGE-GEN-REJECT reason="+rejectReason+" pos="+p);
             if (generatingPlayer != null || !MillConfigValues.generateLoneBuildings || specificVillageType != null) {
                 return false;
             }
