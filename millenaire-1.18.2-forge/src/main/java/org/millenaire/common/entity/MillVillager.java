@@ -249,6 +249,11 @@ IAStarPathedEntity {
     private long nextVanillaPathAttempt = 0L;
     private long nextTrackedEntityPathAttempt;
     private long nextPhysicalTrapRetry;
+    private BlockPos lastPhysicalTrap;
+    private long lastPhysicalTrapTick=Long.MIN_VALUE;
+    private Point avoidedTrapDestination;
+    private long avoidedTrapUntil;
+    private long nextChatPathAttempt;
     private final java.util.LinkedHashMap<Integer, Long> unavailableAnimalTargets = new java.util.LinkedHashMap<>();
     private int approachAnimalId = -1;
     private long approachAnimalProgressTick;
@@ -736,6 +741,20 @@ IAStarPathedEntity {
                 this.refreshTrackedEntityDestination();
             }
         }
+        // Temporarily reject a destination which just led back into a physical trap.
+        // Never blacklist a whole profession or a building permanently.
+        Point retryDestination=this.getPathDestPoint();
+        if(avoidedTrapDestination!=null && this.level.getGameTime()<avoidedTrapUntil
+                && retryDestination!=null && retryDestination.distanceTo(avoidedTrapDestination)<1.5D){
+            this.navigation.stop();
+            this.pathEntity=null;
+            if(this.pathPlannerJPS!=null)this.pathPlannerJPS.stopPathSearch(true);
+            this.pathCalculatedSinceLastTick=null;
+            this.pathFailedSincelastTick=false;
+            this.clearGoal();
+            this.setPathDestPoint(null,0);
+            return;
+        }
         if (this.trackAnimalWorkProgress(goal)) return;
         Point target = null;
         boolean continuingGoal = true;
@@ -976,6 +995,12 @@ IAStarPathedEntity {
         }
         Point previous = this.getPathDestPoint();
         Point live = new Point(target);
+        if("chat".equals(this.goalKey)){
+            // Conversations are short-range leisure, not pursuit of livestock.
+            // Keep a route anchored until the partner has moved materially.
+            if(previous!=null && previous.distanceTo(live)<3.0D
+                    && this.pathEntity!=null && !this.pathEntity.isDone())return;
+        }
         if (previous != null && previous.sameBlock(live)) return;
         // Keep a useful active route for small movements; measure drift against
         // its unchanged anchor, not the target's immediately preceding tick.
@@ -985,6 +1010,13 @@ IAStarPathedEntity {
     }
 
     private List<Node> computeNewPath(Point dest) {
+        if("chat".equals(this.goalKey)){
+            Goal chat=this.getActiveGoal();
+            if(chat!=null && chat.isWithinActionRange(this,dest))return null;
+            long now=this.level.getGameTime();
+            if(now<nextChatPathAttempt)return null;
+            nextChatPathAttempt=now+40L;
+        }
         if (this.tracksLandEntity()) {
             long now = this.level.getGameTime();
             if (now < this.nextTrackedEntityPathAttempt) return null;
@@ -2751,6 +2783,11 @@ IAStarPathedEntity {
         BlockPos safe = org.millenaire.common.pathing.PhysicalTrapRecovery.findExit(this);
         if (safe == null) return;
         BlockPos old = this.blockPosition();
+        boolean repeated=lastPhysicalTrap!=null && old.distSqr(lastPhysicalTrap)<=4
+                && now>=lastPhysicalTrapTick && now-lastPhysicalTrapTick<=200;
+        lastPhysicalTrap=old;lastPhysicalTrapTick=now;
+        Point failedDestination=this.getPathDestPoint();
+        String failedGoal=this.goalKey;
         this.navigation.stop();
         this.pathEntity = null;
         if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
@@ -2764,7 +2801,17 @@ IAStarPathedEntity {
         this.fallDistance = 0.0F;
         this.nextTrackedEntityPathAttempt = 0L;
         this.nextVanillaPathAttempt = 0L;
-        MillLog.major(this, "NAV-TRAP-RESCUE from=" + old + " to=" + safe);
+        if(repeated && failedDestination!=null){
+            // A rescue followed by a return to the same trap is a failed goal,
+            // not evidence of successful navigation. Avoid re-entering it.
+            this.avoidedTrapDestination=failedDestination;
+            this.avoidedTrapUntil=now+200L;
+            this.clearGoal();
+            this.setPathDestPoint(null,0);
+            this.stopMoving=false;
+        }
+        MillLog.major(this, "NAV-TRAP-RESCUE from=" + old + " to=" + safe
+                + " goal="+failedGoal+" repeated="+repeated+" abandoned="+(repeated&&failedDestination!=null));
     }
 
     private void recoverStationaryMovement() {
@@ -3851,6 +3898,12 @@ IAStarPathedEntity {
 
     private void updatePathIfNeeded(Point dest) throws Exception {
         if (dest == null) {
+            return;
+        }
+        if("chat".equals(this.goalKey) && this.getActiveGoal()!=null
+                && this.getActiveGoal().isWithinActionRange(this,dest)){
+            this.navigation.stop();this.pathEntity=null;
+            if(this.pathPlannerJPS!=null && this.pathPlannerJPS.isBusy())this.pathPlannerJPS.stopPathSearch(true);
             return;
         }
         if (this.getNavigation().isStuck()) {
