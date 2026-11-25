@@ -38,9 +38,10 @@ class VillageInteractionWiring(unittest.TestCase):
     def test_paired_door_geometry_is_shared(self):
         self.assertIn("DoorPairRules.isRight", read("common/buildingplan/BuildingPlan.java"))
         doors = read("common/pathing/VillageDoorAccess.java")
-        self.assertIn("DoorPairRules.partnerX", doors)
-        self.assertIn("isPlayerControlled(level,partner)", doors)
-        self.assertIn("openPartner(level,pos,state,actor,source)", doors)
+        self.assertNotIn("pairedDoor(", doors)
+        self.assertNotIn("openPartner(", doors)
+        self.assertIn("PLAYER_CONTROL.computeIfAbsent", doors)
+        self.assertIn("remember(level, pos, actor, source)", doors)
 
     def test_map_details_use_real_records_and_recipe_inputs(self):
         map_info = read("client/gui/text/BuildingMapTooltip.java")
