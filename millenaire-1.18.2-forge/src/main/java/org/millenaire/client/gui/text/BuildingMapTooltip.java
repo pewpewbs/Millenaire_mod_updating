@@ -166,30 +166,29 @@ final class BuildingMapTooltip {
                 ? label("Breeds animals","Розводить тварин","Разводит животных") : source;
         addStack(actions,actionIcon(goal));
     }
-    private static boolean productive(VillagerType type){
-        return type!=null&&!type.isChild&&type.goals.stream().anyMatch(g->!g.leasure&&(g instanceof GoalGeneric
-            ||g instanceof GoalBreedAnimals||g instanceof GoalShearSheep||g instanceof GoalMinerMineResource
-            ||g instanceof GoalFish||g instanceof GoalLumbermanChopTrees||g instanceof GoalHarvestWarts
-            ||g instanceof GoalIndianHarvestSugarCane||g instanceof GoalIndianGatherBrick||g instanceof GoalBrewPotions));
-    }
-
-    private static void staff(List<Line> lines,BuildingLocation loc,Building townHall,Building building,boolean expanded){
+    private static void staff(List<Line> lines,BuildingLocation loc,Building townHall,boolean expanded){
         if(loc.culture==null)return;
-        java.util.Map<VillagerType,Integer> expected=new java.util.LinkedHashMap<>();
+        // These are assigned residential slots, not workplace attendance.
         List<String> roles=new ArrayList<>(loc.getMaleResidents());roles.addAll(loc.getFemaleResidents());
-        for(String key:roles){VillagerType type=loc.culture.getVillagerType(key);if(productive(type))expected.merge(type,1,Integer::sum);}
-        if(expected.isEmpty())return;
-        int total=expected.values().stream().mapToInt(Integer::intValue).sum(),filled=0;
+        if(roles.isEmpty())return;
+        int total=roles.size(),filled=0,children=0;
+        String heading=label("Residents: ","Мешканці: ","Жители: ");
         List<org.millenaire.common.village.VillagerRecord> staff=new ArrayList<>();
-        java.util.Map<VillagerType,Integer> counts=new java.util.HashMap<>();
-        if(building!=null&&loc.level>=0)for(var record:townHall.getVillagerRecords().values()){
-            if(record.killed||record.getHousePos()==null||!record.getHousePos().equals(building.getPos()))continue;
+        var records=townHall.getMapResidentRecords();
+        if(loc.level>=0 && (records==null || loc.pos==null)){
+            add(lines,heading+label("Data unavailable","Дані недоступні","Данные недоступны"),MUTED);
+            return;
+        }
+        if(loc.level>=0)for(var record:records){
+            if(record.killed||record.raidingVillage||record.getHousePos()==null
+                    ||!record.getHousePos().sameBlock(loc.pos))continue;
             VillagerType type=record.getType();
-            if(!expected.containsKey(type))continue;
-            if(counts.merge(type,1,Integer::sum)<=expected.get(type))filled++;
+            if(type==null)continue;
+            if(type.isChild)children++;else filled++;
             staff.add(record);
         }
-        add(lines,label("Workers: ","Працівники: ","Работники: ")+filled+"/"+total,filled==0?0xFF7777:filled<total?GOLD:0x88DD88);
+        String childNote=children>0?" (+"+children+" "+label("children","дітей","детей")+")":"";
+        add(lines,heading+filled+"/"+total+childNote,filled==0?0xFF7777:filled<total?GOLD:0x88DD88);
 
         if(!expanded)return;
         List<Portrait> portraits=new ArrayList<>();
@@ -242,7 +241,7 @@ final class BuildingMapTooltip {
         // Planned residents describe home-based production; village worker types
         // describe tagged workplaces and the central building. These are potential
         // outputs, not a promise of current workers, stock or actual throughput.
-        staff(lines,loc,townHall,building,expanded);
+        staff(lines,loc,townHall,expanded);
 
         Set<VillagerType> residents = new LinkedHashSet<>();
         Set<VillagerType> workers = new LinkedHashSet<>();
