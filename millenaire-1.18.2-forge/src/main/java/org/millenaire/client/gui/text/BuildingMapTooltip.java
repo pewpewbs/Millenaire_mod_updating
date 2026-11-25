@@ -25,9 +25,13 @@ import org.millenaire.common.village.BuildingLocation;
 /** Read-only map description. Never runs a goal, changes stock or requests chunks. */
 final class BuildingMapTooltip {
     record RecipeView(List<ItemStack> inputs,List<ItemStack> outputs) {}
-    record Line(String text,int color,List<ItemStack> icons,List<String> iconDetails,String detail,List<List<RecipeView>> recipes,boolean action) {
-        Line(String text,int color){this(text,color,List.of(),List.of(),null,List.of(),false);}
-        Line(String text,int color,String detail){this(text,color,List.of(),List.of(),detail,List.of(),false);}
+    record Portrait(net.minecraft.resources.ResourceLocation texture,String detail) {}
+    record Line(String text,int color,List<ItemStack> icons,List<String> iconDetails,String detail,List<List<RecipeView>> recipes,boolean action,List<Portrait> portraits) {
+        Line(String text,int color){this(text,color,List.of(),List.of(),null,List.of(),false,List.of());}
+        Line(String text,int color,String detail){this(text,color,List.of(),List.of(),detail,List.of(),false,List.of());}
+        Line(String text,int color,List<ItemStack> icons,List<String> iconDetails,String detail,List<List<RecipeView>> recipes,boolean action){
+            this(text,color,icons,iconDetails,detail,recipes,action,List.of());
+        }
     }
 
     /** Keep actual stacks (including metadata/NBT), not translated names. */
@@ -45,7 +49,7 @@ final class BuildingMapTooltip {
         }
         String detail(ItemStack stack){
             Set<String> sources=details.get(stack);
-            return sources==null?label("Source not specified","Джерело не уточнено","Источник не указан"):String.join("; ",sources);
+            return sources==null?"":String.join("; ",sources);
         }
         boolean isEmpty() { return icons.isEmpty() && fallback.isEmpty(); }
         void removeAll(Goods other) {
@@ -130,7 +134,7 @@ final class BuildingMapTooltip {
         if(goal instanceof GoalBreedAnimals)return new ItemStack(Items.WHEAT);
         if(goal instanceof GoalShearSheep)return new ItemStack(Items.SHEARS);
         if(goal instanceof GoalGenericPlantCrop)return new ItemStack(Items.WHEAT_SEEDS);
-        if(goal instanceof GoalGenericHarvestCrop)return new ItemStack(Items.WHEAT);
+        if(goal instanceof GoalGenericHarvestCrop || goal instanceof GoalHarvestWarts || goal instanceof GoalIndianHarvestSugarCane)return new ItemStack(Items.IRON_HOE);
         if(goal instanceof GoalGenericPlantSapling)return new ItemStack(Blocks.OAK_SAPLING);
         if(goal instanceof GoalLumbermanChopTrees)return new ItemStack(Items.IRON_AXE);
         if(goal instanceof GoalGenericMining||goal instanceof GoalMinerMineResource)return new ItemStack(Items.IRON_PICKAXE);
@@ -145,7 +149,13 @@ final class BuildingMapTooltip {
         actions.source=goal instanceof GoalGenericCrafting
                 ? label("Crafts resources","Виготовляє ресурси","Изготавливает ресурсы")
                 : goal instanceof GoalGenericCooking || goal instanceof GoalGenericTendFurnace
-                ? label("Works with a furnace","Працює з піччю","Работает с печью") : source;
+                ? label("Works with a furnace","Працює з піччю","Работает с печью")
+                : goal instanceof GoalGenericMining || goal instanceof GoalMinerMineResource
+                ? label("Extracts resources","Добуває ресурси","Добывает ресурсы")
+                : goal instanceof GoalGenericHarvestCrop || goal instanceof GoalHarvestWarts || goal instanceof GoalIndianHarvestSugarCane
+                ? label("Harvests crops","Збирає врожай","Собирает урожай")
+                : goal instanceof GoalGenericGatherBlocks
+                ? label("Gathers resources","Збирає ресурси","Собирает ресурсы") : source;
         addStack(actions,actionIcon(goal));
     }
     private static boolean productive(VillagerType type){
@@ -160,10 +170,7 @@ final class BuildingMapTooltip {
         java.util.Map<VillagerType,Integer> expected=new java.util.LinkedHashMap<>();
         List<String> roles=new ArrayList<>(loc.getMaleResidents());roles.addAll(loc.getFemaleResidents());
         for(String key:roles){VillagerType type=loc.culture.getVillagerType(key);if(productive(type))expected.merge(type,1,Integer::sum);}
-        if(expected.isEmpty()){
-            add(lines,label("No fixed production posts specified","Окремі робочі місця не задано","Отдельные рабочие места не заданы"),MUTED);
-            return;
-        }
+        if(expected.isEmpty())return;
         int total=expected.values().stream().mapToInt(Integer::intValue).sum(),filled=0;
         List<org.millenaire.common.village.VillagerRecord> staff=new ArrayList<>();
         java.util.Map<VillagerType,Integer> counts=new java.util.HashMap<>();
@@ -174,9 +181,11 @@ final class BuildingMapTooltip {
             if(counts.merge(type,1,Integer::sum)<=expected.get(type))filled++;
             staff.add(record);
         }
-        add(lines,label("Resident workers: ","Працівники-резиденти: ","Работники-резиденты: ")+filled+"/"+total,filled==0?0xFF7777:filled<total?GOLD:0x88DD88);
+        add(lines,label("Workers: ","Працівники: ","Работники: ")+filled+"/"+total,filled==0?0xFF7777:filled<total?GOLD:0x88DD88);
 
         if(!expanded)return;
+        List<Portrait> portraits=new ArrayList<>();
+        staff.sort(java.util.Comparator.comparing(r->r.getName()));
         for(var record:staff){
             var npc=townHall.mw.getVillagerById(record.getVillagerId());
             String status;
@@ -185,8 +194,11 @@ final class BuildingMapTooltip {
                 var goal=npc.getCurrentGoal();
                 status=goal==null?label("No current task","Немає поточного завдання","Нет текущего задания"):goal.gameName(npc);
             }
-            lines.add(new Line(record.getName()+" — "+record.getGameOccupation(),NORMAL,label("Current task: ","Що робить: ","Что делает: ")+status));
+            var texture=npc!=null&&npc.getTexture()!=null?npc.getTexture():record.texture;
+            portraits.add(new Portrait(texture,record.getName()+"; "+record.getGameOccupation()+"; "
+                    +label("Current task: ","Поточна дія: ","Текущее действие: ")+status));
         }
+        if(!portraits.isEmpty())lines.add(new Line("",NORMAL,List.of(),List.of(),null,List.of(),false,List.copyOf(portraits)));
 
     }
 
@@ -252,16 +264,18 @@ final class BuildingMapTooltip {
                 boolean home = residents.contains(type);
                 String action=goal.gameName();
                 String source=(action==null||action.isBlank()||action.startsWith("goal."))?goal.getClass().getSimpleName():action;
-                produced.source=source;extracted.source=source;produced.recipe=null;extracted.recipe=null;
+                produced.source=null;extracted.source=null;produced.recipe=null;extracted.recipe=null;
                 if (!(goal instanceof GoalGeneric generic)) {
                     // Legacy goals have no generic output table. Describe only
                     // products whose destination contract is explicit in code.
                     if (goal instanceof GoalLumbermanChopTrees && hasTag(loc, building, plan, "grove")) {
                         activity(actions,goal,source,null);
-                        addItem(extracted, InvItem.createInvItem(Items.OAK_LOG, -1));
+                        for(var wood:groveWoodTypes(plan,building))
+                            addStack(extracted,new ItemStack(wood.log()));
                     } else if (goal instanceof GoalFishInuit && hasTag(loc, building, plan, "fishingspot")) {
                         activity(actions,goal,source,null);
                         addStack(extracted, new ItemStack(Items.COD));
+                        extracted.source=label("Chance-based catch","Імовірнісна здобич","Вероятностная добыча");
                         addStack(extracted, new ItemStack(Items.BONE_BLOCK));
                     } else if (goal instanceof GoalFish && hasTag(loc, building, plan, "fishingspot")) {
                         activity(actions,goal,source,null);
@@ -299,8 +313,11 @@ final class BuildingMapTooltip {
                     } else if (goal instanceof GoalShearSheep && home && hasTag(loc, building, plan, "sheeps")) {
                         activity(actions,goal,source,null);
                         activities.add(source);
-                        extracted.source=label("Shear an adult sheep with wool","Стрижка дорослої вівці з вовною","Стрижка взрослой овцы с шерстью");
-                        addStack(extracted, new ItemStack(Blocks.WHITE_WOOL));
+                        extracted.source=label("Colour depends on the sheep","Колір залежить від вівці","Цвет зависит от овцы");
+                        for(var color:net.minecraft.world.item.DyeColor.values()){
+                            var wool=net.minecraft.core.Registry.ITEM.get(new net.minecraft.resources.ResourceLocation("minecraft",color.getName()+"_wool"));
+                            if(wool!=Items.AIR)addStack(extracted,new ItemStack(wool));
+                        }
                     } else if (goal instanceof GoalBreedAnimals && home
                             && (hasTag(loc, building, plan, "sheeps") || hasTag(loc, building, plan, "cattle")
                                 || hasTag(loc, building, plan, "pigs") || hasTag(loc, building, plan, "chicken"))) {
@@ -331,29 +348,26 @@ final class BuildingMapTooltip {
                     produced.recipe=recipe;
                     crafting.output.forEach((item,count)->{
                         if(count==null||count<=0)return;
-                        // Some configured goals deliberately consume no ingredients.
-                        // Report that fact and the batch size, not the repeated goal name.
-                        produced.source=crafting.input.isEmpty()
-                                ? label("No ingredients consumed","Без витрат сировини","Без расхода сырья")
-                                    + "; " + count + label(" per cycle"," шт. за цикл"," шт. за цикл")
-                                : recipe==null ? label("Recipe not available","Рецепт не відображено","Рецепт не отображается") : null;
+                        // A free output needs only its item name; no duplicate activity or batch note.
+                        produced.source=!crafting.input.isEmpty()&&recipe==null
+                                ? label("Recipe not available","Рецепт не відображено","Рецепт не отображается") : null;
                         addItem(produced,item);
                     });
                 } else if (generic instanceof GoalGenericMining mining) {
                     mining.loots.forEach((item, count) -> { if (count != null && count > 0) addItem(extracted, item); });
                 } else if (generic instanceof GoalGenericHarvestCrop harvest) {
-                    extracted.source=source+" | "+label("Crop: ","Культура: ","Культура: ")+harvest.cropType;
+                    extracted.source=null;
                     for (var bonus : harvest.harvestItem) addItem(extracted, bonus.item);
-                    extracted.source+=label(" (irrigation bonus)"," (бонус зрошення)"," (бонус орошения)");
+                    extracted.source=label("Irrigation bonus","Бонус зрошення","Бонус орошения");
                     addItem(extracted, harvest.irrigationBonusCrop);
                 } else if (generic instanceof GoalGenericGatherBlocks gather) {
                     for (var bonus : gather.harvestItem) addItem(extracted, bonus.item);
                 } else if (generic instanceof GoalGenericSlaughterAnimal slaughter) {
-                    extracted.source=source+" | "+label("Chance-based drops","Імовірнісна здобич","Вероятностная добыча");
+                    extracted.source=label("Chance-based drops","Імовірнісна здобич","Вероятностная добыча");
                     for (var bonus : slaughter.bonusItem) addItem(extracted, bonus.item);
                 } else if (generic instanceof GoalGenericCooking cooking && cooking.itemToCook != null
                         && cooking.itemToCook.staticStack != null && townHall.world != null) {
-                    produced.source=source;
+                    produced.source=null;
                     ItemStack raw=cooking.itemToCook.staticStack.copy();raw.setCount(1);
                     var input=new SimpleContainer(raw.copy());
                     townHall.world.getRecipeManager().getRecipeFor(RecipeType.SMELTING,input,townHall.world)
@@ -379,19 +393,18 @@ final class BuildingMapTooltip {
         planned.removeAll(produced);
         planned.removeAll(extracted);
         Goods sells = new Goods();
-        sells.source=label("For sale","Продається","Продаётся");
         if (loc.culture != null && loc.shop != null) {
             var goods = loc.culture.shopSells.get(loc.shop);
             if (goods != null) for (var good : goods) if (good != null) addItem(sells, good.item);
         }
-        section(lines,label("Activities:","Що робить:","Что делает:"),actions,true);
+        section(lines,label("Purpose:","Призначення:","Назначение:"),actions,true);
         section(lines, label("Potential production:", "Може виробляти:", "Может производить:"), produced);
         section(lines, label("Can extract / gather:", "Може добувати / збирати:", "Может добывать / собирать:"), extracted);
         section(lines, label("Declared production:", "Виробництво за планом:", "Производство по плану:"), planned);
         section(lines, label("Sells:", "Продає:", "Продаёт:"), sells);
 
         List<String> effects = loc.getBuildingEffects(townHall.world);
-        if (produced.isEmpty() && extracted.isEmpty() && planned.isEmpty() && sells.isEmpty()) {
+        if (actions.isEmpty() && produced.isEmpty() && extracted.isEmpty() && planned.isEmpty() && sells.isEmpty()) {
             Set<String> roles = new LinkedHashSet<>(effects);
 
             if (!residents.isEmpty()) roles.add(label("Housing for villagers", "Житло для мешканців", "Жильё для жителей"));
@@ -400,12 +413,54 @@ final class BuildingMapTooltip {
             if (hasTag(loc, building, plan, "fishingspot")) roles.add(label("Fishing", "Рибальство", "Рыболовство"));
             if (hasTag(loc, building, plan, "sugarplantation")) roles.add(label("Sugar cane cultivation", "Вирощування цукрової тростини", "Выращивание сахарного тростника"));
             if (hasTag(loc, building, plan, "brickkiln")) roles.add(label("Brick drying", "Сушіння цегли", "Сушка кирпича"));
-            if (roles.isEmpty()) roles.add(label("Purpose not specified in available data", "Призначення не вказано в доступних даних", "Назначение не указано в доступных данных"));
-            add(lines, label("Purpose: ", "Призначення: ", "Назначение: ") + String.join("; ", roles), MUTED);
+            if(!roles.isEmpty())add(lines, label("Purpose: ", "Призначення: ", "Назначение: ") + String.join("; ", roles), MUTED);
         } else {
             for (String effect : effects) add(lines, effect, MUTED);
         }
         return lines;
+    }
+
+    // Match the sapling markers consumed by GoalGenericPlantSapling and the
+    // six ordinary log families actually harvested by GoalLumbermanChopTrees.
+    private static final java.util.Map<BuildingPlan,Set<org.millenaire.common.block.WoodVariant>> PLAN_WOOD =
+            new java.util.WeakHashMap<>();
+    private static org.millenaire.common.block.WoodVariant woodMarker(String marker){
+        if(marker==null)return null;
+        return switch(marker){
+            case "oakspawn" -> org.millenaire.common.block.WoodVariant.OAK;
+            case "pinespawn" -> org.millenaire.common.block.WoodVariant.SPRUCE;
+            case "birchspawn" -> org.millenaire.common.block.WoodVariant.BIRCH;
+            case "junglespawn" -> org.millenaire.common.block.WoodVariant.JUNGLE;
+            case "acaciaspawn" -> org.millenaire.common.block.WoodVariant.ACACIA;
+            case "darkoakspawn" -> org.millenaire.common.block.WoodVariant.DARK_OAK;
+            default -> null;
+        };
+    }
+    private static Set<org.millenaire.common.block.WoodVariant> groveWoodTypes(BuildingPlan plan,Building building){
+        var types=java.util.EnumSet.noneOf(org.millenaire.common.block.WoodVariant.class);
+        if(plan!=null)types.addAll(PLAN_WOOD.computeIfAbsent(plan,key->{
+            var found=java.util.EnumSet.noneOf(org.millenaire.common.block.WoodVariant.class);
+            for(BuildingPlan p=key;p!=null;){
+                if(p.plan!=null)for(var floor:p.plan)if(floor!=null)
+                    for(var row:floor)if(row!=null)for(var point:row)if(point!=null){
+                        var wood=woodMarker(point.getSpecialType());
+                        if(wood!=null)found.add(wood);
+                        if(point.getBlockState()!=null){
+                            wood=org.millenaire.common.block.WoodVariant.fromState(point.getBlockState());
+                            if(wood!=null&&(point.getBlock()==wood.log()||point.getBlock()==wood.sapling()))found.add(wood);
+                        }
+                    }
+                if(p.level<=0)break;
+                var previous=p.getPreviousBuildingPlan();
+                if(previous==null||previous.level>=p.level)break;
+                p=previous;
+            }
+            return Set.copyOf(found);
+        }));
+        if(building!=null)for(String marker:building.getResManager().woodspawnTypes.values()){
+            var wood=woodMarker(marker);if(wood!=null)types.add(wood);
+        }
+        return types;
     }
 
     private static boolean hasTag(BuildingLocation loc, Building building, BuildingPlan plan, String tag) {
