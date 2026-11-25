@@ -683,7 +683,8 @@ public class MillWorldData {
         }
         for (Player player : world.players()) {
             int distance;
-            if (!newVillage || !type.keyLonebuilding && type.keyLoneBuildingGenerateTag == null || (distance = Mth.floor((double)pos.horizontalDistanceTo((Entity)player))) > 2000) continue;
+            if (!newVillage || world.isClientSide
+                    || (distance = Mth.floor((double)pos.horizontalDistanceTo((Entity)player))) > 2000) continue;
             String direction = new Point((Entity)player).directionTo(pos, true);
             ServerSender.sendTranslatedSentence(player, 'e', "command.newlonebuildingfound", type.name, "" + distance, direction);
         }
