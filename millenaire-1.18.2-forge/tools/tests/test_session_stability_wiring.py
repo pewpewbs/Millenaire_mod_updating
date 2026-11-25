@@ -35,7 +35,12 @@ class SessionStability(unittest.TestCase):
 
     def test_chunk_ticket_batch_and_activation_gate(self):
         code=read("common/forge/BuildingChunkLoader.java")
-        self.assertIn("MAX_NEW_TICKETS_PER_CALL=4",code)
+        self.assertIn("getChunkNow(pending.x,pending.z)==null",code)
+        self.assertIn("addRegionTicket(PREPARE,chunk,0,owner.asLong())",code)
+        self.assertIn("removeRegionTicket(PREPARE,pending,0,owner.asLong())",code)
+        self.assertIn("if(!takeBudget(world,tick))return;",code)
+        self.assertIn("mspt>=50",code)
+        self.assertIn("cachedLength!=info.length",code)
         self.assertIn("if(lastLoadTick==tick)return",code)
         self.assertIn("forcedChunks.containsAll(required)",code)
         self.assertIn("MILL-SLOW stage=village-tickets",code)
@@ -47,6 +52,9 @@ class SessionStability(unittest.TestCase):
         self.assertIn("this.winfo.width<=0",gate)
         self.assertIn("chunkProvider.getChunkNow(x,z)==null",gate)
         self.assertNotIn("chunkProvider.hasChunk(",gate)
+        self.assertIn("mapStartX+this.winfo.length-1",gate)
+        self.assertIn("mapStartZ+this.winfo.width-1",gate)
+        self.assertIn("if(!this.world.hasChunkAt(p.getBlockPos()))continue;",code)
         for stage in ("activation","grove","pens","signs","initial-packets","refresh-goods"):
             self.assertIn('reportSlowBuildingPart("'+stage+'"',code)
 
@@ -63,6 +71,14 @@ class SessionStability(unittest.TestCase):
         self.assertIn("event.getResult()==Event.Result.DENY",code)
         self.assertIn("if(!grown&&world.getBlockState(pos).isAir())world.setBlock(pos,sapling,4)",code)
         self.assertIn("new StraightTrunkPlacer(4,0,0)",code)
+
+    def test_scan_rule_cache_is_local_and_state_tags_are_preserved(self):
+        code=read("common/village/VillageMapInfo.java")
+        self.assertIn("ScanRules rules=new ScanRules();",code)
+        self.assertIn("IdentityHashMap<Block,Integer> flags",code)
+        self.assertIn("return TERRAIN_RULES.tree(state)",code)
+        self.assertIn("yBaseline, minY, maxY, rules",code)
+        self.assertNotIn("static final ScanRules",code)
 
     def test_progression_decisions_and_retired_config(self):
         planner=read("common/village/VillageProgression.java")
