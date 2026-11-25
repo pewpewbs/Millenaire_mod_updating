@@ -101,6 +101,28 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertIn("Integer.toString(item.stack().getCount())", ui)
         self.assertNotIn("framePose.translate(left,top,850)", ui)
 
+    def test_crop_and_slaughter_capability_shared_with_progression(self):
+        code = read("common/village/ProductionCapability.java")
+        for marker in ("soil","ricesoil","turmericsoil","maizesoil","carrotsoil","potatosoil",
+                       "flowersoil","vinesoil","cacaospot","cottonsoil"):
+            self.assertIn('case "'+marker+'"', code)
+        self.assertIn("getSoilPoints(crop)", code)
+        self.assertIn("if(!existing.world.isClientSide)return false;", code)
+        self.assertIn("Items.CHICKEN,Items.FEATHER,Items.EGG", code)
+        self.assertIn("worker.collectGoods.stream()", code)
+        self.assertIn("worker.bringBackHomeGoods.stream()", code)
+        ui = read("client/gui/text/BuildingMapTooltip.java")
+        planner = read("common/village/VillageProgression.java")
+        for source in (ui,planner):
+            self.assertIn("ProductionCapability.hasCrop(", source)
+            self.assertIn("ProductionCapability.animalGoods(", source)
+        self.assertIn('label("Slaughters animals","Забиває тварин"', ui)
+        self.assertIn('label("Plants crops","Садить культури"', ui)
+        self.assertIn("if(maximum>0)add", ui)
+        self.assertNotIn('label("Irrigation bonus"', ui)
+        self.assertIn('hasTag(loc,building,plan,"inn")', ui)
+        self.assertIn("getCount()>1?Integer.toString", read("client/gui/text/GuiPanelParchment.java"))
+
     def test_ukrainian_goal_labels(self):
         lang = ROOT.parents[2] / "resources/todeploy/millenaire/languages/uk/strings.txt"
         data = lang.read_text(encoding="utf-8-sig")
