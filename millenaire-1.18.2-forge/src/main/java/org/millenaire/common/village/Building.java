@@ -197,6 +197,13 @@ public class Building {
    private Set<MillVillager> villagers = new LinkedHashSet<>();
    public CopyOnWriteArrayList<String> visitorsList = new CopyOnWriteArrayList<>();
    private final Map<Long, VillagerRecord> vrecords = new HashMap<>();
+   // Complete server roster, independent of locally tracked entities.
+   private Map<Long,VillagerRecord> mapResidentSnapshot;
+
+   public Collection<VillagerRecord> getMapResidentRecords() {
+      if (!this.world.isClientSide) return this.getVillagerRecords().values();
+      return this.mapResidentSnapshot==null?null:this.mapResidentSnapshot.values();
+   }
    public VillageType villageType = null;
    private ConcurrentHashMap<Point, Integer> relations = new ConcurrentHashMap<>();
    public Point parentVillage = null;
@@ -317,6 +324,7 @@ public class Building {
             building.marvelManager = new MarvelManager(building);
             building.marvelManager.readDataStream(ds);
          }
+         if(building.isTownhall)building.mapResidentSnapshot=Map.copyOf(vrecords);
       } catch (IOException var13) {
          MillLog.printException(var13);
       }
@@ -5269,6 +5277,8 @@ public class Building {
 
    public void sendMapInfo(Player player) {
       if (this.getTownHall() != null && this.getTownHall().winfo != null) {
+         // The map covers the whole village, not just client-tracked houses.
+         this.getTownHall().sendBuildingPacket(player,false);
          MillMapInfo minfo = new MillMapInfo(this.getTownHall(), this.getTownHall().winfo);
          minfo.sendMapInfoPacket(player);
       }
