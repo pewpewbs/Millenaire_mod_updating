@@ -1120,6 +1120,8 @@ public class MillWorldData {
         this.forcePreload();
         this.reportSlowStage("force-preload", stageStarted);
         this.testLog();
+        if(this.world instanceof net.minecraft.server.level.ServerLevel server)
+            VillagePreparationQueue.tick(server,this,totalStarted);
         this.reportSlowStage("world-total", totalStarted);
     }
 }
