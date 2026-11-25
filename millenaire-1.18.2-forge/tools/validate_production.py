@@ -25,6 +25,11 @@ def main():
             JAVA / "buildingplan/ProductionSourceMigrationPolicy.java",
             ROOT / "tools/tests/ProductionSourceMigrationSmoke.java")
         run("java","-cp",classes,"ProductionSourceMigrationSmoke")
+        run("javac","--release","17","-d",classes,
+            JAVA / "buildingplan/DoorPairRules.java",
+            JAVA / "village/PenAllocationRules.java",
+            ROOT / "tools/tests/VillageInteractionRulesSmoke.java")
+        run("java","-cp",classes,"VillageInteractionRulesSmoke")
     from audit_production import audit, DEFAULT_DATA, DEFAULT_JAVA
     result = audit(DEFAULT_DATA, DEFAULT_JAVA, True)
     output = ROOT / "tools/reports/production_audit.json"

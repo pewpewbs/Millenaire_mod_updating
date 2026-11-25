@@ -75,7 +75,7 @@ extends GuiText {
     private List<BuildingMapTooltip.Line> tooltipDetails = List.of();
     private boolean showBuildingTooltip;
     private BuildingLocation hoveredLocation,pinnedLocation;
-    private boolean hoveredConstruction,pinnedConstruction;
+    private boolean hoveredConstruction,tooltipPinned;
     private int hoverX,hoverY,panelLeft,panelTop,panelWidth,panelHeight;
     private record TooltipText(FormattedCharSequence text, int color, int y,String detail) {}
     private record TooltipIcon(ItemStack stack, int x, int y,String detail) {}
@@ -372,7 +372,7 @@ extends GuiText {
             long now = System.nanoTime();
             String language = org.millenaire.common.config.MillConfigValues.effective_language;
             if (tooltipLocation != locHover || tooltipLevel != locHover.level
-                    || tooltipConstruction != constructionHover
+                    || tooltipConstruction != constructionHover || tooltipPinned!=(pinnedLocation!=null)
                     || !java.util.Objects.equals(tooltipTitle, title)
                     || !java.util.Objects.equals(tooltipLanguage, language)
                     || now - tooltipRefreshNanos >= 500_000_000L) {
@@ -380,6 +380,7 @@ extends GuiText {
                 tooltipLocation = locHover;
                 tooltipLevel = locHover.level;
                 tooltipConstruction = constructionHover;
+                tooltipPinned=pinnedLocation!=null;
                 tooltipTitle = title;
                 tooltipLanguage = language;
                 tooltipRefreshNanos = now;
@@ -411,7 +412,6 @@ extends GuiText {
             if(pinnedLocation!=null&&x>=panelLeft-3&&x<=panelLeft+panelWidth+3&&y>=panelTop-3&&y<=panelTop+panelHeight+3)return true;
             if(hoveredLocation!=null&&Math.abs(x-hoverX)<=3&&Math.abs(y-hoverY)<=3){
                 pinnedLocation=pinnedLocation!=null&&pinnedLocation.isSameLocation(hoveredLocation)?null:hoveredLocation;
-                pinnedConstruction=hoveredConstruction;
                 tooltipRefreshNanos=0;
                 return true;
             }
@@ -516,7 +516,7 @@ extends GuiText {
             drawItemStackTooltip(icon.stack(),mouseX,mouseY,true,icon.detail());return;
         }
         for(var line:layout.text())if(line.detail()!=null&&y>=line.y()&&y<line.y()+11){
-            renderComponentTooltip(framePose,java.util.List.of(new net.minecraft.network.chat.TextComponent(line.detail())),mouseX,mouseY,ItemStack.EMPTY);
+            drawHoveringText(java.util.List.of(line.detail()),mouseX,mouseY,font);
             return;
         }
     }

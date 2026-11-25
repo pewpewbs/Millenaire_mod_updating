@@ -63,7 +63,8 @@ public final class VillageDoorAccess {
         var facing=state.getValue(DoorBlock.FACING);
         var hinge=state.getValue(DoorBlock.HINGE);
         var left=net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT;
-        BlockPos other=pos.relative(hinge==left?facing.getClockWise():facing.getCounterClockWise());
+        BlockPos other=pos.offset(org.millenaire.common.buildingplan.DoorPairRules.partnerX(facing.getStepX(),facing.getStepZ(),hinge==left),0,
+                org.millenaire.common.buildingplan.DoorPairRules.partnerZ(facing.getStepX(),facing.getStepZ(),hinge==left));
         if(!level.hasChunkAt(other))return null;
         BlockState s=level.getBlockState(other);
         return s.getBlock()==state.getBlock()&&s.getValue(DoorBlock.HALF)==DoubleBlockHalf.LOWER

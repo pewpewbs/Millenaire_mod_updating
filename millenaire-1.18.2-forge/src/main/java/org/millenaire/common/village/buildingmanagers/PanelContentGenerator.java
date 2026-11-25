@@ -933,6 +933,7 @@ public class PanelContentGenerator {
             }
          }
 
+         appendAvailabilityDetails(page,house,res,goalPlan);
          book.addPage(page);
          page = new TextPage();
       }
@@ -1088,6 +1089,7 @@ public class PanelContentGenerator {
          for (TextLine l : BookManager.splitInColumns(infoColumns, 2)) {
             page.addLine(l);
          }
+         appendAvailabilityDetails(page,townHall,res,goal);
          }
       }
 
@@ -1285,4 +1287,23 @@ public class PanelContentGenerator {
          return book;
       }
    }
+   /** Show why an apparently sufficient physical stock can be unavailable.
+    * The difference can also include other allocation rules, not just reservations. */
+   private static void appendAvailabilityDetails(TextPage page,Building house,List<InvItem> items,BuildingPlan plan){
+      if(house.getConstructionsInProgress().stream().anyMatch(cip->cip.getBuildingLocation()!=null
+            &&cip.getBuildingLocation().planKey.equals(house.buildingGoal)))return;
+      String lang=MillConfigValues.effective_language;
+      boolean uk=lang!=null&&lang.startsWith("uk"),ru=lang!=null&&lang.startsWith("ru");
+      for(InvItem item:items){
+         int stock=house.countGoods(item.getItem(),item.meta);
+         int available=house.availableForCurrentProject(item);
+         int need=plan.resCost.getOrDefault(item,0);
+         if(stock<=available||available>=need)continue;
+         page.addLine(item.getName()+": "+(uk?"на складі ":ru?"на складе ":"stock ")+stock
+             +(uk?", недоступно ":ru?", недоступно ":", unavailable ")+Math.max(0,stock-available)
+             +(uk?", доступно ":ru?", доступно ":", available ")+available
+             +(uk?", потрібно ":ru?", нужно ":", needed ")+need);
+      }
+   }
+
 }

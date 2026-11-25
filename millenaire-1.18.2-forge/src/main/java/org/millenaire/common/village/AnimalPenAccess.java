@@ -56,8 +56,7 @@ public final class AnimalPenAccess {
             int group=root(parent,i), count=counts[group];
             // Finish an isolated pair before starting a new one; then spread
             // across available pens in proportion to registered marker capacity.
-            int score=(count==1?100000:count==0?50000:0)
-                -1000*count/Math.max(1,capacity[group])-markerCounts[i];
+            int score=PenAllocationRules.score(count,capacity[group],markerCounts[i]);
             if(score>bestScore){best=p;bestScore=score;}
         }
         return best;

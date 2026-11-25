@@ -1075,7 +1075,7 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
          if(facing.getAxis()==pairAxis||otherFacing.getAxis()==pairAxis)continue;
          // The earlier leaf supplies the common facing, even when the
          // imported marker encoded the other leaf in the opposite direction.
-         boolean otherOnRight=q.equals(p.relative(facing.getClockWise()));
+         boolean otherOnRight=DoorPairRules.isRight(facing.getStepX(),facing.getStepZ(),q.getX()-p.getX(),q.getZ()-p.getZ());
          var hinge=net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT;
          var right=net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT;
          door.setBlockstate(door.getBlockstate().setValue(DoorBlock.FACING,facing).setValue(DoorBlock.HINGE,otherOnRight?hinge:right));
