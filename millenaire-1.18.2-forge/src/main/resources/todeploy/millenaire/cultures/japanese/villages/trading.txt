@@ -24,7 +24,6 @@ outerwallType=borderposts
 //starting buildings=
 centre=sakebrewery
 start=japaneselmh
-start=japanesefarm
 start=japanesepaddy
 start=japanesegrove
 start=japaneseinn 
@@ -65,6 +64,7 @@ never=japaneseshintoshrine
 never=bath
 never=japanesekitchen
 never=japanesearmyforge
+never=japanesefarm
 never=squidfarm
 
 sellingPrice=sake,2/0
