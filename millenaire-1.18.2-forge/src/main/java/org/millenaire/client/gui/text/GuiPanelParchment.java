@@ -76,9 +76,10 @@ extends GuiText {
     private boolean showBuildingTooltip;
     private BuildingLocation hoveredLocation,pinnedLocation;
     private boolean hoveredConstruction,tooltipPinned;
-    private int hoverX,hoverY,panelLeft,panelTop,panelWidth,panelHeight;
+    private int hoverX,hoverY,panelLeft,panelTop,panelWidth,panelHeight,pinLeft,pinTop,closeX,closeY,closeSize;
+    private boolean panelVisible;
     private record TooltipText(FormattedCharSequence text, int color, int y,String detail) {}
-    private record TooltipIcon(ItemStack stack, int x, int y,String detail) {}
+    private record TooltipIcon(ItemStack stack,int x,int y,String detail,List<BuildingMapTooltip.RecipeView> recipes,boolean action) {}
     private record TooltipLayout(List<TooltipText> text, List<TooltipIcon> icons, int width, int height) {}
     private final Player player;
     ResourceLocation backgroundParchment = new ResourceLocation("millenaire", "textures/gui/parchment.png");
@@ -376,7 +377,7 @@ extends GuiText {
                     || !java.util.Objects.equals(tooltipTitle, title)
                     || !java.util.Objects.equals(tooltipLanguage, language)
                     || now - tooltipRefreshNanos >= 500_000_000L) {
-                tooltipDetails = BuildingMapTooltip.describe(locHover, this.townHall, title, constructionHover,pinnedLocation!=null);
+                tooltipDetails = BuildingMapTooltip.describe(locHover, this.townHall, title, constructionHover,true);
                 tooltipLocation = locHover;
                 tooltipLevel = locHover.level;
                 tooltipConstruction = constructionHover;
@@ -400,6 +401,7 @@ extends GuiText {
     @Override
     public void render(PoseStack pose, int mouseX, int mouseY, float partialTicks) {
         showBuildingTooltip = false;
+        panelVisible=false;
         if(pageNum!=0){pinnedLocation=null;hoveredLocation=null;}
         super.render(pose, mouseX, mouseY, partialTicks);
         if (showBuildingTooltip && !tooltipDetails.isEmpty()) {
@@ -409,11 +411,15 @@ extends GuiText {
 
     @Override public boolean mouseClicked(double x,double y,int button){
         if(mapType==VILLAGE_MAP&&pageNum==0&&button==0){
-            if(pinnedLocation!=null&&x>=panelLeft-3&&x<=panelLeft+panelWidth+3&&y>=panelTop-3&&y<=panelTop+panelHeight+3)return true;
-            if(hoveredLocation!=null&&Math.abs(x-hoverX)<=3&&Math.abs(y-hoverY)<=3){
-                pinnedLocation=pinnedLocation!=null&&pinnedLocation.isSameLocation(hoveredLocation)?null:hoveredLocation;
-                tooltipRefreshNanos=0;
+            if(pinnedLocation!=null){
+                if(x>=closeX&&x<closeX+closeSize&&y>=closeY&&y<closeY+closeSize){
+                    pinnedLocation=null;tooltipRefreshNanos=0;panelVisible=false;
+                }
                 return true;
+            }
+            if(panelVisible&&hoveredLocation!=null&&Math.abs(x-hoverX)<=3&&Math.abs(y-hoverY)<=3){
+                pinnedLocation=hoveredLocation;pinLeft=panelLeft;pinTop=panelTop;
+                tooltipRefreshNanos=0;return true;
             }
         }
         return super.mouseClicked(x,y,button);
@@ -429,7 +435,7 @@ extends GuiText {
         List<TooltipText> texts = new ArrayList<>();
         List<TooltipIcon> icons = new ArrayList<>();
         int usedWidth = 0;
-        int y = 0;
+        int y = 14; // permanent header clearance for close control
         int columns = Math.max(1, maxWidth / 18);
         for (var line : tooltipDetails) {
             if (!line.icons().isEmpty()) y += 3;
@@ -442,13 +448,15 @@ extends GuiText {
                 int count = line.icons().size();
                 for (int n = 0; n < count; n++) {
                     int x = (n % columns) * 18;
-                    icons.add(new TooltipIcon(line.icons().get(n), x, y + (n / columns) * 18,n<line.iconDetails().size()?line.iconDetails().get(n):null));
+                    icons.add(new TooltipIcon(line.icons().get(n),x,y+(n/columns)*18,
+                        n<line.iconDetails().size()?line.iconDetails().get(n):null,
+                        n<line.recipes().size()?line.recipes().get(n):List.of(),line.action()));
                 }
                 usedWidth = Math.max(usedWidth, Math.min(columns, count) * 18);
                 y += ((count + columns - 1) / columns) * 18;
             }
         }
-        return new TooltipLayout(texts, icons, usedWidth, y);
+        return new TooltipLayout(texts,icons,Math.max(usedWidth,60),y);
     }
 
     private void drawBuildingTooltip(PoseStack pose, int mouseX, int mouseY) {
@@ -466,8 +474,9 @@ extends GuiText {
                 ? mouseX + 12 : mouseX - w - 12;
         left = Math.max(5, Math.min(left, this.width - w - 5));
         int top = Math.max(5, Math.min(mouseY + 8, this.height - h - 5));
-        if(pinnedLocation!=null){left=Math.max(5,this.width-w-8);top=8;}
-        panelLeft=left;panelTop=top;panelWidth=w;panelHeight=h;
+        if(pinnedLocation!=null){left=Math.max(5,Math.min(pinLeft,this.width-w-5));top=Math.max(5,Math.min(pinTop,this.height-h-5));}
+        panelLeft=left;panelTop=top;panelWidth=w;panelHeight=h;panelVisible=true;
+        closeSize=Math.max(10,(int)Math.ceil(12*fit));closeX=left+w-closeSize;closeY=top;
 
         pose.pushPose();
         try {
@@ -475,8 +484,11 @@ extends GuiText {
             pose.scale(fit, fit, 1);
             fillGradient(pose, -3, -3, layout.width() + 3, layout.height() + 3,
                     0xF0101010, 0xF0101010);
-            for (var row : layout.text())
-                font.draw(pose, row.text(), 0, row.y(), row.color());
+            for(var row:layout.text())font.draw(pose,row.text(),0,row.y(),row.color());
+            if(pinnedLocation!=null){
+                fill(pose,layout.width()-12,0,layout.width(),12,0xff563232);
+                font.draw(pose,"X",layout.width()-10,2,0xffffff);
+            }
         } finally {
             pose.popPose();
         }
@@ -513,12 +525,72 @@ extends GuiText {
         float x=(mouseX-panelLeft)/fit,y=(mouseY-panelTop)/fit;
         if(x<0||x>layout.width()||y<0||y>layout.height())return;
         for(var icon:layout.icons())if(x>=icon.x()&&x<icon.x()+16&&y>=icon.y()&&y<icon.y()+16){
-            drawItemStackTooltip(icon.stack(),mouseX,mouseY,true,icon.detail());return;
+            drawMapDetail(icon,mouseX,mouseY);return;
         }
         for(var line:layout.text())if(line.detail()!=null&&y>=line.y()&&y<line.y()+11){
-            drawHoveringText(java.util.List.of(line.detail()),mouseX,mouseY,font);
+            drawMapDetail(new TooltipIcon(ItemStack.EMPTY,0,0,line.detail(),List.of(),true),mouseX,mouseY);
             return;
         }
+    }
+
+    /** Draw the secondary tooltip after every primary item, at a higher Z.
+     * Real stacks with counts; no fabricated recipe for unknown outputs. */
+    private void drawMapDetail(TooltipIcon icon,int mouseX,int mouseY){
+        List<FormattedCharSequence> text=new ArrayList<>();
+        int maxWidth=Math.max(40,Math.min(170,width-18));
+        if(!icon.action()&&!icon.stack().isEmpty())
+            text.addAll(font.split(icon.stack().getHoverName(),maxWidth));
+        if(icon.detail()!=null&&!icon.detail().isBlank()){
+            String detail=icon.detail();
+            if(!icon.recipes().isEmpty()&&!icon.action())detail="";
+            for(String part:detail.split("; "))if(!part.isBlank())
+                text.addAll(font.split(new net.minecraft.network.chat.TextComponent(part),maxWidth));
+        }
+        List<TooltipIcon> recipeIcons=new ArrayList<>();
+        List<int[]> arrows=new ArrayList<>();
+        int y=text.size()*11,w=40;
+        for(var line:text)w=Math.max(w,font.width(line));
+        int columns=Math.max(2,maxWidth/20);
+        for(var recipe:icon.recipes()){
+            int n=0;y+=3;
+            for(var stack:recipe.inputs()){
+                recipeIcons.add(new TooltipIcon(stack,(n%columns)*20,y+(n/columns)*20,null,List.of(),false));n++;
+            }
+            arrows.add(new int[]{(n%columns)*20,y+(n/columns)*20+5});n++;
+            for(var stack:recipe.outputs()){
+                recipeIcons.add(new TooltipIcon(stack,(n%columns)*20,y+(n/columns)*20,null,List.of(),false));n++;
+            }
+            w=Math.max(w,Math.min(n,columns)*20);y+=((n+columns-1)/columns)*20;
+        }
+        if(y==0)return;
+        float fit=Math.min(1f,Math.min((width-12)/(float)w,(height-12)/(float)y));
+        int sw=(int)Math.ceil(w*fit),sh=(int)Math.ceil(y*fit);
+        int left=mouseX+12+sw+5<=width?mouseX+12:mouseX-sw-12;
+        left=Math.max(5,Math.min(left,width-sw-5));
+        int top=Math.max(5,Math.min(mouseY+8,height-sh-5));
+        framePose.pushPose();
+        try{
+            framePose.translate(left,top,600);framePose.scale(fit,fit,1);
+            fillGradient(framePose,-4,-4,w+4,y+4,0xff160f20,0xff160f20);
+            fill(framePose,-4,-4,w+4,-3,0xff754c99);
+            for(int i=0;i<text.size();i++)font.draw(framePose,text.get(i),0,i*11,0xffffff);
+            for(int[] arrow:arrows)font.draw(framePose,"→",arrow[0]+3,arrow[1],0xffffff);
+        }finally{framePose.popPose();}
+        if(recipeIcons.isEmpty())return;
+        PoseStack model=RenderSystem.getModelViewStack();float old=itemRenderer.blitOffset;
+        model.pushPose();
+        try{
+            model.translate(left,top,0);model.scale(fit,fit,1);RenderSystem.applyModelViewMatrix();
+            Lighting.setupFor3DItems();RenderSystem.enableDepthTest();itemRenderer.blitOffset=700;
+            for(var item:recipeIcons)itemRenderer.renderAndDecorateItem(item.stack(),item.x(),item.y());
+        }finally{itemRenderer.blitOffset=old;model.popPose();RenderSystem.applyModelViewMatrix();Lighting.setupFor3DItems();}
+        // Explicit quantities, including 1, in the same transformed screen space.
+        framePose.pushPose();
+        try{
+            framePose.translate(left,top,850);framePose.scale(fit,fit,1);
+            for(var item:recipeIcons){String count=Integer.toString(item.stack().getCount());
+                font.drawShadow(framePose,count,item.x()+16-font.width(count),item.y()+10,0xffffff);}
+        }finally{framePose.popPose();}
     }
 
     @Override
