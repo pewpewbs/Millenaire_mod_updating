@@ -3903,8 +3903,8 @@ public class Building {
          ServerChunkCache chunkProvider = ((ServerLevel)this.world).getChunkSource();
 
          if(this.winfo==null||this.winfo.width<=0||this.winfo.length<=0)return false;
-         int minX=this.winfo.mapStartX>>4, maxX=(this.winfo.mapStartX+this.winfo.width-1)>>4;
-         int minZ=this.winfo.mapStartZ>>4, maxZ=(this.winfo.mapStartZ+this.winfo.length-1)>>4;
+         int minX=this.winfo.mapStartX>>4, maxX=(this.winfo.mapStartX+this.winfo.length-1)>>4;
+         int minZ=this.winfo.mapStartZ>>4, maxZ=(this.winfo.mapStartZ+this.winfo.width-1)>>4;
          for (int x=minX; x<=maxX; x++) {
             for (int z=minZ; z<=maxZ; z++) {
                if (chunkProvider.getChunkNow(x,z)==null) {
@@ -5927,8 +5927,8 @@ public class Building {
    }
 
    public void updateBuildingServer() {
-      if (!this.world.isClientSide) this.finishPendingSave();
       if (!this.world.isClientSide) {
+         long saveStarted=System.nanoTime();this.finishPendingSave();reportSlowBuildingPart("finish-save",saveStarted);
          if (this.mw.getBuilding(this.pos) != this) {
             MillLog.error(this, "Other building registered in my place: " + this.mw.getBuilding(this.pos));
          }
@@ -6029,41 +6029,45 @@ public class Building {
                   }
 
                   if (this.isInn) {
-                     this.updateInn();
+                     {long began=System.nanoTime(); this.updateInn(); reportSlowBuildingPart("inn",began);}
                   }
 
                   if (this.hasVisitors) {
-                     this.getVisitorManager().update(false);
+                     {long began=System.nanoTime(); this.getVisitorManager().update(false); reportSlowBuildingPart("visitors",began);}
                   }
 
                   if (this.hasAutoSpawn) {
-                     this.updateAutoSpawn();
+                     {long began=System.nanoTime(); this.updateAutoSpawn(); reportSlowBuildingPart("auto-spawn",began);}
                   }
 
                   if (Math.abs(this.world.getDayTime() + this.hashCode()) % 20L == 4L) {
-                     this.unlockForNearbyPlayers();
+                     {long began=System.nanoTime(); this.unlockForNearbyPlayers(); reportSlowBuildingPart("nearby-unlock",began);}
                   }
 
                   {long began=System.nanoTime(); this.getPanelManager().updateSigns(); reportSlowBuildingPart("signs",began);}
                   if (this.isTownhall) {
+                     long began=System.nanoTime();
                      if (this.saveNeeded && this.saveWorker == null) {
                         this.saveTownHall("Save needed");
                      } else if (this.saveWorker == null && this.world.getGameTime() - this.lastSaved > 1000L) {
                         this.saveTownHall("Delay up");
                      }
+                     reportSlowBuildingPart("save-snapshot",began);
                   }
 
                   if (player != null && this.location.getPlan() != null && this.location.getPlan().exploreTag != null) {
-                     this.checkExploreTag(player);
+                     {long began=System.nanoTime(); this.checkExploreTag(player); reportSlowBuildingPart("exploration",began);}
                   }
 
                   {long began=System.nanoTime(); this.sendInitialBuildingPackets(); reportSlowBuildingPart("initial-packets",began);}
                   if (MillCommonUtilities.chanceOn(100)) {
+                     long began=System.nanoTime();
                      for (Point p : this.resManager.chests) {
-                        if (p.getMillChest(this.world) != null) {
-                           p.getMillChest(this.world).buildingPos = this.getPos();
-                        }
+                        if(!this.world.hasChunkAt(p.getBlockPos()))continue;
+                        TileEntityLockedChest chest=p.getMillChest(this.world);
+                        if(chest!=null)chest.buildingPos=this.getPos();
                      }
+                     reportSlowBuildingPart("chest-links",began);
                   }
 
                   {long began=System.nanoTime(); this.refreshGoods(); reportSlowBuildingPart("refresh-goods",began);}
@@ -6279,7 +6283,7 @@ public class Building {
 
    private void updateTownHall() throws MillLog.MillenaireException {
       if (this.getVillagerRecords().size() > 0) {
-         this.updateWorldInfo();
+         long began=System.nanoTime();this.updateWorldInfo();reportSlowBuildingPart("terrain-refresh",began);
       }
 
       if (MillConfigValues.autoConvertProfiles
@@ -6302,7 +6306,7 @@ public class Building {
       }
 
       if ((this.world.getDayTime() + this.hashCode()) % 20L == 3L) {
-         this.updateConstructionQueue(false);
+         long began=System.nanoTime();this.updateConstructionQueue(false);reportSlowBuildingPart("construction-queue",began);
       }
 
       this.checkSeller();
