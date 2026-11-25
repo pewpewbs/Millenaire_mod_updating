@@ -10,6 +10,13 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 25.11.2026 — HOTFIX: cold village activation deadlock
+
+- Runtime report after 31a7823: all villagers frozen. latest(20261125-220239).log: normal join and save, zero NAV-/DOOR-/MILL-SLOW/VILLAGE-PREP entries between 23:00:30 and 23:02:24. Source confirms saved buildings start with empty VillageMapInfo; loadChunks required nonzero map width, isVillageChunksLoaded returned false on empty map, and only active updateTownHall initialized the map. This is a bootstrap deadlock, not a pathing failure.
+- Derive chunk-aligned bounds from saved building locations, construction locations and village radius without scanning or allocating map. Use the same geometry for terrain-map sizing. Request chunks before map initialization; require FULL map plus one-chunk border; initialize terrain before publishing active state. No hard wait for all Forge ticket bookkeeping when actual area is available.
+- Remove staged global MSPT admission gate and temporary-ticket wait for existing village activation. Restore Forge ticking tickets with up to four claims per village/tick, at most one cold synchronous claim; this favors correctness/progress over aggressive throttling. Keep generation preparation queue and scoped terrain cache unchanged. Add MILL-ACTIVATION waiting/active and static regression guards. No save migration or AI goal changes; build and actual existing-world recovery still need verification. Cold forceChunk can still cause a short stall.
+- Startup measurements from same log: cultures 11384ms, building-points 1191ms, languages 667ms; deferred task 13.72s. Startup optimization separate from freeze.
+
 ### 25.11.2026 — PERF: activation tickets and terrain classification
 
 - User validated 07bff86: 168/168 Python tests and Forge BUILD SUCCESSFUL. No gameplay log for that build yet. Reopened latest(20261125-212112).log: 1482 repeated slow building updates, exact internal cause not proven. Confirmed separate ticket stalls 511/457/155/104 ms with attempted=4, terrain scans 200–706ms, final village build 4311ms. Reverse ENDPOINT_MISMATCH chose FORWARD, preserve safety checks. optionsManagerViewed is logged by JourneyMap, not Millenaire. Deferred Millenaire startup 10.22s remains to profile.
