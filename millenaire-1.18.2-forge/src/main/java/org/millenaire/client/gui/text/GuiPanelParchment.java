@@ -79,7 +79,11 @@ extends GuiText {
     private int hoverX,hoverY,panelLeft,panelTop,panelWidth,panelHeight,pinLeft,pinTop,closeX,closeY,closeSize;
     private boolean panelVisible;
     private record TooltipText(FormattedCharSequence text, int color, int y,String detail) {}
-    private record TooltipIcon(ItemStack stack,int x,int y,String detail,List<BuildingMapTooltip.RecipeView> recipes,boolean action) {}
+    private record TooltipIcon(ItemStack stack,int x,int y,String detail,List<BuildingMapTooltip.RecipeView> recipes,boolean action,BuildingMapTooltip.Portrait portrait) {
+        TooltipIcon(ItemStack stack,int x,int y,String detail,List<BuildingMapTooltip.RecipeView> recipes,boolean action){
+            this(stack,x,y,detail,recipes,action,null);
+        }
+    }
     private record TooltipLayout(List<TooltipText> text, List<TooltipIcon> icons, int width, int height) {}
     private final Player player;
     ResourceLocation backgroundParchment = new ResourceLocation("millenaire", "textures/gui/parchment.png");
@@ -439,10 +443,19 @@ extends GuiText {
         int columns = Math.max(1, maxWidth / 18);
         for (var line : tooltipDetails) {
             if (!line.icons().isEmpty()) y += 3;
-            for (var part : font.split(new net.minecraft.network.chat.TextComponent(line.text()), maxWidth)) {
+            if(!line.text().isEmpty())for (var part : font.split(new net.minecraft.network.chat.TextComponent(line.text()), maxWidth)) {
                 texts.add(new TooltipText(part, line.color(), y,line.detail()));
                 usedWidth = Math.max(usedWidth, font.width(part));
                 y += 11;
+            }
+            if(!line.portraits().isEmpty()){
+                int count=line.portraits().size();
+                for(int n=0;n<count;n++){
+                    var portrait=line.portraits().get(n);
+                    icons.add(new TooltipIcon(ItemStack.EMPTY,(n%columns)*18,y+(n/columns)*18,portrait.detail(),List.of(),true,portrait));
+                }
+                usedWidth=Math.max(usedWidth,Math.min(columns,count)*18);
+                y+=((count+columns-1)/columns)*18;
             }
             if (!line.icons().isEmpty()) {
                 int count = line.icons().size();
@@ -487,7 +500,8 @@ extends GuiText {
             for(var row:layout.text())font.draw(pose,row.text(),0,row.y(),row.color());
             if(pinnedLocation!=null){
                 fill(pose,layout.width()-12,0,layout.width(),12,0xff563232);
-                font.draw(pose,"X",layout.width()-10,2,0xffffff);
+                String cross="×";
+                font.draw(pose,cross,layout.width()-12+(12-font.width(cross))/2f,(12-font.lineHeight)/2f,0xffffff);
             }
         } finally {
             pose.popPose();
@@ -509,14 +523,36 @@ extends GuiText {
             Lighting.setupFor3DItems();
             RenderSystem.enableDepthTest();
             itemRenderer.blitOffset = 300.0f;
-            for (var icon : layout.icons())
-                itemRenderer.renderAndDecorateItem(icon.stack(), icon.x(), icon.y());
+            for (var icon : layout.icons()){
+                if(icon.portrait()!=null){
+                    var texture=icon.portrait().texture();
+                    if(texture==null||!minecraft.getResourceManager().hasResource(texture))
+                        itemRenderer.renderAndDecorateItem(new ItemStack(net.minecraft.world.item.Items.PLAYER_HEAD),icon.x(),icon.y());
+                }else itemRenderer.renderAndDecorateItem(icon.stack(), icon.x(), icon.y());
+            }
         } finally {
             itemRenderer.blitOffset = oldOffset;
             modelView.popPose();
             RenderSystem.applyModelViewMatrix();
             Lighting.setupFor3DItems();
         }
+        // All Millenaire humanoid models use the 64x32 skin layout. UVs
+        // are normalized, so higher-resolution resource pack skins work too.
+        pose.pushPose();
+        try{
+            pose.translate(left,top,350);pose.scale(fit,fit,1);
+            RenderSystem.enableBlend();
+            for(var icon:layout.icons()){
+                if(icon.portrait()==null)continue;
+                var texture=icon.portrait().texture();
+                if(texture==null||!minecraft.getResourceManager().hasResource(texture))continue;
+                RenderSystem.setShader(GameRenderer::getPositionTexShader);
+                RenderSystem.setShaderTexture(0,texture);
+                RenderSystem.setShaderColor(1,1,1,1);
+                blit(pose,icon.x(),icon.y(),16,16,8,8,8,8,64,32);
+                blit(pose,icon.x(),icon.y(),16,16,40,8,8,8,64,32);
+            }
+        }finally{RenderSystem.disableBlend();pose.popPose();}
         if(pinnedLocation!=null)drawPinnedDetail(layout,mouseX,mouseY,fit);
     }
 
@@ -583,19 +619,12 @@ extends GuiText {
             model.translate(left,top,0);model.scale(fit,fit,1);RenderSystem.applyModelViewMatrix();
             Lighting.setupFor3DItems();RenderSystem.enableDepthTest();itemRenderer.blitOffset=700;
             for(var item:recipeIcons)itemRenderer.renderAndDecorateItem(item.stack(),item.x(),item.y());
+            // Use the vanilla inventory overlay, with an explicit count even
+            // for one item. Keep the same model-view transform as the icons.
+            // Render every model first so another model cannot cover a count.
+            for(var item:recipeIcons)itemRenderer.renderGuiItemDecorations(font,item.stack(),item.x(),item.y(),
+                    Integer.toString(item.stack().getCount()));
         }finally{itemRenderer.blitOffset=old;model.popPose();RenderSystem.applyModelViewMatrix();Lighting.setupFor3DItems();}
-        // Explicit quantities, including 1, in the same transformed screen space.
-        framePose.pushPose();
-        try{
-            framePose.translate(left,top,850);framePose.scale(fit,fit,1);
-            // The SEE_THROUGH text render type disables depth testing for the
-            // count itself, including when the item model has written depth.
-            var counts=net.minecraft.client.renderer.MultiBufferSource.immediate(new BufferBuilder(256));
-            for(var item:recipeIcons){String count=Integer.toString(item.stack().getCount());
-                font.drawInBatch(count,item.x()+16-font.width(count),item.y()+10,0xffffff,true,
-                        framePose.last().pose(),counts,true,0,0xF000F0);}
-            counts.endBatch();
-        }finally{framePose.popPose();}
     }
 
     @Override
