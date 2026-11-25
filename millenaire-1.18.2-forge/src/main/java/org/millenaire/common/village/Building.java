@@ -170,9 +170,8 @@ public class Building {
    public boolean isMarket = false;
    public boolean hasVisitors = false;
    public boolean hasAutoSpawn = false;
-   private long lastFailedOtherLocationSearch = 0L;
+   private final ProjectSiteCooldown projectSiteCooldown = new ProjectSiteCooldown();
    private long nextProgressionReviewTick = Long.MIN_VALUE;
-   private long lastFailedProjectLocationSearch = 0L;
    public long lastPathingUpdate;
    private long lastSaved = 0L;
    public long lastVillagerRecordsRepair = 0L;
@@ -2429,12 +2428,11 @@ public class Building {
                   }
                } else if (goalProject.location == null) {
                   boolean canAffordProject = ignoreCost || this.canAffordProject(goalProject.getPlan(this.buildingGoalVariation, 0));
-                  if (System.currentTimeMillis() - this.lastFailedProjectLocationSearch > 80000L && canAffordProject) {
+                  if (!this.projectSiteCooldown.deferred(goalProject.key,this.world.getGameTime()) && canAffordProject) {
                      BuildingLocation location = goalProject.getPlan(this.buildingGoalVariation, 0)
                         .findBuildingLocation(this.winfo, this.regionMapper, this.location.pos, this.villageType.radius, MillCommonUtilities.getRandom(), -1);
-                     this.lastFailedProjectLocationSearch = System.currentTimeMillis();
                      if (location != null) {
-                        this.lastFailedProjectLocationSearch = 0L;
+                         this.projectSiteCooldown.clear(goalProject.key);
                         if (this.brickColourTheme != null && location.getPlan().randomBrickColours.isEmpty()) {
                            location.initialiseBrickColoursFromTheme(this, this.brickColourTheme);
                         }
@@ -2464,10 +2462,13 @@ public class Building {
                         }
                      } else {
                         this.buildingGoalIssue = "ui.nospace";
-                        this.lastFailedProjectLocationSearch = System.currentTimeMillis();
-                        if (MillConfigValues.LogBuildingPlan >= 1) {
-                           MillLog.major(this, "Searching for a location for the new project failed.");
-                        }
+                        this.projectSiteCooldown.defer(goalProject.key,this.world.getGameTime());
+                         MillLog.major(this,"VILLAGE-SITE-DEFER project="+goalProject.key+" retryTicks="+ProjectSiteCooldown.RETRY_TICKS);
+                         this.buildingGoal=null;
+                         this.buildingGoalLocation=null;
+                         this.noProjectsLeft=false;
+                         this.markSaveNeeded();
+                         return false;
                      }
                   } else if (!canAffordProject) {
                      this.buildingGoalIssue = "ui.lackingresources";
@@ -2483,7 +2484,6 @@ public class Building {
             if (targetConstruction.getBuildingLocation() != null) {
                return true;
             } else {
-               boolean attemptedConstruction = false;
                List<BuildingProject> possibleProjects = this.getAllPossibleProjects();
                List<BuildingProject> affordableProjects = new ArrayList<>();
 
@@ -2504,7 +2504,6 @@ public class Building {
                }
 
                if (affordableProjects.isEmpty()) {
-                  this.lastFailedOtherLocationSearch = System.currentTimeMillis();
                   return false;
                } else {
                   VillageProgression.Candidate progression = VillageProgression.enabled(this)
@@ -2533,11 +2532,11 @@ public class Building {
                         );
                      }
                   } else {
-                     BuildingPlan plan = progression != null ? progression.plan() : newProject.planSet.getRandomStartingPlan();
+                     BuildingPlan plan = newProject.location != null ? newProject.getNextBuildingPlan(false) : progression != null ? progression.plan() : newProject.planSet.getRandomStartingPlan();
                      if (plan == null) return false;
                      BuildingLocation location = null;
                      if (ignoreCost || this.canAffordBuild(plan)) {
-                        if (newProject.location == null && System.currentTimeMillis() - this.lastFailedOtherLocationSearch > 80000L) {
+                        if (newProject.location == null && !this.projectSiteCooldown.deferred(newProject.key,this.world.getGameTime())) {
                            location = plan.findBuildingLocation(
                               this.winfo, this.regionMapper, this.location.pos, this.villageType.radius, MillCommonUtilities.getRandom(), -1
                            );
@@ -2547,7 +2546,7 @@ public class Building {
                      }
 
                      if (location != null) {
-                        this.lastFailedOtherLocationSearch = 0L;
+                        this.projectSiteCooldown.clear(newProject.key);
                         targetConstruction.startNewConstruction(location, plan.getBuildingPoints(this.world, location, false, false, false));
                         if (MillConfigValues.LogBuildingPlan >= 1) {
                            MillLog.major(
@@ -2555,15 +2554,14 @@ public class Building {
                            );
                         }
                      } else {
-                        attemptedConstruction = true;
-                     }
-                  }
-
-                  if (attemptedConstruction) {
-                     this.lastFailedOtherLocationSearch = System.currentTimeMillis();
-                  }
-
-                  return true;
+                        if(newProject.location==null&&(ignoreCost||this.canAffordBuild(plan))){
+                            this.projectSiteCooldown.defer(newProject.key,this.world.getGameTime());
+                            MillLog.major(this,"VILLAGE-SITE-DEFER project="+newProject.key+" retryTicks="+ProjectSiteCooldown.RETRY_TICKS);
+                         }
+                         return false;
+                      }
+                   }
+                   return targetConstruction.getBuildingLocation()!=null;
                }
             }
          }
@@ -2903,6 +2901,7 @@ public class Building {
 
             for (BuildingProject project : projectsLevel) {
                project.projectTier = ep;
+               if (project.location == null && this.projectSiteCooldown.deferred(project.key,this.world.getGameTime())) continue;
                if ((project.location == null || project.location.level < 0)
                     && (!foundNewBuildingsLevel || VillageProgression.enabled(this))) {
                   if (this.isValidProject(project)) {
