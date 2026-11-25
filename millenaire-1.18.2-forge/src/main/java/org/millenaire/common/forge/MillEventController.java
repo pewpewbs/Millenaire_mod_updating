@@ -319,6 +319,8 @@ public class MillEventController {
 
     @SubscribeEvent
     public void worldUnloaded(WorldEvent.Unload event) {
+        if(event.getWorld() instanceof ServerLevel server)
+            org.millenaire.common.world.VillagePreparationQueue.unload(server);
         // Always release matching state, including failed startup and client dimension changes.
         if (Mill.clientWorld != null && Mill.clientWorld.world == event.getWorld()) Mill.clientWorld = null;
         if (Mill.serverWorlds != null) {
