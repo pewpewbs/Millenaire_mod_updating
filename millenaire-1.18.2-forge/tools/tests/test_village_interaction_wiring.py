@@ -20,7 +20,9 @@ class VillageInteractionWiring(unittest.TestCase):
     def test_operational_priority_is_soft(self):
         code = read("common/village/VillageProgression.java")
         self.assertIn("operatingSupplier(v,options,preferred.plan(),ignoreCost)", code)
-        self.assertIn("return operating == null ? preferred : operating;", code)
+        select = code.split("static Candidate select(", 1)[1].split("static Candidate replacement(", 1)[0]
+        self.assertRegex(select, r"Candidate chosen\s*=\s*operating\s*==\s*null\s*\?\s*preferred\s*:\s*operating\s*;")
+        self.assertIn("return chosen;", select)
         self.assertIn("if(!operatingNeeds(v,c.plan()).isEmpty())continue;", code)
 
     def test_pen_pairing_keeps_existing_spawn_limits(self):
