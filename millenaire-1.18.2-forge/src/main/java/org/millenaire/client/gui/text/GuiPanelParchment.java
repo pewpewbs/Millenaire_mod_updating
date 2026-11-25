@@ -443,14 +443,19 @@ extends GuiText {
         List<TooltipText> texts = new ArrayList<>();
         List<TooltipIcon> icons = new ArrayList<>();
         int usedWidth = 0;
-        int y = 14; // permanent header clearance for close control
+        int y = 0; // keep the title at the top; reserve space beside it, not above it
         int columns = Math.max(1, maxWidth / 18);
         for (var line : tooltipDetails) {
             if (!line.icons().isEmpty()) y += 3;
-            if(!line.text().isEmpty())for (var part : font.split(new net.minecraft.network.chat.TextComponent(line.text()), maxWidth)) {
-                texts.add(new TooltipText(part, line.color(), y,line.detail()));
-                usedWidth = Math.max(usedWidth, font.width(part));
-                y += 11;
+            if(!line.text().isEmpty()){
+                // Both hover and pinned layouts reserve the same header space.
+                // A wrapped first title keeps its entire text clear of the button.
+                int headerReserve=y<12?16:0;
+                for (var part : font.split(new net.minecraft.network.chat.TextComponent(line.text()), Math.max(1,maxWidth-headerReserve))) {
+                    texts.add(new TooltipText(part, line.color(), y,line.detail()));
+                    usedWidth = Math.max(usedWidth, font.width(part)+(y<12?16:0));
+                    y += 11;
+                }
             }
             if(!line.portraits().isEmpty()){
                 int count=line.portraits().size();
