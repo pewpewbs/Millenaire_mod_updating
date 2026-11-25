@@ -56,7 +56,7 @@ public final class ProductionCapability {
             if(soils!=null&&!soils.isEmpty())return true;
             // Server has authoritative registered soil positions; client
             // building packets do not carry soils, so fall back to the plan.
-            if(!existing.world.isClientSide && plan==null)return false;
+            if(!existing.world.isClientSide)return false;
         }
         return plan!=null&&planCrops(plan).contains(crop);
     }
