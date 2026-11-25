@@ -19,6 +19,8 @@ public class BuildingChunkLoader {
     private final BlockPos owner;
     private final Set<ChunkPos> forcedChunks=new LinkedHashSet<>();
     public boolean chunksLoaded;
+    private static final int MAX_NEW_TICKETS_PER_CALL=4;
+    private long lastLoadTick=Long.MIN_VALUE;
     public BuildingChunkLoader(Building townHall) {
         this.townHall=townHall;var pos=townHall.getPos();owner=new BlockPos(pos.getiX(),pos.getiY(),pos.getiZ());
     }
@@ -34,18 +36,29 @@ public class BuildingChunkLoader {
     }
     public void loadChunks() {
         if(!(townHall.world instanceof ServerLevel world) || townHall.winfo==null)return;
+        long tick=world.getGameTime();
+        if(lastLoadTick==tick)return;
+        lastLoadTick=tick;
+        long started=System.nanoTime();
         var info=townHall.winfo;Set<ChunkPos> required=requiredChunks(info.chunkStartX,info.chunkStartZ,info.length,info.width);
         for(ChunkPos chunk:new ArrayList<>(forcedChunks))if(!required.contains(chunk)) {
             ForgeChunkManager.forceChunk(world,"millenaire",owner,chunk.x,chunk.z,false,true);forcedChunks.remove(chunk);
         }
+        int attempted=0;
         for(ChunkPos chunk:required)if(!forcedChunks.contains(chunk)) {
+            if(attempted>=MAX_NEW_TICKETS_PER_CALL)break;
+            attempted++;
             if(ForgeChunkManager.forceChunk(world,"millenaire",owner,chunk.x,chunk.z,true,true))forcedChunks.add(chunk);
             else MillLog.warning(townHall,"Could not force-load village chunk "+chunk);
         }
         chunksLoaded=forcedChunks.containsAll(required);
-        if(MillConfigValues.LogChunkLoader>=1)MillLog.major(townHall,"Force-loaded "+forcedChunks.size()+" village chunks.");
+        long elapsed=System.nanoTime()-started;
+        if(elapsed>=100_000_000L)MillLog.major(townHall,"MILL-SLOW stage=village-tickets ms="+elapsed/1_000_000L
+                +" attempted="+attempted+" forced="+forcedChunks.size()+" required="+required.size());
+        if(chunksLoaded&&MillConfigValues.LogChunkLoader>=1)MillLog.major(townHall,"Force-loaded "+forcedChunks.size()+" village chunks.");
     }
     public void unloadChunks() {
+        if(forcedChunks.isEmpty()&&!chunksLoaded)return;
         if(townHall.world instanceof ServerLevel world)
             for(ChunkPos chunk:forcedChunks)ForgeChunkManager.forceChunk(world,"millenaire",owner,chunk.x,chunk.z,false,true);
         forcedChunks.clear();chunksLoaded=false;
