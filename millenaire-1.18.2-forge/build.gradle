@@ -219,3 +219,38 @@ tasks.register('writeMigrationClasspath') {
         file('build/migration-classpath.txt').text = configurations.compileClasspath.asPath
     }
 }
+
+// JourneyMap and other clients look for entity_icon/<skin path>. Generate
+// the missing face images from the mod's actual skins, not placeholders.
+// Existing authored icons are retained, all culture subfolders are included.
+def millSkinRoot = file('src/main/resources/assets/millenaire/textures/entity')
+def millAuthoredIcons = file('src/main/resources/assets/millenaire/textures/entity_icon')
+def millIconRoot = layout.buildDirectory.dir('generated/millenaireEntityIcons')
+tasks.register('generateMillenaireEntityIcons') {
+    inputs.dir(millSkinRoot)
+    inputs.files(fileTree(millAuthoredIcons))
+    outputs.dir(millIconRoot)
+    doLast {
+        def output = millIconRoot.get().asFile
+        project.delete(output)
+        fileTree(millSkinRoot).matching { include '**/*.png' }.files.each { skin ->
+            def relative = millSkinRoot.toPath().relativize(skin.toPath()).toString()
+            if (new File(millAuthoredIcons, relative).isFile()) return
+            def source = javax.imageio.ImageIO.read(skin)
+            if (source == null || source.width < 64 || source.width % 64 != 0 ||
+                source.height != 32 * (source.width.intdiv(64))) return
+            int scale = source.width.intdiv(64)
+            def icon = new java.awt.image.BufferedImage(8*scale,8*scale,java.awt.image.BufferedImage.TYPE_INT_ARGB)
+            def graphics = icon.createGraphics()
+            try {
+                graphics.drawImage(source.getSubimage(8*scale,8*scale,8*scale,8*scale),0,0,null)
+                graphics.drawImage(source.getSubimage(40*scale,8*scale,8*scale,8*scale),0,0,null)
+            } finally { graphics.dispose() }
+            def target = new File(output, 'assets/millenaire/textures/entity_icon/' + relative)
+            target.parentFile.mkdirs()
+            javax.imageio.ImageIO.write(icon, 'png', target)
+        }
+    }
+}
+sourceSets.main.resources.srcDir(millIconRoot)
+tasks.named('processResources').configure { dependsOn 'generateMillenaireEntityIcons' }
