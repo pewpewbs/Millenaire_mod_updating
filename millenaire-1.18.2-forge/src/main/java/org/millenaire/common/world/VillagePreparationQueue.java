@@ -15,7 +15,7 @@ import org.millenaire.common.culture.Culture;
 import org.millenaire.common.culture.VillageType;
 import org.millenaire.common.forge.Mill;
 import org.millenaire.common.utilities.MillLog;
-import org.millenaire.common.utilities.Point;
+import org.millenaire.common.utilities.MillCommonUtilities;
 
 /**
  * Bounded fallback for natural village candidates rejected only because their
@@ -94,7 +94,7 @@ public final class VillagePreparationQueue extends SavedData {
     }
 
     public static boolean suppressNatural(ServerLevel world,int x,int z){
-        if(!world.getServer().isSameThread())return false;
+        if(!Mill.loadingComplete || !world.getServer().isSameThread())return false;
         VillagePreparationQueue q=get(world);
         if(q.building)return true;
         if(q.active!=null && VillagePreparationPolicy.nearby(x,z,q.active.x,q.active.z,
@@ -137,14 +137,20 @@ public final class VillagePreparationQueue extends SavedData {
         if(pending.isEmpty())return;
         int interval=VillagePreparationPolicy.interval(world.getServer().getAverageTickTime(),System.nanoTime()-started);
         if(interval==0){
-            if(pausedSince<0)pausedSince=now;
+            if(pausedSince<0){
+                pausedSince=now;
+                if(active!=null)MillLog.major(this,"VILLAGE-PREP paused mspt="+world.getServer().getAverageTickTime());
+            }
             // Avoid retaining a whole region indefinitely on a saturated server.
             if(active!=null && now-pausedSince>=TIMEOUT){
                 release(world);nextTick=now+200;
             }
             return;
         }
-        if(pausedSince>=0){lastProgress=now;pausedSince=-1;}
+        if(pausedSince>=0){
+            if(active!=null)MillLog.major(this,"VILLAGE-PREP resumed mspt="+world.getServer().getAverageTickTime());
+            lastProgress=now;pausedSince=-1;
+        }
         if(now<nextTick)return;
         nextTick=now+interval;
         WorldGenVillage generator=new WorldGenVillage();
@@ -154,9 +160,15 @@ public final class VillagePreparationQueue extends SavedData {
                 finish(world,"distance");return;
             }
             // Only one outstanding request; initial one is the candidate centre.
+            if(!world.getWorldBorder().isWithinBounds(new BlockPos(active.x*16,0,active.z*16))){
+                finish(world,"world-border");return;
+            }
             request(world,new ChunkPos(active.x,active.z));return;
         }
         if(now-lastProgress>TIMEOUT){finish(world,"chunk-timeout");return;}
+        if(!generator.preparationDistanceValid(world,mw,active.x,active.z,null)){
+            finish(world,"distance-changed");return;
+        }
         if(waiting!=null){
             if(world.getChunkSource().getChunkNow(waiting.x,waiting.z)==null)return;
             waiting=null;lastProgress=now;
@@ -201,11 +213,13 @@ public final class VillagePreparationQueue extends SavedData {
         }
         long began=System.nanoTime();
         building=true;
+        Random previous=MillCommonUtilities.random;
         boolean success=false;
         try{
             success=generator.generateVillageAtPoint(world,new Random(active.seed),active.x*16,0,active.z*16,
                     null,false,false,true,Integer.MAX_VALUE,type,null,null,active.completion);
         }finally{
+            MillCommonUtilities.random=previous;
             building=false;
             MillLog.major(this,"VILLAGE-PREP build="+active.x+"/"+active.z+" success="+success
                     +" ms="+(System.nanoTime()-began)/1_000_000L);
