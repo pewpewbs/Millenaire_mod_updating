@@ -1,60 +1,60 @@
-female.BecomeAdult=Watashi wa ituka hahaoya ni naritai desu. / Хочу небудь стати матір'ю.
+female.BecomeAdult=Watashi wa ituka hahaoya ni naritai desu. / Колись хочу стати матір’ю.
 
-male.BecomeAdult=Watashi wa sensi ni naritai desu. / Я хочу бути воїном.
+male.BecomeAdult=Watashi wa sensi ni naritai desu. / Хочу стати воїном.
 
-villager.BecomeAdult=Seityou suru jikan. / Час подорослішати.
+villager.BecomeAdult=Seityou suru jikan. / Час дорослішати.
 
-villager.BringBackResourcesHome=Cho cho cho... / Працюйте, працюйте, працюйте...
+villager.BringBackResourcesHome=Cho cho cho... / Робота, робота, робота…
 
 villager.ChopTrees=Watashi wa nanbonka no ki wo bassai suru tsumori da. / Піду зрубаю кілька дерев.
 
-villager.ConstructionStepByStep=Watashi no chichi wa kentiku no houhou ni tuite watashi ni oshieta. / Мій батько навчив мене як будувати.
-villager.ConstructionStepByStep=Watashi wa kami ga watashi no kenchiku wo kiniiru koto wo negatte imasu. / Сподіваюся, Камі подобаються мої споруди.
+villager.ConstructionStepByStep=Watashi no chichi wa kentiku no houhou ni tuite watashi ni oshieta. / Батько навчив мене будувати.
+villager.ConstructionStepByStep=Watashi wa kami ga watashi no kenchiku wo kiniiru koto wo negatte imasu. / Сподіваюся, камі вподобають мою споруду.
 
-villager.DeliverGoodsHousold=Watashi wa mise kara syokuryou wo eta. / Я взяла їжі на ринку.
+villager.DeliverGoodsHousold=Watashi wa mise kara syokuryou wo eta. / Їжу з ринку вже забрано.
 
-villager.GatherGoods=Watashi wa ikutuka no souchi ga hituyou da. / Мені потрібні дещо запасти.
+villager.GatherGoods=Watashi wa ikutuka no souchi ga hituyou da. / Мені потрібні деякі припаси.
 
-villager.GetGoodsHousold=Watashi wa ie ni korera no mono ga hituyou desu. / Є дещо потрібне для мого будинку.
+villager.GetGoodsHousold=Watashi wa ie ni korera no mono ga hituyou desu. / Ці речі потрібні мені вдома.
 
-villager.GetHouseResources=Watashi wa ie kara nanika totte konakereba ikenai. / Я повинен піти щось забирати з дому.
+villager.GetHouseResources=Watashi wa ie kara nanika totte konakereba ikenai. / Треба дещо забрати з дому.
 
-villager.GetResourcesForBuild=Watashi wa motto takusan no zairyou ga hituyou desu. / Мені потрібно більше матеріалу.
+villager.GetResourcesForBuild=Watashi wa motto takusan no zairyou ga hituyou desu. / Мені потрібно більше матеріалів.
 
-villager.GoPlay=watashi wa asobitai desu. / Я хочу грати.
+villager.GoPlay=watashi wa asobitai desu. / Хочу гратися.
 
-villager.childobserveagriculture=Watashinohaha wa,-mai sakumotsu o saibai suru koto wa jūyōdesuga, sore wa watashi no tame ni totemo taikutsuda to iimasu... / Моя мама каже, що вирощування рису важливо, але мені це виглядає так нудно...
-villager.childobserveconstruction=Tabun watashi ga ōkiku naru to, watashi wa tō o taterudeshou. Kin kara! / Можливо, коли я вирощу, буду будую пагоди.  Золото закінчилося!
-villager.childobservesmithing=Watashitachi no buki ya yoroi wa mottomo utsukushī monodesu! / Наші озброєння і броні найкрасивіші!
-villager.childobserveproducefood=Naze koko ni subete ga kome de tsukura renakereba naranai nodesu ka? Watashi wa kome ni tsukarete iru! / Чому тут все повинно бути зроблено з рису?  Я втомився рисом!
-villager.childobserveproducealcohol=Zenkai watashi wa sake o tameshite mimashita. / Останній раз, коли я спробував саке, я був хворий.
+villager.childobserveagriculture=Watashinohaha wa,-mai sakumotsu o saibai suru koto wa jūyōdesuga, sore wa watashi no tame ni totemo taikutsuda to iimasu... / Мама каже, що вирощувати рис важливо, але це здається мені таким нудним…
+villager.childobserveconstruction=Tabun watashi ga ōkiku naru to, watashi wa tō o taterudeshou. Kin kara! / Може, коли виросту, будуватиму пагоди. Із золота!
+villager.childobservesmithing=Watashitachi no buki ya yoroi wa mottomo utsukushī monodesu! / Наша зброя та обладунки — найгарніші!
+villager.childobserveproducefood=Naze koko ni subete ga kome de tsukura renakereba naranai nodesu ka? Watashi wa kome ni tsukarete iru! / Чому тут усе готують із рису? Як же він мені набрид!
+villager.childobserveproducealcohol=Zenkai watashi wa sake o tameshite mimashita. / Минулого разу від саке мені стало зле.
 
-villager.childeatapple=Kono sekai wa mahōdesu! Ringo wa subete no ki ni sodatsu! / Цей світ - це чарівність!  Яблуки ростуть на кожному дереві!
+villager.childeatapple=Kono sekai wa mahōdesu! Ringo wa subete no ki ni sodatsu! / Цей світ чарівний! Яблука ростуть на кожному дереві!
 
-villager.MakeTools=Watashi wa naganen no aida saikoukyu no dougu wo koumyou ni tukutte iru. / Я створював цей кращий інструмент багато років.
+villager.MakeTools=Watashi wa naganen no aida saikoukyu no dougu wo koumyou ni tukutte iru. / Я вже багато років виготовляю найкращі інструменти.
 
-villager.MakeWeapons=Saikoukyu no buki no himitu wa sisyou kara watashi ni uketugareta. / Секрети найкращого зброї перейшли мені від мого вчителя.
+villager.MakeWeapons=Saikoukyu no buki no himitu wa sisyou kara watashi ni uketugareta. / Таємниці виготовлення найкращої зброї мені передав мій учитель.
 
-villager.PlantSaplings=Watashi wa korera no naegi wo ueru tumori desu. / Посаджу ці паростки.
+villager.PlantSaplings=Watashi wa korera no naegi wo ueru tumori desu. / Посаджу ці саджанці.
 
-villager.SlaughterChicken=Anata wa dareka no tame ni subarashii shokuji wo tukuru darou. / З тебе вийде відмінна їжа для кого-небудь.
+villager.SlaughterChicken=Anata wa dareka no tame ni subarashii shokuji wo tukuru darou. / З тебе вийде чудова страва для когось.
 
-villager.calltoarms=Karera wa watashitachi wo kougeki suru hi wo koukai suru darou! / На захист поселення!
-villager.calltoarms=Kuki wo mote! / До зброї!
-villager.calltoarms=Mura wo mamore! / До зброї!
+villager.calltoarms=Karera wa watashitachi wo kougeki suru hi wo koukai suru darou! / Вони пошкодують про день, коли напали на нас!
+villager.calltoarms=Kuki wo mote! / Хапайте зброю!
+villager.calltoarms=Mura wo mamore! / Захищайте село!
 
-villager.gopray.chosen=Kokoro wo otitukasete kudasai. / Успокой свої думки.
-villager.gopray=Kami wa watashitachi wo aku kara osukui ni naru. / Я буду молитися Богині Уга-но-Мінтама за вдалий врожай.
-villager.gopray=Watashi wa housaku no tame ni megami Uga-no-Mintama ni inori masu. / Камі захищає нас від зла.
+villager.gopray.chosen=Kokoro wo otitukasete kudasai. / Заспокой свій розум.
+villager.gopray=Kami wa watashitachi wo aku kara osukui ni naru. / Камі захищають нас від зла.
+villager.gopray=Watashi wa housaku no tame ni megami Uga-no-Mintama ni inori masu. / Помолюся богині Уґа-но-Мітамі про щедрий урожай.
 
-villager.gorest=A-, mou neru jikan da / Як же мені необхідний відпочинок.
-villager.gorest=Watashi niwa kyu-kei ga hituyou desu. / Так, ось мій час сну.
-villager.gorest=Watashi wa totemo tukarete imasu./ Я занадто втомився.
+villager.gorest=A-, mou neru jikan da / Ах, час спати.
+villager.gorest=Watashi niwa kyu-kei ga hituyou desu. / Мені треба відпочити.
+villager.gorest=Watashi wa totemo tukarete imasu./ Я надто втомився.
 
-villager.greeting=Gokigenyou. / Як ти?
+villager.greeting=Gokigenyou. / Як поживаєш?
 villager.greeting=Hajimemashite / Приємно познайомитися.
 villager.greeting=Kawatta koto aru? / Що нового?
-villager.greeting=Konnichiwa, $name-san! / Добрий день. $name-Сан!
-villager.greeting=Ogenki desuka, $name-san  / Як ти? $name- Сан?
-villager.greeting=Oi. / Привітання.
-villager.greeting=Yokoso. / Вітаю вас.
+villager.greeting=Konnichiwa, $name-san! / Доброго дня, $name-сан!
+villager.greeting=Ogenki desuka, $name-san  / Як справи, $name-сан?
+villager.greeting=Oi. / Гей!
+villager.greeting=Yokoso. / Ласкаво просимо!
