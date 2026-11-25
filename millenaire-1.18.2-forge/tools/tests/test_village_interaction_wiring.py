@@ -66,6 +66,41 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertIn("recipeStacks(crafting.output)", code)
         self.assertIn("recipe.getResultItem().copy()", code)
 
+    def test_map_purpose_is_compact_and_distinct(self):
+        code = read("client/gui/text/BuildingMapTooltip.java")
+        self.assertIn('label("Purpose:","Призначення:"', code)
+        self.assertIn('label("Workers: ","Працівники: "', code)
+        self.assertIn("if(expected.isEmpty())return;", code)
+        self.assertIn("if(!roles.isEmpty())add", code)
+        self.assertIn("new ItemStack(Items.IRON_HOE)", code)
+        self.assertIn("new ItemStack(Items.WHEAT)", code)
+        self.assertNotIn('sells.source=label("For sale"', code)
+        self.assertNotIn("No ingredients consumed", code)
+        self.assertNotIn("Purpose not specified in available data", code)
+
+    def test_grove_and_sheep_outputs_are_not_hardcoded_to_one_variant(self):
+        code = read("client/gui/text/BuildingMapTooltip.java")
+        for marker in ("oakspawn", "pinespawn", "birchspawn", "junglespawn", "acaciaspawn", "darkoakspawn"):
+            self.assertIn('case "'+marker+'"', code)
+        self.assertIn("point.getSpecialType()", code)
+        self.assertIn("getPreviousBuildingPlan()", code)
+        self.assertIn("woodspawnTypes.values()", code)
+        self.assertIn("DyeColor.values()", code)
+        self.assertNotIn("getChunk(", code)
+
+    def test_portraits_and_count_overlay_use_synced_data_and_vanilla_renderer(self):
+        code = read("client/gui/text/BuildingMapTooltip.java")
+        self.assertIn("record.texture", code)
+        self.assertIn("npc.getCurrentGoal()", code)
+        self.assertIn("new Portrait(texture", code)
+        ui = read("client/gui/text/GuiPanelParchment.java")
+        self.assertIn("line.portraits()", ui)
+        self.assertIn("portraitAvailable(texture)", ui)
+        self.assertIn("font.width(cross)", ui)
+        self.assertIn("renderGuiItemDecorations(font,item.stack()", ui)
+        self.assertIn("Integer.toString(item.stack().getCount())", ui)
+        self.assertNotIn("framePose.translate(left,top,850)", ui)
+
     def test_ukrainian_goal_labels(self):
         lang = ROOT.parents[2] / "resources/todeploy/millenaire/languages/uk/strings.txt"
         data = lang.read_text(encoding="utf-8-sig")
