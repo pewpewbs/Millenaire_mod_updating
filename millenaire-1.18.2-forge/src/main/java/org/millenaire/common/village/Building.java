@@ -3620,6 +3620,9 @@ public class Building {
       WoodVariant family = WoodVariant.fromState(state);
       if (family == null || state.getBlock() != family.sapling()) return;
       if (family == WoodVariant.DARK_OAK && !MillCommonUtilities.chanceOn(5)) return;
+      if(family==WoodVariant.ACACIA && this.containsTags("grove")
+            && "acaciaspawn".equals(this.resManager.woodspawnTypes.get(new Point(x,y,z)))
+            && GroveAcaciaGrowth.tryGrow(server,position,state,random))return;
       sapling.advanceTree(server, position, state.setValue(SaplingBlock.STAGE, 1), random);
    }
 
@@ -3899,9 +3902,12 @@ public class Building {
       } else {
          ServerChunkCache chunkProvider = ((ServerLevel)this.world).getChunkSource();
 
-         for (int x = this.winfo.mapStartX; x < this.winfo.mapStartX + this.winfo.width; x += 16) {
-            for (int z = this.winfo.mapStartZ; z < this.winfo.mapStartZ + this.winfo.length; z += 16) {
-               if (!chunkProvider.hasChunk(x >> 4, z >> 4)) {
+         if(this.winfo==null||this.winfo.width<=0||this.winfo.length<=0)return false;
+         int minX=this.winfo.mapStartX>>4, maxX=(this.winfo.mapStartX+this.winfo.width-1)>>4;
+         int minZ=this.winfo.mapStartZ>>4, maxZ=(this.winfo.mapStartZ+this.winfo.length-1)>>4;
+         for (int x=minX; x<=maxX; x++) {
+            for (int z=minZ; z<=maxZ; z++) {
+               if (chunkProvider.getChunkNow(x,z)==null) {
                   return false;
                }
             }
@@ -5938,6 +5944,7 @@ public class Building {
 
             Player player = this.world.getNearestPlayer(this.pos.getiX(), this.pos.getiY(), this.pos.getiZ(), MillConfigValues.KeepActiveRadius, false);
             if (this.isTownhall) {
+               long activationStarted=System.nanoTime();
                if (player != null && this.getPos().distanceTo(player) < MillConfigValues.KeepActiveRadius) {
                   this.loadChunks();
                } else if (player == null || this.getPos().distanceTo(player) > MillConfigValues.KeepActiveRadius + 32) {
@@ -5974,6 +5981,7 @@ public class Building {
                   this.isActive = true;
                }
 
+               reportSlowBuildingPart("activation",activationStarted);
                if (!this.isActive) {
                   return;
                }
@@ -5997,11 +6005,11 @@ public class Building {
                   }
 
                   if (this.containsTags("grove")) {
-                     this.updateGrove();
+                     {long began=System.nanoTime(); this.updateGrove(); reportSlowBuildingPart("grove",began);}
                   }
 
                   if (this.resManager.spawns.size() > 0) {
-                     this.updatePens(false);
+                     {long began=System.nanoTime(); this.updatePens(false); reportSlowBuildingPart("pens",began);}
                   }
 
                   if (this.resManager.healingspots.size() > 0) {
@@ -6036,7 +6044,7 @@ public class Building {
                      this.unlockForNearbyPlayers();
                   }
 
-                  this.getPanelManager().updateSigns();
+                  {long began=System.nanoTime(); this.getPanelManager().updateSigns(); reportSlowBuildingPart("signs",began);}
                   if (this.isTownhall) {
                      if (this.saveNeeded && this.saveWorker == null) {
                         this.saveTownHall("Save needed");
@@ -6049,7 +6057,7 @@ public class Building {
                      this.checkExploreTag(player);
                   }
 
-                  this.sendInitialBuildingPackets();
+                  {long began=System.nanoTime(); this.sendInitialBuildingPackets(); reportSlowBuildingPart("initial-packets",began);}
                   if (MillCommonUtilities.chanceOn(100)) {
                      for (Point p : this.resManager.chests) {
                         if (p.getMillChest(this.world) != null) {
@@ -6058,7 +6066,7 @@ public class Building {
                      }
                   }
 
-                  this.refreshGoods();
+                  {long began=System.nanoTime(); this.refreshGoods(); reportSlowBuildingPart("refresh-goods",began);}
                } catch (Exception var5) {
                   int nbRepeats = MillLog.printException("Exception in TileEntityBuilding.onUpdate() for building " + this + ": ", var5);
                   if (nbRepeats < 5) {
@@ -6098,7 +6106,8 @@ public class Building {
 
    private void updateGrove() {
       for (Point p : this.resManager.woodspawn) {
-         if (MillCommonUtilities.chanceOn(4000) && WorldUtilities.getBlock(this.world, p) instanceof SaplingBlock) {
+         if (MillCommonUtilities.chanceOn(4000) && this.world.hasChunkAt(new BlockPos(p.getiX(),p.getiY(),p.getiZ()))
+               && WorldUtilities.getBlock(this.world, p) instanceof SaplingBlock) {
             this.growTree(this.world, p.getiX(), p.getiY(), p.getiZ(), MillCommonUtilities.random);
          }
       }
