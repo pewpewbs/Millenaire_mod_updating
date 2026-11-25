@@ -15,6 +15,14 @@ class VillageGenerationWiring(unittest.TestCase):
         self.assertIn("j = -8; j <= 8",area)
         self.assertNotIn("world.getChunk(",area)
 
+    def test_generation_logs_distinguish_regular_and_lone_buildings(self):
+        code = (ROOT / "world/WorldGenVillage.java").read_text(encoding="utf-8")
+        self.assertIn('VILLAGE-GEN-REGISTER kind=',code)
+        self.assertIn('villageType.lonebuilding?"lone":"village"',code)
+        self.assertIn('VILLAGE-GEN-REJECT reason=area-incomplete',code)
+        for reason in ("villages-disabled","distance","no-eligible-type","layout:"):
+            self.assertIn('"'+reason+'"',code)
+
     def test_stages_have_separate_measurements(self):
         code = (ROOT / "world/WorldGenVillage.java").read_text(encoding="utf-8")
         self.assertIn("MILL-SLOW stage=village-area-check",code)
