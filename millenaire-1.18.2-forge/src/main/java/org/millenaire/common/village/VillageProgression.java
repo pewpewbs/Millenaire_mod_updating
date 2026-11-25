@@ -315,12 +315,17 @@ final class VillageProgression {
                 else if (g instanceof GoalGenericMining mine)
                     mine.loots.forEach((item,n) -> { if (n != null && n > 0) output(out,item,Map.of()); });
                 else if (g instanceof GoalGenericHarvestCrop crop) {
+                    Building existingBuilding=project.location!=null&&project.location.level==plan.level
+                            ?project.location.getBuilding(v.world):null;
+                    if(!ProductionCapability.hasCrop(plan,existingBuilding,crop.cropType))continue;
                     for (var bonus : crop.harvestItem) output(out,bonus.item,Map.of());
                     output(out,crop.irrigationBonusCrop,Map.of());
                 } else if (g instanceof GoalGenericGatherBlocks gather) {
                     for (var bonus : gather.harvestItem) output(out,bonus.item,Map.of());
                 } else if (g instanceof GoalGenericSlaughterAnimal slaughter) {
-                    for (var bonus : slaughter.bonusItem) output(out,bonus.item,Map.of());
+                    for(InvItem good:ProductionCapability.animalGoods(slaughter.animalKey,type))output(out,good,Map.of());
+                    for (var bonus : slaughter.bonusItem)
+                        if(bonus.tag==null||tags.contains(bonus.tag))output(out,bonus.item,Map.of());
                 } else if (g instanceof GoalGenericCooking cook && cook.itemToCook != null && cook.itemToCook.staticStack != null) {
                     v.world.getRecipeManager().getRecipeFor(RecipeType.SMELTING,new SimpleContainer(cook.itemToCook.staticStack.copy()),v.world)
                             .ifPresent(recipe -> {
