@@ -410,6 +410,28 @@ final class BuildingMapTooltip {
             var goods = loc.culture.shopSells.get(loc.shop);
             if (goods != null) for (var good : goods) if (good != null) addItem(sells, good.item);
         }
+        // Residential slots and trade are purposes too, even when the same
+        // building contains a workshop. Inn visitors are not ordinary housing.
+        boolean inn=hasTag(loc,building,plan,"inn");
+        if(inn){
+            actions.recipe=null;
+            actions.source=label("Inter-village trade; lodging for travelling merchants","Міжселищна торгівля; прихисток для мандрівних торговців","Межпоселенческая торговля; приют для странствующих торговцев");
+            addStack(actions,new ItemStack(org.millenaire.common.item.MillItems.DENIER_OR));
+        }else if(!loc.getMaleResidents().isEmpty()||!loc.getFemaleResidents().isEmpty()){
+            actions.recipe=null;
+            actions.source=label("Housing","Житло","Жильё");
+            addStack(actions,new ItemStack(Items.WHITE_BED));
+        }
+        if(!loc.getVisitors().isEmpty()&&!inn){
+            actions.recipe=null;
+            actions.source=label("Accommodation for visitors","Помешкання для відвідувачів","Жильё для посетителей");
+            addStack(actions,new ItemStack(Items.WHITE_BED));
+        }
+        if(hasTag(loc,building,plan,"patrol")){
+            actions.recipe=null;
+            actions.source=label("Patrol point","Місце патрулювання","Место патрулирования");
+            addStack(actions,new ItemStack(Items.SHIELD));
+        }
         section(lines,label("Purpose:","Призначення:","Назначение:"),actions,true);
         section(lines, label("Potential production:", "Може виробляти:", "Может производить:"), produced);
         section(lines, label("Can extract / gather:", "Може добувати / збирати:", "Может добывать / собирать:"), extracted);
@@ -420,10 +442,6 @@ final class BuildingMapTooltip {
         if (actions.isEmpty() && produced.isEmpty() && extracted.isEmpty() && planned.isEmpty() && sells.isEmpty()) {
             Set<String> roles = new LinkedHashSet<>(effects);
 
-            if(hasTag(loc,building,plan,"inn"))
-                roles.add(label("Accommodation for travelling merchants; inter-village trade","Прихисток для мандрівних торговців; міжселищна торгівля","Приют для странствующих торговцев; межпоселенческая торговля"));
-            else if (!residents.isEmpty()) roles.add(label("Housing for villagers", "Житло для мешканців", "Жильё для жителей"));
-            if (!loc.getVisitors().isEmpty()) roles.add(label("Accommodation for visitors", "Помешкання для відвідувачів", "Жильё для посетителей"));
             if (hasTag(loc, building, plan, "grove")) roles.add(label("Forestry", "Лісозаготівля", "Лесозаготовка"));
             if (hasTag(loc, building, plan, "fishingspot")) roles.add(label("Fishing", "Рибальство", "Рыболовство"));
             if (hasTag(loc, building, plan, "sugarplantation")) roles.add(label("Sugar cane cultivation", "Вирощування цукрової тростини", "Выращивание сахарного тростника"));
