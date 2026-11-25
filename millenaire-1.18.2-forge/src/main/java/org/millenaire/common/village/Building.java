@@ -2713,6 +2713,9 @@ public class Building {
 
    private boolean setProgressionGoal(BuildingProject project, BuildingPlan plan) {
       if (project == null || plan == null) return false;
+      if(VillageProgression.enabled(this))
+         MillLog.major(this,"VILLAGE-PROGRESSION picked="+project.key+" level="+plan.level
+               +" affordable="+this.canAffordProgression(plan,false)+" reserved="+(project.location!=null&&project.location.level<0));
       this.buildingGoal = project.key;
       this.buildingGoalLevel = plan.level;
       this.buildingGoalVariation = plan.variation;
@@ -5901,6 +5904,12 @@ public class Building {
       }
    }
 
+   private void reportSlowBuildingPart(String part,long began){
+      long elapsed=System.nanoTime()-began;
+      if(elapsed>=100_000_000L)MillLog.major(this,"MILL-SLOW stage=building-"+part+" ms="+elapsed/1_000_000L
+            +" pos="+this.getPos()+" tick="+this.world.getGameTime());
+   }
+
    public void updateBuildingServer() {
       if (!this.world.isClientSide) this.finishPendingSave();
       if (!this.world.isClientSide) {
@@ -5925,7 +5934,10 @@ public class Building {
                   this.unloadChunks();
                }
 
-               this.isAreaLoaded = this.isVillageChunksLoaded();
+               // Do not activate a cold village until its required tickets have
+               // been requested and its actual map chunks are available.
+               this.isAreaLoaded = this.isVillageChunksLoaded()
+                     && (player==null || this.chunkLoader==null || this.chunkLoader.chunksLoaded);
                if (this.isActive && !this.isAreaLoaded) {
                   this.isActive = false;
 
@@ -5964,10 +5976,14 @@ public class Building {
                   // Only run in the active, server-side building loop. A
                   // missing chunk is retried without forcing it to load.
                   if (!this.productionSourcesChecked && (this.world.getGameTime() + this.hashCode()) % 100L == 0L) {
+                     long began=System.nanoTime();
                      this.productionSourcesChecked = org.millenaire.common.buildingplan.ProductionSourceRepair.reconcile(this);
+                     reportSlowBuildingPart("source-reconcile",began);
                   }
                   if (this.isTownhall && this.villageType != null) {
+                     long began=System.nanoTime();
                      this.updateTownHall();
+                     reportSlowBuildingPart("townhall",began);
                   }
 
                   if (this.containsTags("grove")) {
