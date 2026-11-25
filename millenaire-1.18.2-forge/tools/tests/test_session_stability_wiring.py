@@ -54,7 +54,7 @@ class SessionStability(unittest.TestCase):
         self.assertNotIn("chunkProvider.hasChunk(",gate)
         self.assertIn("mapStartX+this.winfo.length-1",gate)
         self.assertIn("mapStartZ+this.winfo.width-1",gate)
-        self.assertIn("if(!this.world.hasChunkAt(p.getBlockPos()))continue;",code)
+        self.assertIn("getChunkNow(p.getChunkX(),p.getChunkZ())==null)continue;",code)
         for stage in ("activation","grove","pens","signs","initial-packets","refresh-goods"):
             self.assertIn('reportSlowBuildingPart("'+stage+'"',code)
 
@@ -79,6 +79,14 @@ class SessionStability(unittest.TestCase):
         self.assertIn("return TERRAIN_RULES.tree(state)",code)
         self.assertIn("yBaseline, minY, maxY, rules",code)
         self.assertNotIn("static final ScanRules",code)
+
+    def test_startup_and_generation_substage_timings(self):
+        startup=read("common/forge/Mill.java")
+        for stage in ("block-states","items","building-points","villager-configs","goals","cultures","quests","languages"):
+            self.assertIn('startupStage("'+stage+'"',startup)
+        generation=read("common/world/WorldGenVillage.java")
+        for stage in ("build-centre","build-start-buildings","initialise-village","rush-construction"):
+            self.assertIn('reportGenerationStage("'+stage+'"',generation)
 
     def test_progression_decisions_and_retired_config(self):
         planner=read("common/village/VillageProgression.java")
