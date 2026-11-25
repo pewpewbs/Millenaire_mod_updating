@@ -197,6 +197,23 @@ implements Cloneable {
         }
     }
 
+    /** Geometry only: safe before map allocation, chunk reads or village activation. */
+    public record ActivationBounds(int startX,int startZ,int length,int width) {}
+    public static ActivationBounds activationBounds(List<BuildingLocation> locations,Point centre,int radius){
+        int minX=centre.getiX()-radius, maxX=centre.getiX()+radius;
+        int minZ=centre.getiZ()-radius, maxZ=centre.getiZ()+radius;
+        for(BuildingLocation location:locations){
+            if(location==null||location.pos==null)continue;
+            minX=Math.min(minX,location.pos.getiX()-location.length/2);
+            maxX=Math.max(maxX,location.pos.getiX()+location.length/2);
+            minZ=Math.min(minZ,location.pos.getiZ()-location.width/2);
+            maxZ=Math.max(maxZ,location.pos.getiZ()+location.width/2);
+        }
+        int sx=(minX-MAP_MARGIN)>>4,sz=(minZ-MAP_MARGIN)>>4;
+        int ex=(maxX+MAP_MARGIN)>>4,ez=(maxZ+MAP_MARGIN)>>4;
+        return new ActivationBounds(sx,sz,(ex-sx+1)*16,(ez-sz+1)*16);
+    }
+
     public boolean update(Level world, List<BuildingLocation> locations, Point centre, int radius) throws MillLog.MillenaireException {
         Level previousWorld = this.world;
         int previousBaseline = this.yBaseline;
@@ -258,12 +275,11 @@ implements Cloneable {
         if (MillConfigValues.LogWorldInfo >= 1) {
             MillLog.major(this, "Values: " + startX + "/" + startZ + "/" + endX + "/" + endZ);
         }
-        int chunkStartXTemp = startX >> 4;
-        int chunkStartZTemp = startZ >> 4;
-        int mapStartXTemp = chunkStartXTemp << 4;
-        int mapStartZTemp = chunkStartZTemp << 4;
-        int lengthTemp = ((endX >> 4) + 1 << 4) - mapStartXTemp;
-        int widthTemp = ((endZ >> 4) + 1 << 4) - mapStartZTemp;
+        ActivationBounds bounds=activationBounds(locations,centre,radius);
+        int mapStartXTemp=bounds.startX()<<4;
+        int mapStartZTemp=bounds.startZ()<<4;
+        int lengthTemp=bounds.length();
+        int widthTemp=bounds.width();
         if (MillConfigValues.LogWorldInfo >= 1) {
             MillLog.major(this, "Values after chunks: " + mapStartXTemp + "/" + mapStartZTemp + "/" + (mapStartXTemp + lengthTemp) + "/" + (mapStartZTemp + widthTemp));
         }
