@@ -10,6 +10,14 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 25.11.2026 — MAP-ANIMAL-DROPS / MAP-CROP-SOURCE / INN-PURPOSE / UNIT-COUNT
+
+- Ігрові спостереження Isesake: рецепт із числами поверх іконок після vanilla overlay працює (скрин залізної мотики); користувач просить не показувати 1. Також приховано 0/0 для планів без покращень; загальні дії «Забиває тварин», «Садить культури», «Садить саджанці», без повторного напису про зрошення у товарі.
+- GoalGenericSlaughterAnimal призначає ціль атаки, а звичайні дропи збираються через MillVillager.getGoodsToCollect/pickUpGoods. japanese_chickenfarmer має collectGood і bringBackHomeGood для chickenmeat/feather/egg; slaughterchicken не задає bonusItem. ProductionCapability.animalGoods описує відомі vanilla види здобичі, які професія збирає й повертає додому, включно з яйцем як окремим продуктом курки; бонуси враховують required tag. Не симулюємо loot tables, не гарантуємо кількість, не змінюємо забій/підбирання/доставку.
+- Japanese wheat farm japanesefarm_A.txt (priority=1000, japanese_farmer/japanese_farmwife) має професії з harvestwheathome/plantwheathome. japanese_farmwife також прописана у chickenfarm_A.txt; звичайна наявність домашньої цілі не доводить наявність грядок. ProductionCapability.hasCrop перевіряє реальні зареєстровані ґрунти на сервері для існуючих будівель, маркери плану/попередніх рівнів для майбутніх та клієнта; 10 типів відповідно до BuildingPlan.referenceBuildingPoints. Кеш за планом, без читання чанків. Спільна перевірка у BuildingMapTooltip і VillageProgression.recipes; усуває хибних постачальників, але не гарантує пріоритет, якщо ферма відсутня у типі поселення, недоступна або не вистачає ресурсів. Не змінено правила вибору/вартість/порядок будівництва. Конкретний стан проєктів і запасів Isesake ще не перевірено.
+- Shijin = japaneseinn_A.txt, initial.tag=inn, initial.male=japanese_merchant (visitor, localmerchant); Building.updateInn/attemptMerchantMove/transferMerchantStock забезпечують міжселищну торгівлю. Підказка тепер відрізняє прихисток мандрівного торговця від звичайного житла. Не змінено механіку торгівлі.
+- Додано source regression guard. Збірку Forge та повний набір тестів не запускав; реальна поява ресурсів, пріоритет пшеничної ферми та рендер одиничної кількості потребують ігрової перевірки. Гілка main не змінювалась.
+
 ### 25.11.2026 — MAP-COMPACT-PURPOSE / MAP-SPECIES / MAP-PORTRAITS / MAP-COUNT-OVERLAY-2
 
 - Повторна перевірка у грі (Isesake, 7 скринів): попередній see-through прохід не виправив перекриття кількості моделями; пшениця об'єднувала розведення й урожай; у гаї показувався лише дуб, хоч ростуть також ялини; дублювалися описи видобутку, продажу та безкоштовного крафту; зайві порожні рядки робочих місць/призначення; X зміщений.
