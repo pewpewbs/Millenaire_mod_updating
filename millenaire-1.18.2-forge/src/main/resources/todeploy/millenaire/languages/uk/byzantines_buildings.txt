@@ -1,7 +1,7 @@
 
 //refresh
-kastron_a0=Кастрона
-kastron_a_archives_a0=Архів поселення
+kastron_a0=Кастрон
+kastron_a_archives_a0=Архів села
 kastron_a_inn_a0=Заїжджий двір
 kastron_a_leftmarket_a0=Ринок
 kastron_a_leftmarket_a1=Ліва частина ринку
@@ -11,16 +11,16 @@ kastron_a_rightmarket_a1=Права частина ринку
 acaciagrove_a0=Акацієвий гай
 acaciagrovesmall_A0=Малий акацієвий гай
 architect_a0=Майстерня архітектора
-dressmaker_a0=Кравець
+dressmaker_a0=Кравецька майстерня
 fishfarm_a0=Хатина рибалки
 fishfarm_a3=Рибне господарство
-mason_a0=Муляр
+mason_a0=Майстерня муляра
 mine_a0=Шахта
 pinegrove_a0=Ялиновий гай
 pinegrovesmall_a0=Малий ялиновий гай
 sandpit_a0=Піщаний кар’єр
 sheepfarm_a0=Овечий загін
-silkfarm_a0=Шовкова ферма
+silkfarm_a0=Шовківницька ферма
 smelter_a0=Плавильня
 toolsmith_a0=Кузня
 woodcutter_a0=Хатина лісоруба
@@ -41,7 +41,7 @@ olivepress_a0=Олійниця
 inn_a0=Заїжджий двір
 archives_a0=Архів
 market_a0=Ринок
-market_a4=Торговий зал
+market_a4=Критий ринок
 fortress_a0=Фортеця
 fortress_a_barracks_a0=Казарми
 fortress_a_armyforge_a0=Військова кузня
@@ -68,7 +68,7 @@ gifthut_a0=Подарунковий будинок
 
 borderpost_a0=Прикордонний пост
 borderpost_corner_a0=Прикордонний пост (кут)
-borderpost_gate_a0=Прикордонний пункт (вхід)
+borderpost_gate_a0=Прикордонний пост (вхід)
 
 playerfortress_a0=Фортеця
 playerfortress_a_barracks_a0=Казарми
@@ -79,18 +79,18 @@ oldsheepfarm_A_special_A0=Сюрприз віддаленої вівчарні
 lonesheepfarm_a0=Віддалена вівчарня
 lonesheepfarm_b0=Віддалена вівчарня
 
-lonemonastery_a0=Одинокий монастир
-lonemonastery_b0=Одинокий монастир
+lonemonastery_a0=Віддалений монастир
+lonemonastery_b0=Віддалений монастир
 lonemonastery_side_A0=Бічне крило віддаленого монастиря
 lonemonastery_apse_A0=Апсида віддаленого монастиря
 lonemonastery_dorms_A0=Спальні віддаленого монастиря
 lonemonastery_dome_A0=Купол віддаленого монастиря
-lonemonastery_field_A0=Поле одинокого монастиря
+lonemonastery_field_A0=Поле віддаленого монастиря
 lonemonastery_side_B0=Бічне крило віддаленого монастиря
 lonemonastery_apse_B0=Апсида віддаленого монастиря
 lonemonastery_dorms_B0=Спальні віддаленого монастиря
 lonemonastery_dome_B0=Купол віддаленого монастиря
-lonemonastery_field_B0=Поле одинокого монастиря
+lonemonastery_field_B0=Поле віддаленого монастиря
 
 ancienttheatrebyzantine_A0=Стародавній театр
 ancienttemplebyzantine_a0=Стародавній храм
