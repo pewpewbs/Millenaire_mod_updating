@@ -293,6 +293,31 @@ implements Cloneable {
         public boolean explicitlyForbidden(Block b) { return MillConfigValues.forbiddenBlocks.contains(b); }
     };
 
+    // Cache classifications only within one synchronous chunk scan.
+    private static final class ScanRules implements VillageTerrainColumn.Rules {
+        private final java.util.IdentityHashMap<Block,Integer> flags=new java.util.IdentityHashMap<>();
+        private int flags(Block b){
+            Integer known=flags.get(b);
+            if(known!=null)return known;
+            int v=(TERRAIN_RULES.ground(b)?1:0)|(TERRAIN_RULES.solid(b)?2:0)
+                |(TERRAIN_RULES.liquid(b)?4:0)|(TERRAIN_RULES.forbidden(b)?8:0)
+                |(TERRAIN_RULES.dangerous(b)?16:0)|(TERRAIN_RULES.water(b)?32:0)
+                |(TERRAIN_RULES.fence(b)?64:0)|(TERRAIN_RULES.path(b)?128:0)
+                |(TERRAIN_RULES.explicitlyForbidden(b)?256:0);
+            flags.put(b,v);return v;
+        }
+        public boolean ground(Block b){return (flags(b)&1)!=0;}
+        public boolean solid(Block b){return (flags(b)&2)!=0;}
+        public boolean liquid(Block b){return (flags(b)&4)!=0;}
+        public boolean forbidden(Block b){return (flags(b)&8)!=0;}
+        public boolean dangerous(Block b){return (flags(b)&16)!=0;}
+        public boolean water(Block b){return (flags(b)&32)!=0;}
+        public boolean fence(Block b){return (flags(b)&64)!=0;}
+        public boolean path(Block b){return (flags(b)&128)!=0;}
+        public boolean explicitlyForbidden(Block b){return (flags(b)&256)!=0;}
+        public boolean tree(BlockState state){return TERRAIN_RULES.tree(state);}
+    }
+
     private void updateChunk(int startX, int startZ) throws ThreadSafeUtilities.ChunkAccessException {
         if (startX < 0 || startZ < 0 || startX + 16 > length || startZ + 16 > width) return;
         int cx = (mapStartX + startX) >> 4;
@@ -306,12 +331,14 @@ implements Cloneable {
             ? server.getChunkSource().getChunkNow(cx, cz)
             : world.getChunkSource().getChunk(cx, cz, net.minecraft.world.level.chunk.ChunkStatus.FULL, false);
         if (!(available instanceof LevelChunk chunk)) return;
+        ScanRules rules=new ScanRules();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY=world.getMinBuildHeight(),maxY=world.getMaxBuildHeight();
         for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) {
             int mx = startX + x, mz = startZ + z;
             int wx = mapStartX + mx, wz = mapStartZ + mz;
-            BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
             var column = VillageTerrainColumn.scan(y -> chunk.getBlockState(pos.set(wx, y, wz)),
-                yBaseline, world.getMinBuildHeight(), world.getMaxBuildHeight(), TERRAIN_RULES);
+                yBaseline, minY, maxY, rules);
             topGround[mx][mz] = (short)column.top();
             spaceAbove[mx][mz] = (short)column.clearance();
             buildingForbidden[mx][mz] = column.forbidden();
