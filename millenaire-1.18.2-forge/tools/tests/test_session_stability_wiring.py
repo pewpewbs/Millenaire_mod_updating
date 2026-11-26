@@ -88,11 +88,22 @@ class SessionStability(unittest.TestCase):
         self.assertIn("new StraightTrunkPlacer(4,0,0)",code)
 
     def test_acacia_planting_uses_same_clearance_as_compact_growth(self):
-        manager=read("common/village/BuildingResManager.java")
-        check=manager.split("private boolean hasAcaciaGrowthRoom(",1)[1].split("public Point getPlantingLocation()",1)[0]
-        self.assertLess(check.index("GroveAcaciaGrowth.hasCompactRoom"),check.index("dx * dx + dz * dz >= 25"))
+        # Follow the actual declared return type of Building.getResManager.
+        # The old BuildingResManager class is not the live implementation.
+        building=read("common/village/Building.java")
+        self.assertIn("import org.millenaire.common.village.buildingmanagers.ResManager;",building)
+        self.assertIn("public ResManager getResManager()",building)
+        manager=read("common/village/buildingmanagers/ResManager.java")
+        check=manager.split("public boolean canPlantAcaciaAt(",1)[1].split("public Point getPlantingLocation()",1)[0]
+        self.assertIn("GroveAcaciaGrowth.hasCompactRoom",check)
         self.assertIn('this.building.containsTags("grove")',check)
+        self.assertIn("this.woodspawn.contains(p)",check)
+        self.assertIn("getChunkNow(p.getChunkX(),p.getChunkZ())==null",check)
+        selection=manager.split("public Point getPlantingLocation()",1)[1].split("public String getPlantingLocationType(",1)[0]
+        self.assertIn("!canPlantAcaciaAt(p)",selection)
         growth=read("common/village/GroveAcaciaGrowth.java")
+        self.assertIn("public final class GroveAcaciaGrowth",growth)
+        self.assertIn("public static boolean hasCompactRoom(",growth)
         self.assertIn("if(!hasCompactRoom(world,pos,sapling))return false;",growth)
         self.assertIn("if(!hasLoadedArea(world,pos))return false;",growth)
         goal=read("common/goal/generic/GoalGenericPlantSapling.java")
