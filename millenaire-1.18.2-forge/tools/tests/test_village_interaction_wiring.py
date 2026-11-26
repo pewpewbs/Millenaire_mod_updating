@@ -134,7 +134,11 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertIn('singular?"дитина":few?"дитини":"дітей"',ui)
         self.assertIn("lastTwo!=11",ui)
         self.assertIn("lastTwo<12||lastTwo>14",ui)
-        self.assertIn('name+=" (lvl "+loc.level+(loc.level==maximum?"":"/"+maximum)+")";',ui)
+        self.assertIn('name+=" lvl "+loc.level;',ui)
+        self.assertIn("levelDetail=upgradeDetail(loc,plan",ui)
+        self.assertIn("r.getType().isChild).thenComparing",ui)
+        self.assertIn("residentActivities(record.getType())",ui)
+        self.assertIn('label("Not built yet","Ще не збудовано","Ещё не построено"),0xFF7777',ui)
         self.assertIn("if(loc.level==maximum)nameColor=GOLD",ui)
         book=read("client/book/BookManagerTravelBook.java")
         detail=book.split("public TextBook getBookBuildingDetail(",1)[1].split("private void getBookBuildingDetail_exportVariation(",1)[0]
