@@ -777,7 +777,8 @@ IAStarPathedEntity {
             // tick() resets stopMoving before checkGoals(). Preserve the
             // construction pause on EVERY active work tick, not only the
             // first one, otherwise builders continue paddling in water.
-            if ((this.tracksLandEntity() || goal == Goal.construction || goal instanceof org.millenaire.common.goal.GoalMinerMineResource
+            if ((this.tracksLandEntity() || goal == Goal.construction || goal instanceof org.millenaire.common.goal.GoalSleep
+                    || goal instanceof org.millenaire.common.goal.GoalMinerMineResource
                     || goal instanceof org.millenaire.common.goal.GoalFish
                     || goal instanceof org.millenaire.common.goal.generic.GoalGenericMining
                     || goal instanceof org.millenaire.common.goal.generic.GoalGenericCrafting
@@ -787,7 +788,11 @@ IAStarPathedEntity {
             if (this.actionStart == 0L) {
                 this.stopMoving = goal.stopMovingWhileWorking();
                 this.actionStart = this.level.getGameTime();
-                this.shouldLieDown = goal.shouldVillagerLieDown();
+                // GoalSleep owns this flag after its live occupancy check. Do not
+                // clear a validated lying pose when the next work interval starts.
+                if (!(goal instanceof org.millenaire.common.goal.GoalSleep)) {
+                    this.shouldLieDown = goal.shouldVillagerLieDown();
+                }
                 if (MillConfigValues.LogGeneralAI >= 2 && this.extraLog) {
                     MillLog.minor(this, "Starting action: " + this.actionStart);
                 }

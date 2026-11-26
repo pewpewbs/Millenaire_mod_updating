@@ -10,6 +10,10 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 26.11.2026 — Sleep pose lifecycle follow-up
+
+- Source review of 8c9b25f found checkGoals resets actionStart after every performAction, then reassigns shouldLieDown from GoalSleep.shouldVillagerLieDown() (now false) at the next interval. Preserve the occupancy-validated pose across sleep work intervals; retain stopMoving on active sleep ticks. Invalid occupancy, leaving action range, clearing/completing the goal still clear the pose. Other goals unchanged. Added source regression guard. Full Forge build and actual night-cycle verification pending.
+
 ### 26.11.2026 — Sleep occupancy and model lighting
 
 - GoalSleep: reserve physical bed halves and floor footprint, consider other NPC sleep goals and nearby sleepers plus vanilla bed occupied state; skip unavailable chunks and duplicate candidate coordinates; remove unconditional occupied sleeping-marker fallback. Live validation before lying down. No change to daytime navigation or villager beds' construction. If no free safe spot, NPC does not lie down; night-action availability in overcrowded houses needs in-game verification.

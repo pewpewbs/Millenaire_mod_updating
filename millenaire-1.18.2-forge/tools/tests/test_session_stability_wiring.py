@@ -126,6 +126,13 @@ class SessionStability(unittest.TestCase):
         self.assertIn("LightTexture.pack(block,sky)",render)
         self.assertIn("super.render(villager, yaw, partialTicks, pose, buffers, modelLight)",render)
 
+    def test_sleep_pose_survives_action_interval_restart(self):
+        entity=read("common/entity/MillVillager.java")
+        self.assertIn("if (!(goal instanceof org.millenaire.common.goal.GoalSleep)) {\n                    this.shouldLieDown = goal.shouldVillagerLieDown();",entity)
+        self.assertIn("goal == Goal.construction || goal instanceof org.millenaire.common.goal.GoalSleep",entity)
+        clear=entity.split("public void clearGoal() {",1)[1].split("\n    }",1)[0]
+        self.assertIn("this.shouldLieDown = false;",clear)
+
     def test_scan_rule_cache_is_local_and_state_tags_are_preserved(self):
         code=read("common/village/VillageMapInfo.java")
         self.assertIn("ScanRules rules=new ScanRules();",code)
