@@ -57,7 +57,6 @@ import org.millenaire.common.utilities.MillLog;
 import org.millenaire.common.utilities.Point;
 import org.millenaire.common.utilities.WorldUtilities;
 import org.millenaire.common.village.Building;
-import org.millenaire.common.village.GroveAcaciaGrowth;
 import net.minecraft.server.level.ServerLevel;
 
 public class ResManager {
@@ -425,7 +424,12 @@ public class ResManager {
                 ||server.getChunkSource().getChunkNow(p.getChunkX(),p.getChunkZ())==null)return false;
         var pos=p.getBlockPos();
         var sapling=Blocks.ACACIA_SAPLING.defaultBlockState();
-        if(this.building.containsTags("grove"))return GroveAcaciaGrowth.hasCompactRoom(server,pos,sapling);
+        // Planting is not tree generation. Existing foliage or a temporary
+        // obstruction must not prevent a sapling from being planted on soil.
+        var existing=server.getBlockState(pos);
+        if(!existing.isAir()&&!existing.is(Blocks.SNOW)
+                &&(!BlockItemUtilities.isBlockDecorativePlant(existing.getBlock())
+                    ||existing.getBlock() instanceof SaplingBlock||existing.getBlock() instanceof BlockMillSapling))return false;
         return server.getWorldBorder().isWithinBounds(pos)&&sapling.canSurvive(server,pos);
     }
 
