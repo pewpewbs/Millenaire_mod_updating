@@ -413,8 +413,14 @@ public class BuildingResManager {
     private boolean hasAcaciaGrowthRoom(Point plantingPoint) {
         net.minecraft.core.BlockPos pos = plantingPoint.getBlockPos();
         Level level = this.building.world;
+        if(level instanceof net.minecraft.server.level.ServerLevel server){
+            if(server.getChunkSource().getChunkNow(pos.getX()>>4,pos.getZ()>>4)==null)return false;
+            if(this.building.containsTags("grove"))
+                return GroveAcaciaGrowth.hasCompactRoom(server,pos,Blocks.ACACIA_SAPLING.defaultBlockState());
+        }
         if (!Blocks.ACACIA_SAPLING.defaultBlockState().canSurvive(level, pos)) return false;
 
+        // Legacy non-compact sites retain the original spacing rule.
         // Legacy Byzantine groves place saplings only four blocks apart.
         // A surviving neighbour can obstruct the next tree's trunk or crown.
         // Check only recorded planting markers (bounded per grove), avoiding a
@@ -451,16 +457,22 @@ public class BuildingResManager {
         return true;
     }
 
+    /** Recheck a registered acacia marker at action time, not just during selection. */
+    public boolean canPlantAcaciaAt(Point p){
+        return p!=null&&"acaciaspawn".equals(this.woodspawnTypes.get(p))&&hasAcaciaGrowthRoom(p);
+    }
+
     public Point getPlantingLocation() {
         for (Point p : this.woodspawn) {
+            if(this.building.world instanceof net.minecraft.server.level.ServerLevel server
+                    &&server.getChunkSource().getChunkNow(p.getChunkX(),p.getChunkZ())==null)continue;
             Block block = WorldUtilities.getBlock(this.building.world, p);
             if (block != Blocks.AIR && block != Blocks.SNOW
                     && (!BlockItemUtilities.isBlockDecorativePlant(block)
                             || block instanceof SaplingBlock || block instanceof BlockMillSapling)) continue;
-            // Prefer other designated grove points over placing acacia on a
-            // marker where the vanilla tree will never grow, even with bonemeal.
+            // Check the actual compact growth volume for registered groves.
             if ("acaciaspawn".equals(this.woodspawnTypes.get(p))
-                    && !hasAcaciaGrowthRoom(p)) continue;
+                    && !canPlantAcaciaAt(p)) continue;
             return p;
         }
         return null;
