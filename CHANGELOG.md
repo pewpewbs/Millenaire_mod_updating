@@ -10,6 +10,12 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 26.11.2026 — MAP-LABELS / TRAVELBOOK-ICONS / ACACIA-PLANTING
+
+- Map: Ukrainian дитина/дитини/дітей with teen exceptions, English/Russian corresponding inflection; level suffix (lvl current/max), at max (lvl current) with existing gold colour. No change to unbuilt or non-upgradable buildings.
+- Building detail travel book: associated village types now use six-column icon-only reference buttons; original hover and click routing retained, no text duplication. Other lists unchanged.
+- Acacia: prior planting filter rejected another marker within five blocks even though compact growth permits a straight trunk and compact crown. Registered grove markers now use the same loaded-area, soil, border and actual clearance check as compact growth, not the old neighbour-distance veto. Non-grove sites retain old rule. Recheck acacia at action time and only consume a carried sapling after successful placement, retaining original free-planting policy. No changes to player-placed trees, activation or generation. Added source regression tests. Forge build and in-game planting not yet verified.
+
 ### 25.11.2026 — HOTFIX: cold village activation deadlock
 
 - Runtime report after 31a7823: all villagers frozen. latest(20261125-220239).log: normal join and save, zero NAV-/DOOR-/MILL-SLOW/VILLAGE-PREP entries between 23:00:30 and 23:02:24. Source confirms saved buildings start with empty VillageMapInfo; loadChunks required nonzero map width, isVillageChunksLoaded returned false on empty map, and only active updateTownHall initialized the map. This is a bootstrap deadlock, not a pathing failure.
