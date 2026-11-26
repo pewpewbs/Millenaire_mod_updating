@@ -87,6 +87,18 @@ class SessionStability(unittest.TestCase):
         self.assertIn("if(!grown&&world.getBlockState(pos).isAir())world.setBlock(pos,sapling,4)",code)
         self.assertIn("new StraightTrunkPlacer(4,0,0)",code)
 
+    def test_acacia_planting_uses_same_clearance_as_compact_growth(self):
+        manager=read("common/village/BuildingResManager.java")
+        check=manager.split("private boolean hasAcaciaGrowthRoom(",1)[1].split("public Point getPlantingLocation()",1)[0]
+        self.assertLess(check.index("GroveAcaciaGrowth.hasCompactRoom"),check.index("dx * dx + dz * dz >= 25"))
+        self.assertIn('this.building.containsTags("grove")',check)
+        growth=read("common/village/GroveAcaciaGrowth.java")
+        self.assertIn("if(!hasCompactRoom(world,pos,sapling))return false;",growth)
+        self.assertIn("if(!hasLoadedArea(world,pos))return false;",growth)
+        goal=read("common/goal/generic/GoalGenericPlantSapling.java")
+        self.assertIn("canPlantAcaciaAt(target)",goal)
+        self.assertLess(goal.index("if(!villager.setBlockstate(target,saplingBS))return true;"),goal.index("villager.takeFromInv(saplingBS, 1)"))
+
     def test_scan_rule_cache_is_local_and_state_tags_are_preserved(self):
         code=read("common/village/VillageMapInfo.java")
         self.assertIn("ScanRules rules=new ScanRules();",code)
