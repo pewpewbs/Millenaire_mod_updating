@@ -131,7 +131,7 @@ extends GoalGeneric {
             if(!villager.setBlockstate(target,saplingBS))return true;
             villager.takeFromInv(saplingBS, 1);
             villager.swing(InteractionHand.MAIN_HAND);
-            if("acaciaspawn".equals(saplingType)&&MillConfigValues.LogLumberman>=1)
+            if("acaciaspawn".equals(saplingType))
                 MillLog.major(this,"GROVE-ACACIA planted pos="+target);
             if (MillConfigValues.LogLumberman >= 3 && villager.extraLog) {
                 MillLog.debug(this, "Planted at: " + villager.getGoalDestPoint());
