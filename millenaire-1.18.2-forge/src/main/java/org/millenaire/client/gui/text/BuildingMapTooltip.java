@@ -193,7 +193,13 @@ final class BuildingMapTooltip {
             if(type.isChild)children++;else filled++;
             staff.add(record);
         }
-        String childNote=children>0?" (+"+children+" "+label("children","дітей","детей")+")":"";
+        int lastDigit=children%10,lastTwo=children%100;
+        boolean singular=lastDigit==1&&lastTwo!=11;
+        boolean few=lastDigit>=2&&lastDigit<=4&&(lastTwo<12||lastTwo>14);
+        String childWord=label(children==1?"child":"children",
+                singular?"дитина":few?"дитини":"дітей",
+                singular?"ребёнок":few?"ребёнка":"детей");
+        String childNote=children>0?" (+"+children+" "+childWord+")":"";
         add(lines,heading+filled+"/"+total+childNote,filled==0?0xFF7777:filled<total?GOLD:0x88DD88);
 
         if(!expanded)return;
@@ -232,7 +238,7 @@ final class BuildingMapTooltip {
                     &&set.plans.get(variation).length>loc.level){
                 int maximum=set.plans.get(variation).length-1;
                 if(maximum>0){
-                    name+=" ("+loc.level+"/"+maximum+")";
+                    name+=" (lvl "+loc.level+(loc.level==maximum?"":"/"+maximum)+")";
                     if(loc.level==maximum)nameColor=GOLD;
                 }
             }
