@@ -378,7 +378,9 @@ final class BuildingMapTooltip {
                     } else if (goal instanceof GoalShearSheep && home && hasTag(loc, building, plan, "sheeps")) {
                         activity(actions,goal,source,null);
                         activities.add(source);
-                        obtained.source=label("Colour depends on the sheep","Колір залежить від вівці","Цвет зависит от овцы");
+                        obtained.source=GoalShearSheep.usesWhiteWool(loc.culture)
+                                ?label("White wool regardless of sheep colour","Біла вовна незалежно від кольору вівці","Белая шерсть независимо от цвета овцы")
+                                :label("Colour depends on the sheep","Колір залежить від вівці","Цвет зависит от овцы");
                         addStack(obtained,new ItemStack(Items.WHITE_WOOL));
                     } else if (goal instanceof GoalBreedAnimals && home
                             && (hasTag(loc, building, plan, "sheeps") || hasTag(loc, building, plan, "cattle")
@@ -439,7 +441,9 @@ final class BuildingMapTooltip {
                     for(var good:org.millenaire.common.village.ProductionCapability.animalGoods(slaughter.animalKey,type)){
                         if(GoalShearSheep.isSheepWool(good)&&slaughter.animalKey!=null
                                 &&"sheep".equals(slaughter.animalKey.getPath())){
-                            obtained.source=label("Colour depends on the sheep","Колір залежить від вівці","Цвет зависит от овцы");
+                            obtained.source=GoalShearSheep.usesWhiteWool(loc.culture)
+                                ?label("White wool regardless of sheep colour","Біла вовна незалежно від кольору вівці","Белая шерсть независимо от цвета овцы")
+                                :label("Colour depends on the sheep","Колір залежить від вівці","Цвет зависит от овцы");
                             addStack(obtained,new ItemStack(Items.WHITE_WOOL));obtained.source=null;
                         }else addItem(obtained,good);
                     }
