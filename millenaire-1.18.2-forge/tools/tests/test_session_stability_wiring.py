@@ -113,6 +113,19 @@ class SessionStability(unittest.TestCase):
         self.assertIn("canPlantAcaciaAt(target)",goal)
         self.assertLess(goal.index("if(!villager.setBlockstate(target,saplingBS))return true;"),goal.index("villager.takeFromInv(saplingBS, 1)"))
 
+    def test_sleep_reservations_and_lighting(self):
+        sleep=read("common/goal/GoalSleep.java")
+        self.assertIn("Set.of(pos,other)",sleep)
+        self.assertIn("state.getValue(BedBlock.OCCUPIED)",sleep)
+        self.assertIn("other.getCurrentGoal() instanceof GoalSleep",sleep)
+        self.assertIn("available(villager.level,destination,reservations(villager,destination))",sleep)
+        self.assertNotIn("return this.packDest(sleepPos, villager.getHouse())",sleep)
+        self.assertIn("villager.shouldLieDown=false",sleep)
+        render=read("client/render/RenderMillVillager.java")
+        self.assertIn("villager.isAlive()&&villager.isVillagerSleeping()",render)
+        self.assertIn("LightTexture.pack(block,sky)",render)
+        self.assertIn("super.render(villager, yaw, partialTicks, pose, buffers, modelLight)",render)
+
     def test_scan_rule_cache_is_local_and_state_tags_are_preserved(self):
         code=read("common/village/VillageMapInfo.java")
         self.assertIn("ScanRules rules=new ScanRules();",code)
