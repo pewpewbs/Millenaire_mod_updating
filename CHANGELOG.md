@@ -10,6 +10,11 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 26.11.2026 — Sleep occupancy and model lighting
+
+- GoalSleep: reserve physical bed halves and floor footprint, consider other NPC sleep goals and nearby sleepers plus vanilla bed occupied state; skip unavailable chunks and duplicate candidate coordinates; remove unconditional occupied sleeping-marker fallback. Live validation before lying down. No change to daytime navigation or villager beds' construction. If no free safe spot, NPC does not lie down; night-action availability in overcrowded houses needs in-game verification.
+- Sleeping black model screenshot: likely lighting sampled at standing eye height inside roof. Render only sleeping NPC using actual light sampled in nearby air at feet/above; do not force full brightness or change block light. Exact cause unconfirmed until client test; renderer and sleep changes uncompiled here. Added source guards.
+
 ### 26.11.2026 — Acacia planting and Byzantine wool
 
 - User confirms spruce planted, acacia not planted even after manually grown tree was chopped. Live ResManager previously required complete 5x5x6 air volume for choosing acacia planting. Separate planting viability (registered marker, loaded chunk, replaceable target, valid soil and border) from tree growth. Lower straight trunk clearance now only center through y=2; upper checks natural nonpersistent acacia foliage, not player blocks; compact feature size lower radius zero through y=2. Acacia planting logs on actual successful placement. No new chunk loading, no forced block removal. Exact cause on the user's existing grove not runtime-proven.
