@@ -1,6 +1,13 @@
 package org.millenaire.common.entity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.core.BlockPos;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.pathfinder.Node;
+import net.minecraft.world.phys.Vec3;
+import org.millenaire.common.pathing.OpenGroundPassage;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 public class PathNavigateSimple extends GroundPathNavigation {
@@ -43,7 +50,41 @@ public class PathNavigateSimple extends GroundPathNavigation {
         finally { org.millenaire.common.pathing.NavigationMetrics.record(0, System.nanoTime()-began); }
     }
     private boolean ladderMotionControlled;
+    private int nextOpenGroundCheck;
+    private Path shortcutPath;
+    private int shortcutStart;
+    private int shortcutEnd;
     public boolean isLadderMotionControlled() { return this.ladderMotionControlled; }
+
+    protected BlockGetter movementView() { return this.level; }
+
+    private boolean openWater(BlockPos pos) {
+        BlockGetter view = this.movementView();
+        if (view == null || view instanceof Level live && !live.hasChunkAt(pos)) return false;
+        var state = view.getBlockState(pos);
+        return (state.is(Blocks.WATER) || state.getFluidState().is(FluidTags.WATER))
+                && state.getCollisionShape(view, pos).isEmpty();
+    }
+
+    private boolean swimmingTo(BlockPos pos) {
+        BlockGetter view = this.movementView();
+        return this.mob.isInWater() && view != null && (!(view instanceof Level live) || live.hasChunkAt(pos))
+                && (openWater(pos) || view.getBlockState(pos).isAir() && openWater(pos.below()));
+    }
+
+    @Override protected double getGroundY(Vec3 target) {
+        // GroundPathNavigation would aim one block below a node above shape-less water.
+        return this.mob.isInWater() && swimmingTo(new BlockPos(target)) ? target.y : super.getGroundY(target);
+    }
+
+    private boolean reachedSwimNode(Node node, Vec3 target) {
+        int index = this.path.getNextNodeIndex();
+        Node previous = index > 0 ? this.path.getNode(index - 1) : null;
+        boolean vertical = previous != null && previous.x == node.x && previous.z == node.z && previous.y != node.y;
+        double reach = Math.min(0.55D, Math.max(0.35D, this.mob.getBbWidth() * 0.75D));
+        return Math.abs(this.mob.getX() - target.x) <= reach && Math.abs(this.mob.getZ() - target.z) <= reach
+                && Math.abs(this.mob.getY() - target.y) <= (vertical ? 0.45D : 1.0D);
+    }
 
     @Override protected boolean canUpdatePath() {
         // Vanilla's airborne branch skips a node whenever feet are above it,
@@ -59,6 +100,29 @@ public class PathNavigateSimple extends GroundPathNavigation {
         }
         var next = this.path.getNextNode();
         if (next == null) return;
+        if (this.shortcutPath != this.path || this.path.getNextNodeIndex() != this.shortcutEnd)
+            this.shortcutPath = null;
+        if (this.shortcutPath != null && this.mob.horizontalCollision) {
+            // A block or another resident entered the corridor after we checked it.
+            this.path.setNextNodeIndex(this.shortcutStart);
+            this.shortcutPath = null;
+            this.nextOpenGroundCheck = this.mob.tickCount + 8;
+            next = this.path.getNextNode();
+        }
+        if (this.mob.isOnGround() && !this.mob.horizontalCollision && !this.mob.isInWater()
+                && this.mob.tickCount >= this.nextOpenGroundCheck) {
+            this.nextOpenGroundCheck = this.mob.tickCount + 4;
+            int first = this.path.getNextNodeIndex();
+            int aim = OpenGroundPassage.lookAhead(this.movementView(), this.path, this.mob.position(),
+                    this.mob.getBbWidth(), this.mob.getBbHeight());
+            if (aim > first) {
+                this.shortcutPath = this.path;
+                this.shortcutStart = first;
+                this.shortcutEnd = aim;
+                this.path.setNextNodeIndex(aim);
+                next = this.path.getNextNode();
+            }
+        }
         if (!this.isLadderNode(next)) {
             var target = this.path.getNextEntityPos(this.mob);
             // Do not use vanilla's dot-product corner shortcut: it can skip
@@ -66,9 +130,11 @@ public class PathNavigateSimple extends GroundPathNavigation {
             // Aim/reach use the SAME centre (vanilla reach uses x/z + .8 for
             // a .6-wide mob whereas Path.getNextEntityPos uses + .5).
             this.maxDistanceToWaypoint = 0.20F;
-            if (Math.abs(this.mob.getX() - target.x) <= this.maxDistanceToWaypoint
+            boolean reached = this.mob.isInWater() && swimmingTo(next.asBlockPos()) ? reachedSwimNode(next, target)
+                    : Math.abs(this.mob.getX() - target.x) <= this.maxDistanceToWaypoint
                     && Math.abs(this.mob.getZ() - target.z) <= this.maxDistanceToWaypoint
-                    && Math.abs(this.mob.getY() - this.getGroundY(target)) < 0.25D) {
+                    && Math.abs(this.mob.getY() - this.getGroundY(target)) < 0.25D;
+            if (reached) {
                 this.path.advance();
             }
         }
@@ -93,6 +159,19 @@ public class PathNavigateSimple extends GroundPathNavigation {
         net.minecraft.core.BlockPos rung = new net.minecraft.core.BlockPos(next.x, next.y, next.z);
         if (!this.mob.level.hasChunkAt(rung)) return;
         net.minecraft.world.level.block.state.BlockState state = this.mob.level.getBlockState(rung);
+        if (this.mob.isInWater() && this.mob.horizontalCollision && !swimmingTo(rung)
+                && state.getCollisionShape(this.level, rung).isEmpty()) {
+            // Only assist a nearby, clear landing on the planned bank.
+            Vec3 bank = Vec3.atBottomCenterOf(rung);
+            double top = this.getGroundY(bank);
+            double rise = top - this.mob.getY();
+            Vec3 offset = new Vec3(bank.x - this.mob.getX(), rise, bank.z - this.mob.getZ());
+            if (rise > 0.05D && rise <= 1.25D && offset.horizontalDistanceSqr() <= 2.25D
+                    && this.level.getBlockState(rung.below()).isFaceSturdy(this.level, rung.below(),
+                            net.minecraft.core.Direction.UP)
+                    && this.level.noCollision(this.mob, this.mob.getBoundingBox().move(offset)))
+                this.mob.getJumpControl().jump();
+        }
         this.traceNearbyStair(rung);
         // A path can have the OPEN door block as its next node for many ticks
         // while a villager remains stationary in front of it. Distinguish

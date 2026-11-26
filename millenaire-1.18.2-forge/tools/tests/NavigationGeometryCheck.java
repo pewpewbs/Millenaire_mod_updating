@@ -34,10 +34,13 @@ public class NavigationGeometryCheck {
     static class Navigator extends PathNavigateSimple {
         Grid grid;
         Navigator(Mob mob, Grid grid) { super(mob, null); this.grid = grid; }
+        @Override protected BlockGetter movementView() { return grid; }
         @Override protected boolean isLadderNode(Node n) {
             return grid.getBlockState(n.asBlockPos()).is(Blocks.LADDER);
         }
         @Override protected double getGroundY(Vec3 pos) {
+            if (this.mob.isInWater() && grid.getBlockState(new BlockPos(pos)).is(Blocks.WATER))
+                return super.getGroundY(pos);
             return WalkNodeEvaluator.getFloorLevel(grid, new BlockPos(pos));
         }
         @Override protected void doStuckDetection(Vec3 pos) { }
@@ -171,6 +174,57 @@ public class NavigationGeometryCheck {
         AABB crossing=new AABB(22.2,67,570.6,22.8,68.8,571.2);
         check(door.getCollisionShape(grid,new BlockPos(22,67,570)).toAabbs().stream()
                 .anyMatch(b->crossing.intersects(b.move(22,67,570))),"saved OPEN panel is actual blocker");
+        grid.blocks.clear();
+        mob.setOnGround(true);
+        position(mob,.5,64,.8);
+        p=route(0,64,0, 1,64,0, 2,64,0, 3,64,0); nav.route(p); nav.follow();
+        check(p.getNextNodeIndex()==3 && !p.isDone(),"open straight targets ahead and preserves terminal arrival");
+        mob.horizontalCollision=true; nav.follow();
+        check(p.getNextNodeIndex()==0,"new obstruction restores skipped nodes");
+        mob.horizontalCollision=false;
+        mob.tickCount+=10;
+        p=route(0,64,0, 1,64,0, 1,64,1); nav.route(p); nav.follow();
+        check(p.getNextNodeIndex()==2,"clear flat bend may be rounded");
+        for(Block obstacle : new Block[]{Blocks.COBBLESTONE_WALL,Blocks.OAK_FENCE_GATE,
+                Blocks.OAK_DOOR,Blocks.CHEST,Blocks.WHEAT,Blocks.OAK_STAIRS,Blocks.LADDER}) {
+            mob.tickCount+=5;
+            grid.blocks.put(new BlockPos(0,64,1),obstacle.defaultBlockState());
+            p=route(0,64,0, 1,64,0, 1,64,1); nav.route(p); nav.follow();
+            check(p.getNextNodeIndex()==0,"preserve bend beside "+obstacle);
+        }
+        grid.blocks.clear(); mob.tickCount+=5;
+        grid.blocks.put(new BlockPos(1,63,1),Blocks.AIR.defaultBlockState());
+        p=route(0,64,0, 1,64,0, 1,64,1); nav.route(p); nav.follow();
+        check(p.getNextNodeIndex()==0,"no smoothing across a missing floor");
+        grid.blocks.clear(); mob.tickCount+=5;
+        grid.blocks.put(new BlockPos(0,65,1),Blocks.STONE.defaultBlockState());
+        p=route(0,64,0, 1,64,0, 1,64,1); nav.route(p); nav.follow();
+        check(p.getNextNodeIndex()==0,"no smoothing through a head-height obstruction");
+        grid.blocks.clear(); mob.tickCount+=5;
+        for (int x=0;x<=3;x++) grid.blocks.put(new BlockPos(x,63,0),Blocks.STONE_SLAB.defaultBlockState());
+        position(mob,.5,63.5,.5);
+        p=route(0,64,0, 1,64,0, 2,64,0, 3,64,0); nav.route(p); nav.follow();
+        check(p.getNextNodeIndex()==3,"flat half-height pavement supports a continuous stride");
+        grid.blocks.put(new BlockPos(1,63,0),Blocks.STONE.defaultBlockState()); mob.tickCount+=5;
+        position(mob,.5,63.5,.8);
+        p=route(0,64,0, 1,64,0, 2,64,0); nav.route(p); nav.follow();
+        check(p.getNextNodeIndex()==0,"mixed pavement heights retain the planned step");
+        grid.blocks.clear(); mob.setOnGround(false);
+        field(mob,Entity.class,"wasTouchingWater",true);
+        var wet=new BlockPos(-393,62,-581);
+        grid.blocks.put(wet,Blocks.WATER.defaultBlockState()); grid.blocks.put(wet.below(),Blocks.WATER.defaultBlockState());
+        position(mob,-392.5,62,-580.5);
+        p=route(-393,62,-581,-392,62,-581); nav.route(p); nav.follow();
+        check(p.getNextNodeIndex()==1,"Kaland swimmer passes water node above empty collision floor");
+        check(nav.getGroundY(Vec3.atBottomCenterOf(wet))==62.0,"water aim stays in the planned water layer");
+        position(mob,-392.5,59,-580.5); p=route(-393,62,-581); nav.route(p); nav.follow();
+        check(!p.isDone(),"same XZ deep below a water target is not arrival");
+        position(mob,-392.5,62,-580.5); p=route(-393,61,-581,-393,62,-581);
+        p.setNextNodeIndex(1); nav.route(p); position(mob,-392.5,61.1,-580.5); nav.follow();
+        check(!p.isDone(),"vertical swimming still requires real vertical progress");
+        field(mob,Entity.class,"wasTouchingWater",false); position(mob,-392.5,62,-580.5);
+        p=route(-393,62,-581); nav.route(p); nav.follow();
+        check(!p.isDone(),"dry actor above water cannot advance using swim tolerance");
         System.out.println("PASS: "+checks+" real geometry / follower / JPS assertions");
     }
     static BlockState setProperty(BlockState state, net.minecraft.world.level.block.state.properties.Property property,String value) {
