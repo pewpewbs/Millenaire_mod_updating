@@ -10,6 +10,13 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 26.11.2026 — MAP readability and deferred gameplay requirements
+
+- Map: adults first then children; portrait hover shows current action in yellow, profession in aqua and actual configured non-leisure travel-book goal icons. Native title muted, purpose and output headings tinted, unbuilt status red. Level suffix now "lvl N", no parentheses or max denominator; maximum stays gold. Pinned tooltip level/name hover shows next plan level, declared resident capacity/irrigation/shop/tag differences and material costs when available; no fabricated architectural description. Ukrainian Byzantine corner border post label simplified. Crop purpose labels use nouns; extraction and logging site wording.
+- BACKLOG / next navigation implementation (do not implement now): pathfinding must avoid walking on planted crop beds, use existing field paths and reachable edge work positions; evaluate planting/harvest access without breaking goals. Fix gate close lifecycle after NPC passes, including interrupted goals, player priority, herd escapes, unloaded chunks and gates shared by multiple actors. Reproduce screenshot where sheep escaped the Byzantine enclosure. No change to current route planner or gate logic in this UI patch.
+- BACKLOG / future economy and reputation: assess penalty for stealing settlement-owned crops, distinguish village plots from player-owned plots and accidental harvest, prevent repeated/false penalties. Not implemented.
+- Build and live verification pending.
+
 ### 26.11.2026 — HOTFIX: acacia live resource manager API
 
 - User's first one-click run (a6dae8a): 173/173 Python tests, Java smoke tests and production audit passed; compileJava failed at GoalGenericPlantSapling.java:114 because Building.getResManager() returns buildingmanagers.ResManager, not legacy BuildingResManager. Installer correctly cancelled before touching installed JARs.
