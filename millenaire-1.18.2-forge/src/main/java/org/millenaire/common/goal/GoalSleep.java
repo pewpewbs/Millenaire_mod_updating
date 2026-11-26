@@ -9,6 +9,13 @@
 package org.millenaire.common.goal;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.Level;
@@ -46,92 +53,108 @@ extends Goal {
         return false;
     }
 
+    private static boolean loaded(Level world,BlockPos pos){
+        return !world.isOutsideBuildHeight(pos)
+                &&(!(world instanceof ServerLevel server)
+                    ||server.getChunkSource().getChunkNow(pos.getX()>>4,pos.getZ()>>4)!=null);
+    }
+
+    // Both bed halves describe the same physical reservation. For floor
+    // sleeping use the existing orientation convention and its adjacent cell.
+    private static Set<BlockPos> footprint(Level world,Point point){
+        if(point==null)return Set.of();
+        BlockPos pos=point.getBlockPos();
+        if(!loaded(world,pos))return Set.of();
+        var state=world.getBlockState(pos);
+        if(state.getBlock() instanceof BedBlock){
+            Direction facing=state.getValue(BedBlock.FACING);
+            BlockPos other=pos.relative(state.getValue(BedBlock.PART)==BedPart.FOOT?facing:facing.getOpposite());
+            if(!loaded(world,other))return Set.of();
+            var pair=world.getBlockState(other);
+            if(pair.getBlock()!=state.getBlock()||pair.getValue(BedBlock.FACING)!=facing
+                    ||pair.getValue(BedBlock.PART)==state.getValue(BedBlock.PART))return Set.of();
+            return Set.of(pos,other);
+        }
+        Direction dir=null;
+        // Match MillVillager.getBedOrientationInDegrees() for floor spots.
+        if(loaded(world,pos.south())&&world.getBlockState(pos.south()).isAir())dir=Direction.EAST;
+        else if(loaded(world,pos.west())&&world.getBlockState(pos.west()).isAir())dir=Direction.SOUTH;
+        else if(loaded(world,pos.north())&&world.getBlockState(pos.north()).isAir())dir=Direction.WEST;
+        else if(loaded(world,pos.east())&&world.getBlockState(pos.east()).isAir())dir=Direction.NORTH;
+        if(dir==null)return Set.of();
+        BlockPos other=pos.relative(dir);
+        if(!loaded(world,other))return Set.of();
+        return Set.of(pos,other);
+    }
+
+    private static Set<BlockPos> reservations(MillVillager villager,Point center){
+        Set<MillVillager> residents=new HashSet<>(villager.getHouse().getKnownVillagers());
+        residents.addAll(villager.level.getEntitiesOfClass(MillVillager.class,
+                new AABB(center.getBlockPos()).inflate(8,6,8)));
+        Set<BlockPos> occupied=new HashSet<>();
+        for(MillVillager other:residents){
+            if(other==villager||!other.isAlive())continue;
+            if(other.getCurrentGoal() instanceof GoalSleep||other.isVillagerSleeping()){
+                Point destination=other.getGoalDestPoint();
+                if(destination!=null)occupied.addAll(footprint(villager.level,destination));
+                else if(other.isVillagerSleeping())occupied.addAll(footprint(villager.level,other.getPos()));
+            }
+        }
+        return occupied;
+    }
+
+    private static boolean available(Level world,Point candidate,Set<BlockPos> occupied){
+        Set<BlockPos> cells=footprint(world,candidate);
+        if(cells.isEmpty())return false;
+        for(BlockPos cell:cells){
+            if(occupied.contains(cell))return false;
+            var state=world.getBlockState(cell);
+            if(state.getBlock() instanceof BedBlock&&state.getValue(BedBlock.OCCUPIED))return false;
+        }
+        return true;
+    }
+
+    private static boolean floorSpot(Level world,Point point){
+        Set<BlockPos> cells=footprint(world,point);
+        if(cells.isEmpty())return false;
+        for(BlockPos cell:cells){
+            if(!loaded(world,cell.below())||!loaded(world,cell.above()))return false;
+            Point feet=new Point(cell.getX(),cell.getY(),cell.getZ());
+            if(feet.getBelow().isBlockPassable(world)||!feet.isBlockPassable(world)||!feet.getAbove().isBlockPassable(world))return false;
+            Point roof=WorldUtilities.findTopNonPassableBlock(world,cell.getX(),cell.getZ());
+            if(roof==null||roof.y<=cell.getY())return false;
+        }
+        return true;
+    }
+
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
-        Level world = villager.level;
-        Point sleepPos = villager.getHouse().getResManager().getSleepingPos();
-        ArrayList<Point> beds = new ArrayList<Point>();
-        for (int xDelta = 0; xDelta < 6; ++xDelta) {
-            for (int yDelta = 0; yDelta < 6; ++yDelta) {
-                for (int zDelta = 0; zDelta < 6; ++zDelta) {
-                    for (int l = 0; l < 8; ++l) {
-                        int meta;
-                        Point p = sleepPos.getRelative(xDelta * (1 - (l & 1) * 2), yDelta * (1 - (l & 2)), zDelta * (1 - (l & 4) / 2));
-                        Block block = WorldUtilities.getBlock(world, p);
-                        if (!(block instanceof BedBlock) || ((meta = WorldUtilities.getBlockMeta(world, p)) & 8) != 0) continue;
-                        boolean alreadyTaken = false;
-                        for (MillVillager v : villager.getHouse().getKnownVillagers()) {
-                            if (v == villager || v.getGoalDestPoint() == null || !v.getGoalDestPoint().equals(p)) continue;
-                            alreadyTaken = true;
-                        }
-                        if (alreadyTaken) continue;
-                        beds.add(p);
-                    }
+        if(villager.getHouse()==null)return null;
+        Level world=villager.level;
+        Point sleepPos=villager.getHouse().getResManager().getSleepingPos();
+        if(sleepPos==null)return null;
+        Set<BlockPos> occupied=reservations(villager,sleepPos);
+        // Each candidate once; preserve the existing preference for beds.
+        Set<BlockPos> visited=new HashSet<>();
+        ArrayList<Point> floors=new ArrayList<>();
+        for(int xDelta=0;xDelta<6;xDelta++)for(int yDelta=0;yDelta<6;yDelta++)
+            for(int zDelta=0;zDelta<6;zDelta++)for(int l=0;l<8;l++){
+                Point p=sleepPos.getRelative(xDelta*(1-(l&1)*2),yDelta*(1-(l&2)),zDelta*(1-(l&4)/2));
+                BlockPos pos=p.getBlockPos();
+                if(!visited.add(pos)||!loaded(world,pos))continue;
+                var state=world.getBlockState(pos);
+                if(state.getBlock() instanceof BedBlock&&state.getValue(BedBlock.PART)==BedPart.FOOT){
+                    if(available(world,p,occupied))return this.packDest(p,villager.getHouse());
+                }else{
+                    Point feet=p.getAbove();
+                    if(loaded(world,feet.getBlockPos())&&!p.isBlockPassable(world)
+                            &&!(state.getBlock() instanceof BedBlock)
+                            &&available(world,feet,occupied))floors.add(feet);
                 }
             }
-        }
-        if (beds.size() > 0) {
-            return this.packDest((Point)beds.get(0), villager.getHouse());
-        }
-        ArrayList<Point> feetPos = new ArrayList<Point>();
-        for (int xDelta = 0; xDelta < 6; ++xDelta) {
-            for (int yDelta = 0; yDelta < 6; ++yDelta) {
-                for (int zDelta = 0; zDelta < 6; ++zDelta) {
-                    for (int l = 0; l < 8; ++l) {
-                        Point topBlock;
-                        Point p = sleepPos.getRelative(xDelta * (1 - (l & 1) * 2), yDelta * (1 - (l & 2)), zDelta * (1 - (l & 4) / 2));
-                        if (p.isBlockPassable(world) || !p.getAbove().isBlockPassable(world) || !p.getRelative(0.0, 2.0, 0.0).isBlockPassable(world) || (topBlock = WorldUtilities.findTopNonPassableBlock(world, p.getiX(), p.getiZ())) == null || !(topBlock.y > p.y + 1.0)) continue;
-                        float angle = villager.getBedOrientationInDegrees();
-                        int dx = 0;
-                        int dz = 0;
-                        if (angle == 0.0f) {
-                            dx = 1;
-                        } else if (angle == 90.0f) {
-                            dz = 1;
-                        } else if (angle == 180.0f) {
-                            dx = -1;
-                        } else if (angle == 270.0f) {
-                            dz = -1;
-                        }
-                        Point p2 = p.getRelative(dx, 0.0, dz);
-                        if (p2.isBlockPassable(world) || !p2.getAbove().isBlockPassable(world) || !p2.getRelative(0.0, 2.0, 0.0).isBlockPassable(world) || (topBlock = WorldUtilities.findTopNonPassableBlock(world, p2.getiX(), p2.getiZ())) == null || !(topBlock.y > p2.y + 1.0)) continue;
-                        p = p.getAbove();
-                        boolean alreadyTaken = false;
-                        for (MillVillager v : villager.getHouse().getKnownVillagers()) {
-                            if (v == villager || v.getGoalDestPoint() == null) continue;
-                            if (v.getGoalDestPoint().equals(p)) {
-                                alreadyTaken = true;
-                            }
-                            if (v.getGoalDestPoint().equals(p.getRelative(1.0, 0.0, 0.0))) {
-                                alreadyTaken = true;
-                            }
-                            if (v.getGoalDestPoint().equals(p.getRelative(0.0, 0.0, 1.0))) {
-                                alreadyTaken = true;
-                            }
-                            if (v.getGoalDestPoint().equals(p.getRelative(-1.0, 0.0, 0.0))) {
-                                alreadyTaken = true;
-                            }
-                            if (!v.getGoalDestPoint().equals(p.getRelative(0.0, 0.0, -1.0))) continue;
-                            alreadyTaken = true;
-                        }
-                        if (alreadyTaken) continue;
-                        feetPos.add(p);
-                    }
-                }
-            }
-        }
-        for (MillVillager v : villager.getHouse().getKnownVillagers()) {
-            if (v == villager || v.getGoalDestPoint() == null) continue;
-            feetPos.remove(v.getGoalDestPoint());
-            feetPos.remove(v.getGoalDestPoint().getRelative(1.0, 0.0, 0.0));
-            feetPos.remove(v.getGoalDestPoint().getRelative(0.0, 0.0, 1.0));
-            feetPos.remove(v.getGoalDestPoint().getRelative(-1.0, 0.0, 0.0));
-            feetPos.remove(v.getGoalDestPoint().getRelative(0.0, 0.0, -1.0));
-        }
-        if (feetPos.size() > 0) {
-            return this.packDest((Point)feetPos.get(0), villager.getHouse());
-        }
-        return this.packDest(sleepPos, villager.getHouse());
+        for(Point p:floors)if(floorSpot(world,p))return this.packDest(p,villager.getHouse());
+        // No unconditional fallback to the occupied sleeping marker.
+        return null;
     }
 
     @Override
@@ -141,6 +164,17 @@ extends Goal {
 
     @Override
     public boolean performAction(MillVillager villager) throws Exception {
+        Point destination=villager.getGoalDestPoint();
+        if(villager.getHouse()==null||destination==null
+                ||!available(villager.level,destination,reservations(villager,destination))){
+            villager.shouldLieDown=false;
+            return true;
+        }
+        var state=villager.level.getBlockState(destination.getBlockPos());
+        if(!(state.getBlock() instanceof BedBlock)&&!floorSpot(villager.level,destination)){
+            villager.shouldLieDown=false;
+            return true;
+        }
         if (!villager.nightActionPerformed) {
             villager.nightActionPerformed = villager.performNightAction();
         }
@@ -181,7 +215,8 @@ extends Goal {
 
     @Override
     public boolean shouldVillagerLieDown() {
-        return true;
+        // Set the lying flag only after the live occupancy check succeeds.
+        return false;
     }
 }
 
