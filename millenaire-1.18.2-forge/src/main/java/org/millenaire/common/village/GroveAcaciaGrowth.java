@@ -19,7 +19,7 @@ import net.minecraftforge.eventbus.api.Event;
 import org.millenaire.common.utilities.MillLog;
 
 /** Compact acacia for registered grove saplings, never general world generation. */
-final class GroveAcaciaGrowth {
+public final class GroveAcaciaGrowth {
     private GroveAcaciaGrowth() {}
 
     private static boolean hasLoadedArea(ServerLevel world,BlockPos pos){
@@ -32,7 +32,7 @@ final class GroveAcaciaGrowth {
 
     /** Same compact geometry for site selection and growth; no blanket
      * neighbour-marker distance restriction. Only reads already loaded chunks. */
-    static boolean hasCompactRoom(ServerLevel world,BlockPos pos,BlockState sapling){
+    public static boolean hasCompactRoom(ServerLevel world,BlockPos pos,BlockState sapling){
         if(!hasLoadedArea(world,pos))return false;
         if(pos.getY()<=world.getMinBuildHeight()||pos.getY()+7>=world.getMaxBuildHeight())return false;
         if(!sapling.canSurvive(world,pos))return false;
