@@ -10,6 +10,11 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 26.11.2026 — Acacia planting and Byzantine wool
+
+- User confirms spruce planted, acacia not planted even after manually grown tree was chopped. Live ResManager previously required complete 5x5x6 air volume for choosing acacia planting. Separate planting viability (registered marker, loaded chunk, replaceable target, valid soil and border) from tree growth. Lower straight trunk clearance now only center through y=2; upper checks natural nonpersistent acacia foliage, not player blocks; compact feature size lower radius zero through y=2. Acacia planting logs on actual successful placement. No new chunk loading, no forced block removal. Exact cause on the user's existing grove not runtime-proven.
+- Verified Byzantine shepherd collectGood/bringBackHomeGood wool_white, trade list wool_white, tailor recipes makeclotheswool and makeclothes_byz_wool plus yellow/purple carpets use white wool and dyes. Byzantine NPC shearing returns white wool; sheep killed by Byzantine NPC have only wool drops normalized to white, keeping amounts, other drops, animal colours, player actions and other cultures unchanged. Tooltip reflects policy. Tests updated to follow live manager, not legacy class. Full build/runtime not yet verified.
+
 ### 26.11.2026 — MAP readability and deferred gameplay requirements
 
 - Map: adults first then children; portrait hover shows current action in yellow, profession in aqua and actual configured non-leisure travel-book goal icons. Native title muted, purpose and output headings tinted, unbuilt status red. Level suffix now "lvl N", no parentheses or max denominator; maximum stays gold. Pinned tooltip level/name hover shows next plan level, declared resident capacity/irrigation/shop/tag differences and material costs when available; no fabricated architectural description. Ukrainian Byzantine corner border post label simplified. Crop purpose labels use nouns; extraction and logging site wording.
