@@ -162,13 +162,14 @@ extends BookManager {
         ArrayList<TextLine> infoColumns = new ArrayList<TextLine>();
         for (VillageType village : culture.listVillageTypes) {
             if (village.centreBuilding != planSet && !village.startBuildings.contains(planSet) && !village.coreBuildings.contains(planSet) && !village.secondaryBuildings.contains(planSet) && !village.extraBuildings.contains(planSet)) continue;
-            infoColumns.add(new TextLine(village.name, new GuiText.GuiButtonReference(village)));
+            // The reference button already supplies the village name on hover.
+            infoColumns.add(new TextLine("", new GuiText.GuiButtonReference(village)));
         }
         if (infoColumns.size() > 0) {
             page.addBlankLine();
             page.addLine(LanguageUtilities.string("travelbook.villageswithbuilding"), "\u00a71");
             page.getLastLine().canCutAfter = false;
-            List<TextLine> linesWithColumns = BookManager.splitInColumns(infoColumns, 2);
+            List<TextLine> linesWithColumns = BookManager.splitInColumns(infoColumns, 6);
             for (TextLine l : linesWithColumns) {
                 page.addLine(l);
             }
