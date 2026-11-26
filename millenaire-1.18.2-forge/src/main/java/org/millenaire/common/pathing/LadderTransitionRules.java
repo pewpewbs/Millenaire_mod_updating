@@ -50,7 +50,10 @@ public final class LadderTransitionRules {
      */
     public static boolean reachedRung(int direction, double feetY, int rungY,
                                       double horizontalErrorSquared) {
-        if (direction == 0 || horizontalErrorSquared > 0.30D) return false;
+        if (horizontalErrorSquared > 0.30D) return false;
+        // A horizontal route can cross a single rung or end on one. There is
+        // no vertical route direction, but physical arrival must still finish it.
+        if (direction == 0) return Math.abs(feetY - rungY) < 0.25D;
         return direction > 0 ? feetY >= rungY + 0.04D
                 : feetY <= rungY + 0.55D;
     }

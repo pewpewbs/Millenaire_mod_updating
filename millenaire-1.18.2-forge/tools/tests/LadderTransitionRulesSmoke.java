@@ -14,6 +14,10 @@ public final class LadderTransitionRulesSmoke {
     }
 
     public static void main(String[] args) {
+        test(LadderTransitionRules.reachedRung(0, 64.0, 64, 0.02),
+                "horizontal single-rung route can complete on contact");
+        test(!LadderTransitionRules.reachedRung(0, 65.0, 64, 0.02),
+                "single rung cannot complete one block above its height");
         test(LadderTransitionRules.canTraverse(true, true, true, true),
                 "continuous clear ladder should be traversable");
         test(!LadderTransitionRules.canTraverse(true, false, true, true),

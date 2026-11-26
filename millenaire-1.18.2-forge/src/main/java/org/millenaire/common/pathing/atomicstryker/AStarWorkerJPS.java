@@ -45,27 +45,36 @@ extends AStarWorker {
     }
 
     private ArrayList<AStarNode> backTrace(AStarNode start) throws ThreadSafeUtilities.ChunkAccessException {
-        ArrayList<AStarNode> foundpath = new ArrayList<AStarNode>();
-        foundpath.add(this.currentNode);
-        while (!this.currentNode.equals(start)) {
-            int x = this.currentNode.x;
-            int y = this.currentNode.y;
-            int z = this.currentNode.z;
-            int px = this.currentNode.parent.x;
-            int pz = this.currentNode.parent.z;
-            int dx = (px - x) / Math.max(Math.abs(x - px), 1);
-            int dz = (pz - z) / Math.max(Math.abs(z - pz), 1);
-            x += dx;
-            z += dz;
-            while (x != px || z != pz) {
-                y = this.getGroundNodeHeight(x, y, z);
-                foundpath.add(new AStarNode(x, y, z, 0, null));
-                x += dx;
-                z += dz;
-            }
-            foundpath.add(this.currentNode.parent);
-            this.currentNode = this.currentNode.parent;
+        // Parent links are goal -> start, but terrain choices are directed.
+        // Reconstruct each macroedge FROM its parent, never by re-solving
+        // ground heights backwards from the goal (which can select another floor).
+        ArrayList<AStarNode> chain = new ArrayList<>();
+        for (AStarNode node = this.currentNode; node != null; node = node.parent) {
+            if (this.shouldInterrupt() || chain.size() >= 4096) return null;
+            chain.add(node);
+            if (node.equals(start)) break;
         }
+        if (chain.isEmpty() || !chain.get(chain.size() - 1).equals(start)) return null;
+        java.util.Collections.reverse(chain);
+        ArrayList<AStarNode> foundpath = new ArrayList<>();
+        foundpath.add(start);
+        for (int i = 1; i < chain.size(); i++) {
+            AStarNode from = chain.get(i - 1), end = chain.get(i);
+            int dx = Integer.compare(end.x, from.x), dz = Integer.compare(end.z, from.z);
+            int length = Math.max(Math.abs(end.x - from.x), Math.abs(end.z - from.z));
+            if (length == 0 || (dx != 0 && dz != 0
+                    && Math.abs(end.x - from.x) != Math.abs(end.z - from.z))) return null;
+            int y = from.y;
+            for (int step = 1; step <= length; step++) {
+                if (this.shouldInterrupt()) return null;
+                int x = from.x + dx * step, z = from.z + dz * step;
+                y = this.getGroundNodeHeight(x, y, z);
+                if (y == 0) return null; // existing JPS no-ground sentinel
+                if (step == length && y != end.y) return null;
+                foundpath.add(new AStarNode(x, y, z, 0, null));
+            }
+        }
+        java.util.Collections.reverse(foundpath); // public result contract
         return foundpath;
     }
 

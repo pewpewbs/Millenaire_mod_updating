@@ -10,6 +10,13 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 26.11.2026 — NAV-PHASE2: directed routes, ladder control and door geometry
+
+- Based on handoff §§26–27 and local base 9c0ece1. JPS reconstructs intermediate heights in search direction; rejects endpoint mismatches. Reject +2 upward edges. AS route follower retains validated corners and ladder rungs instead of vanilla shortcut/airborne skipping, uses physical support height.
+- Ladder body stays clear of the panel in all four facings; exclusive ladder/ground movement ownership prevents stale ground JUMPING during descent. Isolated rung completion and first-rung ground approach retained.
+- Read-only saved hotspot (22,66,571) reproduces east-facing OPEN door panel across north/south stair entrance. Planner now checks actual door panel shape in the directed passage state; server manager selects the same state, respects player override and powered doors, checks occupants before closing a sideways panel. No automatic building/door rotation.
+- Full Forge build PASS; 175 Python checks and production validation PASS; 11 navigation Java smokes plus ladder/transition smokes PASS; 32 executable Forge geometry/follower/JPS assertions PASS. No new in-game traversal or controlled performance acceptance yet. Phase 2 remains open. Details and reproduction: millenaire-1.18.2-forge/docs/NAVIGATION_PHASE2_2026-11-26_UA.md. Local changes, not committed/pushed/merged.
+
 ### 26.11.2026 — Validator: stale crop planting label
 
 - Local updater at 58863fb: 174/175 Python tests passed, including sleep pose, sleep reservations and acacia checks. One stale assertion expected the previous `Plants crops` / `Садить культури` label after the intentional noun-based map UI change. Updated the assertion to `Crop planting` / `Посадка культур`; retained the shared crop and animal capability guards. Checked remaining assertions in the failing method against current source. No production Java changes. Installer correctly aborted before Java smoke tests, audit, Forge build and installation; rerun required.

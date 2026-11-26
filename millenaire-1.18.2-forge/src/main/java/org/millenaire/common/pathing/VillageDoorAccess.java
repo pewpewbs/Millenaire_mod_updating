@@ -166,6 +166,22 @@ public final class VillageDoorAccess {
 
         if (BlockItemUtilities.isWoodenDoor(state.getBlock())) {
             if (state.getValue(DoorBlock.POWERED)) return;
+            Boolean passageOpen = routeDoorState(actor, pos, state);
+            if (Boolean.FALSE.equals(passageOpen)) {
+                // Legacy plans can have a door rotated across the entrance.
+                // In that layout OPEN blocks the route and CLOSED clears it.
+                // Never swing the panel into an occupant or fight player control.
+                if (state.getValue(DoorBlock.OPEN)) {
+                    var shape = state.setValue(DoorBlock.OPEN, false).getCollisionShape(level, pos);
+                    var closing = shape.bounds().move(pos).expandTowards(0.0D, 1.0D, 0.0D);
+                    if (!level.getEntitiesOfClass(LivingEntity.class, closing,
+                            entity -> entity.isAlive()).isEmpty()) return;
+                    ((DoorBlock)state.getBlock()).setOpen(null, level, state, pos, false);
+                    trace(level, pos, "PASSAGE-CLOSED source=" + source);
+                }
+                if (registered != null) registered.remove(pos);
+                return;
+            }
             if (!state.getValue(DoorBlock.OPEN)) {
                 ((DoorBlock) state.getBlock()).setOpen(null, level, state, pos, true);
                 if (level.getBlockState(pos).getValue(DoorBlock.OPEN)) remember(level, pos, actor, source);
@@ -181,6 +197,28 @@ public final class VillageDoorAccess {
                 remember(level, pos, actor, source);
             }
         }
+    }
+
+    private static Boolean routeDoorState(LivingEntity actor, BlockPos door, BlockState state) {
+        if (!(actor instanceof net.minecraft.world.entity.Mob mob)) return null;
+        var route = mob.getNavigation().getPath();
+        if (route == null || route.isDone()) return null;
+        for (int i = Math.max(0, route.getNextNodeIndex() - 1);
+                i < Math.min(route.getNodeCount(), route.getNextNodeIndex() + 3); i++) {
+            var node = route.getNode(i);
+            if (node.x != door.getX() || node.z != door.getZ()
+                    || Math.abs(node.y - door.getY()) > 1) continue;
+            // Match the directed edge currently being traversed. A route can
+            // turn inside a door cell; its approach and exit need different states.
+            boolean leaving = i < route.getNextNodeIndex();
+            var before = leaving ? node : i > 0 ? route.getNode(i - 1) : null;
+            var after = leaving && i + 1 < route.getNodeCount() ? route.getNode(i + 1) : node;
+            double dx = after.x + 0.5D - (before == null ? actor.getX() : before.x + 0.5D);
+            double dz = after.z + 0.5D - (before == null ? actor.getZ() : before.z + 0.5D);
+            if (dx * dx + dz * dz < 0.01D) return null;
+            return DoorPassageGeometry.openForDirection(state, dx, dz);
+        }
+        return null;
     }
 
     @SubscribeEvent

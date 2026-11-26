@@ -28,7 +28,7 @@ public final class TransitionClearanceRules {
         final int dx = toX - fromX;
         final int dy = toY - fromY;
         final int dz = toZ - fromZ;
-        if (Math.abs(dx) > 1 || Math.abs(dz) > 1 || Math.abs(dy) > 2) return false;
+        if (Math.abs(dx) > 1 || Math.abs(dz) > 1 || dy > 1 || dy < -2) return false;
         if (dx == 0 && dz == 0) {
             // Only the dedicated ladder expansion is allowed to create this
             // edge. Its consecutive-rung and head checks are performed there.

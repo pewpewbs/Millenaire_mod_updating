@@ -167,6 +167,7 @@ public class AStarStatic {
     public static boolean isTransitionViable(BlockGetter world, AStarNode from,
                                              AStarNode to, AStarConfig config)
             throws ThreadSafeUtilities.ChunkAccessException {
+        if (to.y - from.y < -1 && !config.allowDropping) return false;
         int dx = Math.abs(to.x - from.x);
         int dz = Math.abs(to.z - from.z);
         if (dx == 0 && dz == 0) {
@@ -193,7 +194,7 @@ public class AStarStatic {
         boolean traversable = TransitionClearanceRules.canTraverse(
                 from.x, from.y, from.z, to.x, to.y, to.z,
                 (centerX, feetY, centerZ) -> isBodyCollisionFree(
-                        world, centerX, feetY, centerZ, config));
+                        world, centerX, feetY, centerZ, config, to.x - from.x, to.z - from.z));
         org.millenaire.common.pathing.NavigationMetrics.sweptTransition(
                 System.nanoTime() - sweepBegan, traversable);
         return traversable;
@@ -229,7 +230,7 @@ public class AStarStatic {
 
     private static boolean isBodyCollisionFree(BlockGetter world, double x,
                                                double feetY, double z,
-                                               AStarConfig config) {
+                                               AStarConfig config, int dx, int dz) {
         double halfWidth = TransitionClearanceRules.VILLAGER_WIDTH * 0.5D;
         AABB body = new AABB(
                 x - halfWidth, feetY, z - halfWidth,
@@ -256,10 +257,12 @@ public class AStarStatic {
                     BlockState state = world.getBlockState(pos);
                     if (state.isAir()) continue;
                     Block block = state.getBlock();
-                    // The villager opens doors/gates as a separate action.
-                    if (config.canUseDoors
-                            && (BlockItemUtilities.isWoodenDoor(block)
-                                || BlockItemUtilities.isFenceGate(block))) continue;
+                    // Gates retract, wooden door panels rotate and still collide.
+                    // Use the same directed state that the server-side opener chooses.
+                    if (config.canUseDoors && BlockItemUtilities.isWoodenDoor(block))
+                        state = org.millenaire.common.pathing.DoorPassageGeometry.passageState(state, dx, dz);
+                    if (config.canUseDoors && BlockItemUtilities.isFenceGate(block)
+                            && !state.getValue(net.minecraft.world.level.block.FenceGateBlock.POWERED)) continue;
                     if (config.canClearLeaves && block instanceof LeavesBlock
                             && !state.getValue(LeavesBlock.PERSISTENT)) continue;
                     var shape = state.getCollisionShape(world, pos);

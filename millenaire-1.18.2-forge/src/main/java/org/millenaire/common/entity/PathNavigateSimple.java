@@ -42,6 +42,41 @@ public class PathNavigateSimple extends GroundPathNavigation {
         try { return super.createPath(targets, padding, above, accuracy, 64.0F); }
         finally { org.millenaire.common.pathing.NavigationMetrics.record(0, System.nanoTime()-began); }
     }
+    private boolean ladderMotionControlled;
+    public boolean isLadderMotionControlled() { return this.ladderMotionControlled; }
+
+    @Override protected boolean canUpdatePath() {
+        // Vanilla's airborne branch skips a node whenever feet are above it,
+        // even if the NPC has not descended to that rung yet.
+        return this.path instanceof org.millenaire.common.pathing.atomicstryker.AS_PathEntity
+                || super.canUpdatePath();
+    }
+
+    @Override protected void followThePath() {
+        if (!(this.path instanceof org.millenaire.common.pathing.atomicstryker.AS_PathEntity)) {
+            super.followThePath();
+            return;
+        }
+        var next = this.path.getNextNode();
+        if (next == null) return;
+        if (!this.isLadderNode(next)) {
+            var target = this.path.getNextEntityPos(this.mob);
+            // Do not use vanilla's dot-product corner shortcut: it can skip
+            // the only validated approach to a stair, door, or ladder shaft.
+            // Aim/reach use the SAME centre (vanilla reach uses x/z + .8 for
+            // a .6-wide mob whereas Path.getNextEntityPos uses + .5).
+            this.maxDistanceToWaypoint = 0.20F;
+            if (Math.abs(this.mob.getX() - target.x) <= this.maxDistanceToWaypoint
+                    && Math.abs(this.mob.getZ() - target.z) <= this.maxDistanceToWaypoint
+                    && Math.abs(this.mob.getY() - this.getGroundY(target)) < 0.25D) {
+                this.path.advance();
+            }
+        }
+        // Ladder advancement belongs solely to assistLadderRung's directional
+        // contact/height test; timeouts and physical stall recovery remain active.
+        this.doStuckDetection(this.mob.position());
+    }
+
     /**
      * GroundPathNavigation does not reliably drive a mob onto a ladder's thin
      * collision plane or actively climb vertically once a node is reached.
@@ -49,6 +84,7 @@ public class PathNavigateSimple extends GroundPathNavigation {
      * All motion is velocity-based and still uses Minecraft collision checks.
      */
     @Override public void tick() {
+        this.ladderMotionControlled = false;
         super.tick();
         if (this.mob.level.isClientSide || this.path == null || this.path.isDone()) return;
         net.minecraft.world.level.pathfinder.Node next = this.path.getNextNode();
@@ -111,7 +147,7 @@ public class PathNavigateSimple extends GroundPathNavigation {
     }
 
     /** A route node is a real, loaded vanilla ladder (not vines/scaffolding). */
-    private boolean isLadderNode(net.minecraft.world.level.pathfinder.Node node) {
+    protected boolean isLadderNode(net.minecraft.world.level.pathfinder.Node node) {
         if (node == null) return false;
         net.minecraft.core.BlockPos at = new net.minecraft.core.BlockPos(node.x, node.y, node.z);
         return this.mob.level.hasChunkAt(at)
@@ -146,16 +182,12 @@ public class PathNavigateSimple extends GroundPathNavigation {
 
     private static double ladderTargetX(net.minecraft.world.level.pathfinder.Node rung,
                                         net.minecraft.world.level.block.state.BlockState state) {
-        net.minecraft.core.Direction wall =
-                state.getValue(net.minecraft.world.level.block.LadderBlock.FACING).getOpposite();
-        return rung.x + 0.5D + wall.getStepX() * 0.12D;
+        return rung.x + 0.5D; // onClimbable uses the cell, not collision with the panel
     }
 
     private static double ladderTargetZ(net.minecraft.world.level.pathfinder.Node rung,
                                         net.minecraft.world.level.block.state.BlockState state) {
-        net.minecraft.core.Direction wall =
-                state.getValue(net.minecraft.world.level.block.LadderBlock.FACING).getOpposite();
-        return rung.z + 0.5D + wall.getStepZ() * 0.12D;
+        return rung.z + 0.5D; // keep the .6-wide body clear of the 3/16 ladder panel
     }
 
     private boolean canRiseInsideLadder() {
@@ -177,6 +209,9 @@ public class PathNavigateSimple extends GroundPathNavigation {
         net.minecraft.core.BlockPos feet = this.mob.blockPosition();
         boolean sameColumn = next.x == feet.getX() && next.z == feet.getZ();
         boolean contact = this.touchesLadder();
+        // A first rung above the ground may require a normal jump before
+        // contact. Do not take movement ownership while still below that rung.
+        if (!contact && next.y - this.mob.getY() > 0.5D) return;
         int direction = this.ladderRouteDirection(next);
         boolean reached = org.millenaire.common.pathing.LadderTransitionRules.reachedRung(
                 direction, this.mob.getY(), next.y, horizontalErrorSquared);
@@ -219,6 +254,7 @@ public class PathNavigateSimple extends GroundPathNavigation {
         }
         // Approach the surface even before feet reach the ladder. Apply no
         // upward/downward force until contact and column alignment are real.
+        this.ladderMotionControlled = true;
         this.mob.setDeltaMovement(
                 org.millenaire.common.pathing.LadderTransitionRules.approachSpeed(ex),
                 vy,
@@ -266,6 +302,7 @@ public class PathNavigateSimple extends GroundPathNavigation {
                 this.mob.getY(), distanceSquared)) return;
         if (!this.canRiseInsideLadder()) return;
         net.minecraft.world.phys.Vec3 velocity = this.mob.getDeltaMovement();
+        this.ladderMotionControlled = true;
         this.mob.setDeltaMovement(
                 org.millenaire.common.pathing.LadderTransitionRules.approachSpeed(ex),
                 Math.max(0.20D, velocity.y),

@@ -362,6 +362,7 @@ IAStarPathedEntity {
 
     protected MillVillager(EntityType<? extends MillVillager> type, Level world) {
         super(type, world);
+        this.moveControl = new VillagerMoveControl(this);
         this.level = world;
         this.mw = Mill.getMillWorld(world);
         this.inventory = new HashMap();
