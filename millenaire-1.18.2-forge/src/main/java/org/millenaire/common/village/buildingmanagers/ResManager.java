@@ -57,6 +57,8 @@ import org.millenaire.common.utilities.MillLog;
 import org.millenaire.common.utilities.Point;
 import org.millenaire.common.utilities.WorldUtilities;
 import org.millenaire.common.village.Building;
+import org.millenaire.common.village.GroveAcaciaGrowth;
+import net.minecraft.server.level.ServerLevel;
 
 public class ResManager {
     public CopyOnWriteArrayList<Point> brickspot = new CopyOnWriteArrayList();
@@ -416,10 +418,24 @@ public class ResManager {
         return this.getSellingPos();
     }
 
+    /** Validate registered acacia sites both when choosing a goal and placing a sapling. */
+    public boolean canPlantAcaciaAt(Point p) {
+        if(p==null||!this.woodspawn.contains(p)||!"acaciaspawn".equals(this.woodspawnTypes.get(p)))return false;
+        if(!(this.building.world instanceof ServerLevel server)
+                ||server.getChunkSource().getChunkNow(p.getChunkX(),p.getChunkZ())==null)return false;
+        var pos=p.getBlockPos();
+        var sapling=Blocks.ACACIA_SAPLING.defaultBlockState();
+        if(this.building.containsTags("grove"))return GroveAcaciaGrowth.hasCompactRoom(server,pos,sapling);
+        return server.getWorldBorder().isWithinBounds(pos)&&sapling.canSurvive(server,pos);
+    }
+
     public Point getPlantingLocation() {
         for (Point p : this.woodspawn) {
+            if(this.building.world instanceof ServerLevel server
+                    &&server.getChunkSource().getChunkNow(p.getChunkX(),p.getChunkZ())==null)continue;
             Block block = WorldUtilities.getBlock(this.building.world, p);
             if (block != Blocks.AIR && block != Blocks.SNOW && (!BlockItemUtilities.isBlockDecorativePlant(block) || block instanceof SaplingBlock || block instanceof BlockMillSapling)) continue;
+            if("acaciaspawn".equals(this.woodspawnTypes.get(p))&&!canPlantAcaciaAt(p))continue;
             return p;
         }
         return null;
