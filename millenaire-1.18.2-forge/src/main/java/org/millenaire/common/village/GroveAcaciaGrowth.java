@@ -30,8 +30,7 @@ public final class GroveAcaciaGrowth {
         return true;
     }
 
-    /** Same compact geometry for site selection and growth; no blanket
-     * neighbour-marker distance restriction. Only reads already loaded chunks. */
+    /** Growth clearance is separate from planting viability. Only reads loaded chunks. */
     public static boolean hasCompactRoom(ServerLevel world,BlockPos pos,BlockState sapling){
         if(!hasLoadedArea(world,pos))return false;
         if(pos.getY()<=world.getMinBuildHeight()||pos.getY()+7>=world.getMaxBuildHeight())return false;
@@ -39,12 +38,19 @@ public final class GroveAcaciaGrowth {
         var ground=world.getBlockState(pos.below());
         if(!(ground.is(Blocks.GRASS_BLOCK)||ground.is(Blocks.DIRT)||ground.is(Blocks.COARSE_DIRT)
                 ||ground.is(Blocks.PODZOL)||ground.is(Blocks.ROOTED_DIRT)))return false;
-        // A ground-level fence is compatible with the straight trunk.
-        for(int dy=1;dy<=6;dy++)
-            for(int dx=-2;dx<=2;dx++)for(int dz=-2;dz<=2;dz++){
+        // Lower trunk needs only its own column; adjacent fences do not
+        // occupy it. Upper canopy may overlap natural acacia foliage, never
+        // player-persistent leaves or structural blocks.
+        for(int dy=1;dy<=6;dy++){
+            int radius=dy<3?0:2;
+            for(int dx=-radius;dx<=radius;dx++)for(int dz=-radius;dz<=radius;dz++){
                 BlockPos p=pos.offset(dx,dy,dz);
-                if(!world.getWorldBorder().isWithinBounds(p)||!world.getBlockState(p).isAir())return false;
+                if(!world.getWorldBorder().isWithinBounds(p))return false;
+                var state=world.getBlockState(p);
+                if(!state.isAir()&&!(state.is(Blocks.ACACIA_LEAVES)
+                        &&!state.getValue(net.minecraft.world.level.block.LeavesBlock.PERSISTENT)))return false;
             }
+        }
         return world.getWorldBorder().isWithinBounds(pos);
     }
 
@@ -57,7 +63,7 @@ public final class GroveAcaciaGrowth {
                 BlockStateProvider.simple(Blocks.ACACIA_LOG),new StraightTrunkPlacer(4,0,0),
                 BlockStateProvider.simple(Blocks.ACACIA_LEAVES),
                 new BlobFoliagePlacer(ConstantInt.of(1),ConstantInt.of(0),2),
-                new TwoLayersFeatureSize(1,0,1)).ignoreVines().build();
+                new TwoLayersFeatureSize(3,0,1)).ignoreVines().build();
         Holder<ConfiguredFeature<?,?>> feature=Holder.direct(new ConfiguredFeature<>(Feature.TREE,configuration));
         var event=ForgeEventFactory.blockGrowFeature(world,random,pos,feature);
         // Respect protection/other mods. Do not execute an unvalidated substitute.
