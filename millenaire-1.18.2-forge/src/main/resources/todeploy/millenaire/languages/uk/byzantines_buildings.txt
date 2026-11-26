@@ -67,7 +67,7 @@ playerhugeplot_a0=Величезна ділянка
 gifthut_a0=Подарунковий будинок
 
 borderpost_a0=Прикордонний пост
-borderpost_corner_a0=Прикордонний пост (кут)
+borderpost_corner_a0=Прикордонний пост
 borderpost_gate_a0=Прикордонний пост (вхід)
 
 playerfortress_a0=Фортеця
