@@ -80,14 +80,16 @@ class SessionStability(unittest.TestCase):
         code=read("common/village/GroveAcaciaGrowth.java")
         self.assertIn("getChunkNow(x,z)==null",code)
         self.assertNotIn("getChunk(",code)
-        self.assertIn("!world.getBlockState(p).isAir()",code)
+        self.assertIn("int radius=dy<3?0:2",code)
+        self.assertIn("LeavesBlock.PERSISTENT",code)
+        self.assertIn("new TwoLayersFeatureSize(3,0,1)",code)
         self.assertIn("sapling.canSurvive(world,pos)",code)
         self.assertIn("ForgeEventFactory.blockGrowFeature",code)
         self.assertIn("event.getResult()==Event.Result.DENY",code)
         self.assertIn("if(!grown&&world.getBlockState(pos).isAir())world.setBlock(pos,sapling,4)",code)
         self.assertIn("new StraightTrunkPlacer(4,0,0)",code)
 
-    def test_acacia_planting_uses_same_clearance_as_compact_growth(self):
+    def test_acacia_planting_is_independent_of_growth_clearance(self):
         # Follow the actual declared return type of Building.getResManager.
         # The old BuildingResManager class is not the live implementation.
         building=read("common/village/Building.java")
@@ -95,8 +97,9 @@ class SessionStability(unittest.TestCase):
         self.assertIn("public ResManager getResManager()",building)
         manager=read("common/village/buildingmanagers/ResManager.java")
         check=manager.split("public boolean canPlantAcaciaAt(",1)[1].split("public Point getPlantingLocation()",1)[0]
-        self.assertIn("GroveAcaciaGrowth.hasCompactRoom",check)
-        self.assertIn('this.building.containsTags("grove")',check)
+        self.assertNotIn("GroveAcaciaGrowth.hasCompactRoom",check)
+        self.assertIn("sapling.canSurvive(server,pos)",check)
+        self.assertIn("existing.getBlock() instanceof SaplingBlock",check)
         self.assertIn("this.woodspawn.contains(p)",check)
         self.assertIn("getChunkNow(p.getChunkX(),p.getChunkZ())==null",check)
         selection=manager.split("public Point getPlantingLocation()",1)[1].split("public String getPlantingLocationType(",1)[0]
