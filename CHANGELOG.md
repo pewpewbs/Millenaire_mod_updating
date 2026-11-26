@@ -10,6 +10,11 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 26.11.2026 — ONE-CLICK UPDATE / VALIDATE / INSTALL
+
+- Root Update-Millenaire.bat checks the working branch, runs git pull --ff-only, and launches the updated PowerShell installer only after success. No reset, merge commit or automatic discard of local edits.
+- Update-Millenaire.ps1 resolves artifact name from gradle.properties, uses local JDK 17 for production validation (Python tests, Java smoke tests, audit), then calls build-local.ps1 once for Forge build. Any validation/build failure aborts before touching installed mods. Preserves existing Codefication1182 ATLauncher instance, guards against its running Java process, checks Forge archive metadata and SHA256, backs up old JARs and attempts rollback on install failure. No game code changed. Windows end-to-end execution not performed here.
+
 ### 26.11.2026 — MAP-LABELS / TRAVELBOOK-ICONS / ACACIA-PLANTING
 
 - Map: Ukrainian дитина/дитини/дітей with teen exceptions, English/Russian corresponding inflection; level suffix (lvl current/max), at max (lvl current) with existing gold colour. No change to unbuilt or non-upgradable buildings.
