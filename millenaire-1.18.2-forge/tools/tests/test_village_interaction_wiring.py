@@ -129,6 +129,19 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertIn('hasTag(loc,building,plan,"inn")', ui)
         self.assertIn("getCount()>1?Integer.toString", read("client/gui/text/GuiPanelParchment.java"))
 
+    def test_child_inflection_level_and_travelbook_village_icons(self):
+        ui=read("client/gui/text/BuildingMapTooltip.java")
+        self.assertIn('singular?"дитина":few?"дитини":"дітей"',ui)
+        self.assertIn("lastTwo!=11",ui)
+        self.assertIn("lastTwo<12||lastTwo>14",ui)
+        self.assertIn('name+=" (lvl "+loc.level+(loc.level==maximum?"":"/"+maximum)+")";',ui)
+        self.assertIn("if(loc.level==maximum)nameColor=GOLD",ui)
+        book=read("client/book/BookManagerTravelBook.java")
+        detail=book.split("public TextBook getBookBuildingDetail(",1)[1].split("private void getBookBuildingDetail_exportVariation(",1)[0]
+        self.assertIn('new TextLine("", new GuiText.GuiButtonReference(village))',detail)
+        self.assertIn("splitInColumns(infoColumns, 6)",detail)
+        self.assertNotIn("new TextLine(village.name,",detail)
+
     def test_resident_roster_does_not_require_loaded_house_or_entity(self):
         ui = read("client/gui/text/BuildingMapTooltip.java")
         staff = ui.split("private static void staff(",1)[1].split("static List<Line> describe(",1)[0]
