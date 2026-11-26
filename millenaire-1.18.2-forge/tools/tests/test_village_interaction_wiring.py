@@ -129,7 +129,7 @@ class VillageInteractionWiring(unittest.TestCase):
             self.assertIn("ProductionCapability.hasCrop(", source)
             self.assertIn("ProductionCapability.animalGoods(", source)
         self.assertIn('label("Slaughters animals","Забиває тварин"', ui)
-        self.assertIn('label("Plants crops","Садить культури"', ui)
+        self.assertIn('label("Crop planting","Посадка культур"', ui)
         self.assertIn("if(maximum>0){",ui)
         self.assertIn("if(loc.level==maximum){",ui)
         self.assertIn("nameColor=GOLD",ui)

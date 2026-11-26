@@ -10,6 +10,10 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 26.11.2026 — Validator: stale crop planting label
+
+- Local updater at 58863fb: 174/175 Python tests passed, including sleep pose, sleep reservations and acacia checks. One stale assertion expected the previous `Plants crops` / `Садить культури` label after the intentional noun-based map UI change. Updated the assertion to `Crop planting` / `Посадка культур`; retained the shared crop and animal capability guards. Checked remaining assertions in the failing method against current source. No production Java changes. Installer correctly aborted before Java smoke tests, audit, Forge build and installation; rerun required.
+
 ### 26.11.2026 — Sleep pose lifecycle follow-up
 
 - Source review of 8c9b25f found checkGoals resets actionStart after every performAction, then reassigns shouldLieDown from GoalSleep.shouldVillagerLieDown() (now false) at the next interval. Preserve the occupancy-validated pose across sleep work intervals; retain stopMoving on active sleep ticks. Invalid occupancy, leaving action range, clearing/completing the goal still clear the pose. Other goals unchanged. Added source regression guard. Full Forge build and actual night-cycle verification pending.
