@@ -163,6 +163,23 @@ public class MillEventController {
     }
 
     @SubscribeEvent
+    public void normalizeByzantineSheepWool(LivingDropsEvent event){
+        if(event.getEntityLiving().level.isClientSide
+                ||!(event.getEntityLiving() instanceof net.minecraft.world.entity.animal.Sheep)
+                ||event.getSource()==null
+                ||!(event.getSource().getEntity() instanceof MillVillager villager)
+                ||!org.millenaire.common.goal.GoalShearSheep.usesWhiteWool(villager.getCulture()))return;
+        for(var drop:event.getDrops()){
+            var stack=drop.getItem();
+            var key=net.minecraft.core.Registry.ITEM.getKey(stack.getItem());
+            if(key!=null&&"minecraft".equals(key.getNamespace())&&key.getPath().endsWith("_wool")
+                    &&!stack.is(net.minecraft.world.item.Items.WHITE_WOOL)){
+                drop.setItem(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WHITE_WOOL,stack.getCount()));
+            }
+        }
+    }
+
+    @SubscribeEvent
     public void addInuitDrops(LivingDropsEvent event) {
         if (event.getEntityLiving().level.isClientSide) return;
         if (event.getEntityLiving() instanceof Guardian || event.getEntityLiving() instanceof Squid) {
