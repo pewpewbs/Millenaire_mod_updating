@@ -588,14 +588,35 @@ extends GuiText {
         if(icon.detail()!=null&&!icon.detail().isBlank()){
             String detail=icon.detail();
             if(!icon.recipes().isEmpty()&&!icon.action())detail="";
-            for(String part:detail.split("; "))if(!part.isBlank())
-                text.addAll(font.split(new net.minecraft.network.chat.TextComponent(part),maxWidth));
+            int partIndex=0;
+            for(String part:detail.split("; ")){
+                if(!part.isBlank()){
+                    var component=new net.minecraft.network.chat.TextComponent(part);
+                    if(icon.portrait()!=null){
+                        if(partIndex==0)component.withStyle(net.minecraft.ChatFormatting.WHITE);
+                        if(partIndex==1)component.withStyle(net.minecraft.ChatFormatting.AQUA);
+                        if(partIndex==2)component.withStyle(net.minecraft.ChatFormatting.YELLOW);
+                    }
+                    text.addAll(font.split(component,maxWidth));
+                }
+                partIndex++;
+            }
+        }
+        if(icon.portrait()!=null&&!icon.portrait().activities().isEmpty()){
+            text.addAll(font.split(new net.minecraft.network.chat.TextComponent(BuildingMapTooltip.label("Purpose:","Призначення:","Назначение:")).withStyle(net.minecraft.ChatFormatting.AQUA),maxWidth));
         }
         List<TooltipIcon> recipeIcons=new ArrayList<>();
         List<int[]> arrows=new ArrayList<>();
         int y=text.size()*11,w=40;
         for(var line:text)w=Math.max(w,font.width(line));
         int columns=Math.max(2,maxWidth/20);
+        if(icon.portrait()!=null&&!icon.portrait().activities().isEmpty()){
+            int n=0;y+=3;
+            for(var stack:icon.portrait().activities()){
+                recipeIcons.add(new TooltipIcon(stack,(n%columns)*20,y+(n/columns)*20,null,List.of(),true));n++;
+            }
+            w=Math.max(w,Math.min(n,columns)*20);y+=((n+columns-1)/columns)*20;
+        }
         for(var recipe:icon.recipes()){
             int n=0;y+=3;
             for(var stack:recipe.inputs()){
