@@ -10,6 +10,11 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 26.11.2026 — HOTFIX: acacia live resource manager API
+
+- User's first one-click run (a6dae8a): 173/173 Python tests, Java smoke tests and production audit passed; compileJava failed at GoalGenericPlantSapling.java:114 because Building.getResManager() returns buildingmanagers.ResManager, not legacy BuildingResManager. Installer correctly cancelled before touching installed JARs.
+- Added canPlantAcaciaAt and the selection guard to the actual live ResManager; public shared GroveAcaciaGrowth.hasCompactRoom enables safe cross-package calls. Registered grove markers use the compact clearance, non-grove sites retain simple planting viability. No change to updater, growth shape or navigation. Corrected regression test to follow Building's actual return type and check live selection/action wiring. Previous five-block veto was in the legacy class, not established as the cause of the in-game issue. New full compile and in-game planting remain to be verified.
+
 ### 26.11.2026 — ONE-CLICK UPDATE / VALIDATE / INSTALL
 
 - Root Update-Millenaire.bat checks the working branch, runs git pull --ff-only, and launches the updated PowerShell installer only after success. No reset, merge commit or automatic discard of local edits.
