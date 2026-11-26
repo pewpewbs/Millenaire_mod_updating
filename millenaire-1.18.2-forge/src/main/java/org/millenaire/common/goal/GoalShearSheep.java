@@ -64,6 +64,11 @@ extends Goal {
         return count;
     }
 
+    /** Byzantine textile recipes require white wool and add dyes separately. */
+    public static boolean usesWhiteWool(org.millenaire.common.culture.Culture culture){
+        return culture!=null&&"byzantines".equals(culture.key);
+    }
+
     public GoalShearSheep() {
         this.buildingLimit.put(InvItem.createInvItem(Blocks.WHITE_WOOL, 0), 1024);
         this.townhallLimit.put(InvItem.createInvItem(Blocks.WHITE_WOOL, 0), 1024);
@@ -154,7 +159,9 @@ extends Goal {
             if (villager.distanceToSqr(animal) >= 4.0
                     || !WorkAccess.visible(villager, animal.getBoundingBox().getCenter(), null)) continue;
             int amount = org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 3);
-            villager.addToInv(Registry.ITEM.get(new ResourceLocation(animal.getColor().getName() + "_wool")), amount);
+            Item wool=usesWhiteWool(villager.getCulture())?Items.WHITE_WOOL:
+                    Registry.ITEM.get(new ResourceLocation(animal.getColor().getName() + "_wool"));
+            villager.addToInv(wool,amount);
             carriedWool += amount;
             ((Sheep)ent).setSheared(true);
             if (MillConfigValues.LogCattleFarmer >= 1 && villager.extraLog) {
