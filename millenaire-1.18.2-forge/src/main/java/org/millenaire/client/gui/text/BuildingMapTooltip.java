@@ -25,7 +25,7 @@ import org.millenaire.common.village.BuildingLocation;
 /** Read-only map description. Never runs a goal, changes stock or requests chunks. */
 final class BuildingMapTooltip {
     record RecipeView(List<ItemStack> inputs,List<ItemStack> outputs) {}
-    record Portrait(net.minecraft.resources.ResourceLocation texture,String detail) {}
+    record Portrait(net.minecraft.resources.ResourceLocation texture,String detail,List<ItemStack> activities) {}
     record Line(String text,int color,List<ItemStack> icons,List<String> iconDetails,String detail,List<List<RecipeView>> recipes,boolean action,List<Portrait> portraits) {
         Line(String text,int color){this(text,color,List.of(),List.of(),null,List.of(),false,List.of());}
         Line(String text,int color,String detail){this(text,color,List.of(),List.of(),detail,List.of(),false,List.of());}
@@ -105,7 +105,7 @@ final class BuildingMapTooltip {
     private static void section(List<Line> lines,String title,Goods goods,boolean action) {
         if(goods.isEmpty())return;
         goods.icons.sort(java.util.Comparator.comparing(stack->stack.getHoverName().getString()));
-        lines.add(new Line(title,NORMAL,List.copyOf(goods.icons),goods.icons.stream().map(goods::detail).toList(),null,
+        lines.add(new Line(title,action?0x99D9EA:0xD5DCC2,List.copyOf(goods.icons),goods.icons.stream().map(goods::detail).toList(),null,
             goods.icons.stream().map(s->List.copyOf(goods.recipes.getOrDefault(s,List.of()))).toList(),action));
         // Special trade abstractions (e.g. any enchanted item) have no stack.
         // Only those retain a text description.
@@ -157,15 +157,17 @@ final class BuildingMapTooltip {
                 : goal instanceof GoalGenericCooking || goal instanceof GoalGenericTendFurnace
                 ? label("Processes resources in a furnace","Переробляє ресурси в печі","Перерабатывает ресурсы в печи")
                 : goal instanceof GoalGenericMining || goal instanceof GoalMinerMineResource || (goal instanceof GoalGenericGatherBlocks gather&&softGather(gather))
-                ? label("Extracts resources","Добуває ресурси","Добывает ресурсы")
+                ? label("Resource extraction site","Місце для добування ресурсів","Место добычи ресурсов")
+                : goal instanceof GoalLumbermanChopTrees
+                ? label("Logging site","Місце для заготівлі деревини","Место заготовки древесины")
                 : goal instanceof GoalGenericHarvestCrop || goal instanceof GoalHarvestWarts || goal instanceof GoalIndianHarvestSugarCane
-                ? label("Harvests crops","Збирає врожай","Собирает урожай")
+                ? label("Harvesting","Збір врожаю","Сбор урожая")
                 : goal instanceof GoalGenericGatherBlocks
                 ? label("Gathers resources","Збирає ресурси","Собирает ресурсы")
                 : goal instanceof GoalGenericSlaughterAnimal
                 ? label("Slaughters animals","Забиває тварин","Забивает животных")
                 : goal instanceof GoalGenericPlantCrop
-                ? label("Plants crops","Садить культури","Сажает культуры")
+                ? label("Crop planting","Посадка культур","Посадка культур")
                 : goal instanceof GoalGenericPlantSapling
                 ? label("Plants saplings","Садить саджанці","Сажает саженцы")
                 : goal instanceof GoalBreedAnimals
@@ -204,7 +206,7 @@ final class BuildingMapTooltip {
 
         if(!expanded)return;
         List<Portrait> portraits=new ArrayList<>();
-        staff.sort(java.util.Comparator.comparing(r->r.getName()));
+        staff.sort(java.util.Comparator.comparing((org.millenaire.common.village.VillagerRecord r)->r.getType().isChild).thenComparing(r->r.getName()));
         for(var record:staff){
             var npc=townHall.mw.getVillagerById(record.getVillagerId());
             String status;
@@ -215,15 +217,49 @@ final class BuildingMapTooltip {
             }
             var texture=npc!=null&&npc.getTexture()!=null?npc.getTexture():record.texture;
             portraits.add(new Portrait(texture,record.getName()+"; "+record.getGameOccupation()+"; "
-                    +label("Current task: ","Поточна дія: ","Текущее действие: ")+status));
+                    +label("Current task: ","Поточна дія: ","Текущее действие: ")+status, residentActivities(record.getType())));
         }
         if(!portraits.isEmpty())lines.add(new Line("",NORMAL,List.of(),List.of(),null,List.of(),false,List.copyOf(portraits)));
 
     }
 
+    private static List<ItemStack> residentActivities(VillagerType type){
+        Goods activities=new Goods();
+        for(Goal goal:type.goals){
+            if(!goal.travelBookShow||goal.leasure)continue;
+            ItemStack icon=goal.getIcon();
+            if(icon!=null&&!icon.isEmpty())addStack(activities,icon);
+        }
+        if(type.isForeignMerchant)addStack(activities,new ItemStack(org.millenaire.common.item.MillItems.PURSE));
+        return List.copyOf(activities.icons);
+    }
+
+    /** Only report differences actually declared by the next authored plan. */
+    private static String upgradeDetail(BuildingLocation loc,BuildingPlan current,BuildingPlan next){
+        List<String> changes=new ArrayList<>();
+        changes.add(label("Next level: ","Наступний рівень: ","Следующий уровень: ")+next.level);
+        if(current!=null){
+            int before=loc.getMaleResidents().size()+loc.getFemaleResidents().size();
+            int after=next.getMaleResident().size()+next.getFemaleResident().size();
+            if(before!=after)changes.add(label("Resident slots: ","Місця для мешканців: ","Места для жителей: ")+before+" → "+after);
+            if(current.irrigation!=next.irrigation)changes.add(label("Irrigation: ","Зрошення: ","Орошение: ")+current.irrigation+" → "+next.irrigation);
+            if(!java.util.Objects.equals(current.shop,next.shop))changes.add(label("Shop configuration changes","Змінюється конфігурація крамниці","Изменяется конфигурация лавки"));
+            if(!current.tags.equals(next.tags)||!current.clearTags.equals(next.clearTags))
+                changes.add(label("Building functions change according to the plan","Змінюються функції будівлі за планом","Меняются функции здания по плану"));
+        }
+        changes.add(label("Construction changes according to the next plan","Перебудова за планом наступного рівня","Перестройка по плану следующего уровня"));
+        if(next.resCost!=null&&!next.resCost.isEmpty()){
+            changes.add(label("Required materials:","Необхідні матеріали:","Необходимые материалы:"));
+            next.resCost.entrySet().stream().filter(e->e.getValue()!=null&&e.getValue()>0)
+                .sorted(java.util.Comparator.comparing(e->e.getKey().getName()))
+                .forEach(e->changes.add(e.getKey().getName()+" ×"+e.getValue()));
+        }
+        return String.join("; ",changes);
+    }
+
     static List<Line> describe(BuildingLocation loc, Building townHall, String nativeName, boolean construction,boolean expanded) {
         List<Line> lines = new ArrayList<>();
-        add(lines, nativeName, NORMAL);
+        add(lines, nativeName, 0xC8B99A);
         String name=loc.getIBuildingPlan()==null?"":loc.getGameName();
         Building building = loc.getBuilding(townHall.world);
         BuildingPlan plan = loc.getPlan();
@@ -231,6 +267,7 @@ final class BuildingMapTooltip {
         // Level zero is the completed initial building. Keep the name and
         // level together; no meaningless 0/0, and no level for unbuilt plans.
         int nameColor=NORMAL;
+        String levelDetail=null;
         if(!construction&&loc.level>=0&&!loc.isCustomBuilding&&loc.culture!=null){
             var set=loc.culture.getBuildingPlanSet(loc.planKey);
             int variation=loc.getVariation();
@@ -238,14 +275,17 @@ final class BuildingMapTooltip {
                     &&set.plans.get(variation).length>loc.level){
                 int maximum=set.plans.get(variation).length-1;
                 if(maximum>0){
-                    name+=" (lvl "+loc.level+(loc.level==maximum?"":"/"+maximum)+")";
-                    if(loc.level==maximum)nameColor=GOLD;
+                    name+=" lvl "+loc.level;
+                    if(loc.level==maximum){
+                        nameColor=GOLD;
+                        levelDetail=label("Maximum level","Максимальний рівень","Максимальный уровень");
+                    }else if(expanded)levelDetail=upgradeDetail(loc,plan,set.plans.get(variation)[loc.level+1]);
                 }
             }
         }
-        add(lines,name,nameColor);
+        if(!name.isBlank())lines.add(new Line(name,nameColor,levelDetail));
         if(construction)add(lines,label("Under construction","Будується","Строится"),MUTED);
-        else if(loc.level<0)add(lines,label("Not built yet","Ще не збудовано","Ещё не построено"),MUTED);
+        else if(loc.level<0)add(lines,label("Not built yet","Ще не збудовано","Ещё не построено"),0xFF7777);
         else if(loc.isCustomBuilding)add(lines,label("Custom building (no standard upgrades)","Власна будівля (без стандартних покращень)","Пользовательская постройка (без стандартных улучшений)"),MUTED);
 
         // Planned residents describe home-based production; village worker types
@@ -478,7 +518,7 @@ final class BuildingMapTooltip {
         if(!extracted.icons.isEmpty()&&extracted.icons.stream().allMatch(stack->
                 stack.is(Items.SAND)||stack.is(Items.RED_SAND)||stack.is(Items.GRAVEL)||stack.is(Items.CLAY_BALL))){
             actions.icons.removeIf(stack->stack.is(Items.IRON_PICKAXE));
-            actions.source=label("Extracts resources","Добуває ресурси","Добывает ресурсы");
+            actions.source=label("Resource extraction site","Місце для добування ресурсів","Место добычи ресурсов");
             addStack(actions,new ItemStack(Items.IRON_SHOVEL));
         }
         section(lines,label("Purpose:","Призначення:","Назначение:"),actions,true);
