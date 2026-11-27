@@ -580,6 +580,9 @@ extends GuiText {
     /** Draw the secondary tooltip after every primary item, at a higher Z.
      * Real stacks with counts; no fabricated recipe for unknown outputs. */
     private void drawMapDetail(TooltipIcon icon,int mouseX,int mouseY){
+        // Road items show only their actual localized name, even when rotating.
+        if(BuildingMapTooltip.road(icon.stack()))
+            icon=new TooltipIcon(icon.stack(),icon.x(),icon.y(),null,List.of(),false);
         List<FormattedCharSequence> text=new ArrayList<>();
         int maxWidth=Math.max(40,Math.min(170,width-18));
         if(!icon.action()&&!icon.stack().isEmpty())

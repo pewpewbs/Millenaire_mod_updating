@@ -582,7 +582,7 @@ final class BuildingMapTooltip {
         return (road(stack)?"1":stack.getItem().isEdible()?"2":"0")+stack.getHoverName().getString();
     }
 
-    private static boolean road(ItemStack stack){
+    static boolean road(ItemStack stack){
         return stack.getItem() instanceof net.minecraft.world.item.BlockItem item
                 &&item.getBlock() instanceof org.millenaire.common.block.IBlockPath;
     }

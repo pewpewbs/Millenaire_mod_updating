@@ -192,6 +192,19 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertIn("if(group.size()<2)return;",ui)
         self.assertIn("goods.recipes.getOrDefault(s,List.of())",ui)
 
+    def test_map_road_icons_show_only_localized_item_name(self):
+        ui=read("client/gui/text/BuildingMapTooltip.java")
+        self.assertIn("static boolean road(ItemStack stack){",ui)
+        self.assertIn("item.getBlock() instanceof org.millenaire.common.block.IBlockPath",ui)
+        panel=read("client/gui/text/GuiPanelParchment.java")
+        detail=panel.split("private void drawMapDetail(",1)[1]
+        guard=detail.split("List<FormattedCharSequence> text",1)[0]
+        self.assertIn("if(BuildingMapTooltip.road(icon.stack()))",guard)
+        self.assertIn("icon=new TooltipIcon(icon.stack(),icon.x(),icon.y(),null,List.of(),false);",guard)
+        self.assertIn("font.split(icon.stack().getHoverName(),maxWidth)",detail)
+        self.assertIn("if(icon.detail()!=null&&!icon.detail().isBlank())",detail)
+        self.assertIn("for(var recipe:icon.recipes())",detail)
+
     def test_map_construction_status_distinguishes_initial_and_upgrade(self):
         ui=read("client/gui/text/BuildingMapTooltip.java")
         self.assertIn("if(!construction&&loc.level>=0",ui)
