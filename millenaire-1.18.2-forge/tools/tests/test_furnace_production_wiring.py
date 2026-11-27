@@ -83,6 +83,23 @@ class FurnaceProductionWiring(unittest.TestCase):
         self.assertIn("!passesWorkplaceBalance(villager, dest)", src)
         self.assertIn("GoalGenericTendFurnace.canStoreOutput", src)
 
+    def test_regular_stone_miners_keep_local_cobblestone_input(self):
+        for role in (
+            "indian/villagers/indian_miner.txt",
+            "japanese/villagers/japanese_miner.txt",
+            "mayan/villagers/mayan_miner.txt",
+            "norman/villagers/normalvillagers/miner.txt",
+        ):
+            with self.subTest(role=role):
+                profile = fields(DATA / "cultures" / role)
+                self.assertIn("cookstone", profile["goal"])
+                self.assertIn("tendfurnace", profile["goal"])
+                self.assertIn("cobblestone,16", profile["requiredgood"])
+        cook = fields(DATA / "goals/genericcooking/cookstone.txt")
+        self.assertEqual(scope(cook), ("false", ""))
+        self.assertEqual(cook["itemtocook"], ["cobblestone"])
+        self.assertGreaterEqual(16 // 2, int(cook["minimumtocook"][0]))
+
     def test_tavern_role_and_same_version_migration(self):
         role = DATA / "cultures/byzantines/villagers/artisans/hostesse_byzantine.txt"
         data = fields(role)
