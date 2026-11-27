@@ -180,11 +180,16 @@ class VillageInteractionWiring(unittest.TestCase):
         send = building.split("public void sendMapInfo(Player player)",1)[1].split("public void sendShopPacket",1)[0]
         self.assertIn("this.getTownHall().sendBuildingPacket(player,false)",send)
 
-    def test_food_icons_rotate_faster_than_road_icons(self):
+    def test_all_rotating_map_icons_share_one_second_interval(self):
         ui=read("client/gui/text/BuildingMapTooltip.java")
-        self.assertIn('cycleGroup(goods,BuildingMapTooltip::road,label("Road materials (rotating)","Матеріали доріг (змінюються)","Материалы дорог (сменяются)"),3000L);',ui)
-        self.assertIn('cycleGroup(goods,s->s.getItem().isEdible(),label("Food (rotating)","Їжа (змінюється)","Еда (сменяется)"),1500L);',ui)
-        self.assertIn("System.currentTimeMillis()/intervalMillis",ui)
+        self.assertIn("private static final long ICON_ROTATION_INTERVAL_MILLIS = 1000L;",ui)
+        self.assertIn('cycleGroup(goods,BuildingMapTooltip::road,label("Road materials (rotating)","Матеріали доріг (змінюються)","Материалы дорог (сменяются)"));',ui)
+        self.assertIn('cycleGroup(goods,s->s.getItem().isEdible(),label("Food (rotating)","Їжа (змінюється)","Еда (сменяется)"));',ui)
+        self.assertIn("String category){",ui.split("private static void cycleGroup(",1)[1])
+        self.assertIn("System.currentTimeMillis()/ICON_ROTATION_INTERVAL_MILLIS",ui)
+        self.assertIn("groupProduction(produced);",ui)
+        self.assertIn("groupProduction(planned);",ui)
+        self.assertIn("if(group.size()<2)return;",ui)
         self.assertIn("goods.recipes.getOrDefault(s,List.of())",ui)
 
     def test_map_construction_status_distinguishes_initial_and_upgrade(self):

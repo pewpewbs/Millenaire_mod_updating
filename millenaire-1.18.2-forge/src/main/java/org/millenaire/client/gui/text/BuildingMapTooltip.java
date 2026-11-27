@@ -61,6 +61,7 @@ final class BuildingMapTooltip {
     private static final int NORMAL = 0xE0E0E0;
     private static final int GOLD = 0xFFAA00;
     private static final int MUTED = 0xAAAAAA;
+    private static final long ICON_ROTATION_INTERVAL_MILLIS = 1000L;
     private BuildingMapTooltip() {}
 
     static String label(String en, String uk, String ru) {
@@ -587,14 +588,14 @@ final class BuildingMapTooltip {
     }
 
     private static void groupProduction(Goods goods){
-        cycleGroup(goods,BuildingMapTooltip::road,label("Road materials (rotating)","Матеріали доріг (змінюються)","Материалы дорог (сменяются)"),3000L);
-        cycleGroup(goods,s->s.getItem().isEdible(),label("Food (rotating)","Їжа (змінюється)","Еда (сменяется)"),1500L);
+        cycleGroup(goods,BuildingMapTooltip::road,label("Road materials (rotating)","Матеріали доріг (змінюються)","Материалы дорог (сменяются)"));
+        cycleGroup(goods,s->s.getItem().isEdible(),label("Food (rotating)","Їжа (змінюється)","Еда (сменяется)"));
     }
 
-    private static void cycleGroup(Goods goods,java.util.function.Predicate<ItemStack> predicate,String category,long intervalMillis){
+    private static void cycleGroup(Goods goods,java.util.function.Predicate<ItemStack> predicate,String category){
         List<ItemStack> group=goods.icons.stream().filter(predicate).sorted(java.util.Comparator.comparing(s->s.getHoverName().getString())).toList();
         if(group.size()<2)return;
-        ItemStack chosen=group.get((int)Math.floorMod(System.currentTimeMillis()/intervalMillis,group.size()));
+        ItemStack chosen=group.get((int)Math.floorMod(System.currentTimeMillis()/ICON_ROTATION_INTERVAL_MILLIS,group.size()));
         goods.icons.removeIf(s->predicate.test(s)&&s!=chosen);
         goods.details.computeIfAbsent(chosen,k->new LinkedHashSet<>()).add(category);
     }
