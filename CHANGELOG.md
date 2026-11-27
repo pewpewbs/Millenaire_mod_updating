@@ -10,6 +10,10 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 27.11.2026 — Shorter chat and localized upgrade status
+
+- Chat shows the speaker name only; recipient metadata, dialogue suppression, range and speech colours are unchanged. The resource panel now supplies the upgrade level to the translation placeholder, consistent with the three other upgrade status calls in PanelContentGenerator. Ukrainian, English and Russian wording updated. Added two source regression guards. No gameplay changes; Forge build and runtime testing pending.
+
 ### 27.11.2026 — Production provenance and presentation polish
 
 - Straw-bed-only crafting omitted from map purpose, resident activity and travel-book production/consumption listings; actual crafting, housing, trade and resource accounting unchanged. Wet-to-dry brick tooltip reflects actual intermediate block. Free-output goals show that no inputs are consumed and show real output quantities; no fake recipes. Fort's intentional specialization (no sugar plantation or spice garden) documented; no automatic resource injection. Rice plan PNG inspection remains pending. Static guards updated; compile/playtest not run here.

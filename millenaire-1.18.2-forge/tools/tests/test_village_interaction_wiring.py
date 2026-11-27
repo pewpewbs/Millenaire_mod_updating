@@ -221,6 +221,20 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertEqual(panel.count("res.stream().allMatch(key->resHas.get(key)>=resCost.get(key))"),2)
         self.assertIn('"поза спостереженням"',panel)
 
+    def test_dialogue_chat_shows_only_speaker(self):
+        chat = read("client/MillClientUtilities.java").split("public static void putVillagerSentenceInChat(", 1)[1]
+        self.assertIn('String s = v.func_70005_c_() + ": ";', chat)
+        self.assertNotIn("other.chattosomeone", chat)
+        self.assertIn("v.dialogueTargetFirstName != null && !v.dialogueChat", chat)
+
+    def test_upgrade_status_substitutes_level(self):
+        panel = read("common/village/buildingmanagers/PanelContentGenerator.java")
+        self.assertNotIn('LanguageUtilities.string("ui.upgrading")', panel)
+        for name in ("cip", "projectCIP", "goalCIP", "cipxx"):
+            self.assertIn('LanguageUtilities.string("ui.upgrading", "" + ' + name + '.getBuildingLocation().level)', panel)
+        lang = ROOT.parents[2] / "resources/todeploy/millenaire/languages/uk/strings.txt"
+        self.assertIn("ui.upgrading=Поліпшення до рівня <0>", lang.read_text(encoding="utf-8-sig"))
+
     def test_ukrainian_goal_labels(self):
         lang = ROOT.parents[2] / "resources/todeploy/millenaire/languages/uk/strings.txt"
         data = lang.read_text(encoding="utf-8-sig")
