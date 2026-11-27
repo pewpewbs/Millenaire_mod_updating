@@ -226,7 +226,7 @@ final class BuildingMapTooltip {
     private static List<ItemStack> residentActivities(VillagerType type){
         Goods activities=new Goods();
         for(Goal goal:type.goals){
-            if(!goal.travelBookShow||goal.leasure)continue;
+            if(!goal.travelBookShow||goal.leasure||goal instanceof GoalGenericCrafting crafting&&crafting.isOnlyStrawBedProduction())continue;
             ItemStack icon=goal.getIcon();
             if(icon!=null&&!icon.isEmpty()&&!strawBed(icon))addStack(activities,icon);
         }
@@ -355,6 +355,11 @@ final class BuildingMapTooltip {
                         addStack(gathered, new ItemStack(Items.SUGAR_CANE));
                     } else if (goal instanceof GoalIndianGatherBrick && hasTag(loc, building, plan, "brickkiln")) {
                         activity(actions,goal,source,null);
+                        ItemStack wet=InvItem.createInvItem(MillBlocks.BS_WET_BRICK).getItemStack();
+                        ItemStack dry=InvItem.createInvItem(MillBlocks.BS_MUD_BRICK).getItemStack();
+                        if(wet!=null&&dry!=null&&!wet.isEmpty()&&!dry.isEmpty())
+                            produced.recipe=new RecipeView(List.of(wet.copy()),List.of(dry.copy()));
+                        produced.source=label("Drying wet bricks in daylight","Висушування вологої цегли при денному освітленні","Сушка сырого кирпича при дневном свете");
                         addItem(produced, InvItem.createInvItem(org.millenaire.common.block.MillBlocks.BS_MUD_BRICK));
                     } else if (goal instanceof GoalMinerMineResource miner
                             && (miner.buildingTag == null ? home : hasTag(loc, building, plan, miner.buildingTag))) {
@@ -412,6 +417,7 @@ final class BuildingMapTooltip {
                         && !org.millenaire.common.village.ProductionCapability.hasCrop(plan,building,harvest.cropType))continue;
                 // Supply pickup is not an output or the purpose of a building.
                 if(generic instanceof GoalGenericTakeFromBuilding)continue;
+                if(generic instanceof GoalGenericCrafting crafting&&crafting.isOnlyStrawBedProduction())continue;
                 if(fruitTree&&generic instanceof GoalGenericPlantSapling)continue;
                 // A configured workplace can also have a non-producing role:
                 // planting, visiting, tending equipment or collecting supplies.
@@ -422,14 +428,14 @@ final class BuildingMapTooltip {
                 }
                 if (generic instanceof GoalGenericCrafting crafting) {
                     List<ItemStack> inputs=recipeStacks(crafting.input),outputs=recipeStacks(crafting.output);
-                    RecipeView recipe=inputs.isEmpty()||outputs.isEmpty()?null:new RecipeView(inputs,outputs);
+                    RecipeView recipe=outputs.isEmpty()||(!crafting.input.isEmpty()&&inputs.isEmpty())?null:new RecipeView(inputs,outputs);
                     activity(actions,goal,source,recipe);
                     produced.recipe=recipe;
                     crafting.output.forEach((item,count)->{
                         if(count==null||count<=0)return;
-                        // A free output needs only its item name; no duplicate activity or batch note.
-                        produced.source=!crafting.input.isEmpty()&&recipe==null
-                                ? label("Recipe not available","Рецепт не відображено","Рецепт не отображается") : null;
+                        produced.source=crafting.input.isEmpty()
+                                ? label("No material inputs in this goal","За цим завданням матеріали не витрачаються","По этому заданию материалы не расходуются")
+                                : recipe==null?label("Recipe not available","Рецепт не відображено","Рецепт не отображается"):null;
                         addItem(produced,item);
                     });
                 } else if (generic instanceof GoalGenericMining mining) {

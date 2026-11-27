@@ -10,6 +10,10 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 27.11.2026 — Production provenance and presentation polish
+
+- Straw-bed-only crafting omitted from map purpose, resident activity and travel-book production/consumption listings; actual crafting, housing, trade and resource accounting unchanged. Wet-to-dry brick tooltip reflects actual intermediate block. Free-output goals show that no inputs are consumed and show real output quantities; no fake recipes. Fort's intentional specialization (no sugar plantation or spice garden) documented; no automatic resource injection. Rice plan PNG inspection remains pending. Static guards updated; compile/playtest not run here.
+
 ### 27.11.2026 — Social pairs and vanilla-first acacia
 
 - Socialising residents display an arrived status; dialogue selects a shuffled pool of nearby available residents who have reached a meeting point. Assign partners only after a compatible authored two-person dialogue is found; reciprocal target validity and cleanup prevent abandoned dialogue. Existing v1/v2 content format unchanged (no three-person dialogue support). Work retains priority. Ukrainian, English, Russian status labels added.

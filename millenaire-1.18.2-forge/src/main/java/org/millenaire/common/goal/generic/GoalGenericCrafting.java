@@ -43,6 +43,12 @@ extends GoalGeneric {
         return null;
     }
 
+    /** Presentation helper only; the actual crafting goal remains available. */
+    public boolean isOnlyStrawBedProduction(){
+        return !this.output.isEmpty()&&this.output.keySet().stream().allMatch(item->
+                item.getItem()==org.millenaire.common.block.MillBlocks.BED_STRAW.asItem());
+    }
+
     @Override
     public ItemStack getIcon() {
         if (this.icon != null) {

@@ -624,7 +624,7 @@ extends GuiText {
             for(var stack:recipe.inputs()){
                 recipeIcons.add(new TooltipIcon(stack,(n%columns)*20,y+(n/columns)*20,null,List.of(),false));n++;
             }
-            if(!recipe.outputs().isEmpty()){arrows.add(new int[]{(n%columns)*20,y+(n/columns)*20+5});n++;}
+            if(!recipe.inputs().isEmpty()&&!recipe.outputs().isEmpty()){arrows.add(new int[]{(n%columns)*20,y+(n/columns)*20+5});n++;}
             for(var stack:recipe.outputs()){
                 recipeIcons.add(new TooltipIcon(stack,(n%columns)*20,y+(n/columns)*20,null,List.of(),false));n++;
             }
