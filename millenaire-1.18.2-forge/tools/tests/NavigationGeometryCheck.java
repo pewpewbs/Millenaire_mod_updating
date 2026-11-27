@@ -72,6 +72,7 @@ public class NavigationGeometryCheck {
         Field uf=sun.misc.Unsafe.class.getDeclaredField("theUnsafe"); uf.setAccessible(true);
         var unsafe=(sun.misc.Unsafe)uf.get(null);
         Mob mob=(Mob)unsafe.allocateInstance(org.millenaire.common.entity.MillVillager.EntityGenericMale.class);
+        mob.setDeltaMovement(Vec3.ZERO);
         field(mob, Entity.class, "dimensions", EntityDimensions.scalable(.6F,1.8F));
         field(mob, LivingEntity.class, "attributes", new AttributeMap(AttributeSupplier.builder()
                 .add(Attributes.FOLLOW_RANGE,16).add(Attributes.MOVEMENT_SPEED,.5).build()));
@@ -225,8 +226,49 @@ public class NavigationGeometryCheck {
         field(mob,Entity.class,"wasTouchingWater",false); position(mob,-392.5,62,-580.5);
         p=route(-393,62,-581); nav.route(p); nav.follow();
         check(!p.isDone(),"dry actor above water cannot advance using swim tolerance");
+        grid.blocks.clear();
+        grid.blocks.put(new BlockPos(0,64,0),Blocks.STONE.defaultBlockState());
+        mob.setDeltaMovement(0.15,-0.12,0); position(mob,1.67,64.6,.5);
+        p=route(0,65,0, 1,64,0, 2,64,0); nav.route(p); nav.follow();
+        check(p.getNextNodeIndex()==1 && nav.isSettlingOnDrop(),"falling over a landing never steers back to the ledge");
+        position(mob,1.78,64,.5); mob.setOnGround(true); nav.follow();
+        check(p.getNextNodeIndex()==2,"landed beyond centre continues towards next block");
+        mob.setOnGround(false); position(mob,1.65,64.6,1.1);
+        p=route(0,65,0, 1,64,0, 2,64,0); nav.route(p); nav.follow();
+        check(p.getNextNodeIndex()==0,"fall into neighbouring column cannot consume planned drop");
+        checkVillageTransit(grid, config);
         MiningGoalCheck.run(unsafe);
         System.out.println("PASS: "+checks+" real geometry / follower / JPS / mining assertions");
+    }
+
+    static void checkVillageTransit(Grid grid, AStarConfig config) {
+        grid.blocks.clear();
+        var start = new AStarNode(0,64,0); var goal = new AStarNode(12,64,0);
+        var house = new org.millenaire.common.pathing.VillageTransit.Plot(3,9,63,68,-3,3,true);
+        config.transit=org.millenaire.common.pathing.VillageTransit.between(List.of(house),start,goal);
+        var worker=new AStarWorker(); worker.setup(grid,start,goal,config);
+        var outside=worker.runSync();
+        check(outside!=null && outside.stream().noneMatch(n->config.transit.cost(grid,n.x,n.y,n.z)>0),
+                "classic worker takes the exterior corridor past a foreign house");
+        var chamber=new AStarNode(6,64,0);
+        check(org.millenaire.common.pathing.VillageTransit.between(List.of(house),start,chamber)
+                ==org.millenaire.common.pathing.VillageTransit.NONE,"destination building remains accessible");
+        check(org.millenaire.common.pathing.VillageTransit.between(List.of(house),chamber,goal)
+                ==org.millenaire.common.pathing.VillageTransit.NONE,"origin building permits normal departure");
+        Grid tunnel=new Grid(){
+            @Override public BlockState getBlockState(BlockPos p) {
+                return (p.getX()<0 || p.getX()>12 || p.getZ()!=0 || p.getY()<64 || p.getY()>65
+                        ? Blocks.STONE : Blocks.AIR).defaultBlockState();
+            }
+        };
+        worker=new AStarWorker(); worker.setup(tunnel,start,goal,config);
+        var only=worker.runSync();
+        check(only!=null && only.stream().anyMatch(n->n.equals(chamber)),"sole passage remains usable");
+        var yard=new org.millenaire.common.pathing.VillageTransit.Plot(3,9,63,68,-3,3,false);
+        var policy=org.millenaire.common.pathing.VillageTransit.between(List.of(yard),start,goal);
+        check(policy.cost(grid,6,64,0)==0,"open courtyard is free for transit");
+        grid.blocks.put(new BlockPos(6,64,0),Blocks.OAK_DOOR.defaultBlockState());
+        check(policy.cost(grid,6,64,0)>0,"actual doorway in a compound counts as indoor transit");
     }
     static BlockState setProperty(BlockState state, net.minecraft.world.level.block.state.properties.Property property,String value) {
         return (BlockState)property.getValue(value).map(v->state.setValue(property,(Comparable)v)).orElse(state);

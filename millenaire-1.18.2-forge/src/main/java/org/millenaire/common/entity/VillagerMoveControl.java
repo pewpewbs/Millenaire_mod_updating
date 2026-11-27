@@ -9,6 +9,15 @@ public final class VillagerMoveControl extends MoveControl {
     public VillagerMoveControl(Mob mob) { super(mob); }
 
     @Override public void tick() {
+        if (this.mob.getNavigation() instanceof PathNavigateSimple navigation && navigation.isSettlingOnDrop()) {
+            // The NPC is already over its landing. Let vanilla gravity finish
+            // the drop without rotating back towards the waypoint centre.
+            this.operation = Operation.WAIT;
+            this.mob.setSpeed(0);
+            this.mob.setXxa(0);
+            this.mob.setZza(0);
+            return;
+        }
         if (this.mob.getNavigation() instanceof PathNavigateSimple navigation
                 && navigation.isLadderMotionControlled()) {
             // A stale ground JUMPING operation otherwise survives until landing,

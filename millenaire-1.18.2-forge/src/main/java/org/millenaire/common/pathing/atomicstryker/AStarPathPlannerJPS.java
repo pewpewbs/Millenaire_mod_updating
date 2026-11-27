@@ -56,6 +56,8 @@ public class AStarPathPlannerJPS {
     // JPS never expands vertical ladder edges. Keep its candidate while a
     // bounded classic A* attempt checks for a shorter ladder alternative.
     private ArrayList<AStarNode> jpsCandidate;
+    private int jpsTransitCost;
+    private boolean transitPrepared;
     private boolean immediatePath;
     private boolean deferred;
     // A physically blocked villager may request the SAME cached route every
@@ -141,11 +143,20 @@ public class AStarPathPlannerJPS {
         }
         ArrayList<AStarNode> best = null;
         boolean bestReversed = false;
+        boolean bestCorridor = false;
         double bestCost = Double.POSITIVE_INFINITY;
         // Cache hits are validated on the main thread. Hard-limit that extra
         // work; a cache miss may be cheaper than a huge shape revalidation.
-        final long validationDeadline = System.nanoTime()
-                + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(2L);
+        final boolean nearby = !alternatives.isEmpty() && alternatives.get(0).corridor();
+        long tick = this.world.getGameTime();
+        long budget = nearby ? memory.corridorBudget(tick) : java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(2L);
+        if (budget == 0L) {
+            org.millenaire.common.pathing.NavigationMetrics.cacheMiss();
+            return null;
+        }
+        final long began = System.nanoTime();
+        final long validationDeadline = began + budget;
+        if (!alternatives.isEmpty()) prepareTransit();
         for (var alternative : alternatives) {
             var coordinates = alternative.goalToStart();
             if (coordinates.size() < 2 || coordinates.size() > 96) continue;
@@ -171,6 +182,9 @@ public class AStarPathPlannerJPS {
                         // diagnostics never repeat expensive collision queries.
                         if (!isCacheEdgeAdjacent(from, to)) {
                             rejection = "NON_ADJACENT_EDGE";
+                        } else if (this.config.transit.cost(this.world, to.x, to.y, to.z) != 0) {
+                            // A different trip can still use this route. Keep the shared entry.
+                            rejection = "INDOOR_TRANSIT";
                         } else if (!AStarStatic.isViable(this.world, to, 0, this.config)) {
                             rejection = "BLOCKED_NODE";
                         } else if (!AStarStatic.isTransitionViable(this.world, from, to, this.config)) {
@@ -194,6 +208,8 @@ public class AStarPathPlannerJPS {
                 }
             }
             if (!valid) {
+                // A local join can be blocked while the shared middle is still good.
+                if (alternative.corridor() || "INDOOR_TRANSIT".equals(rejection)) continue;
                 // A time-budget rejection does not mean the stored path is
                 // stale. Keep it for future requests with more free CPU.
                 if (!timedOut) {
@@ -215,16 +231,19 @@ public class AStarPathPlannerJPS {
                 best = path;
                 bestCost = cost;
                 bestReversed = alternative.reversed();
+                bestCorridor = alternative.corridor();
             }
         }
+        if (nearby) memory.chargeCorridor(tick, System.nanoTime() - began);
         if (best == null) {
             org.millenaire.common.pathing.NavigationMetrics.cacheMiss();
             return null;
         }
         org.millenaire.common.pathing.NavigationMetrics.cacheHit(bestReversed);
+        if (bestCorridor) org.millenaire.common.pathing.NavigationMetrics.corridorHit();
         if (MillConfigValues.LogPathing >= 2) {
             MillLog.major(null, "NAV-OPT-CACHE action=HIT reverse=" + bestReversed
-                    + " from=" + start + " to=" + end + " nodes=" + best.size()
+                    + " corridor=" + bestCorridor + " from=" + start + " to=" + end + " nodes=" + best.size()
                     + " cost=" + String.format(java.util.Locale.ROOT, "%.2f", bestCost));
         }
         return best;
@@ -267,6 +286,7 @@ public class AStarPathPlannerJPS {
         }
         return cost;
     }
+
 
     /**
      * Detect ladders near a plausible vertical route, not only around start
@@ -344,8 +364,18 @@ public class AStarPathPlannerJPS {
         if(this.world.getServer()!=null)this.world.getServer().execute(action);
     }
     private static AStarNode copy(AStarNode node) { return new AStarNode(node.x,node.y,node.z); }
+    private void prepareTransit() {
+        if (transitPrepared) return;
+        transitPrepared = true;
+        if (this.pathedEntity instanceof org.millenaire.common.entity.MillVillager resident
+                && resident.getTarget() == null && resident.goalKey != null && !resident.isRaider) {
+            this.config.transit = org.millenaire.common.pathing.VillageTransit.between(
+                    resident.getTownHall(), this.world.getGameTime(), this.lastStart, this.lastEnd);
+        }
+    }
     private static AStarConfig copy(AStarConfig source) {
         AStarConfig result=new AStarConfig(source.canUseDoors,source.canTakeDiagonals,source.allowDropping,source.canSwim,source.canClearLeaves);
+        result.transit=source.transit;
         result.tolerance=source.tolerance;result.toleranceHorizontal=source.toleranceHorizontal;result.toleranceVertical=source.toleranceVertical;return result;
     }
     public synchronized void getPath(AStarNode start,AStarNode end,AStarConfig settings) {
@@ -377,6 +407,7 @@ public class AStarPathPlannerJPS {
         this.lastStart = copy(start);
         this.lastEnd = copy(end);
         this.config = copy(settings);
+        this.transitPrepared = false;
         reportPeriodically();
         long tick = this.world == null ? 0L : this.world.getGameTime();
         if (this.world != null && this.recentCacheStart != null
@@ -432,6 +463,7 @@ public class AStarPathPlannerJPS {
                     + Math.floorMod(System.identityHashCode(this), 7);
             return;
         }
+        prepareTransit();
         submit(false);
         if (this.future != null && this.busy) {
             // Diagnostic only. Count ACTUAL submitted searches, not repeated
@@ -495,15 +527,17 @@ public class AStarPathPlannerJPS {
         this.busy=false;this.future=null;this.worker=null;
         if (this.isJPS && !source.classicAttempt) {
             if (result == null) { submit(true); return; }
-            if (nearbyLadderOnVerticalRoute()) {
-                // Compare the JPS solution to a ladder-capable classical route.
+            if (nearbyLadderOnVerticalRoute() || source.resultTransitCost > 0) {
+                // Keep the feasible route while comparing an outdoor or ladder alternative.
                 this.jpsCandidate = result;
+                this.jpsTransitCost = source.resultTransitCost;
                 submit(true);
                 return;
             }
         }
         if (source.classicAttempt && this.jpsCandidate != null) {
-            if (result == null || pathCost(this.jpsCandidate) <= pathCost(result)) {
+            if (result == null || pathCost(this.jpsCandidate) + this.jpsTransitCost
+                    <= pathCost(result) + source.resultTransitCost) {
                 result = this.jpsCandidate;
             }
         }

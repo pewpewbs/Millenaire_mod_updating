@@ -31,6 +31,7 @@ implements Runnable {
     private long timeLimit;
     long requestGeneration;
     boolean classicAttempt;
+    int resultTransitCost;
     private final AStarOpenSet queue;
     private final Map<AStarOpenSet.Position, AStarNode> closedIndex = new HashMap<>();
     private volatile boolean isBusy = false;
@@ -73,7 +74,8 @@ implements Runnable {
             boolean headClear = AStarStatic.isPassableBlock(this.world, x, nextY + 1, z, this.config);
             if (!org.millenaire.common.pathing.LadderTransitionRules.canTraverse(
                     true, true, feetClear, headClear)) continue;
-            AStarNode candidate = new AStarNode(x, nextY, z, node.getG() + 2, node, this.targetNode);
+            AStarNode candidate = new AStarNode(x, nextY, z, node.getG() + 2
+                    + this.config.transit.cost(this.world, x, nextY, z), node, this.targetNode);
             AStarOpenSet.Position key = AStarOpenSet.Position.of(candidate);
             AStarNode closed = this.closedIndex.get(key);
             if (closed != null) {
@@ -98,7 +100,9 @@ implements Runnable {
         int z = parent.z;
         int[][] c = droppingAllowed ? AStarStatic.candidates_allowdrops : AStarStatic.candidates;
         for (int i = 0; i < c.length; ++i) {
-            AStarNode check = new AStarNode(x + c[i][0], y + c[i][1], z + c[i][2], parent.getG() + c[i][3], parent, this.targetNode);
+            int nx = x + c[i][0], ny = y + c[i][1], nz = z + c[i][2];
+            AStarNode check = new AStarNode(nx, ny, nz, parent.getG() + c[i][3]
+                    + this.config.transit.cost(this.world, nx, ny, nz), parent, this.targetNode);
             try {
                 // Clearance must be checked BEFORE improving either an open
                 // or a closed node. A blocked transition is not a cheaper path.
@@ -266,13 +270,14 @@ implements Runnable {
         return chosen;
     }
 
-    private static double routeCost(ArrayList<AStarNode> nodes) {
+    private double routeCost(ArrayList<AStarNode> nodes) {
         if (nodes == null || nodes.size() < 2) return Double.POSITIVE_INFINITY;
         double result = 0.0D;
         for (int i = 1; i < nodes.size(); i++) {
             AStarNode a = nodes.get(i - 1), b = nodes.get(i);
             int x = a.x - b.x, y = a.y - b.y, z = a.z - b.z;
             result += Math.sqrt(x * x + y * y + z * z);
+            result += this.config.transit.cost(this.world, a.x, a.y, a.z);
             if (x == 0 && z == 0 && y != 0) result += 0.8D;
         }
         return result;
@@ -291,6 +296,10 @@ implements Runnable {
                 result = this.getPath(this.startNode, this.targetNode, this.config.allowDropping);
                 if (!this.shouldInterrupt()) {
                     result = this.tryReverseClassic(result);
+                }
+                if (result != null && this.config.transit != org.millenaire.common.pathing.VillageTransit.NONE) {
+                    for (AStarNode node : result)
+                        this.resultTransitCost += this.config.transit.cost(this.world, node.x, node.y, node.z);
                 }
             }
             catch (ThreadSafeUtilities.ChunkAccessException e) {

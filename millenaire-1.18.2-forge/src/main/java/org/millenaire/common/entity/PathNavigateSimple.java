@@ -50,6 +50,8 @@ public class PathNavigateSimple extends GroundPathNavigation {
         finally { org.millenaire.common.pathing.NavigationMetrics.record(0, System.nanoTime()-began); }
     }
     private boolean ladderMotionControlled;
+    private boolean settlingOnDrop;
+    public boolean isSettlingOnDrop() { return this.settlingOnDrop; }
     private int nextOpenGroundCheck;
     private Path shortcutPath;
     private int shortcutStart;
@@ -123,6 +125,20 @@ public class PathNavigateSimple extends GroundPathNavigation {
                 next = this.path.getNextNode();
             }
         }
+        int index = this.path.getNextNodeIndex();
+        Node following = index + 1 < this.path.getNodeCount() ? this.path.getNode(index + 1) : null;
+        if (following != null && following.y == next.y - 1
+                && !this.mob.isOnGround() && !this.mob.isInWater() && this.mob.getDeltaMovement().y <= 0
+                && Math.abs(next.x - following.x) + Math.abs(next.z - following.z) == 1
+                && this.mob.blockPosition().getX() == following.x && this.mob.blockPosition().getZ() == following.z
+                && this.mob.getY() < next.y && this.mob.getY() >= following.y
+                && !this.isLadderNode(next) && !this.isLadderNode(following)) {
+            // Already over the planned landing. Steering back to an upper
+            // waypoint that the falling body has passed turns it into the ledge.
+            this.path.advance();
+            next = following;
+            index++;
+        }
         if (!this.isLadderNode(next)) {
             var target = this.path.getNextEntityPos(this.mob);
             // Do not use vanilla's dot-product corner shortcut: it can skip
@@ -134,6 +150,19 @@ public class PathNavigateSimple extends GroundPathNavigation {
                     : Math.abs(this.mob.getX() - target.x) <= this.maxDistanceToWaypoint
                     && Math.abs(this.mob.getZ() - target.z) <= this.maxDistanceToWaypoint
                     && Math.abs(this.mob.getY() - this.getGroundY(target)) < 0.25D;
+            if (!reached && index > 0 && !this.mob.isInWater()) {
+                Node previous = this.path.getNode(index - 1);
+                int dx = next.x - previous.x, dz = next.z - previous.z;
+                if (previous.y == next.y + 1 && Math.abs(dx) + Math.abs(dz) == 1 && !this.isLadderNode(previous)) {
+                    double x = this.mob.getX() - target.x, z = this.mob.getZ() - target.z;
+                    double along = x * dx + z * dz, across = x * dz - z * dx;
+                    if (along >= 0 && along <= 0.45 && Math.abs(across) <= 0.20) {
+                        double above = this.mob.getY() - this.getGroundY(target);
+                        if (this.mob.isOnGround()) reached = Math.abs(above) < 0.25D;
+                        else this.settlingOnDrop = above >= 0 && above <= 1.0D && this.mob.getDeltaMovement().y < 0;
+                    }
+                }
+            }
             if (reached) {
                 this.path.advance();
             }
@@ -151,6 +180,7 @@ public class PathNavigateSimple extends GroundPathNavigation {
      */
     @Override public void tick() {
         this.ladderMotionControlled = false;
+        this.settlingOnDrop = false;
         super.tick();
         if (this.mob.level.isClientSide || this.path == null || this.path.isDone()) return;
         net.minecraft.world.level.pathfinder.Node next = this.path.getNextNode();

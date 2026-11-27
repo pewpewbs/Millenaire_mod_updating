@@ -66,6 +66,45 @@ public final class RouteMemorySmoke {
                 "bounded LRU eviction");
         test(new RouteMemory(2, 4, 10).size() == 0,
                 "world-specific cache instances never share entries");
+        var shared = new RouteMemory(1, 32, 10);
+        var street = new java.util.ArrayList<RouteMemory.Cell>();
+        for (int x = 24; x >= 8; x--) street.add(cell(x, 64, 0));
+        shared.remember(100, 7, street);
+        int hits = 0, exact = 0;
+        for (int from = -2; from <= 2; from++) {
+            for (int to = -2; to <= 2; to++) {
+                var candidate = shared.lookup(101,7,cell(8,64,from),cell(24,64,to));
+                if (candidate != null) {
+                    hits++;
+                    if (!candidate.corridor()) exact++;
+                }
+            }
+        }
+        test(hits==25 && exact==1, "24 nearby pairs plus the exact pair find the same street");
+        System.out.println("Street fixture: "+exact+" exact, "+(hits-exact)+" nearby candidates in 25 trips");
+        var origin = cell(7, 64, 1);
+        var goal = cell(23, 64, 2);
+        var joined = shared.lookup(101, 7, origin, goal);
+        test(joined != null && joined.corridor() && !joined.reversed(), "offset grid across zone boundary");
+        var walk = joined.goalToStart();
+        test(walk.get(0).equals(goal) && walk.get(walk.size()-1).equals(origin)
+                && walk.contains(cell(16,64,0)), "both new endpoints connected to original middle");
+        for (int i=1; i<walk.size(); i++) {
+            var p = walk.get(i-1); var q = walk.get(i);
+            test(Math.abs(p.x()-q.x()) + Math.abs(p.z()-q.z()) == 1 && p.y()==q.y(), "unit edges");
+        }
+        test(shared.lookup(101,7,goal,origin).reversed(), "opposite nearby trip");
+        test(shared.lookup(101,7,cell(7,65,1),goal)==null, "different floors are independent");
+        test(shared.lookup(101,8,origin,goal)==null, "corridor respects movement settings");
+        test(shared.lookup(101,7,cell(7,64,5),goal)==null, "distant room cannot borrow approach");
+        test(shared.lookup(111,7,origin,goal)==null, "expired corridor cannot be replayed");
+        shared.remember(112,7,street); shared.remember(113,7,List.of(b,rung,a));
+        test(shared.lookup(113,7,origin,goal)==null, "eviction removes secondary index");
+        test(shared.corridorBudget(113)==1_000_000L,"new world tick provides a corridor budget");
+        shared.chargeCorridor(113,700_000L);
+        test(shared.corridorBudget(113)==300_000L,"all residents draw on one budget");
+        shared.chargeCorridor(113,500_000L);
+        test(shared.corridorBudget(113)==0 && shared.corridorBudget(114)==1_000_000L,"exhaustion and rollover");
         System.out.println("PASS: forward/reverse lookup, independent directions, TTL, config, LRU, revision and isolation");
     }
 }
