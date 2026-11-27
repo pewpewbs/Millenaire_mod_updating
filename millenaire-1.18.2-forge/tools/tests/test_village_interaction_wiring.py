@@ -180,6 +180,17 @@ class VillageInteractionWiring(unittest.TestCase):
         send = building.split("public void sendMapInfo(Player player)",1)[1].split("public void sendShopPacket",1)[0]
         self.assertIn("this.getTownHall().sendBuildingPacket(player,false)",send)
 
+    def test_map_construction_status_distinguishes_initial_and_upgrade(self):
+        ui=read("client/gui/text/BuildingMapTooltip.java")
+        self.assertIn("if(!construction&&loc.level>=0",ui)
+        status=ui.split("if(construction){",1)[1].split("else if(loc.level<0)",1)[0]
+        self.assertIn('if(loc.level>0)add(lines,label("Upgrade: ","Поліпшення: ","Улучшение: ")+(loc.level-1)+" → "+loc.level,GOLD);',status)
+        self.assertIn('else add(lines,label("Under construction","Будується","Строится"),GOLD);',status)
+        self.assertNotIn('label("Level "',status)
+        building=read("common/village/Building.java")
+        self.assertIn("plan.level != project.location.level + 1",building)
+        self.assertIn("int level = newProject.location.level + 1;",building)
+
     def test_map_housing_trade_patrol_and_compact_header(self):
         ui=read("client/gui/text/BuildingMapTooltip.java")
         self.assertIn("MillItems.PURSE",ui)

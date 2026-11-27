@@ -289,7 +289,11 @@ final class BuildingMapTooltip {
         }
         if(!name.isBlank())lines.add(new Line(name.strip(),NORMAL));
         if(levelLabel!=null)lines.add(new Line(levelLabel,nameColor,List.of(),List.of(),levelDetail,List.of(levelMaterials),true));
-        if(construction)add(lines,label("Under construction","Будується","Строится")+(loc.level>=0?" · "+label("Level ","Рівень ","Уровень ")+loc.level:""),GOLD);
+        if(construction){
+            // ConstructionIP carries the target level; standard upgrades advance exactly one level.
+            if(loc.level>0)add(lines,label("Upgrade: ","Поліпшення: ","Улучшение: ")+(loc.level-1)+" → "+loc.level,GOLD);
+            else add(lines,label("Under construction","Будується","Строится"),GOLD);
+        }
         else if(loc.level<0)add(lines,label("Not built yet","Ще не збудовано","Ещё не построено"),0xFF7777);
         else if(loc.isCustomBuilding)add(lines,label("Custom building (no standard upgrades)","Власна будівля (без стандартних покращень)","Пользовательская постройка (без стандартных улучшений)"),MUTED);
 
