@@ -10,6 +10,10 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 27.11.2026 — Map: compact production and upgrade presentation
+
+- Localized separate level line; real next-level material stacks and counts in hover, removed generic construction wording. Construction hover takes precedence over planned locations and displays amber status. Brick gathering uses pickaxe; mixed extraction uses one pickaxe, soft-only remains shovel. Straw-bed production hidden from map output only. Food and road outputs rotate every three seconds; chosen item retains its own recipe. No recipe or stock changes. Source checks added; Forge/game not run here.
+
 ### 27.11.2026 — Плавніший рух і проходження водних точок маршруту
 
 - На рівній відкритій ділянці житель може націлитися на дальшу точку свого маршруту. Перевірка охоплює підлогу та весь простір для тіла. Біля дверей, сходів, огорож, посівів і країв платформи залишаються початкові точки. Зіткнення під час скороченого проходу повертає жителя до пропущених точок.
