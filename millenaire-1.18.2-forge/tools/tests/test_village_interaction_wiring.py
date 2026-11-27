@@ -180,6 +180,13 @@ class VillageInteractionWiring(unittest.TestCase):
         send = building.split("public void sendMapInfo(Player player)",1)[1].split("public void sendShopPacket",1)[0]
         self.assertIn("this.getTownHall().sendBuildingPacket(player,false)",send)
 
+    def test_food_icons_rotate_faster_than_road_icons(self):
+        ui=read("client/gui/text/BuildingMapTooltip.java")
+        self.assertIn('cycleGroup(goods,BuildingMapTooltip::road,label("Road materials (rotating)","Матеріали доріг (змінюються)","Материалы дорог (сменяются)"),3000L);',ui)
+        self.assertIn('cycleGroup(goods,s->s.getItem().isEdible(),label("Food (rotating)","Їжа (змінюється)","Еда (сменяется)"),1500L);',ui)
+        self.assertIn("System.currentTimeMillis()/intervalMillis",ui)
+        self.assertIn("goods.recipes.getOrDefault(s,List.of())",ui)
+
     def test_map_construction_status_distinguishes_initial_and_upgrade(self):
         ui=read("client/gui/text/BuildingMapTooltip.java")
         self.assertIn("if(!construction&&loc.level>=0",ui)

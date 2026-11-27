@@ -587,14 +587,14 @@ final class BuildingMapTooltip {
     }
 
     private static void groupProduction(Goods goods){
-        cycleGroup(goods,BuildingMapTooltip::road,label("Road materials (rotating)","Матеріали доріг (змінюються)","Материалы дорог (сменяются)"));
-        cycleGroup(goods,s->s.getItem().isEdible(),label("Food (rotating)","Їжа (змінюється)","Еда (сменяется)"));
+        cycleGroup(goods,BuildingMapTooltip::road,label("Road materials (rotating)","Матеріали доріг (змінюються)","Материалы дорог (сменяются)"),3000L);
+        cycleGroup(goods,s->s.getItem().isEdible(),label("Food (rotating)","Їжа (змінюється)","Еда (сменяется)"),1500L);
     }
 
-    private static void cycleGroup(Goods goods,java.util.function.Predicate<ItemStack> predicate,String category){
+    private static void cycleGroup(Goods goods,java.util.function.Predicate<ItemStack> predicate,String category,long intervalMillis){
         List<ItemStack> group=goods.icons.stream().filter(predicate).sorted(java.util.Comparator.comparing(s->s.getHoverName().getString())).toList();
         if(group.size()<2)return;
-        ItemStack chosen=group.get((int)Math.floorMod(System.currentTimeMillis()/3000L,group.size()));
+        ItemStack chosen=group.get((int)Math.floorMod(System.currentTimeMillis()/intervalMillis,group.size()));
         goods.icons.removeIf(s->predicate.test(s)&&s!=chosen);
         goods.details.computeIfAbsent(chosen,k->new LinkedHashSet<>()).add(category);
     }
