@@ -588,8 +588,8 @@ final class BuildingMapTooltip {
     }
 
     private static void groupProduction(Goods goods){
-        cycleGroup(goods,BuildingMapTooltip::road,label("Road materials (rotating)","Матеріали доріг (змінюються)","Материалы дорог (сменяются)"));
-        cycleGroup(goods,s->s.getItem().isEdible(),label("Food (rotating)","Їжа (змінюється)","Еда (сменяется)"));
+        cycleGroup(goods,BuildingMapTooltip::road,label("Road materials","Матеріали доріг","Материалы дорог"));
+        cycleGroup(goods,s->s.getItem().isEdible(),label("Food","Їжа","Еда"));
     }
 
     private static void cycleGroup(Goods goods,java.util.function.Predicate<ItemStack> predicate,String category){

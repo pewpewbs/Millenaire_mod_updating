@@ -183,14 +183,20 @@ class VillageInteractionWiring(unittest.TestCase):
     def test_all_rotating_map_icons_share_one_second_interval(self):
         ui=read("client/gui/text/BuildingMapTooltip.java")
         self.assertIn("private static final long ICON_ROTATION_INTERVAL_MILLIS = 1000L;",ui)
-        self.assertIn('cycleGroup(goods,BuildingMapTooltip::road,label("Road materials (rotating)","Матеріали доріг (змінюються)","Материалы дорог (сменяются)"));',ui)
-        self.assertIn('cycleGroup(goods,s->s.getItem().isEdible(),label("Food (rotating)","Їжа (змінюється)","Еда (сменяется)"));',ui)
+        self.assertIn('cycleGroup(goods,BuildingMapTooltip::road,label("Road materials","Матеріали доріг","Материалы дорог"));',ui)
+        self.assertIn('cycleGroup(goods,s->s.getItem().isEdible(),label("Food","Їжа","Еда"));',ui)
         self.assertIn("String category){",ui.split("private static void cycleGroup(",1)[1])
         self.assertIn("System.currentTimeMillis()/ICON_ROTATION_INTERVAL_MILLIS",ui)
         self.assertIn("groupProduction(produced);",ui)
         self.assertIn("groupProduction(planned);",ui)
         self.assertIn("if(group.size()<2)return;",ui)
         self.assertIn("goods.recipes.getOrDefault(s,List.of())",ui)
+
+    def test_rotating_map_icon_categories_have_no_rotation_suffix(self):
+        ui=read("client/gui/text/BuildingMapTooltip.java")
+        grouping=ui.split("private static void groupProduction(",1)[1].split("private static void cycleGroup(",1)[0]
+        for suffix in ("(rotating)","(змінюється)","(змінюються)","(сменяется)","(сменяются)"):
+            self.assertNotIn(suffix,grouping)
 
     def test_map_road_icons_show_only_localized_item_name(self):
         ui=read("client/gui/text/BuildingMapTooltip.java")
