@@ -12,6 +12,7 @@ import net.minecraft.world.level.material.*;
 import net.minecraft.world.level.pathfinder.*;
 import net.minecraft.world.phys.*;
 import org.millenaire.common.entity.PathNavigateSimple;
+import org.millenaire.common.pathing.DoorCrossing;
 import org.millenaire.common.pathing.atomicstryker.*;
 
 /** Real 1.18.2 block shapes and PathNavigateSimple, no running game/world mutation. */
@@ -167,10 +168,13 @@ public class NavigationGeometryCheck {
             check(AStarStatic.isTransitionViable(grid,passage[i-1],passage[i],config),"hotspot entrance edge "+i);
             check(AStarStatic.isTransitionViable(grid,passage[i],passage[i-1],config),"hotspot exit edge "+i);
         }
-        Method selection=org.millenaire.common.pathing.VillageDoorAccess.class.getDeclaredMethod(
-                "routeDoorState",LivingEntity.class,BlockPos.class,BlockState.class);selection.setAccessible(true);
+        var access=org.millenaire.common.pathing.VillageDoorAccess.class;
+        Method direction=access.getDeclaredMethod("routeDoorDirection",LivingEntity.class,BlockPos.class);
+        Method selection=access.getDeclaredMethod("routeDoorState",Direction.class,BlockState.class);
+        direction.setAccessible(true); selection.setAccessible(true);
         position(mob,22.5,67,571.5); p=route(22,67,571,22,67,570,22,67,569);nav.route(p);
-        check(Boolean.FALSE.equals(selection.invoke(null,mob,new BlockPos(22,67,570),door)),"server opener matches planned sideways door state");
+        check(Boolean.FALSE.equals(selection.invoke(null,direction.invoke(null,mob,new BlockPos(22,67,570)),door)),
+                "server opener matches planned sideways door state");
         // The old open panel blocks the whole .6-wide approach despite a clear node centre.
         AABB crossing=new AABB(22.2,67,570.6,22.8,68.8,571.2);
         check(door.getCollisionShape(grid,new BlockPos(22,67,570)).toAabbs().stream()
@@ -237,6 +241,7 @@ public class NavigationGeometryCheck {
         p=route(0,65,0, 1,64,0, 2,64,0); nav.route(p); nav.follow();
         check(p.getNextNodeIndex()==0,"fall into neighbouring column cannot consume planned drop");
         checkVillageTransit(grid, config);
+        checkDoorObservations();
         MiningGoalCheck.run(unsafe);
         System.out.println("PASS: "+checks+" real geometry / follower / JPS / mining assertions");
     }
@@ -269,6 +274,59 @@ public class NavigationGeometryCheck {
         check(policy.cost(grid,6,64,0)==0,"open courtyard is free for transit");
         grid.blocks.put(new BlockPos(6,64,0),Blocks.OAK_DOOR.defaultBlockState());
         check(policy.cost(grid,6,64,0)>0,"actual doorway in a compound counts as indoor transit");
+    }
+
+    static void checkDoorObservations() {
+        BlockPos door = new BlockPos(-23,67,40);
+        double cx=door.getX()+0.5, cz=door.getZ()+0.5;
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            for (var hinge : net.minecraft.world.level.block.state.properties.DoorHingeSide.values()) {
+                var state=Blocks.OAK_DOOR.defaultBlockState().setValue(DoorBlock.FACING,facing)
+                        .setValue(DoorBlock.HINGE,hinge);
+                for (Direction travel : new Direction[]{facing,facing.getOpposite()}) {
+                    int dx=travel.getStepX(), dz=travel.getStepZ();
+                    var trace=DoorCrossing.approach(door,travel,20,cx-dx,67,cz-dz,.6,"deliver",3,7,1);
+                    check(trace!=null && org.millenaire.common.pathing.DoorPassageGeometry.openForDirection(state,dx,dz),
+                            "intent uses actual passage axis "+facing+"/"+hinge+"/"+travel);
+                    var open=org.millenaire.common.pathing.DoorPassageGeometry.passageState(state,dx,dz);
+                    var body=new AABB(cx-.3,67,cz-.3,cx+.3,68.8,cz+.3)
+                            .expandTowards(dx,0,dz).expandTowards(-2*dx,0,-2*dz);
+                    check(open.getCollisionShape(new Grid(),door).toAabbs().stream()
+                            .noneMatch(part->part.move(door).intersects(body)), "open leaf clears the centred body sweep");
+                    var powered=state.setValue(DoorBlock.POWERED,true);
+                    check(org.millenaire.common.pathing.DoorPassageGeometry.passageState(powered,dx,dz)==powered,
+                            "a powered door keeps its actual panel");
+                    check(trace.sample(21,cx-dx,67,cz-dz,"deliver",3)==null && trace.stationaryTicks==1,
+                            "waiting at the door is separate from crossing");
+                    check(trace.sample(22,cx-.4*dx,67,cz-.4*dz,"deliver",3)==null
+                            && trace.sample(23,cx+.35*dx,67,cz+.35*dz,"deliver",3)==null
+                            && trace.sample(24,cx+.9*dx,67,cz+.9*dz,"deliver",3)==DoorCrossing.Result.CROSSED,
+                            "whole body clears observed leaf "+travel);
+                }
+            }
+        }
+        var east=Direction.EAST;
+        var parallel=DoorCrossing.approach(door,east,0,cx-.6,67,cz+1,.6,"deliver",3,7,1);
+        check(parallel.sample(1,cx+.1,67,cz+1,"deliver",3)==DoorCrossing.Result.DIVERTED,
+                "crossing neighbouring leaf is not credited to this leaf");
+        var jump=DoorCrossing.approach(door,east,0,cx-1,67,cz,.6,"deliver",3,7,1);
+        check(jump.sample(1,cx+1,67,cz,"deliver",3)==DoorCrossing.Result.DISCONTINUITY,
+                "teleport is not a physical crossing");
+        check(jump.sample(3,cx-.9,67,cz,"deliver",3)==DoorCrossing.Result.DISCONTINUITY,
+                "unobserved interval is not a physical crossing");
+        check(jump.sample(1,cx-1,67,cz,"sleep",4)==DoorCrossing.Result.GOAL_CHANGED,
+                "a cancelled job is separate from a stuck resident");
+        var wait=DoorCrossing.approach(door,east,0,cx-1,67,cz,.6,"deliver",3,7,1);
+        DoorCrossing.Result last=null;
+        for(int tick=1; tick<=100; tick++) last=wait.sample(tick,cx-1,67,cz,"deliver",3);
+        check(last==DoorCrossing.Result.TIMEOUT && wait.stationaryTicks==100,"bounded wait counts real stationary ticks");
+        var left=DoorCrossing.approach(door,east,0,cx-1,67,cz,.6,"deliver",10,7,1);
+        var right=DoorCrossing.approach(door,Direction.WEST,0,cx+1,67,cz,.6,"mine",11,8,2);
+        check(left.sample(1,cx-.6,67,cz,"deliver",10)==null && right.sample(1,cx+1,67,cz,"mine",11)==null,
+                "opposite residents retain separate observations");
+        check(left.sample(2,cx+.1,67,cz,"deliver",10)==null
+                && left.sample(3,cx+.85,67,cz,"deliver",10)==DoorCrossing.Result.CROSSED
+                && right.stationaryTicks==1, "one resident crossing cannot complete another resident's passage");
     }
     static BlockState setProperty(BlockState state, net.minecraft.world.level.block.state.properties.Property property,String value) {
         return (BlockState)property.getValue(value).map(v->state.setValue(property,(Comparable)v)).orElse(state);

@@ -231,6 +231,42 @@ IAStarPathedEntity {
     public String dialogueTargetFirstName = null;
     public String dialogueTargetLastName = null;
     private Point doorToClose = null;
+    private org.millenaire.common.pathing.DoorCrossing observedDoor;
+
+    public void observeDoorApproach(BlockPos door, net.minecraft.core.Direction direction,
+            BlockState state, boolean manual, boolean powered) {
+        if (this.observedDoor == null) {
+            var route = this.getNavigation().getPath();
+            if (route == null || route.isDone()) return;
+            this.observedDoor = org.millenaire.common.pathing.DoorCrossing.approach(door, direction,
+                    this.level.getGameTime(), getX(), getY(), getZ(), getBbWidth(), this.goalKey,
+                    this.goalStarted, System.identityHashCode(route), route.getNextNodeIndex());
+            if (this.observedDoor != null) this.observedDoor.entryState = state.toString();
+        }
+        if (this.observedDoor != null && this.observedDoor.door.equals(door)) {
+            this.observedDoor.manual |= manual;
+            this.observedDoor.powered |= powered;
+        }
+    }
+
+    private void finishDoorObservation(org.millenaire.common.pathing.DoorCrossing.Result result) {
+        var observation = this.observedDoor;
+        this.observedDoor = null;
+        if (MillConfigValues.LogPathing < 2) return;
+        MillLog.major(this, "DOOR-CROSS result=" + result + " actorId=" + getId()
+                + " residentId=" + getVillagerId() + " goal=" + observation.goal
+                + " job=" + observation.job + " route=" + observation.routeId + " node=" + observation.nodeIndex
+                + " door=" + observation.door + " direction=" + observation.direction
+                + " startTick=" + observation.started + " ticks=" + (level.getGameTime()-observation.started)
+                + " stationaryTicks=" + observation.stationaryTicks
+                + " playerOverride=" + observation.manual + " powered=" + observation.powered
+                + " initialState=" + observation.entryState);
+    }
+
+    private void noteDoorTeleport() {
+        if (this.observedDoor != null)
+            this.finishDoorObservation(org.millenaire.common.pathing.DoorCrossing.Result.DISCONTINUITY);
+    }
     public int visitorNbNights = 0;
     public int foreignMerchantStallId = -1;
     public boolean lastAttackByPlayer = false;
@@ -2450,6 +2486,7 @@ IAStarPathedEntity {
             if (MillConfigValues.LogPathing >= 1 && this.extraLog) {
                 MillLog.major(this, "Jumping from " + this.getPos() + " to " + jumpTo);
             }
+            this.noteDoorTeleport();
             this.setPos((double)jumpTo.getiX() + 0.5, (double)jumpTo.getiY(), (double)jumpTo.getiZ() + 0.5);
             this.longDistanceStuck = 0;
             this.localStuck = 0;
@@ -2601,6 +2638,14 @@ IAStarPathedEntity {
             if (this.isRemoved()) {
                 super.tick();
                 return;
+            }
+            if (this.observedDoor != null) {
+                if (MillConfigValues.LogPathing < 2) this.observedDoor = null;
+                else {
+                    var result = this.observedDoor.sample(this.level.getGameTime(), getX(), getY(), getZ(),
+                            this.goalKey, this.goalStarted);
+                    if (result != null) this.finishDoorObservation(result);
+                }
             }
             this.recoverPhysicalTrap();
             org.millenaire.common.config.TestTuning.applyMovement(this);
@@ -2851,6 +2896,7 @@ IAStarPathedEntity {
         this.pathFailureRecovery.reset();
         this.movementWatchdog.reset();
         this.actionStart = 0L;
+        this.noteDoorTeleport();
         this.setPos(safe.getX() + 0.5D, safe.getY(), safe.getZ() + 0.5D);
         this.setDeltaMovement(Vec3.ZERO);
         this.fallDistance = 0.0F;
@@ -3428,6 +3474,8 @@ IAStarPathedEntity {
 
     @Override
     public void remove(Entity.RemovalReason reason) {
+        if (this.observedDoor != null)
+            this.finishDoorObservation(org.millenaire.common.pathing.DoorCrossing.Result.REMOVED);
         if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
         this.pathCalculatedSinceLastTick = null;
         if (!isRemoved() && reason.shouldDestroy() && this.getHealth() <= 0.0F) {
@@ -3769,6 +3817,7 @@ IAStarPathedEntity {
             this.setPos(d3, d4, d5);
             return false;
         }
+        this.noteDoorTeleport();
         return true;
     }
 

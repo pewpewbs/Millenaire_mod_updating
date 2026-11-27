@@ -65,6 +65,7 @@ public final class VillageDoorAccess {
             LivingEntity actor, String source) {
         Long previous = OPENED.computeIfAbsent(level, ignored -> new HashMap<>())
             .put(pos.immutable(), level.getGameTime());
+        if (MillConfigValues.LogPathing < 2) return;
         if (previous == null) {
             // OPENED only happens on a real block transition or adoption.
             // Identify which specific NPC and route type causes re-opening
@@ -151,22 +152,31 @@ public final class VillageDoorAccess {
         openForResident(world, raw, null, "UNKNOWN");
     }
 
-    /** Actor and reason are recorded ONLY on successful first opening. */
+    /** Apply the resident's passage request and, when enabled, observe its route. */
     public static void openForResident(Level world, BlockPos raw,
             LivingEntity actor, String source) {
         if (!(world instanceof ServerLevel level) || !level.hasChunkAt(raw)) return;
         BlockState sample = level.getBlockState(raw);
         BlockPos pos = canonical(level, raw, sample);
         BlockState state = level.getBlockState(pos);
-        if (isPlayerControlled(level, pos)) {
+        boolean wooden = BlockItemUtilities.isWoodenDoor(state.getBlock());
+        boolean gate = state.getBlock() instanceof FenceGateBlock;
+        if (!wooden && !gate) return;
+        boolean manual = isPlayerControlled(level, pos);
+        boolean powered = state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.POWERED);
+        boolean observing = MillConfigValues.LogPathing >= 2 && actor instanceof org.millenaire.common.entity.MillVillager;
+        var direction = (observing || (wooden && !manual && !powered)) ? routeDoorDirection(actor, pos) : null;
+        if (observing && direction != null)
+            ((org.millenaire.common.entity.MillVillager)actor).observeDoorApproach(pos, direction, state, manual, powered);
+        if (manual) {
             if (level.getGameTime() % 100L == 0L) trace(level, pos, "PLAYER-OVERRIDE-SKIP");
             return;
         }
+        if (powered) return;
         Map<BlockPos, Long> registered = OPENED.get(level);
 
-        if (BlockItemUtilities.isWoodenDoor(state.getBlock())) {
-            if (state.getValue(DoorBlock.POWERED)) return;
-            Boolean passageOpen = routeDoorState(actor, pos, state);
+        if (wooden) {
+            Boolean passageOpen = routeDoorState(direction, state);
             if (Boolean.FALSE.equals(passageOpen)) {
                 // Legacy plans can have a door rotated across the entrance.
                 // In that layout OPEN blocks the route and CLOSED clears it.
@@ -188,8 +198,7 @@ public final class VillageDoorAccess {
             } else if (registered != null && registered.containsKey(pos)) {
                 remember(level, pos, actor, source);
             }
-        } else if (state.getBlock() instanceof FenceGateBlock) {
-            if (state.getValue(FenceGateBlock.POWERED)) return;
+        } else if (gate) {
             if (!state.getValue(FenceGateBlock.OPEN)) {
                 level.setBlock(pos, state.setValue(FenceGateBlock.OPEN, true), 3);
                 if (level.getBlockState(pos).getValue(FenceGateBlock.OPEN)) remember(level, pos, actor, source);
@@ -199,7 +208,12 @@ public final class VillageDoorAccess {
         }
     }
 
-    private static Boolean routeDoorState(LivingEntity actor, BlockPos door, BlockState state) {
+    private static Boolean routeDoorState(net.minecraft.core.Direction direction, BlockState state) {
+        return direction == null ? null : DoorPassageGeometry.openForDirection(
+                state, direction.getStepX(), direction.getStepZ());
+    }
+
+    private static net.minecraft.core.Direction routeDoorDirection(LivingEntity actor, BlockPos door) {
         if (!(actor instanceof net.minecraft.world.entity.Mob mob)) return null;
         var route = mob.getNavigation().getPath();
         if (route == null || route.isDone()) return null;
@@ -216,7 +230,9 @@ public final class VillageDoorAccess {
             double dx = after.x + 0.5D - (before == null ? actor.getX() : before.x + 0.5D);
             double dz = after.z + 0.5D - (before == null ? actor.getZ() : before.z + 0.5D);
             if (dx * dx + dz * dz < 0.01D) return null;
-            return DoorPassageGeometry.openForDirection(state, dx, dz);
+            if (Math.abs(dx) > Math.abs(dz))
+                return dx > 0 ? net.minecraft.core.Direction.EAST : net.minecraft.core.Direction.WEST;
+            return dz > 0 ? net.minecraft.core.Direction.SOUTH : net.minecraft.core.Direction.NORTH;
         }
         return null;
     }
