@@ -891,7 +891,7 @@ public class PanelContentGenerator {
             if (projectCIP.getBuildingLocation().level == 0) {
                status = LanguageUtilities.string("ui.inconstruction");
             } else {
-               status = LanguageUtilities.string("ui.upgrading") + " (" + projectCIP.getBuildingLocation().level + ")";
+               status = LanguageUtilities.string("ui.upgrading", "" + projectCIP.getBuildingLocation().level);
             }
          } else {
             status = "ui.lackingresources".equals(house.buildingGoalIssue)

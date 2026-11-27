@@ -104,7 +104,7 @@ final class BuildingMapTooltip {
     }
     private static void section(List<Line> lines,String title,Goods goods,boolean action) {
         if(goods.isEmpty())return;
-        goods.icons.sort(java.util.Comparator.comparing(stack->stack.getHoverName().getString()));
+        goods.icons.sort(java.util.Comparator.comparing(BuildingMapTooltip::displaySortKey));
         lines.add(new Line(title,action?0x99D9EA:0xD5DCC2,List.copyOf(goods.icons),goods.icons.stream().map(goods::detail).toList(),null,
             goods.icons.stream().map(s->List.copyOf(goods.recipes.getOrDefault(s,List.of()))).toList(),action));
         // Special trade abstractions (e.g. any enchanted item) have no stack.
@@ -142,7 +142,7 @@ final class BuildingMapTooltip {
             if(block==Blocks.SAND||block==Blocks.RED_SAND||block==Blocks.GRAVEL||block==Blocks.CLAY)
                 return new ItemStack(Items.IRON_SHOVEL);
         }
-        if(goal instanceof GoalGenericMining||goal instanceof GoalMinerMineResource)return new ItemStack(Items.IRON_PICKAXE);
+        if(goal instanceof GoalGenericMining||goal instanceof GoalMinerMineResource||goal instanceof GoalIndianGatherBrick)return new ItemStack(Items.IRON_PICKAXE);
         if(goal instanceof GoalFish)return new ItemStack(Items.FISHING_ROD);
         if(goal instanceof GoalBrewPotions)return new ItemStack(Items.BREWING_STAND);
         if(goal instanceof GoalGenericCrafting)return new ItemStack(Blocks.CRAFTING_TABLE);
@@ -226,9 +226,9 @@ final class BuildingMapTooltip {
     private static List<ItemStack> residentActivities(VillagerType type){
         Goods activities=new Goods();
         for(Goal goal:type.goals){
-            if(!goal.travelBookShow||goal.leasure)continue;
+            if(!goal.travelBookShow||goal.leasure||goal instanceof GoalGenericCrafting crafting&&crafting.isOnlyStrawBedProduction())continue;
             ItemStack icon=goal.getIcon();
-            if(icon!=null&&!icon.isEmpty())addStack(activities,icon);
+            if(icon!=null&&!icon.isEmpty()&&!strawBed(icon))addStack(activities,icon);
         }
         if(type.isForeignMerchant)addStack(activities,new ItemStack(org.millenaire.common.item.MillItems.PURSE));
         return List.copyOf(activities.icons);
@@ -247,13 +247,7 @@ final class BuildingMapTooltip {
             if(!current.tags.equals(next.tags)||!current.clearTags.equals(next.clearTags))
                 changes.add(label("Building functions change according to the plan","Змінюються функції будівлі за планом","Меняются функции здания по плану"));
         }
-        changes.add(label("Construction changes according to the next plan","Перебудова за планом наступного рівня","Перестройка по плану следующего уровня"));
-        if(next.resCost!=null&&!next.resCost.isEmpty()){
-            changes.add(label("Required materials:","Необхідні матеріали:","Необходимые материалы:"));
-            next.resCost.entrySet().stream().filter(e->e.getValue()!=null&&e.getValue()>0)
-                .sorted(java.util.Comparator.comparing(e->e.getKey().getName()))
-                .forEach(e->changes.add(e.getKey().getName()+" ×"+e.getValue()));
-        }
+        if(next.resCost!=null&&!next.resCost.isEmpty())changes.add(label("Required materials:","Необхідні матеріали:","Необходимые материалы:"));
         return String.join("; ",changes);
     }
 
@@ -268,6 +262,8 @@ final class BuildingMapTooltip {
         // level together; no meaningless 0/0, and no level for unbuilt plans.
         int nameColor=NORMAL;
         String levelDetail=null;
+        String levelLabel=null;
+        List<RecipeView> levelMaterials=List.of();
         if(!construction&&loc.level>=0&&!loc.isCustomBuilding&&loc.culture!=null){
             var set=loc.culture.getBuildingPlanSet(loc.planKey);
             int variation=loc.getVariation();
@@ -275,16 +271,25 @@ final class BuildingMapTooltip {
                     &&set.plans.get(variation).length>loc.level){
                 int maximum=set.plans.get(variation).length-1;
                 if(maximum>0){
-                    name+=" lvl "+loc.level;
+                    levelLabel=label("Level: ","Рівень: ","Уровень: ")+loc.level;
                     if(loc.level==maximum){
                         nameColor=GOLD;
                         levelDetail=label("Maximum level","Максимальний рівень","Максимальный уровень");
-                    }else if(expanded)levelDetail=upgradeDetail(loc,plan,set.plans.get(variation)[loc.level+1]);
+                    }else if(expanded){
+                        BuildingPlan next=set.plans.get(variation)[loc.level+1];
+                        levelDetail=upgradeDetail(loc,plan,next);
+                        if(next.resCost!=null){
+                            var stacks=recipeStacks(next.resCost);
+                            if(!stacks.isEmpty())levelMaterials=List.of(new RecipeView(stacks,List.of()));
+                            else if(!next.resCost.isEmpty())levelDetail+="; "+next.resCost.entrySet().stream().filter(e->e.getValue()!=null&&e.getValue()>0).map(e->e.getKey().getName()+" ×"+e.getValue()).sorted().collect(java.util.stream.Collectors.joining("; "));
+                        }
+                    }
                 }
             }
         }
-        if(!name.isBlank())lines.add(new Line(name,nameColor,levelDetail));
-        if(construction)add(lines,label("Under construction","Будується","Строится"),MUTED);
+        if(!name.isBlank())lines.add(new Line(name.strip(),NORMAL));
+        if(levelLabel!=null)lines.add(new Line(levelLabel,nameColor,List.of(),List.of(),levelDetail,List.of(levelMaterials),true));
+        if(construction)add(lines,label("Under construction","Будується","Строится")+(loc.level>=0?" · "+label("Level ","Рівень ","Уровень ")+loc.level:""),GOLD);
         else if(loc.level<0)add(lines,label("Not built yet","Ще не збудовано","Ещё не построено"),0xFF7777);
         else if(loc.isCustomBuilding)add(lines,label("Custom building (no standard upgrades)","Власна будівля (без стандартних покращень)","Пользовательская постройка (без стандартных улучшений)"),MUTED);
 
@@ -350,6 +355,11 @@ final class BuildingMapTooltip {
                         addStack(gathered, new ItemStack(Items.SUGAR_CANE));
                     } else if (goal instanceof GoalIndianGatherBrick && hasTag(loc, building, plan, "brickkiln")) {
                         activity(actions,goal,source,null);
+                        ItemStack wet=InvItem.createInvItem(MillBlocks.BS_WET_BRICK).getItemStack();
+                        ItemStack dry=InvItem.createInvItem(MillBlocks.BS_MUD_BRICK).getItemStack();
+                        if(wet!=null&&dry!=null&&!wet.isEmpty()&&!dry.isEmpty())
+                            produced.recipe=new RecipeView(List.of(wet.copy()),List.of(dry.copy()));
+                        produced.source=label("Drying wet bricks in daylight","Висушування вологої цегли при денному освітленні","Сушка сырого кирпича при дневном свете");
                         addItem(produced, InvItem.createInvItem(org.millenaire.common.block.MillBlocks.BS_MUD_BRICK));
                     } else if (goal instanceof GoalMinerMineResource miner
                             && (miner.buildingTag == null ? home : hasTag(loc, building, plan, miner.buildingTag))) {
@@ -407,6 +417,7 @@ final class BuildingMapTooltip {
                         && !org.millenaire.common.village.ProductionCapability.hasCrop(plan,building,harvest.cropType))continue;
                 // Supply pickup is not an output or the purpose of a building.
                 if(generic instanceof GoalGenericTakeFromBuilding)continue;
+                if(generic instanceof GoalGenericCrafting crafting&&crafting.isOnlyStrawBedProduction())continue;
                 if(fruitTree&&generic instanceof GoalGenericPlantSapling)continue;
                 // A configured workplace can also have a non-producing role:
                 // planting, visiting, tending equipment or collecting supplies.
@@ -417,14 +428,14 @@ final class BuildingMapTooltip {
                 }
                 if (generic instanceof GoalGenericCrafting crafting) {
                     List<ItemStack> inputs=recipeStacks(crafting.input),outputs=recipeStacks(crafting.output);
-                    RecipeView recipe=inputs.isEmpty()||outputs.isEmpty()?null:new RecipeView(inputs,outputs);
+                    RecipeView recipe=outputs.isEmpty()||(!crafting.input.isEmpty()&&inputs.isEmpty())?null:new RecipeView(inputs,outputs);
                     activity(actions,goal,source,recipe);
                     produced.recipe=recipe;
                     crafting.output.forEach((item,count)->{
                         if(count==null||count<=0)return;
-                        // A free output needs only its item name; no duplicate activity or batch note.
-                        produced.source=!crafting.input.isEmpty()&&recipe==null
-                                ? label("Recipe not available","Рецепт не відображено","Рецепт не отображается") : null;
+                        produced.source=crafting.input.isEmpty()
+                                ? label("No material inputs in this goal","За цим завданням матеріали не витрачаються","По этому заданию материалы не расходуются")
+                                : recipe==null?label("Recipe not available","Рецепт не відображено","Рецепт не отображается"):null;
                         addItem(produced,item);
                     });
                 } else if (generic instanceof GoalGenericMining mining) {
@@ -525,6 +536,13 @@ final class BuildingMapTooltip {
             actions.source=label("Resource extraction site","Місце для добування ресурсів","Место добычи ресурсов");
             addStack(actions,new ItemStack(Items.IRON_SHOVEL));
         }
+        if(actions.icons.stream().anyMatch(s->s.is(Items.IRON_PICKAXE)))
+            actions.icons.removeIf(s->s.is(Items.IRON_SHOVEL));
+        // Presentation only: keep actual recipes, stock, and housing functions unchanged.
+        produced.icons.removeIf(BuildingMapTooltip::strawBed);
+        planned.icons.removeIf(BuildingMapTooltip::strawBed);
+        groupProduction(produced);
+        groupProduction(planned);
         section(lines,label("Purpose:","Призначення:","Назначение:"),actions,true);
         section(lines, label("Potential production:", "Може виробляти:", "Может производить:"), produced);
         section(lines,label("Can extract:","Може добувати:","Может добывать:"),extracted);
@@ -550,6 +568,31 @@ final class BuildingMapTooltip {
             for (String effect : effects) add(lines, effect, MUTED);
         }
         return lines;
+    }
+
+    private static boolean strawBed(ItemStack stack){return stack.is(MillBlocks.BED_STRAW.asItem());}
+
+    private static String displaySortKey(ItemStack stack){
+        // Group slots stay in place as their visible member changes.
+        return (road(stack)?"1":stack.getItem().isEdible()?"2":"0")+stack.getHoverName().getString();
+    }
+
+    private static boolean road(ItemStack stack){
+        return stack.getItem() instanceof net.minecraft.world.item.BlockItem item
+                &&item.getBlock() instanceof org.millenaire.common.block.IBlockPath;
+    }
+
+    private static void groupProduction(Goods goods){
+        cycleGroup(goods,BuildingMapTooltip::road,label("Road materials (rotating)","Матеріали доріг (змінюються)","Материалы дорог (сменяются)"));
+        cycleGroup(goods,s->s.getItem().isEdible(),label("Food (rotating)","Їжа (змінюється)","Еда (сменяется)"));
+    }
+
+    private static void cycleGroup(Goods goods,java.util.function.Predicate<ItemStack> predicate,String category){
+        List<ItemStack> group=goods.icons.stream().filter(predicate).sorted(java.util.Comparator.comparing(s->s.getHoverName().getString())).toList();
+        if(group.size()<2)return;
+        ItemStack chosen=group.get((int)Math.floorMod(System.currentTimeMillis()/3000L,group.size()));
+        goods.icons.removeIf(s->predicate.test(s)&&s!=chosen);
+        goods.details.computeIfAbsent(chosen,k->new LinkedHashSet<>()).add(category);
     }
 
     private static boolean softGather(GoalGenericGatherBlocks gather){

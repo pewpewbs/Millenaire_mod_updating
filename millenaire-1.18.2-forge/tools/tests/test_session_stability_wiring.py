@@ -88,6 +88,19 @@ class SessionStability(unittest.TestCase):
         self.assertIn("event.getResult()==Event.Result.DENY",code)
         self.assertIn("if(!grown&&world.getBlockState(pos).isAir())world.setBlock(pos,sapling,4)",code)
         self.assertIn("new StraightTrunkPlacer(4,0,0)",code)
+        self.assertIn("TreeFeatures.ACACIA",code)
+        self.assertIn("vanillaMinimumObstructed",code)
+        self.assertIn("normalEvent.getResult()==Event.Result.DENY",code)
+        self.assertLess(code.index("normalEvent.getFeature().value().place"),code.index("new StraightTrunkPlacer(4,0,0)"))
+
+    def test_chat_pairs_are_random_and_mutually_valid(self):
+        chat=read("common/goal/leisure/GoalGoChat.java")
+        self.assertIn("Collections.shuffle(candidates",chat)
+        self.assertLess(chat.index("if(dialog==null)continue"),chat.index("target.clearGoal()"))
+        self.assertIn("partner.getGoalDestEntity()==villager",chat)
+        self.assertIn("target.dialogueRole=3-role",chat)
+        social=read("common/goal/leisure/GoalGoSocialise.java")
+        self.assertIn("gosocialise.arrived",social)
 
     def test_acacia_planting_is_independent_of_growth_clearance(self):
         # Follow the actual declared return type of Building.getResManager.

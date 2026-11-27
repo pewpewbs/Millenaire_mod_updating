@@ -142,8 +142,18 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertIn('singular?"дитина":few?"дитини":"дітей"',ui)
         self.assertIn("lastTwo!=11",ui)
         self.assertIn("lastTwo<12||lastTwo>14",ui)
-        self.assertIn('name+=" lvl "+loc.level;',ui)
+        self.assertIn('levelLabel=label("Level: ","Рівень: ","Уровень: ")+loc.level;',ui)
         self.assertIn("levelDetail=upgradeDetail(loc,plan",ui)
+        self.assertIn("new RecipeView(stacks,List.of())",ui)
+        self.assertNotIn("Перебудова за планом наступного рівня",ui)
+        self.assertIn("if(!constructionHover)",read("client/gui/text/GuiPanelParchment.java"))
+        self.assertIn("produced.icons.removeIf(BuildingMapTooltip::strawBed)",ui)
+        self.assertIn("cycleGroup(goods,BuildingMapTooltip::road",ui)
+        self.assertIn("s->s.getItem().isEdible()",ui)
+        self.assertIn("crafting.isOnlyStrawBedProduction()",ui)
+        self.assertIn("displaySortKey",ui)
+        self.assertIn("MillBlocks.BS_WET_BRICK",ui)
+        self.assertIn("craftingGoal.isOnlyStrawBedProduction()",read("client/book/BookManagerTravelBook.java"))
         self.assertIn("r.getType().isChild).thenComparing",ui)
         self.assertIn("residentActivities(record.getType())",ui)
         self.assertIn('label("Not built yet","Ще не збудовано","Ещё не построено"),0xFF7777',ui)
@@ -210,6 +220,20 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertIn('"ui.lackingresources".equals(townHall.buildingGoalIssue)',panel)
         self.assertEqual(panel.count("res.stream().allMatch(key->resHas.get(key)>=resCost.get(key))"),2)
         self.assertIn('"поза спостереженням"',panel)
+
+    def test_dialogue_chat_shows_only_speaker(self):
+        chat = read("client/MillClientUtilities.java").split("public static void putVillagerSentenceInChat(", 1)[1]
+        self.assertIn('String s = v.func_70005_c_() + ": ";', chat)
+        self.assertNotIn("other.chattosomeone", chat)
+        self.assertIn("v.dialogueTargetFirstName != null && !v.dialogueChat", chat)
+
+    def test_upgrade_status_substitutes_level(self):
+        panel = read("common/village/buildingmanagers/PanelContentGenerator.java")
+        self.assertNotIn('LanguageUtilities.string("ui.upgrading")', panel)
+        for name in ("cip", "projectCIP", "goalCIP", "cipxx"):
+            self.assertIn('LanguageUtilities.string("ui.upgrading", "" + ' + name + '.getBuildingLocation().level)', panel)
+        lang = ROOT.parents[2] / "resources/todeploy/millenaire/languages/uk/strings.txt"
+        self.assertIn("ui.upgrading=Поліпшення до рівня <0>", lang.read_text(encoding="utf-8-sig"))
 
     def test_ukrainian_goal_labels(self):
         lang = ROOT.parents[2] / "resources/todeploy/millenaire/languages/uk/strings.txt"

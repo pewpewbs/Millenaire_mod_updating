@@ -16,6 +16,24 @@
 - Відтворено випадок Kaland на фрагменті 11×11×11 блоків. Попередній добір давав десять геометричних позицій, першою була клітинка шахтаря. Новий добір пропустив закритий камінь у всіх 154 повтореннях. Відкриття проходу дозволило видобуток. В ізольованому тесті перевірено також інше джерело, старе призначення, ліміт складу, повторні спроби та точну кількість здобичі.
 - Для відтворення тестові класи завантажують таблицю старих блоків із ресурсів збірки та ініціалізують потрібні об’єкти Forge. Початковий стенд не мав цих даних. Окремий контроль показав, що край підлоги може перекрити доступ до близького джерела. Зі штатної робочої позиції той самий тест пройшов.
 
+### 27.11.2026 — Shorter chat and localized upgrade status
+
+- Chat shows the speaker name only; recipient metadata, dialogue suppression, range and speech colours are unchanged. The resource panel now supplies the upgrade level to the translation placeholder, consistent with the three other upgrade status calls in PanelContentGenerator. Ukrainian, English and Russian wording updated. Added two source regression guards. No gameplay changes; Forge build and runtime testing pending.
+
+### 27.11.2026 — Production provenance and presentation polish
+
+- Straw-bed-only crafting omitted from map purpose, resident activity and travel-book production/consumption listings; actual crafting, housing, trade and resource accounting unchanged. Wet-to-dry brick tooltip reflects actual intermediate block. Free-output goals show that no inputs are consumed and show real output quantities; no fake recipes. Fort's intentional specialization (no sugar plantation or spice garden) documented; no automatic resource injection. Rice plan PNG inspection remains pending. Static guards updated; compile/playtest not run here.
+
+### 27.11.2026 — Social pairs and vanilla-first acacia
+
+- Socialising residents display an arrived status; dialogue selects a shuffled pool of nearby available residents who have reached a meeting point. Assign partners only after a compatible authored two-person dialogue is found; reciprocal target validity and cleanup prevent abandoned dialogue. Existing v1/v2 content format unchanged (no three-person dialogue support). Work retains priority. Ukrainian, English, Russian status labels added.
+- Registered acacia saplings use the vanilla grower in roomy sites. Compact fallback requires obstruction of minimum vanilla clearance, actual failed vanilla placement, unchanged sapling and Forge permission; a veto or replacement never triggers compact fallback. Ordinary growth and bone meal untouched. Uses actual 1.18.2 TreeFeatures.ACACIA configuration. No culture-specific exceptions. Recheck both Indian and Byzantine groves in game. Static regression checks updated; Forge and game not run in this environment.
+- Stable road/food icon ordering and category/recipe tooltip, omit straw-bed activity icon, colour level details. No construction economy changes.
+
+### 27.11.2026 — Map: compact production and upgrade presentation
+
+- Localized separate level line; real next-level material stacks and counts in hover, removed generic construction wording. Construction hover takes precedence over planned locations and displays amber status. Brick gathering uses pickaxe; mixed extraction uses one pickaxe, soft-only remains shovel. Straw-bed production hidden from map output only. Food and road outputs rotate every three seconds; chosen item retains its own recipe. No recipe or stock changes. Source checks added; Forge/game not run here.
+
 ### 27.11.2026 — Плавніший рух і проходження водних точок маршруту
 
 - На рівній відкритій ділянці житель може націлитися на дальшу точку свого маршруту. Перевірка охоплює підлогу та весь простір для тіла. Біля дверей, сходів, огорож, посівів і країв платформи залишаються початкові точки. Зіткнення під час скороченого проходу повертає жителя до пропущених точок.

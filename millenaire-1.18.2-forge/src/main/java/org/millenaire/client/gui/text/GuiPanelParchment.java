@@ -82,7 +82,7 @@ extends GuiText {
     private boolean portraitAvailable(ResourceLocation texture){
         return texture!=null&&portraitResources.computeIfAbsent(texture,t->minecraft.getResourceManager().hasResource(t));
     }
-    private record TooltipText(FormattedCharSequence text, int color, int y,String detail) {}
+    private record TooltipText(FormattedCharSequence text, int color, int y,String detail,List<BuildingMapTooltip.RecipeView> materials) {}
     private record TooltipIcon(ItemStack stack,int x,int y,String detail,List<BuildingMapTooltip.RecipeView> recipes,boolean action,BuildingMapTooltip.Portrait portrait) {
         TooltipIcon(ItemStack stack,int x,int y,String detail,List<BuildingMapTooltip.RecipeView> recipes,boolean action){
             this(stack,x,y,detail,recipes,action,null);
@@ -275,8 +275,7 @@ extends GuiText {
             float screenTop = (float)yStart + this.scaledStartY + (float)top * this.scaleFactor;
             float screenBottom = (float)yStart + this.scaledStartY + (float)bottom * this.scaleFactor;
             if ((float)i >= screenLeft && (float)i <= screenRight && (float)j >= screenTop && (float)j <= screenBottom) {
-                locHover = bl;
-                constructionHover = false;
+                if(!constructionHover){locHover = bl; constructionHover = false;}
             }
             if (bl.level < 0) {
                 this.drawScaledRect(left, top, right, bottom, 0x40000060);
@@ -452,7 +451,7 @@ extends GuiText {
                 // A wrapped first title keeps its entire text clear of the button.
                 int headerReserve=y<12?16:0;
                 for (var part : font.split(new net.minecraft.network.chat.TextComponent(line.text()), Math.max(1,maxWidth-headerReserve))) {
-                    texts.add(new TooltipText(part, line.color(), y,line.detail()));
+                    texts.add(new TooltipText(part, line.color(), y,line.detail(),line.icons().isEmpty()&&!line.recipes().isEmpty()?line.recipes().get(0):List.of()));
                     usedWidth = Math.max(usedWidth, font.width(part)+(y<12?16:0));
                     y += 11;
                 }
@@ -573,7 +572,7 @@ extends GuiText {
             drawMapDetail(icon,mouseX,mouseY);return;
         }
         for(var line:layout.text())if(line.detail()!=null&&y>=line.y()&&y<line.y()+11){
-            drawMapDetail(new TooltipIcon(ItemStack.EMPTY,0,0,line.detail(),List.of(),true),mouseX,mouseY);
+            drawMapDetail(new TooltipIcon(ItemStack.EMPTY,0,0,line.detail(),line.materials(),true),mouseX,mouseY);
             return;
         }
     }
@@ -587,11 +586,14 @@ extends GuiText {
             text.addAll(font.split(icon.stack().getHoverName(),maxWidth));
         if(icon.detail()!=null&&!icon.detail().isBlank()){
             String detail=icon.detail();
-            if(!icon.recipes().isEmpty()&&!icon.action())detail="";
+            // A rotating product keeps both its category and the current recipe.
             int partIndex=0;
             for(String part:detail.split("; ")){
                 if(!part.isBlank()){
                     var component=new net.minecraft.network.chat.TextComponent(part);
+                    if(icon.action()&&icon.stack().isEmpty()&&icon.portrait()==null){
+                        component.withStyle(partIndex==0?net.minecraft.ChatFormatting.GOLD:net.minecraft.ChatFormatting.AQUA);
+                    }
                     if(icon.portrait()!=null){
                         if(partIndex==0)component.withStyle(net.minecraft.ChatFormatting.WHITE);
                         if(partIndex==1)component.withStyle(net.minecraft.ChatFormatting.AQUA);
@@ -622,7 +624,7 @@ extends GuiText {
             for(var stack:recipe.inputs()){
                 recipeIcons.add(new TooltipIcon(stack,(n%columns)*20,y+(n/columns)*20,null,List.of(),false));n++;
             }
-            arrows.add(new int[]{(n%columns)*20,y+(n/columns)*20+5});n++;
+            if(!recipe.inputs().isEmpty()&&!recipe.outputs().isEmpty()){arrows.add(new int[]{(n%columns)*20,y+(n/columns)*20+5});n++;}
             for(var stack:recipe.outputs()){
                 recipeIcons.add(new TooltipIcon(stack,(n%columns)*20,y+(n/columns)*20,null,List.of(),false));n++;
             }

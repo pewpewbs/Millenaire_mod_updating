@@ -855,6 +855,7 @@ extends BookManager {
         for (Goal goal : culture.getAllUsedGoals()) {
             if (goal instanceof GoalGenericCrafting) {
                 GoalGenericCrafting craftingGoal = (GoalGenericCrafting)goal;
+                if(craftingGoal.isOnlyStrawBedProduction())continue;
                 if (craftingGoal.output.containsKey(tradeGood.item)) {
                     craftingProducingGoals.add(craftingGoal);
                 }
@@ -1428,14 +1429,14 @@ extends BookManager {
         page.addBlankLine();
         boolean showGoals = false;
         for (Goal goal : villagerType.goals) {
-            if (!goal.travelBookShow) continue;
+            if (!goal.travelBookShow||goal instanceof GoalGenericCrafting crafting&&crafting.isOnlyStrawBedProduction()) continue;
             showGoals = true;
         }
         if (showGoals) {
             page.addLine(culture.getCultureString("travelbook.goals"), "\u00a71");
             page.getLastLine().canCutAfter = false;
             for (Goal goal : villagerType.goals) {
-                if (!goal.travelBookShow) continue;
+                if (!goal.travelBookShow||goal instanceof GoalGenericCrafting crafting&&crafting.isOnlyStrawBedProduction()) continue;
                 page.addLine(goal.gameName(null), goal.getIcon(), false);
             }
             page.addBlankLine();

@@ -872,6 +872,10 @@ IAStarPathedEntity {
 
     public void clearGoal() {
         Goal previous = this.getActiveGoal();
+        if(previous instanceof org.millenaire.common.goal.leisure.GoalGoChat){
+            this.dialogueKey=null;
+            this.dialogueChat=false;
+        }
         if ((this.isAnimalWorkGoal(previous) && this.getGoalDestEntity() != null) || MiningAccess.isMining(previous)) {
             if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
             this.pathCalculatedSinceLastTick = null;
@@ -3853,6 +3857,13 @@ IAStarPathedEntity {
 
     private void updateDialogue() {
         if (this.dialogueKey == null) {
+            return;
+        }
+        if(!(this.getGoalDestEntity() instanceof MillVillager partner)||!partner.isAlive()
+                ||!(this.getActiveGoal() instanceof org.millenaire.common.goal.leisure.GoalGoChat)
+                ||partner.getGoalDestEntity()!=this||!java.util.Objects.equals(this.dialogueKey,partner.dialogueKey)){
+            this.dialogueKey=null;
+            this.dialogueChat=false;
             return;
         }
         CultureLanguage.Dialogue d = this.getCulture().getDialogue(this.dialogueKey);

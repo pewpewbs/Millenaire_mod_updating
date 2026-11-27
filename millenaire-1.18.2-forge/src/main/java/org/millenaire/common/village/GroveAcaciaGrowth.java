@@ -9,6 +9,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.TreeFeature;
+import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.world.level.levelgen.feature.configurations.TreeConfiguration;
 import net.minecraft.world.level.levelgen.feature.featuresize.TwoLayersFeatureSize;
 import net.minecraft.world.level.levelgen.feature.foliageplacers.BlobFoliagePlacer;
@@ -54,11 +56,43 @@ public final class GroveAcaciaGrowth {
         return world.getWorldBorder().isWithinBounds(pos);
     }
 
-    /** True means the compact path handled the attempt (including a Forge veto).
-     *  False leaves the original vanilla grower in charge. */
+    /** The normal minimum-size volume is blocked even at minimum trunk height.
+     * Do not interpret a randomly tall tree failure as lack of room. */
+    private static boolean vanillaMinimumObstructed(ServerLevel world,BlockPos pos,TreeConfiguration config){
+        if(config.minimumSize.minClippedHeight().isPresent())return false;
+        int height=config.trunkPlacer.getTreeHeight(new Random(0L){
+            @Override public int nextInt(int bound){return 0;}
+        });
+        for(int dy=0;dy<=height+1;dy++){
+            int radius=config.minimumSize.getSizeAtHeight(height,dy);
+            for(int dx=-radius;dx<=radius;dx++)for(int dz=-radius;dz<=radius;dz++){
+                if(dx==0&&dy==0&&dz==0)continue; // the grower replaces the sapling itself
+                BlockPos at=pos.offset(dx,dy,dz);
+                if(!TreeFeature.isFree(world,at)||!config.ignoreVines&&world.getBlockState(at).is(Blocks.VINE))return true;
+            }
+        }
+        return false;
+    }
+
+    /** Ordinary roomy groves keep the original vanilla grower. Only after a
+     * genuine vanilla failure at a provably constrained site may compact growth run. */
     static boolean tryGrow(ServerLevel world,BlockPos pos,BlockState sapling,Random random){
         if(!hasLoadedArea(world,pos))return true;
         if(!hasCompactRoom(world,pos,sapling))return false;
+        var vanilla=TreeFeatures.ACACIA;
+        if(!vanillaMinimumObstructed(world,pos,vanilla.value().config()))return false;
+        var normalEvent=ForgeEventFactory.blockGrowFeature(world,random,pos,vanilla);
+        if(normalEvent.getResult()==Event.Result.DENY||normalEvent.getFeature()==null)return true;
+        if(!world.getBlockState(pos).equals(sapling))return true;
+        world.setBlock(pos,Blocks.AIR.defaultBlockState(),4);
+        boolean normalGrown=false;
+        try{
+            normalGrown=normalEvent.getFeature().value().place(world,world.getChunkSource().getGenerator(),random,pos);
+        }finally{
+            if(!normalGrown&&world.getBlockState(pos).isAir())world.setBlock(pos,sapling,4);
+        }
+        if(normalGrown||normalEvent.getFeature()!=vanilla||!world.getBlockState(pos).equals(sapling))return true;
+        if(!hasCompactRoom(world,pos,sapling)||!vanillaMinimumObstructed(world,pos,vanilla.value().config()))return true;
         var configuration=new TreeConfiguration.TreeConfigurationBuilder(
                 BlockStateProvider.simple(Blocks.ACACIA_LOG),new StraightTrunkPlacer(4,0,0),
                 BlockStateProvider.simple(Blocks.ACACIA_LEAVES),
