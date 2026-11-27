@@ -82,8 +82,8 @@ public final class GoalDiagnostics {
         watch.destinationGoal = goal.key;
         watch.destinationTick = villager.level.getGameTime();
         if (info == null || (info.getDest() == null && info.getTargetEnt() == null)) {
-            watch.destinationResult = goal instanceof org.millenaire.common.goal.generic.GoalGenericMining
-                    ? "NO_REGISTERED_MATCHING_LIVE_SOURCE" : "NO_DESTINATION";
+            watch.destinationResult = MiningAccess.isMining(goal)
+                    ? "NO_ACCESSIBLE_MINING_DESTINATION" : "NO_DESTINATION";
         } else {
             watch.destinationResult = info.getDest() != null ? info.getDest().toString() : "ENTITY_TARGET";
         }

@@ -25,11 +25,11 @@ import org.millenaire.common.annotedparameters.ConfigAnnotations;
 import org.millenaire.common.config.MillConfigValues;
 import org.millenaire.common.entity.MillVillager;
 import org.millenaire.common.goal.Goal;
+import org.millenaire.common.goal.MiningAccess;
 import org.millenaire.common.goal.generic.GoalGeneric;
 import org.millenaire.common.item.InvItem;
 import org.millenaire.common.item.MillItems;
 import org.millenaire.common.pathing.atomicstryker.AStarConfig;
-import org.millenaire.common.utilities.MillCommonUtilities;
 import org.millenaire.common.utilities.MillLog;
 import org.millenaire.common.utilities.Point;
 import org.millenaire.common.utilities.WorldUtilities;
@@ -62,8 +62,7 @@ extends GoalGeneric {
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
         List<Building> buildings = this.getBuildings(villager);
-        ArrayList<Point> validSources = new ArrayList<>();
-        ArrayList<Building> validDests = new ArrayList<>();
+        List<GoalInformation> candidates = new ArrayList<>();
         for (Building possibleDest : buildings) {
             if (possibleDest == null || !this.validateDest(villager,possibleDest)) continue;
             var sources = possibleDest.getResManager().sources;
@@ -72,16 +71,11 @@ extends GoalGeneric {
                 if (this.sourceBlockState != types.get(index)) continue;
                 for (Point point:sources.get(index)) {
                     if (!liveSource(villager,point)) continue;
-                    validSources.add(point);
-                    validDests.add(possibleDest);
+                    candidates.add(packDest(point, possibleDest));
                 }
             }
         }
-        if (validSources.isEmpty()) {
-            return null;
-        }
-        int randomTarget = MillCommonUtilities.randomInt(validSources.size());
-        return this.packDest((Point)validSources.get(randomTarget), (Building)validDests.get(randomTarget));
+        return MiningAccess.choose(villager, this, candidates);
     }
 
     @Override
@@ -110,9 +104,9 @@ extends GoalGeneric {
     @Override
     public AStarConfig getPathingConfig(MillVillager villager) {
         if (!villager.canVillagerClearLeaves()) {
-            return JPS_CONFIG_WIDE_NO_LEAVES;
+            return JPS_CONFIG_TIGHT_NO_LEAVES;
         }
-        return JPS_CONFIG_WIDE;
+        return JPS_CONFIG_TIGHT;
     }
 
     @Override
@@ -127,13 +121,19 @@ extends GoalGeneric {
 
     @Override
     public boolean isDestPossibleSpecific(MillVillager villager, Building b) {
+        boolean hasLiveSource = false;
         var sources = b.getResManager().sources;
         var types = b.getResManager().sourceTypes;
         for (int index=0; index<Math.min(sources.size(),types.size()); index++) {
             if (this.sourceBlockState != types.get(index)) continue;
-            for (Point point:sources.get(index)) if (liveSource(villager,point)) return true;
+            for (Point point:sources.get(index)) {
+                if (!liveSource(villager,point)) continue;
+                hasLiveSource = true;
+                if (villager.hasMiningAccess(this, point)) return true;
+            }
         }
-        return org.millenaire.common.goal.GoalDiagnostics.reject(villager,this,"NO_REGISTERED_MATCHING_LIVE_SOURCE");
+        return org.millenaire.common.goal.GoalDiagnostics.reject(villager, this,
+                hasLiveSource ? "NO_ACCESSIBLE_MINING_STAND" : "NO_REGISTERED_MATCHING_LIVE_SOURCE");
     }
 
     @Override
@@ -158,7 +158,8 @@ extends GoalGeneric {
 
     @Override
     protected boolean isStillValidSpecific(MillVillager villager) throws Exception {
-        return validTarget(villager, villager.getGoalBuildingDest(), villager.getGoalDestPoint());
+        Point source = villager.getGoalDestPoint();
+        return validTarget(villager, villager.getGoalBuildingDest(), source) && villager.hasMiningAccess(this, source);
     }
 
     @Override

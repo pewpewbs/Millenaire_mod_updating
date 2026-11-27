@@ -123,6 +123,7 @@ import org.millenaire.common.culture.VillagerType;
 import org.millenaire.common.entity.VillagerConfig;
 import org.millenaire.common.forge.Mill;
 import org.millenaire.common.goal.Goal;
+import org.millenaire.common.goal.MiningAccess;
 import org.millenaire.common.item.InvItem;
 import org.millenaire.common.item.ItemClothes;
 import org.millenaire.common.item.ItemMillenaireBow;
@@ -255,6 +256,7 @@ IAStarPathedEntity {
     private long avoidedTrapUntil;
     private long nextChatPathAttempt;
     private final java.util.LinkedHashMap<Integer, Long> unavailableAnimalTargets = new java.util.LinkedHashMap<>();
+    private MiningAccess miningAccess;
     private int approachAnimalId = -1;
     private long approachAnimalProgressTick;
     private Vec3 approachAnimalProgressPosition;
@@ -474,6 +476,16 @@ IAStarPathedEntity {
                 }
             }
             Goal active = this.getActiveGoal();
+            if (this.isMiningTrip(active)) {
+                Point source = this.getGoalDestPoint();
+                Node end = path.getEndNode();
+                if (end == null || (path.getNodeCount() <= 1 && !active.isWithinActionRange(this, source))
+                        || !MiningAccess.canWorkFrom(this.level, source.getBlockPos(),
+                                end.asBlockPos(), active.range(this), routeConfig)) {
+                    this.pathFailedSincelastTick = true;
+                    return;
+                }
+            }
             if (this.tracksLandEntity() && path.getNodeCount() <= 1 && active != null
                     && !active.isWithinActionRange(this, this.getPathDestPoint())) {
                 this.pathFailedSincelastTick = true;
@@ -859,7 +871,8 @@ IAStarPathedEntity {
     }
 
     public void clearGoal() {
-        if (this.isAnimalWorkGoal(this.getActiveGoal()) && this.getGoalDestEntity() != null) {
+        Goal previous = this.getActiveGoal();
+        if ((this.isAnimalWorkGoal(previous) && this.getGoalDestEntity() != null) || MiningAccess.isMining(previous)) {
             if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
             this.pathCalculatedSinceLastTick = null;
             this.pathFailedSincelastTick = false;
@@ -929,6 +942,28 @@ IAStarPathedEntity {
     private boolean tracksLandEntity() {
         Entity target = this.getGoalDestEntity();
         return target != null && target.isAlive() && !target.isInWater() && !this.isInWater();
+    }
+
+    private MiningAccess miningAccess() {
+        if (this.miningAccess == null) this.miningAccess = new MiningAccess();
+        return this.miningAccess;
+    }
+
+    public boolean hasMiningAccess(Goal goal, Point source) {
+        return source != null && (miningAccess().first(this, goal, source.getBlockPos()) != null
+                || org.millenaire.common.goal.WorkAccess.canAccessResource(this, source, goal.range(this)));
+    }
+
+    private boolean isMiningTrip(Goal goal) {
+        // Combat can temporarily own the route while the profession goal still exists.
+        return MiningAccess.isMining(goal) && this.getTarget() == null && this.getGoalDestPoint() != null
+                && this.getPathDestPoint() != null && this.getGoalDestPoint().sameBlock(this.getPathDestPoint());
+    }
+
+    private void abandonMiningSource(Goal goal) {
+        miningAccess().retryLater(this, goal, this.getGoalDestPoint().getBlockPos());
+        this.clearGoal();
+        this.stopMoving = false;
     }
 
     private boolean isAnimalWorkGoal(Goal goal) {
@@ -1034,6 +1069,7 @@ IAStarPathedEntity {
         // whether the request is IDENTICAL. The planner owns that decision.
         block9: {
             if (this.getPos().sameBlock(dest)
+                    && !this.isMiningTrip(this.getActiveGoal())
                     && !(this.tracksLandEntity() && this.isAnimalWorkGoal(this.getActiveGoal()))) {
                 if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
                 return null;
@@ -1048,7 +1084,16 @@ IAStarPathedEntity {
                 // Vanilla GroundPathNavigation is reserved for failed, deferred
                 // or physically stuck primary paths, never an early success exit.
                 AStarNode destNode = null;
-                if (this.goalKey != null && (Goal.goals.get(this.goalKey) == Goal.construction
+                if (this.isMiningTrip(this.getActiveGoal())) {
+                    Point source = this.getGoalDestPoint();
+                    BlockPos stand = miningAccess().first(this, this.getActiveGoal(), source.getBlockPos());
+                    if (stand == null) {
+                        this.clearGoal();
+                        this.stopMoving = false;
+                        return null;
+                    }
+                    destNode = new AStarNode(stand.getX(), stand.getY(), stand.getZ());
+                } else if (this.goalKey != null && (Goal.goals.get(this.goalKey) == Goal.construction
                         || Goal.goals.get(this.goalKey) instanceof org.millenaire.common.goal.GoalLumbermanChopTrees)) {
                     // Building search already accepts a walkable node near the target,
                     // including ground below a canopy. Do not offset that tolerance
@@ -2851,6 +2896,10 @@ IAStarPathedEntity {
             }
             if (this.tryGroundRoute(dest)) return;
         }
+        if (action == org.millenaire.common.pathing.MovementWatchdog.Action.RECOVER && this.isMiningTrip(goal)) {
+            this.abandonMiningSource(goal);
+            return;
+        }
         if (action == org.millenaire.common.pathing.MovementWatchdog.Action.RECOVER
                 && !this.tracksLandEntity() && this.vtype != null && (!this.vtype.noTeleport
                     || this.getRecord() != null && this.getRecord().raidingVillage)) {
@@ -2893,9 +2942,21 @@ IAStarPathedEntity {
         int range = goal == null ? 1 : Math.max(1, goal.range(this));
         boolean stockGoal = isStockTransferGoal(goal);
         boolean entityGoal = this.tracksLandEntity();
-        Path fallback = this.navigation.createPath(dest.getBlockPos(), entityGoal ? 0 : Math.min(2, range - 1));
+        boolean mining = this.isMiningTrip(goal);
+        Path fallback;
+        if (mining) {
+            Point source = this.getGoalDestPoint();
+            var stands = MiningAccess.alternatives(this.level, source.getBlockPos(), range, this.getPathingConfig());
+            if (!goal.isWithinActionRange(this, source)) stands.remove(this.blockPosition());
+            if (stands.isEmpty()) return false;
+            fallback = this.navigation.createPath(stands, 0);
+            if (fallback == null || !fallback.canReach() || fallback.getEndNode() == null
+                    || !stands.contains(fallback.getEndNode().asBlockPos())) return false;
+        } else {
+            fallback = this.navigation.createPath(dest.getBlockPos(), entityGoal ? 0 : Math.min(2, range - 1));
+        }
         boolean reached = fallback != null && fallback.canReach() && fallback.getNodeCount() > 0
-                && new Point(fallback.getEndNode()).horizontalDistanceTo(dest) < range;
+                && (mining || new Point(fallback.getEndNode()).horizontalDistanceTo(dest) < range);
         if (reached && stockGoal) {
             Node end = fallback.getEndNode();
             reached = canSeeStockFromNode(end.x, end.y, end.z, dest);
@@ -3011,8 +3072,11 @@ IAStarPathedEntity {
                     + " position=" + this.getPos() + " target=" + dest
                     + " distance=" + dest.horizontalDistanceTo((Entity)this));
         }
-        if (this.pathFailureRecovery.failed(now)
-            && !this.tracksLandEntity() && (!this.vtype.noTeleport || this.getRecord() != null && this.getRecord().raidingVillage)) {
+        if (!this.pathFailureRecovery.failed(now)) return;
+        Goal failedGoal = this.getActiveGoal();
+        if (this.isMiningTrip(failedGoal)) {
+            this.abandonMiningSource(failedGoal);
+        } else if (!this.tracksLandEntity() && (!this.vtype.noTeleport || this.getRecord() != null && this.getRecord().raidingVillage)) {
             this.jumpToDest();
         }
     }

@@ -53,7 +53,7 @@ class GoalDiagnosticsWiring(unittest.TestCase):
         self.assertIn("FISH_HOME_STOCK_LIMIT", fish)
         self.assertIn("NO_ELIGIBLE_FISHING_SPOT", fish)
         observer = read("common/goal/GoalDiagnostics.java")
-        self.assertIn("NO_REGISTERED_MATCHING_LIVE_SOURCE", observer)
+        self.assertIn("NO_ACCESSIBLE_MINING_DESTINATION", observer)
         self.assertIn("LAST_DESTINATION", observer)
 
     def test_client_screen(self):

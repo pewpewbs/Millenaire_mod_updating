@@ -25,7 +25,8 @@ class ProductionRuntimeWiring(unittest.TestCase):
         access = read("goal/WorkAccess.java").split("public static boolean canAccessResource(",1)[1]
         self.assertIn("hasChunkAt",access)
         self.assertIn("distanceToSqr(center)",access)
-        self.assertIn("visible(villager, center",access)
+        self.assertIn("canAccessResource(villager.level, villager.position()",access)
+        self.assertIn("visible(world, from, center, target)",access)
 
     def test_registered_sources_and_fishing_points(self):
         legacy = read("goal/GoalMinerMineResource.java")

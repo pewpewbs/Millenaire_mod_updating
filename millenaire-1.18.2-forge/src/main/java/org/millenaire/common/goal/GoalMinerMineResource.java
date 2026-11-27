@@ -33,7 +33,6 @@ import org.millenaire.common.goal.Goal;
 import org.millenaire.common.item.InvItem;
 import org.millenaire.common.item.MillItems;
 import org.millenaire.common.pathing.atomicstryker.AStarConfig;
-import org.millenaire.common.utilities.MillCommonUtilities;
 import org.millenaire.common.utilities.MillLog;
 import org.millenaire.common.utilities.Point;
 import org.millenaire.common.utilities.WorldUtilities;
@@ -78,27 +77,20 @@ extends Goal {
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
         List<Building> buildings = this.getBuildings(villager);
-        ArrayList validSources = new ArrayList();
-        ArrayList<Building> validDests = new ArrayList<Building>();
+        List<GoalInformation> candidates = new ArrayList<>();
         for (Building possibleDest : buildings) {
             CopyOnWriteArrayList<CopyOnWriteArrayList<Point>> sources = possibleDest.getResManager().sources;
             for (int i = 0; i < Math.min(sources.size(), possibleDest.getResManager().sourceTypes.size()); ++i) {
                 BlockState sourceBlockState = possibleDest.getResManager().sourceTypes.get(i);
-                for (int j = 0; j < ((CopyOnWriteArrayList)sources.get(i)).size(); ++j) {
-                    Point point = sources.get(i).get(j);
+                for (Point point : sources.get(i)) {
                     if (point == null || !villager.level.hasChunkAt(point.getBlockPos())) continue;
                     BlockState actualBlockState = WorldUtilities.getBlockState(villager.level, point);
                     if (actualBlockState != sourceBlockState || !supported(actualBlockState.getBlock())) continue;
-                    validSources.add(((CopyOnWriteArrayList)sources.get(i)).get(j));
-                    validDests.add(possibleDest);
+                    candidates.add(packDest(point, possibleDest));
                 }
             }
         }
-        if (validSources.isEmpty()) {
-            return null;
-        }
-        int randomTarget = MillCommonUtilities.randomInt(validSources.size());
-        return this.packDest((Point)validSources.get(randomTarget), (Building)validDests.get(randomTarget));
+        return MiningAccess.choose(villager, this, candidates);
     }
 
     @Override
@@ -116,9 +108,9 @@ extends Goal {
     @Override
     public AStarConfig getPathingConfig(MillVillager villager) {
         if (!villager.canVillagerClearLeaves()) {
-            return JPS_CONFIG_WIDE_NO_LEAVES;
+            return JPS_CONFIG_TIGHT_NO_LEAVES;
         }
-        return JPS_CONFIG_WIDE;
+        return JPS_CONFIG_TIGHT;
     }
 
     @Override
@@ -156,7 +148,8 @@ extends Goal {
 
     @Override
     protected boolean isStillValidSpecific(MillVillager villager) throws Exception {
-        return validTarget(villager, villager.getGoalBuildingDest(), villager.getGoalDestPoint());
+        Point source = villager.getGoalDestPoint();
+        return validTarget(villager, villager.getGoalBuildingDest(), source) && villager.hasMiningAccess(this, source);
     }
 
     @Override

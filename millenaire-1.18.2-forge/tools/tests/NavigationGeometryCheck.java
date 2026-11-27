@@ -225,7 +225,8 @@ public class NavigationGeometryCheck {
         field(mob,Entity.class,"wasTouchingWater",false); position(mob,-392.5,62,-580.5);
         p=route(-393,62,-581); nav.route(p); nav.follow();
         check(!p.isDone(),"dry actor above water cannot advance using swim tolerance");
-        System.out.println("PASS: "+checks+" real geometry / follower / JPS assertions");
+        MiningGoalCheck.run(unsafe);
+        System.out.println("PASS: "+checks+" real geometry / follower / JPS / mining assertions");
     }
     static BlockState setProperty(BlockState state, net.minecraft.world.level.block.state.properties.Property property,String value) {
         return (BlockState)property.getValue(value).map(v->state.setValue(property,(Comparable)v)).orElse(state);
