@@ -21,6 +21,15 @@ extends Goal {
     }
 
     @Override
+    public String labelKey(MillVillager villager) {
+        if(villager!=null){
+            Point target=getCurrentGoalTarget(villager);
+            if(target!=null&&target.distanceTo((net.minecraft.world.entity.Entity)villager)<=range(villager))return "gosocialise.arrived";
+        }
+        return this.key;
+    }
+
+    @Override
     public int actionDuration(MillVillager villager) {
         return 200;
     }

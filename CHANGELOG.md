@@ -10,6 +10,12 @@
 
 Період змін: **22–23 листопада 2026 року** (за датами комітів UTC). Базовий коміт `main`: `a1cde6e6`. На момент створення цього журналу гілка мала **62 додаткові коміти**.
 
+### 27.11.2026 — Social pairs and vanilla-first acacia
+
+- Socialising residents display an arrived status; dialogue selects a shuffled pool of nearby available residents who have reached a meeting point. Assign partners only after a compatible authored two-person dialogue is found; reciprocal target validity and cleanup prevent abandoned dialogue. Existing v1/v2 content format unchanged (no three-person dialogue support). Work retains priority. Ukrainian, English, Russian status labels added.
+- Registered acacia saplings use the vanilla grower in roomy sites. Compact fallback requires obstruction of minimum vanilla clearance, actual failed vanilla placement, unchanged sapling and Forge permission; a veto or replacement never triggers compact fallback. Ordinary growth and bone meal untouched. Uses actual 1.18.2 TreeFeatures.ACACIA configuration. No culture-specific exceptions. Recheck both Indian and Byzantine groves in game. Static regression checks updated; Forge and game not run in this environment.
+- Stable road/food icon ordering and category/recipe tooltip, omit straw-bed activity icon, colour level details. No construction economy changes.
+
 ### 27.11.2026 — Map: compact production and upgrade presentation
 
 - Localized separate level line; real next-level material stacks and counts in hover, removed generic construction wording. Construction hover takes precedence over planned locations and displays amber status. Brick gathering uses pickaxe; mixed extraction uses one pickaxe, soft-only remains shovel. Straw-bed production hidden from map output only. Food and road outputs rotate every three seconds; chosen item retains its own recipe. No recipe or stock changes. Source checks added; Forge/game not run here.

@@ -104,7 +104,7 @@ final class BuildingMapTooltip {
     }
     private static void section(List<Line> lines,String title,Goods goods,boolean action) {
         if(goods.isEmpty())return;
-        goods.icons.sort(java.util.Comparator.comparing(stack->stack.getHoverName().getString()));
+        goods.icons.sort(java.util.Comparator.comparing(BuildingMapTooltip::displaySortKey));
         lines.add(new Line(title,action?0x99D9EA:0xD5DCC2,List.copyOf(goods.icons),goods.icons.stream().map(goods::detail).toList(),null,
             goods.icons.stream().map(s->List.copyOf(goods.recipes.getOrDefault(s,List.of()))).toList(),action));
         // Special trade abstractions (e.g. any enchanted item) have no stack.
@@ -228,7 +228,7 @@ final class BuildingMapTooltip {
         for(Goal goal:type.goals){
             if(!goal.travelBookShow||goal.leasure)continue;
             ItemStack icon=goal.getIcon();
-            if(icon!=null&&!icon.isEmpty())addStack(activities,icon);
+            if(icon!=null&&!icon.isEmpty()&&!strawBed(icon))addStack(activities,icon);
         }
         if(type.isForeignMerchant)addStack(activities,new ItemStack(org.millenaire.common.item.MillItems.PURSE));
         return List.copyOf(activities.icons);
@@ -565,6 +565,11 @@ final class BuildingMapTooltip {
     }
 
     private static boolean strawBed(ItemStack stack){return stack.is(MillBlocks.BED_STRAW.asItem());}
+
+    private static String displaySortKey(ItemStack stack){
+        // Group slots stay in place as their visible member changes.
+        return (road(stack)?"1":stack.getItem().isEdible()?"2":"0")+stack.getHoverName().getString();
+    }
 
     private static boolean road(ItemStack stack){
         return stack.getItem() instanceof net.minecraft.world.item.BlockItem item

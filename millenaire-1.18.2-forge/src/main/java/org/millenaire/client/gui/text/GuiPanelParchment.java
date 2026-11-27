@@ -586,11 +586,14 @@ extends GuiText {
             text.addAll(font.split(icon.stack().getHoverName(),maxWidth));
         if(icon.detail()!=null&&!icon.detail().isBlank()){
             String detail=icon.detail();
-            if(!icon.recipes().isEmpty()&&!icon.action())detail="";
+            // A rotating product keeps both its category and the current recipe.
             int partIndex=0;
             for(String part:detail.split("; ")){
                 if(!part.isBlank()){
                     var component=new net.minecraft.network.chat.TextComponent(part);
+                    if(icon.action()&&icon.stack().isEmpty()&&icon.portrait()==null){
+                        component.withStyle(partIndex==0?net.minecraft.ChatFormatting.GOLD:net.minecraft.ChatFormatting.AQUA);
+                    }
                     if(icon.portrait()!=null){
                         if(partIndex==0)component.withStyle(net.minecraft.ChatFormatting.WHITE);
                         if(partIndex==1)component.withStyle(net.minecraft.ChatFormatting.AQUA);
