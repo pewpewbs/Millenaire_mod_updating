@@ -24,6 +24,7 @@ import org.millenaire.common.block.MillBlocks;
 public class ItemFoodMultiple extends Item {
     public static final int DAMAGE_PER_PORTION = 64;
     public static final int FULL_STACK_LIMIT = 64;
+    public static final int MULTI_SERVING_STACK_LIMIT = 16;
     private final int healthAmount;
     private final int regenerationDuration;
     private final int drunkDuration;
@@ -57,10 +58,13 @@ public class ItemFoodMultiple extends Item {
         return properties;
     }
 
-    /** Forge 1.18.2 stack-sensitive limit; keep legacy Damage NBT for saved food. */
+    /** Forge 1.18.2 stack-sensitive limit. Existing saved counts are not
+     * rewritten or clamped; only subsequent insertion/merging uses this limit. */
     @Override
     public int getItemStackLimit(ItemStack stack) {
-        return stack.getDamageValue() > 0 ? 1 : FULL_STACK_LIMIT;
+        if (stack.getDamageValue() > 0) return 1;
+        return drink || stack.getMaxDamage() > DAMAGE_PER_PORTION
+                ? MULTI_SERVING_STACK_LIMIT : FULL_STACK_LIMIT;
     }
 
     @Override
