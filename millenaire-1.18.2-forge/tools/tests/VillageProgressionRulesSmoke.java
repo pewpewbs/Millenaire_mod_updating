@@ -26,6 +26,20 @@ public final class VillageProgressionRulesSmoke {
         check(VillageProgressionRules.rank(86,1,1) > VillageProgressionRules.rank(45,1,1), "centre outranks decorative upgrades");
         check(VillageProgressionRules.rank(78,1,5) > VillageProgressionRules.rank(78,1,1), "authored priority retained");
         check(VillageProgressionRules.MAX_PASSES == 8 && VillageProgressionRules.MAX_ITEMS == 128, "dependency bounds");
-        System.out.println("PASS: 16 village progression rule checks");
+        check(VillageProgressionRules.compareRank(198,6000,198,5900)>0, "authored priority breaks saturated tie");
+        check(VillageProgressionRules.compareRank(198,5900,198,5000)>0, "weaver before lower priority");
+        check(VillageProgressionRules.compareRank(199,1,198,6000)>0, "existing tier and level weighting retained");
+        var field = new VillageProgressionRules.TagProject<>("field",Set.of(),Set.of("cottonfield"));
+        var weaver = new VillageProgressionRules.TagProject<>("weaver",Set.of("cottonfield"),Set.of("textiles"));
+        var market = new VillageProgressionRules.TagProject<>("market",Set.of("textiles"),Set.<String>of());
+        var cycleA = new VillageProgressionRules.TagProject<>("cycleA",Set.of("b"),Set.of("a"));
+        var cycleB = new VillageProgressionRules.TagProject<>("cycleB",Set.of("a"),Set.of("b"));
+        check(VillageProgressionRules.reachableTagProjects(Set.of(),java.util.List.of(market,weaver,field,cycleA,cycleB))
+                .equals(Set.of("field","weaver","market")), "multi-step tags resolved; isolated cycle rejected");
+        check(VillageProgressionRules.reachableTagProjects(Set.of(),java.util.List.of(weaver,market)).isEmpty(),
+                "specialized village without field cannot invent cotton supplier");
+        check(VillageProgressionRules.reachableTagProjects(Set.of("cottonfield"),java.util.List.of(weaver,market))
+                .equals(Set.of("weaver","market")), "existing field unlocks workshop");
+        System.out.println("PASS: village progression rule checks");
     }
 }

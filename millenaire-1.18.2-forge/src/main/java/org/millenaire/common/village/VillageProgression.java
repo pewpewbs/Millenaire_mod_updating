@@ -155,6 +155,10 @@ final class VillageProgression {
         return VillageProgressionRules.rank(tier, c.plan().level, c.plan().priority);
     }
 
+    private static int compareRank(Candidate a, Candidate b) {
+        return VillageProgressionRules.compareRank(rank(a), a.plan().priority, rank(b), b.plan().priority);
+    }
+
     static Candidate select(Building v, List<BuildingProject> projects, BuildingPlan waiting,
                             boolean affordable, boolean ignoreCost) {
         StyleGate gate = styleGate(v,ignoreCost);
@@ -184,7 +188,7 @@ final class VillageProgression {
             if(supplier!=null) return supplier;
         }
         if(ordinary.isEmpty()){decision(v,"centre-level-hold",null,waiting,options.size());return null;}
-        Candidate preferred = ordinary.stream().max(Comparator.comparingInt(VillageProgression::rank)
+        Candidate preferred = ordinary.stream().max(((Comparator<Candidate>) VillageProgression::compareRank)
                 .thenComparing(c -> c.project().key, Comparator.reverseOrder())).orElse(null);
         BuildingPlan target = waiting != null ? waiting : preferred.plan();
         if (!ignoreCost && !v.canAffordProgression(target,false)) {
@@ -282,7 +286,7 @@ final class VillageProgression {
             // operating inputs; fall back to ordinary progression in cycles.
             if(!operatingNeeds(v,c.plan()).isEmpty())continue;
             int candidateScore=benefit*1000+rank(c);
-            if(candidateScore>score){score=candidateScore;best=c;}
+            if(candidateScore>score || (candidateScore==score && best!=null && compareRank(c,best)>0)){score=candidateScore;best=c;}
         }
         if(best!=null&&MillConfigValues.LogBuildingPlan>=1)
             MillLog.major(v,"VILLAGE-PROGRESSION operatingSupplier="+best.project().key+" target="+target.buildingKey+" missing="+needs.size());
@@ -424,6 +428,44 @@ final class VillageProgression {
         }
     }
 
+    /** Separate lookahead from executable options. A locked workshop is
+     * useful for discovering its prerequisites, never for starting work. */
+    private static Map<Candidate,List<Recipe>> dependencyPlans(Building v, List<Candidate> options,
+            BuildingPlan target, Set<VillagerType> workers) {
+        Map<BuildingProject,Candidate> candidates = new LinkedHashMap<>();
+        for (Candidate c : options) candidates.put(c.project(),c);
+        StyleGate gate = styleGate(v,false);
+        for (BuildingProject p : v.getFlatProjectList()) {
+            if (candidates.containsKey(p) || p.planSet == null || busy(v,p)) continue;
+            BuildingPlan plan = p.getNextBuildingPlan(false);
+            if (plan == null || plan.isWallSegment || gate.blocks(plan)
+                    || !v.validProgressionDependencyPlan(p,plan)) continue;
+            candidates.put(p,new Candidate(p,plan));
+        }
+        Set<String> currentTags = new HashSet<>();
+        List<VillageProgressionRules.TagProject<Candidate>> graph = new ArrayList<>();
+        for (Candidate c : candidates.values()) {
+            if (c.plan() == target || gate.blocks(c.plan())) continue;
+            Set<String> required = new HashSet<>(c.plan().requiredVillageTags);
+            Set<String> provided = new HashSet<>(c.plan().villageTags);
+            for (String tag : required) if (v.containsTags(tag)) currentTags.add(tag);
+            graph.add(new VillageProgressionRules.TagProject<>(c,required,provided));
+        }
+        Set<Candidate> reachable = VillageProgressionRules.reachableTagProjects(currentTags,graph);
+        Map<Candidate,List<Recipe>> potential = new LinkedHashMap<>();
+        for (Candidate c : candidates.values()) {
+            if (!reachable.contains(c)) continue;
+            List<Recipe> outputs = recipes(v,c.plan(),c.project(),workers);
+            BuildingPlan old = c.project().getExistingPlan();
+            if (old != null) {
+                List<Recipe> before = recipes(v,old,c.project(),workers);
+                outputs.removeIf(recipe -> before.stream().anyMatch(r -> r.output().matches(recipe.output())));
+            }
+            if (!outputs.isEmpty() || !c.plan().villageTags.isEmpty()) potential.put(c,outputs);
+        }
+        return potential;
+    }
+
     private static Candidate prerequisite(Building v, List<Candidate> options, BuildingPlan target, boolean reservePending) {
         Set<InvItem> needs = new LinkedHashSet<>();
         missing(v,target.resCost,needs);
@@ -432,46 +474,52 @@ final class VillageProgression {
         for (var record : v.getVillagerRecords().values())
             if (!record.killed && record.getType() != null) workers.add(record.getType());
         List<Recipe> existing = new ArrayList<>();
-        Map<Candidate,List<Recipe>> potential = new LinkedHashMap<>();
+        // Built capacity is intentionally retained even if its house is vacant.
+        // Population/move-in is a separate constraint; do not build a duplicate
+        // workshop merely because its configured resident has not moved in.
         for (BuildingProject p : v.getFlatProjectList())
             if (p.getExistingPlan() != null) existing.addAll(recipes(v,p.getExistingPlan(),p,workers));
-        for (Candidate c : options) {
-            if (c.plan() == target) continue;
-            List<Recipe> outputs = recipes(v,c.plan(),c.project(),workers);
-            BuildingPlan old = c.project().getExistingPlan();
-            if (old != null) {
-                List<Recipe> before = recipes(v,old,c.project(),workers);
-                outputs.removeIf(recipe -> before.stream().anyMatch(r -> r.output().matches(recipe.output())));
-            }
-            if (!outputs.isEmpty()) potential.put(c,outputs);
-        }
-        // Bounded reverse expansion of recipe ingredients and producer build
-        // costs. Cycles terminate; never execute an unaffordable prerequisite.
+        Map<Candidate,List<Recipe>> potential = dependencyPlans(v,options,target,workers);
         List<InvItem> already = existing.stream().map(Recipe::output).toList();
+        Set<String> neededTags = new LinkedHashSet<>();
+        // Traverse resource and explicit village-tag dependencies together.
+        // Only executable options below may be returned to the scheduler.
         for (int pass = 0; pass < VillageProgressionRules.MAX_PASSES && needs.size() < VillageProgressionRules.MAX_ITEMS; pass++) {
-            int size = needs.size();
+            int size = needs.size() + neededTags.size();
             for (Recipe r : existing) if (matches(needs,r.output())) missing(v,r.inputs(),needs);
-            for (var e : potential.entrySet()) for (Recipe r : e.getValue()) if (matches(needs,r.output()) && !matches(already,r.output())) {
-                missing(v,r.inputs(),needs);
-                missing(v,e.getKey().plan().resCost,needs);
+            for (var e : potential.entrySet()) {
+                Candidate c = e.getKey();
+                boolean relevant = VillageProgressionRules.intersects(new HashSet<>(c.plan().villageTags),neededTags);
+                for (Recipe r : e.getValue()) if (matches(needs,r.output()) && !matches(already,r.output())) {
+                    missing(v,r.inputs(),needs);
+                    relevant = true;
+                }
+                if (!relevant) continue;
+                missing(v,c.plan().resCost,needs);
+                for (String tag : c.plan().requiredVillageTags)
+                    if (!v.containsTags(tag)) neededTags.add(tag);
             }
-            if (needs.size() == size) break;
+            if (needs.size() + neededTags.size() == size) break;
         }
         Candidate best = null;
         int score = Integer.MIN_VALUE;
-        for (var e : potential.entrySet()) {
-            Candidate c = e.getKey();
-            if (!v.canAffordProgression(c.plan(),reservePending)) continue;
+        for (Candidate c : options) {
+            List<Recipe> outputs = potential.get(c);
+            if (outputs == null || !v.validProgressionPlan(c.project(),c.plan())
+                    || !v.canAffordProgression(c.plan(),reservePending)) continue;
             int benefit = 0;
             for (InvItem need : needs)
-                if (!matches(already,need) && e.getValue().stream().anyMatch(r -> r.output().matches(need))) benefit++;
+                if (!matches(already,need) && outputs.stream().anyMatch(r -> r.output().matches(need))) benefit++;
+            for (String tag : c.plan().villageTags) if (neededTags.contains(tag)) benefit++;
             if (benefit == 0) continue;
             int candidateScore = benefit * 1000 + rank(c);
-            if (candidateScore > score) { score = candidateScore; best = c; }
+            if (candidateScore > score || (candidateScore == score && best != null && compareRank(c,best)>0)) {
+                score = candidateScore; best = c;
+            }
         }
         if (best != null && MillConfigValues.LogBuildingPlan >= 1)
             MillLog.major(v,"VILLAGE-PROGRESSION supplier=" + best.project().key
-                    + " target=" + target.buildingKey + " missingTypes=" + needs.size());
+                    + " target=" + target.buildingKey + " missingTypes=" + needs.size() + " requiredVillageTags=" + neededTags);
         return best;
     }
 }

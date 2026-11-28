@@ -1022,13 +1022,23 @@ public class Building {
    }
 
    boolean validProgressionPlan(BuildingProject project, BuildingPlan plan) {
+      return validProgressionPlan(project, plan, false);
+   }
+
+   // Lookahead only: retain every other validity gate, but allow a project
+   // whose explicit village-tag prerequisite can be supplied by another plan.
+   boolean validProgressionDependencyPlan(BuildingProject project, BuildingPlan plan) {
+      return validProgressionPlan(project, plan, true);
+   }
+
+   private boolean validProgressionPlan(BuildingProject project, BuildingPlan plan, boolean lookahead) {
       if (plan == null || plan.priority <= 0) return false;
       if (project.location != null && project.location.level >= 0) {
          if (!project.location.upgradesAllowed || plan.version != project.location.version
                || plan.level != project.location.level + 1) return false;
       } else if (plan.level != 0 || (!this.villageType.playerControlled
                && (plan.price > 0 || plan.isgift) && !this.buildingsBought.contains(project.key))) return false;
-      return this.checkProjectValidity(project, plan);
+      return this.checkProjectValidity(project, plan, lookahead);
    }
 
    private boolean canAffordProject(BuildingPlan plan) {
@@ -1274,6 +1284,10 @@ public class Building {
    }
 
    private boolean checkProjectValidity(BuildingProject project, BuildingPlan plan) {
+      return checkProjectValidity(project, plan, false);
+   }
+
+   private boolean checkProjectValidity(BuildingProject project, BuildingPlan plan, boolean lookahead) {
       if (plan.requiredGlobalTag != null && !this.mw.isGlobalTagSet(plan.requiredGlobalTag)) {
          return false;
       } else {
@@ -1327,7 +1341,7 @@ public class Building {
          }
 
          for (String tagx : plan.requiredVillageTags) {
-            if (!this.containsTags(tagx)) {
+            if (!lookahead && !this.containsTags(tagx)) {
                if (MillConfigValues.LogTags >= 2) {
                   MillLog.minor(this, "Can't build plan " + plan + " as village is missing tag:" + tagx);
                }

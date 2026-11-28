@@ -35,6 +35,33 @@ final class VillageProgressionRules {
         return !Collections.disjoint(introduced, locked);
     }
 
+    record TagProject<K>(K key, Set<String> requires, Set<String> provides) {}
+
+    /** Only projects whose required tags are already present or reachable
+     * from an authored project enter the dependency graph. Unseeded cycles
+     * and unavailable specializations cannot create a fictitious supplier. */
+    static <K> Set<K> reachableTagProjects(Set<String> existing, Collection<TagProject<K>> projects) {
+        Set<String> tags = new HashSet<>(existing);
+        Set<K> reachable = new HashSet<>();
+        for (int pass = 0; pass < MAX_PASSES; pass++) {
+            boolean changed = false;
+            for (TagProject<K> project : projects) {
+                if (!tags.containsAll(project.requires())) continue;
+                if (reachable.add(project.key())) changed = true;
+                if (tags.addAll(project.provides())) changed = true;
+            }
+            if (!changed) break;
+        }
+        return reachable;
+    }
+
+    /** Preserve tier/level weighting while resolving saturated priority ties
+     * by the authored priority instead of alphabetical building names. */
+    static int compareRank(int rankA, int priorityA, int rankB, int priorityB) {
+        int comparison = Integer.compare(rankA, rankB);
+        return comparison != 0 ? comparison : Integer.compare(priorityA, priorityB);
+    }
+
     static int rank(int tier, int level, int priority) {
         return tier + (level == 0 ? 20 : 0)
                 - 10 * Math.min(5, Math.max(0,level))
