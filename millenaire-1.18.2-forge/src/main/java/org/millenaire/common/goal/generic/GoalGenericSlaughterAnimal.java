@@ -186,7 +186,7 @@ extends GoalGeneric {
             if (!(tracked instanceof LivingEntity living) || !this.isStillValidSpecific(villager)
                     || !this.isWithinActionRange(villager, new Point(tracked))
                     || !this.getAnimals(villager, dest.getPos(), 15, 10).contains(tracked)) return true;
-            villager.setTarget(living);
+            villager.startSlaughterCombat(living, this);
             this.awardBonus(villager, dest);
             villager.swing(InteractionHand.MAIN_HAND);
             return true;

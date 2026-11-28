@@ -296,6 +296,12 @@ IAStarPathedEntity {
     private int approachAnimalId = -1;
     private long approachAnimalProgressTick;
     private Vec3 approachAnimalProgressPosition;
+    // Keep profession routing context after clearGoal() hands slaughter to combat.
+    private LivingEntity slaughterTarget;
+    private org.millenaire.common.goal.generic.GoalGenericSlaughterAnimal slaughterGoal;
+    private Vec3 slaughterProgressPosition;
+    private long slaughterProgressTick, slaughterLastHitTick;
+    private boolean slaughterRetried;
     private long nextRouteDecisionLog = 0L;
     private String lastRouteDecision = "";
     // Door recovery uses physical displacement, not per-tick velocity,
@@ -526,6 +532,14 @@ IAStarPathedEntity {
                     && !active.isWithinActionRange(this, this.getPathDestPoint())) {
                 this.pathFailedSincelastTick = true;
                 return;
+            }
+            if (this.isSlaughterCombat() && this.tracksLandEntity()) {
+                Node end = path.getEndNode();
+                if (end == null || !this.canReachTrackedAnimalFromNode(end.x, end.y, end.z, this.routingGoal())
+                        || (path.getNodeCount() <= 1 && !this.routingInRange(this.routingGoal(), this.getPathDestPoint()))) {
+                    this.pathFailedSincelastTick = true;
+                    return;
+                }
             }
             this.registerNewPath(path);
         }
@@ -980,8 +994,150 @@ IAStarPathedEntity {
     }
 
     private boolean tracksLandEntity() {
-        Entity target = this.getGoalDestEntity();
+        Entity target = this.trackedNavigationEntity();
         return target != null && target.isAlive() && !target.isInWater() && !this.isInWater();
+    }
+
+    private boolean isSlaughterCombat() {
+        return this.slaughterTarget != null && this.getTarget() == this.slaughterTarget;
+    }
+
+    private Entity trackedNavigationEntity() {
+        return this.isSlaughterCombat() ? this.slaughterTarget : this.getGoalDestEntity();
+    }
+
+    private Goal routingGoal() {
+        return this.isSlaughterCombat() ? this.slaughterGoal : this.getActiveGoal();
+    }
+
+    private boolean routingInRange(Goal goal, Point dest) {
+        return this.isSlaughterCombat() ? this.canHitSlaughterTarget(this.position())
+                : goal != null && goal.isWithinActionRange(this, dest);
+    }
+
+    public void startSlaughterCombat(LivingEntity animal,
+            org.millenaire.common.goal.generic.GoalGenericSlaughterAnimal goal) {
+        this.setTarget(animal);
+        this.slaughterTarget = animal;
+        this.slaughterGoal = goal;
+        this.slaughterProgressPosition = this.position();
+        this.slaughterProgressTick = this.level.getGameTime();
+        this.slaughterLastHitTick = this.slaughterProgressTick;
+        this.slaughterRetried = false;
+    }
+
+    private boolean canHitSlaughterTarget(Vec3 feet) {
+        LivingEntity animal = this.slaughterTarget;
+        if (animal == null || !animal.isAlive()) return false;
+        // Match melee distance, vertical overlap and unobstructed access.
+        return feet.distanceToSqr(animal.position()) < 4.0D
+                && animal.getBoundingBox().maxY > feet.y
+                && animal.getBoundingBox().minY < feet.y + this.getBbHeight()
+                && org.millenaire.common.goal.WorkAccess.visible(this.level,
+                    feet.add(0.0D, 0.8D, 0.0D), animal.getBoundingBox().getCenter(), null);
+    }
+
+    private void resetSlaughterRoute() {
+        this.navigation.stop();
+        this.pathEntity = null;
+        if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
+        this.pathCalculatedSinceLastTick = null;
+        this.pathFailedSincelastTick = false;
+        this.pathFailureRecovery.reset();
+        this.nextTrackedEntityPathAttempt = 0L;
+        this.nextVanillaPathAttempt = 0L;
+    }
+
+    private void endSlaughterCombat(boolean retryLater, String reason) {
+        LivingEntity animal = this.slaughterTarget;
+        if (animal == null) return;
+        boolean ownsTarget = this.isSlaughterCombat();
+        if (retryLater && animal.isAlive()) {
+            long now = this.level.getGameTime();
+            this.unavailableAnimalTargets.entrySet().removeIf(entry -> entry.getValue() <= now);
+            this.unavailableAnimalTargets.put(animal.getId(), now + 200L);
+            if (this.unavailableAnimalTargets.size() > 16)
+                this.unavailableAnimalTargets.remove(this.unavailableAnimalTargets.keySet().iterator().next());
+            MillLog.major(this, "NAV-SLAUGHTER-RESELECT reason=" + reason
+                    + " target=" + animal.getId() + " position=" + this.blockPosition()
+                    + " animalPos=" + animal.blockPosition());
+        }
+        this.slaughterTarget = null;
+        this.slaughterGoal = null;
+        this.slaughterProgressPosition = null;
+        this.slaughterRetried = false;
+        // Do not clear a defensive target that has replaced the animal.
+        if (ownsTarget) {
+            this.setTarget(null);
+            this.clearGoal();
+            this.setPathDestPoint(null, 0);
+            this.resetSlaughterRoute();
+            this.stopMoving = false;
+        }
+    }
+
+    private boolean tickSlaughterCombat() {
+        if (!this.isSlaughterCombat()) return false;
+        LivingEntity animal = this.slaughterTarget;
+        if (!animal.isAlive() || animal.isRemoved()) {
+            this.endSlaughterCombat(false, "TARGET_GONE");
+            return false;
+        }
+        if (this.getPos().distanceTo(animal) > 80.0D) {
+            this.endSlaughterCombat(true, "TARGET_TOO_FAR");
+            return false;
+        }
+        long now = this.level.getGameTime();
+        this.shouldLieDown = false;
+        this.allowRandomMoves = false;
+        boolean land = this.tracksLandEntity();
+        boolean canHit = this.canHitSlaughterTarget(this.position());
+        float health = animal.getHealth();
+        if (canHit) this.attackEntity(animal);
+        else if (this.attackTime > 0) --this.attackTime;
+        if (!animal.isAlive()) {
+            this.endSlaughterCombat(false, "TARGET_KILLED");
+            return false;
+        }
+        if (animal.getHealth() < health) {
+            this.slaughterLastHitTick = now;
+            this.slaughterProgressTick = now;
+            this.slaughterProgressPosition = this.position();
+            this.slaughterRetried = false;
+        }
+        if (this.slaughterProgressPosition == null || now < this.slaughterProgressTick
+                || this.slaughterProgressPosition.distanceToSqr(this.position()) >= 0.25D) {
+            this.slaughterProgressPosition = this.position();
+            this.slaughterProgressTick = now;
+            this.slaughterRetried = false;
+        }
+        // Bound pursuit even when the worker is moving but never hits.
+        if (now - this.slaughterLastHitTick >= 1200L) {
+            this.endSlaughterCombat(true, "NO_HIT_TIMEOUT");
+            return false;
+        }
+        if (land) this.refreshTrackedEntityDestination();
+        else this.setPathDestPoint(new Point(animal), 1);
+        if (now - this.slaughterProgressTick >= 160L) {
+            if (this.slaughterRetried) {
+                this.endSlaughterCombat(true, "NO_PROGRESS");
+                return false;
+            }
+            this.slaughterRetried = true;
+            this.slaughterProgressTick = now;
+            this.resetSlaughterRoute();
+            MillLog.major(this, "NAV-SLAUGHTER-RETRY target=" + animal.getId()
+                    + " position=" + this.blockPosition() + " animalPos=" + animal.blockPosition());
+            if (!canHit) this.tryGroundRoute(this.getPathDestPoint());
+        }
+        if (canHit) {
+            this.stopMoving = true;
+            this.navigation.stop();
+            this.pathEntity = null;
+            if (this.pathPlannerJPS != null && this.pathPlannerJPS.isBusy())
+                this.pathPlannerJPS.stopPathSearch(true);
+        } else this.stopMoving = false;
+        return true;
     }
 
     private MiningAccess miningAccess() {
@@ -1057,11 +1213,12 @@ IAStarPathedEntity {
     }
 
     private boolean canReachTrackedAnimalFromNode(int x, int y, int z, Goal goal) {
-        Entity animal = this.getGoalDestEntity();
+        Entity animal = this.trackedNavigationEntity();
         if (animal == null || !animal.isAlive() || goal == null) return false;
         BlockPos stand = new BlockPos(x, y, z);
         if (!this.level.hasChunkAt(stand) || !this.level.hasChunkAt(animal.blockPosition())) return false;
         Vec3 foot = Vec3.atBottomCenterOf(stand);
+        if (this.isSlaughterCombat()) return this.canHitSlaughterTarget(foot);
         double range = goal.range(this);
         return foot.distanceToSqr(animal.position()) < range * range
                 && org.millenaire.common.goal.WorkAccess.visible(this.level,
@@ -1069,7 +1226,7 @@ IAStarPathedEntity {
     }
 
     private void refreshTrackedEntityDestination() {
-        Entity target = this.getGoalDestEntity();
+        Entity target = this.trackedNavigationEntity();
         if (!this.tracksLandEntity()) {
             this.setPathDestPoint(new Point(target), 2);
             return;
@@ -1110,7 +1267,7 @@ IAStarPathedEntity {
         block9: {
             if (this.getPos().sameBlock(dest)
                     && !this.isMiningTrip(this.getActiveGoal())
-                    && !(this.tracksLandEntity() && this.isAnimalWorkGoal(this.getActiveGoal()))) {
+                    && !(this.tracksLandEntity() && this.isAnimalWorkGoal(this.routingGoal()))) {
                 if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
                 return null;
             }
@@ -1143,7 +1300,7 @@ IAStarPathedEntity {
                     AStarNode[] possibles = AStarStatic.getAccessNodesSorted(this.level, this.doubleToInt(this.getX()), this.doubleToInt(this.getY()), this.doubleToInt(this.getZ()), this.getPathDestPoint().getiX(), this.getPathDestPoint().getiY(), this.getPathDestPoint().getiZ(), this.getPathingConfig());
                     boolean stockGoal = isStockTransferGoal(Goal.goals.get(this.goalKey));
                     boolean entityGoal = this.tracksLandEntity();
-                    Goal currentGoal = this.getActiveGoal();
+                    Goal currentGoal = this.routingGoal();
                     boolean animalWork = entityGoal && this.isAnimalWorkGoal(currentGoal);
                     for (AStarNode candidate : possibles) {
                         if (entityGoal && (candidate.x == this.blockPosition().getX()
@@ -1737,8 +1894,9 @@ IAStarPathedEntity {
     }
 
     private AStarConfig getPathingConfig() {
-        if (this.getActiveGoal() != null) {
-            AStarConfig config = this.getActiveGoal().getPathingConfig(this);
+        Goal routingGoal = this.routingGoal();
+        if (routingGoal != null) {
+            AStarConfig config = routingGoal.getPathingConfig(this);
             if (this.tracksLandEntity() && config.tolerance) {
                 // Exact access node for moving land targets, not the broad
                 // tolerance used by construction and other static workplaces.
@@ -2698,6 +2856,8 @@ IAStarPathedEntity {
                                         this.townHall.getConstructionsInProgress().get(this.constructionJobId).setBuilder(this);
                                     }
                                 }
+                                if (this.slaughterTarget != null && (!this.isSlaughterCombat() || this.getTownHall().underAttack))
+                                    this.endSlaughterCombat(false, "INTERRUPTED");
                                 if (this.getTownHall().underAttack) {
                                     if (this.goalKey == null || !this.goalKey.equals(Goal.raidVillage.key) && !this.goalKey.equals(Goal.defendVillage.key) && !this.goalKey.equals(Goal.hide.key)) {
                                         this.clearGoal();
@@ -2712,6 +2872,9 @@ IAStarPathedEntity {
                                         this.goalKey = Goal.hide.key;
                                     }
                                     this.checkGoals();
+                                }
+                                if (this.isSlaughterCombat()) {
+                                    if (this.tickSlaughterCombat()) break block80;
                                 }
                                 if (this.getTarget() == null) break block79;
                                 if (this.vtype.isDefensive && this.getPos().distanceTo(this.getHouse().getResManager().getDefendingPos()) > 20.0) {
@@ -2988,7 +3151,7 @@ IAStarPathedEntity {
         if (now < this.nextVanillaPathAttempt) return false;
         this.nextVanillaPathAttempt = now + 40L;
         this.navigation.stop();
-        Goal goal = Goal.goals.get(this.goalKey);
+        Goal goal = this.routingGoal();
         int range = goal == null ? 1 : Math.max(1, goal.range(this));
         boolean stockGoal = isStockTransferGoal(goal);
         boolean entityGoal = this.tracksLandEntity();
@@ -3093,7 +3256,7 @@ IAStarPathedEntity {
                 && fallback != null && fallback.getEndNode() != null
                 && new Point(fallback.getEndNode()).distanceTo(dest) < range + 1.0D) progressing = false;
         if (entityGoal && fallback != null && fallback.getNodeCount() <= 1
-                && goal != null && !goal.isWithinActionRange(this, dest)) return false;
+                && goal != null && !this.routingInRange(goal, dest)) return false;
         if (!reached && !progressing) return false;
         Node[] nodes = new Node[fallback.getNodeCount()];
         for (int i = 0; i < nodes.length; i++) nodes[i] = fallback.getNode(i);
@@ -3126,7 +3289,7 @@ IAStarPathedEntity {
         Goal failedGoal = this.getActiveGoal();
         if (this.isMiningTrip(failedGoal)) {
             this.abandonMiningSource(failedGoal);
-        } else if (!this.tracksLandEntity() && (!this.vtype.noTeleport || this.getRecord() != null && this.getRecord().raidingVillage)) {
+        } else if (!this.isSlaughterCombat() && !this.tracksLandEntity() && (!this.vtype.noTeleport || this.getRecord() != null && this.getRecord().raidingVillage)) {
             this.jumpToDest();
         }
     }
@@ -4039,10 +4202,10 @@ IAStarPathedEntity {
         if (this.getNavigation().isStuck()) {
             this.pathEntity = null;
         }
-        if (this.tracksLandEntity() && this.isAnimalWorkGoal(this.getActiveGoal())
+        if (this.tracksLandEntity() && this.isAnimalWorkGoal(this.routingGoal())
                 && this.pathEntity != null && (this.pathEntity.isDone() || this.navigation.isDone())) {
             this.pathEntity = null;
-            if (!this.getActiveGoal().isWithinActionRange(this, dest)) {
+            if (!this.routingInRange(this.routingGoal(), dest)) {
                 this.pathFailedSincelastTick = true;
                 this.nextVanillaPathAttempt = 0L;
                 return;

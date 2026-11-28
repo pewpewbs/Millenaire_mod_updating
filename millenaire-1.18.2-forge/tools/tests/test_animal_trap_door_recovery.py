@@ -35,8 +35,29 @@ class AnimalTrapDoorRecovery(unittest.TestCase):
         self.assertIn("this.getAnimals(villager, b.getPos(), 15, 10)", code)
         self.assertIn("this.aggressiveSlaughter ? targetAnimals / 2 : targetAnimals", code)
         self.assertIn("HERD_AT_RESERVE", code)
-        self.assertIn("villager.setTarget(living)", code)
+        self.assertIn("villager.startSlaughterCombat(living, this)", code)
         self.assertIn("!this.isDestPossible(villager, dest)", code)
+
+    def test_slaughter_combat_preserves_routing_context_and_bounds_stalls(self):
+        code = read("entity/MillVillager.java")
+        self.assertIn("this.getTarget() == this.slaughterTarget", code)
+        self.assertIn("this.isSlaughterCombat() ? this.slaughterGoal : this.getActiveGoal()", code)
+        self.assertIn("this.tickSlaughterCombat()) break block80", code)
+        self.assertIn("if (this.isSlaughterCombat()) return this.canHitSlaughterTarget(foot)", code)
+        self.assertIn("Goal currentGoal = this.routingGoal()", code)
+        self.assertIn("Goal goal = this.routingGoal()", code)
+        combat = code.split("private boolean tickSlaughterCombat()", 1)[1].split("private MiningAccess", 1)[0]
+        self.assertIn("animal.getHealth() < health", combat)
+        self.assertIn("slaughterProgressPosition.distanceToSqr(this.position())", combat)
+        self.assertIn("now - this.slaughterProgressTick >= 160L", combat)
+        self.assertIn("this.tryGroundRoute(this.getPathDestPoint())", combat)
+        self.assertIn('this.endSlaughterCombat(true, "NO_PROGRESS")', combat)
+        self.assertIn("now - this.slaughterLastHitTick >= 1200L", combat)
+        self.assertIn("NAV-SLAUGHTER-RETRY", combat)
+        self.assertIn("NAV-SLAUGHTER-RESELECT", code)
+        self.assertIn("!this.isSlaughterCombat() && !this.tracksLandEntity()", code)
+        clear = code.split("public void clearGoal()", 1)[1].split("public ", 1)[0]
+        self.assertNotIn("slaughterTarget = null", clear)
 
     def test_trap_rescue_requires_solid_enclosure_and_safe_loaded_exit(self):
         code = read("pathing/PhysicalTrapRecovery.java")
