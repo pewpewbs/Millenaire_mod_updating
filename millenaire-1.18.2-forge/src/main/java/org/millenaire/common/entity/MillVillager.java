@@ -3535,6 +3535,7 @@ IAStarPathedEntity {
             this.clothTexture[i] = StreamReadWrite.readNullableResourceLocation(data);
         }
         this.setGoalDestPoint(StreamReadWrite.readNullablePoint(data));
+        this.setGoalBuildingDestPoint(StreamReadWrite.readNullablePoint(data));
         this.shouldLieDown = data.readBoolean();
         this.dialogueTargetFirstName = StreamReadWrite.readNullableString(data);
         this.dialogueTargetLastName = StreamReadWrite.readNullableString(data);
@@ -4396,6 +4397,7 @@ IAStarPathedEntity {
             StreamReadWrite.writeNullableResourceLocation(this.clothTexture[i], data);
         }
         StreamReadWrite.writeNullablePoint(this.getGoalDestPoint(), data);
+        StreamReadWrite.writeNullablePoint(this.getGoalBuildingDestPoint(), data);
         data.writeBoolean(this.shouldLieDown);
         StreamReadWrite.writeNullableString(this.dialogueTargetFirstName, data);
         StreamReadWrite.writeNullableString(this.dialogueTargetLastName, data);

@@ -156,6 +156,27 @@ class ProductionRuntimeWiring(unittest.TestCase):
         self.assertLess(action.index("isWithinActionRange"),action.index("villager.takeFromBuilding"))
         self.assertIn("villager.setGoalInformation(next)",action)
 
+    def test_brick_firing_uses_carried_batch_before_delivery_when_not_reserved(self):
+        cook=read("goal/generic/GoalGenericCooking.java")
+        self.assertIn("constructionMissing(villager,this.itemToCook)==0",cook)
+        self.assertIn("this.getDestination(villager, false, true)!=null) return 925",cook)
+        self.assertIn("REFILL_BEFORE_DELIVERY_PRIORITY = 950",read("goal/BrickProductionPolicy.java"))
+        self.assertIn("return 900",read("goal/GoalBringBackResourcesHome.java"))
+        self.assertIn("if ((brick || inputOnly) && bestInput != null)",cook)
+        self.assertIn("if (inputOnly && !allowSupply) return null",cook)
+        self.assertIn("next=this.getDestination(villager, false, true)",cook)
+        fill=cook.split("private ItemStack fillCookingInput(",1)[1]
+        branch=fill.split("if (brickKilnSupply(villager))",1)[1].split("} else {",1)[0]
+        self.assertLess(branch.index("villager.takeFromInv"),branch.index("dest.takeGoods"))
+
+    def test_brick_supply_activity_is_synced_to_client(self):
+        cook=read("goal/generic/GoalGenericCooking.java")
+        self.assertIn("villager.townHallPoint.equals(villager.getGoalBuildingDestPoint())",cook)
+        self.assertEqual(cook.count('atBrickSupply(villager) ? "getbrickforfiring"'),2)
+        villager=read("entity/MillVillager.java")
+        self.assertIn("this.setGoalBuildingDestPoint(StreamReadWrite.readNullablePoint(data));",villager)
+        self.assertIn("StreamReadWrite.writeNullablePoint(this.getGoalBuildingDestPoint(), data);",villager)
+
     def test_source_migration_is_scoped_and_persisted(self):
         source = read("buildingplan/ProductionSourceRepair.java")
         for key in ("indian/quarry/0","indian/quarry/1","mayan/mayanmining/0",

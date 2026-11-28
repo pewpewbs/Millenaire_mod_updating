@@ -494,6 +494,7 @@ goal.maketimberframe=Делает каркасы
 goal.drybrick=Ставит кирпичи сохнуть
 goal.gatherbrick=Собирает высохшие кирпичи
 goal.cookbrick=Обжигает кирпич
+goal.getbrickforfiring=Забирает кирпич для обжига
 goal.plantrice=Сажает рис
 goal.harvestrice=Собирает рис
 goal.plantturmeric=Сажает куркуму

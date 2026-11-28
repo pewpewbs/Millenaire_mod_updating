@@ -494,6 +494,7 @@ goal.maketimberframe=Виготовляє фахверкові каркаси
 goal.drybrick=Викладає цеглу для сушіння
 goal.gatherbrick=Збирає висушену цеглу
 goal.cookbrick=Випалює цеглу
+goal.getbrickforfiring=Забирає цеглу для випалювання
 goal.plantrice=Садить рис
 goal.harvestrice=Збирає рис
 goal.plantturmeric=Садить куркуму

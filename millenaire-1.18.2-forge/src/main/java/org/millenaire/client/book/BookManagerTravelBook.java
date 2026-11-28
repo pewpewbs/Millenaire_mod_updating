@@ -1058,8 +1058,8 @@ extends BookManager {
         page.getLastLine().canCutAfter = false;
         ArrayList<TextLine> entries = new ArrayList<>();
         for (BuildingPlanSet plan : buildings)
-            entries.add(new TextLine(plan.getNameNative(), new GuiText.GuiButtonReference(plan)));
-        for (TextLine line : BookManager.splitInColumns(entries, 2)) page.addLine(line);
+            entries.add(new TextLine("", new GuiText.GuiButtonReference(plan)));
+        for (TextLine line : BookManager.splitInColumns(entries, 5)) page.addLine(line);
     }
 
     private void getBookTradeGoodDetail_shops(Culture culture, TextPage page, TradeGood tradeGood) {

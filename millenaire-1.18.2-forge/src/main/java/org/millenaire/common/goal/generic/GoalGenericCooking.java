@@ -95,24 +95,49 @@ extends GoalGeneric {
     }
 
     private boolean atBrickSupply(MillVillager villager) {
-        return brickKilnSupply(villager) && villager.getGoalBuildingDest()==villager.getTownHall();
+        return villager != null && "cookindianbrick".equals(this.key)
+                && villager.townHallPoint != null
+                && villager.townHallPoint.equals(villager.getGoalBuildingDestPoint());
+    }
+
+    @Override public String labelKey(MillVillager villager) {
+        return atBrickSupply(villager) ? "getbrickforfiring" : super.labelKey(villager);
+    }
+
+    @Override public String labelKeyWhileTravelling(MillVillager villager) {
+        return atBrickSupply(villager) ? "getbrickforfiring" : super.labelKeyWhileTravelling(villager);
     }
 
     @Override
     public int priority(MillVillager villager) throws Exception {
-        if (org.millenaire.common.goal.BrickProductionDemand.isRawBrick(this.itemToCook)
-                && (carriedForCooking(villager)>=this.minimumToCook
-                    || availableBrickSupply(villager)>=this.minimumToCook)) return 850;
+        if (brickKilnSupply(villager)) {
+            // Complete harvest/refill first (950). Then fire available cargo
+            // directly (925), ahead of normal brick delivery (900), but never
+            // preempt delivery of raw bricks missing for construction.
+            if (carriedForCooking(villager)>0
+                    && org.millenaire.common.goal.BrickProductionDemand.constructionMissing(villager,this.itemToCook)==0
+                    && this.getDestination(villager, false, true)!=null) return 925;
+            if (carriedForCooking(villager)>=this.minimumToCook
+                    || availableBrickSupply(villager)>=this.minimumToCook) return 850;
+        }
         return super.priority(villager);
     }
 
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
+        return getDestination(villager, true, false);
+    }
+
+    /** Input-only probes must not mistake a finished output for firing capacity. */
+    private Goal.GoalInformation getDestination(MillVillager villager, boolean allowSupply, boolean inputOnly) throws Exception {
         List<Building> buildings = this.getBuildings(villager);
         Point best = null;
         Building bestBuilding = null;
+        Point bestInput = null;
+        Building bestInputBuilding = null;
         boolean supplyNeeded=false;
-        int supply=availableBrickSupply(villager);
+        boolean brick=brickKilnSupply(villager);
+        int supply=allowSupply?availableBrickSupply(villager):0;
         for (Building dest : buildings) {
             if (!this.isDestPossible(villager, dest)) continue;
             if (!passesWorkplaceBalance(villager, dest)) {
@@ -135,6 +160,9 @@ extends GoalGeneric {
                         || org.millenaire.common.item.LegacyItemStacks.matches(input,this.itemToCook.getItem(),this.itemToCook.meta)
                         && input.getCount()<32;
                 boolean canFill = countGoods >= this.minimumToCook && inputSlot;
+                if (canFill && (bestInput == null || p.horizontalDistanceToSquared(villager)<bestInput.horizontalDistanceToSquared(villager))) {
+                    bestInput=p; bestInputBuilding=dest;
+                }
                 if (inputSlot && countGoods<this.minimumToCook
                         && countGoods+(long)supply>=this.minimumToCook && dest!=villager.getTownHall())
                     supplyNeeded=true;
@@ -154,6 +182,9 @@ extends GoalGeneric {
                 for (slotNb = 0; slotNb < 3; ++slotNb) {
                     stack = firepit.inputs.getStackInSlot(slotNb);
                     if (countGoods < this.minimumToCook || !stack.isEmpty() && (!org.millenaire.common.item.LegacyItemStacks.matches(stack,this.itemToCook.getItem(),this.itemToCook.meta) || stack.getCount() >= 32)) continue;
+                    if (bestInput == null || p.horizontalDistanceToSquared(villager)<bestInput.horizontalDistanceToSquared(villager)) {
+                        bestInput=p; bestInputBuilding=dest;
+                    }
                     if (best == null || p.horizontalDistanceToSquared(villager)<best.horizontalDistanceToSquared(villager)) {
                         best=p; bestBuilding=dest;
                     }
@@ -167,7 +198,9 @@ extends GoalGeneric {
                 }
             }
         }
-        if (best != null) return this.packDest(best,bestBuilding);
+        if ((brick || inputOnly) && bestInput != null) return this.packDest(bestInput,bestInputBuilding);
+        if (inputOnly && !allowSupply) return null;
+        if (!inputOnly && best != null) return this.packDest(best,bestBuilding);
         if(supplyNeeded && supply>0){
             Building th=villager.getTownHall();
             return this.packDest(th.getResManager().getSellingPos(),th);
@@ -234,18 +267,18 @@ extends GoalGeneric {
             if(target==null || !target.equals(dest.getResManager().getSellingPos())
                     || !villager.level.hasChunkAt(target.getBlockPos()))return true;
             if(!this.isWithinActionRange(villager,null))return false;
-            // Re-evaluate the kiln need and reservations on arrival. If local
-            // input appeared meanwhile, walk there instead of taking extra.
-            Goal.GoalInformation next=this.getDestination(villager);
+            // Revalidate actual input capacity, not merely collectable output.
+            // If local input appeared, the resource trip is no longer needed.
+            if(!this.passesStockLimits(villager))return true;
+            Goal.GoalInformation next=this.getDestination(villager, true, true);
             if(next==null)return true;
             if(!dest.getPos().equals(next.getDestBuildingPos())){
                 villager.setGoalInformation(next);
                 return false;
             }
-            if(!this.passesStockLimits(villager))return true;
             int amount=Math.min(availableBrickSupply(villager),Math.max(0,64-villager.countInv(this.itemToCook)));
             if(amount<=0 || villager.takeFromBuilding(dest,this.itemToCook.getItem(),this.itemToCook.meta,amount)<=0)return true;
-            next=this.getDestination(villager);
+            next=this.getDestination(villager, false, true);
             if(next==null || dest.getPos().equals(next.getDestBuildingPos()))return true;
             villager.setGoalInformation(next);
             return false;
@@ -280,8 +313,14 @@ extends GoalGeneric {
         int capacity = Math.min(slotLimit, ingredient.getMaxStackSize()) - current.getCount();
         int requested = (int)Math.max(0L, Math.min((long)capacity, available));
         if (requested == 0) return current;
-        int taken = dest.takeGoods(this.itemToCook, requested);
-        if (taken < requested) taken += villager.takeFromInv(this.itemToCook, Math.min(requested - taken,carriedForCooking(villager)));
+        int taken = 0;
+        if (brickKilnSupply(villager)) {
+            taken = villager.takeFromInv(this.itemToCook, Math.min(requested,carriedForCooking(villager)));
+            if (taken < requested) taken += dest.takeGoods(this.itemToCook, requested - taken);
+        } else {
+            taken = dest.takeGoods(this.itemToCook, requested);
+            if (taken < requested) taken += villager.takeFromInv(this.itemToCook, Math.min(requested - taken,carriedForCooking(villager)));
+        }
         if (taken == 0) return current;
         ItemStack result = current.isEmpty() ? ingredient : current.copy();
         result.setCount(current.getCount() + taken);

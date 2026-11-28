@@ -494,6 +494,7 @@ goal.maketimberframe=Making timber frames
 goal.drybrick=Setting bricks to dry
 goal.gatherbrick=Gathering dried bricks
 goal.cookbrick=Cooking bricks
+goal.getbrickforfiring=Collecting bricks for firing
 goal.plantrice=Planting rice
 goal.harvestrice=Harvesting rice
 goal.plantturmeric=Planting turmeric

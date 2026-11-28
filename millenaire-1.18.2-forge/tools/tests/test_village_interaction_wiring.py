@@ -205,6 +205,14 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertIn('appendTradeBuildings(page, "travelbook.trade_good_buyingbuildings", buyingOnly)', shops)
         self.assertIn('appendTradeBuildings(page, "travelbook.trade_good_sellingbuildings", sellingOnly)', shops)
 
+    def test_trade_building_names_are_hover_only(self):
+        book=read("client/book/BookManagerTravelBook.java")
+        entries=book.split("private void appendTradeBuildings(",1)[1].split("private void getBookTradeGoodDetail_shops(",1)[0]
+        self.assertIn('new TextLine("", new GuiText.GuiButtonReference(plan))',entries)
+        self.assertIn("BookManager.splitInColumns(entries, 5)",entries)
+        self.assertNotIn("plan.getNameNative()",entries)
+        self.assertIn("reference.getIconName()",read("client/gui/text/GuiText.java"))
+
     def test_sales_icons_use_existing_food_and_road_rotation(self):
         ui = read("client/gui/text/BuildingMapTooltip.java")
         self.assertLess(ui.index("groupProduction(sells);"), ui.index('section(lines, label("Sells:"'))
