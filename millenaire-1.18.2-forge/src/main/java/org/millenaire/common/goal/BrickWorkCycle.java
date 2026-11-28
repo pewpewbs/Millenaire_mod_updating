@@ -20,6 +20,7 @@ final class BrickWorkCycle {
     private static final class Visit {
         Point current;
         boolean refilling;
+        int deliveryTarget=BrickProductionPolicy.DELIVERY_BATCH;
         long lastWorked;
         final Set<Point> visited=new HashSet<>();
     }
@@ -37,6 +38,8 @@ final class BrickWorkCycle {
             visit.refilling=false;
         }
         visit.visited.add(kiln.getPos());
+        visit.deliveryTarget=BrickProductionPolicy.visitDeliveryTarget(visit.deliveryTarget,
+                kiln.getResManager().hasSecondBrickTier());
         visit.lastWorked=v.level.getGameTime();
     }
 
@@ -114,7 +117,7 @@ final class BrickWorkCycle {
         InvItem item=InvItem.createInvItem(MillBlocks.BS_MUD_BRICK);
         if(th.storageRoom(item)<=0)return completed(cargo);
         boolean stockAllowed=th.nbGoodAvailable(MillBlocks.BS_MUD_BRICK,false,false,false)<=4096;
-        // A started local harvest is completed, even when it crosses 32.
+        // A started local harvest is completed, even when it crosses its 32/64 target.
         // Demand still gates starting any additional visit and all new forming.
         if(visit!=null && visit.current!=null){
             for(Building kiln:kilns){
@@ -127,7 +130,8 @@ final class BrickWorkCycle {
                 break;
             }
         }
-        if(!stockAllowed || !BrickProductionPolicy.mayStartAnotherKiln(cargo,demand.shouldGather()))
+        int deliveryTarget=visit==null?BrickProductionPolicy.DELIVERY_BATCH:visit.deliveryTarget;
+        if(!stockAllowed || !BrickProductionPolicy.mayStartAnotherKiln(cargo,demand.shouldGather(),deliveryTarget))
             return completed(cargo);
         Task best=NONE;
         for(Building kiln:kilns){

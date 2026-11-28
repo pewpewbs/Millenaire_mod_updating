@@ -247,7 +247,10 @@ final class BuildingMapTooltip {
         if(current!=null && next.containsTags("brickkiln") && loc.culture != null){
             var set=loc.culture.getBuildingPlanSet(loc.planKey);
             if(set!=null && next.level>0 && next.level==set.plans.get(loc.getVariation()).length-1)
-                changes.add(label("Two drying tiers","Два яруси сушіння","Два яруса сушки"));
+                changes.add(label("Two drying tiers","Два яруси сушіння","Два яруса сушки")
+                        +"; "+label("Delivery target: ","Ціль доставки: ","Цель доставки: ")
+                        +org.millenaire.common.goal.BrickProductionPolicy.rawDeliveryTarget(false)+" → "
+                        +org.millenaire.common.goal.BrickProductionPolicy.rawDeliveryTarget(true));
         }
         if(current!=null){
             int before=loc.getMaleResidents().size()+loc.getFemaleResidents().size();
@@ -297,7 +300,9 @@ final class BuildingMapTooltip {
                         levelDetail=label("Maximum level","Максимальний рівень","Максимальный уровень");
                         if(plan!=null && plan.containsTags("brickkiln"))
                             levelDetail+="; "+label("Mean drying time: ","Середній час сушіння: ","Среднее время сушки: ")+dryingTime(loc.level)
-                                    +"; "+label("Two drying tiers","Два яруси сушіння","Два яруса сушки");
+                                    +"; "+label("Two drying tiers","Два яруси сушіння","Два яруса сушки")
+                                    +"; "+label("Delivery target: ","Ціль доставки: ","Цель доставки: ")
+                                    +org.millenaire.common.goal.BrickProductionPolicy.rawDeliveryTarget(true);
                     }else if(expanded){
                         BuildingPlan next=set.plans.get(variation)[loc.level+1];
                         levelDetail=upgradeDetail(loc,plan,next);
