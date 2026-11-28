@@ -235,10 +235,8 @@ public class ResManager {
         return this.sleepingPos;
     }
 
-    /** The second tier is derived from completed plan markers, not persisted as new markers.
-     * This also enables it in already-built maximum-level kilns.
-     */
-    public boolean hasSecondBrickTier() {
+    /** Restrict legacy upper-brick recovery to formerly eligible kilns. */
+    private boolean wasTwoTierKiln() {
         var loc = building.location;
         if (loc == null || loc.isCustomBuilding || loc.culture == null || loc.level < 1
                 || !building.containsTags("brickkiln")) return false;
@@ -248,23 +246,25 @@ public class ResManager {
                 && loc.level == set.plans.get(variation).length - 1;
     }
 
-    /** Do not add a third tier or overlap another authored drying marker. */
-    public boolean isUpperBrickSpot(Point p) {
-        return p != null && hasSecondBrickTier() && !brickspot.contains(p)
+    /** Only an already existing upper brick can be recovered; never register empty upper slots. */
+    public boolean isLegacyUpperBrick(Point p) {
+        return p != null && wasTwoTierKiln() && !brickspot.contains(p)
                 && brickspot.contains(p.getBelow()) && !brickspot.contains(p.getBelow().getBelow())
                 && !brickspot.contains(p.getAbove())
-                && p.getiY() < building.world.getMaxBuildHeight() - 1;
+                && p.getiY() < building.world.getMaxBuildHeight() - 1
+                && building.world.hasChunkAt(p.getBlockPos())
+                && isProductionBrick(building.world.getBlockState(p.getBlockPos()));
     }
 
     public boolean isBrickWorkSpot(Point p) {
-        return p != null && (brickspot.contains(p) || isUpperBrickSpot(p));
+        return p != null && (brickspot.contains(p) || isLegacyUpperBrick(p));
     }
 
     public List<Point> getBrickWorkSpots() {
-        if (!hasSecondBrickTier()) return brickspot;
+        if (!wasTwoTierKiln()) return brickspot;
         var result = new java.util.ArrayList<Point>(brickspot);
         for (Point base : brickspot) {
-            if (base != null && isUpperBrickSpot(base.getAbove()))
+            if (base != null && isLegacyUpperBrick(base.getAbove()))
                 result.add(base.getAbove());
         }
         return result;
@@ -274,21 +274,15 @@ public class ResManager {
         return state.getBlock() == MillBlocks.WET_BRICK || state == MillBlocks.BS_MUD_BRICK;
     }
 
-    /** Fill bottom-up, harvest top-down. Never overwrite an occupied upper position. */
+    /** Form only on authored base slots; harvest any old upper brick before its base. */
     public boolean canWorkBrickSpot(Point p, boolean ready) {
         if (!isBrickWorkSpot(p) || !building.world.hasChunkAt(p.getBlockPos())) return false;
         var pos = p.getBlockPos();
         var state = building.world.getBlockState(pos);
         if (ready ? state != MillBlocks.BS_MUD_BRICK : !state.isAir()) return false;
-        if (isUpperBrickSpot(p)) {
-            var below = building.world.getBlockState(pos.below());
-            if (ready) return isProductionBrick(below) || below.isAir();
-            return isProductionBrick(below) && building.world.getBlockState(pos.above()).isAir()
-                    && building.world.canSeeSky(pos.above());
-        }
-        // A lower dry brick supports its upper neighbour until that neighbour is harvested.
-        return !ready || !isUpperBrickSpot(p.getAbove())
-                || !isProductionBrick(building.world.getBlockState(pos.above()));
+        if (isLegacyUpperBrick(p)) return ready;
+        // Don't refill or harvest a base while a legacy upper brick remains.
+        return !isLegacyUpperBrick(p.getAbove());
     }
 
     public Point getEmptyBrickLocation() {

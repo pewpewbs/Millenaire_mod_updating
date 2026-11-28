@@ -5,7 +5,6 @@ public final class BrickProductionPolicy {
     public static final int RESERVE_PER_LEVEL = 128;
     public static final int MAX_RESERVE = 512;
     public static final int DELIVERY_BATCH = 32;
-    public static final int MAX_KILN_DELIVERY_BATCH = DELIVERY_BATCH * 2;
     public static final int REFILL_BEFORE_DELIVERY_PRIORITY = 950;
     private BrickProductionPolicy() {}
 
@@ -18,22 +17,9 @@ public final class BrickProductionPolicy {
         return carried > 0 && (carried >= DELIVERY_BATCH || fired);
     }
 
-    public static int rawDeliveryTarget(boolean secondTier) {
-        return secondTier ? MAX_KILN_DELIVERY_BATCH : DELIVERY_BATCH;
-    }
-
-    /** Keep the larger threshold for the rest of a mixed-level delivery trip. */
-    public static int visitDeliveryTarget(int previousTarget, boolean secondTier) {
-        return Math.max(previousTarget, rawDeliveryTarget(secondTier));
-    }
-
     /** The threshold gates another kiln visit, never the active harvest. */
     public static boolean mayStartAnotherKiln(int raw, boolean demandRemaining) {
-        return mayStartAnotherKiln(raw, demandRemaining, DELIVERY_BATCH);
-    }
-
-    public static boolean mayStartAnotherKiln(int raw, boolean demandRemaining, int deliveryTarget) {
-        return raw < deliveryTarget && demandRemaining;
+        return raw < DELIVERY_BATCH && demandRemaining;
     }
 
     public static boolean shouldDeliverRaw(int raw, boolean workRemaining) {

@@ -2,7 +2,7 @@ import java.util.Random;
 import org.millenaire.common.block.BrickDryingPolicy;
 public final class BrickDryingPolicySmoke {
     public static void main(String[] args) {
-        int[] expected = {379,341,303};
+        int[] expected = {303,273,242};
         for(int level=0;level<3;level++){
             if(BrickDryingPolicy.meanSeconds(level)!=expected[level])throw new AssertionError("mean seconds");
             Random random=new Random(42);

@@ -42,14 +42,14 @@ public class BlockWetBrick extends Block implements IMetaBlockName, LegacyVarian
     @Override public void randomTick(BlockState state, ServerLevel level, BlockPos pos, Random random) {
         int current = state.getValue(PROGRESS).getMetadata();
         boolean exposed = level.getMaxLocalRawBrightness(pos.above()) > 14;
-        // Only a registered lower tier may borrow light from immediately above
+        // Only a registered base with a leftover upper brick may borrow light from immediately above
         // its upper production brick. Ordinary covered bricks still cannot dry.
         if (!exposed && !org.millenaire.common.village.buildingmanagers.ResManager.isProductionBrick(
                 level.getBlockState(pos.above()))) return;
         var data = org.millenaire.common.forge.Mill.getMillWorld(level);
         int kilnLevel = data != null && data.world == level
                 ? data.getBrickDryingLevel(pos) : BrickDryingPolicy.NORMAL_LEVEL;
-        if (!exposed && (data == null || data.world != level || !data.isStackedBrickBase(pos)
+        if (!exposed && (data == null || data.world != level || !data.isLegacyStackedBrickBase(pos)
                 || level.getMaxLocalRawBrightness(pos.above().above()) <= 14)) return;
         int next = BrickDryingPolicy.advance(current, kilnLevel, random);
         if (next == current) return;

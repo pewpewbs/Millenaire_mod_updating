@@ -18,19 +18,21 @@ class BrickDryingWiring(unittest.TestCase):
         self.assertIn("+(loc.level+1)",ui)
         self.assertIn("dryingTime(current.level)",ui)
         self.assertIn("dryingTime(next.level)",ui)
-    def test_second_tier_is_final_only_and_shared_by_work_and_drying(self):
+    def test_old_upper_bricks_are_recoverable_but_never_refilled(self):
         manager=(ROOT/"common/village/buildingmanagers/ResManager.java").read_text(encoding="utf-8")
         cycle=(ROOT/"common/goal/BrickWorkCycle.java").read_text(encoding="utf-8")
         demand=(ROOT/"common/goal/BrickProductionDemand.java").read_text(encoding="utf-8")
         block=(ROOT/"common/block/BlockWetBrick.java").read_text(encoding="utf-8")
         self.assertIn("loc.level == set.plans.get(variation).length - 1",manager)
         self.assertIn("!brickspot.contains(p.getBelow().getBelow())",manager)
-        self.assertIn("isProductionBrick(below) &&",manager)
-        self.assertIn("!isProductionBrick(building.world.getBlockState(pos.above()))",manager)
+        self.assertIn("&& isProductionBrick(building.world.getBlockState(p.getBlockPos()))",manager)
+        self.assertIn("if (isLegacyUpperBrick(p)) return ready;",manager)
+        self.assertIn("return !isLegacyUpperBrick(p.getAbove());",manager)
+        self.assertNotIn("Two drying tiers", (ROOT/"client/gui/text/BuildingMapTooltip.java").read_text(encoding="utf-8"))
         self.assertIn("getBrickWorkSpots()",cycle)
         self.assertIn("canWorkBrickSpot(p,ready)",cycle)
         self.assertIn("getBrickWorkSpots()",demand)
-        self.assertIn("data.isStackedBrickBase(pos)",block)
+        self.assertIn("data.isLegacyStackedBrickBase(pos)",block)
         self.assertIn("getMaxLocalRawBrightness(pos.above().above())",block)
     def test_runtime_manager_is_the_one_checked(self):
         building=(ROOT/"common/village/Building.java").read_text(encoding="utf-8")
@@ -38,7 +40,7 @@ class BrickDryingWiring(unittest.TestCase):
         block=(ROOT/"common/block/BlockWetBrick.java").read_text(encoding="utf-8")
         self.assertIn("public ResManager getResManager()",building)
         self.assertIn("class ResManager",manager)
-        for signature in ("boolean hasSecondBrickTier()", "boolean isUpperBrickSpot(Point p)",
+        for signature in ("boolean wasTwoTierKiln()", "boolean isLegacyUpperBrick(Point p)",
                           "boolean isBrickWorkSpot(Point p)", "List<Point> getBrickWorkSpots()",
                           "boolean canWorkBrickSpot(Point p, boolean ready)"):
             self.assertIn(signature,manager)

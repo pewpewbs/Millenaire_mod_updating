@@ -99,10 +99,10 @@ public class MillWorldData {
     }
 
     /** Called after getBrickDryingLevel has refreshed the owner index. */
-    public boolean isStackedBrickBase(net.minecraft.core.BlockPos pos) {
+    public boolean isLegacyStackedBrickBase(net.minecraft.core.BlockPos pos) {
         Building kiln = brickDryingOwners.get(pos);
         return kiln != null && kiln.getResManager().brickspot.contains(new Point(pos))
-                && kiln.getResManager().isUpperBrickSpot(new Point(pos.above()));
+                && kiln.getResManager().isLegacyUpperBrick(new Point(pos.above()));
     }
     private final HashMap<Long, MillVillager> villagers = new HashMap();
     private final HashMap<Long, VillagerRecord> villagerRecords = new HashMap();
