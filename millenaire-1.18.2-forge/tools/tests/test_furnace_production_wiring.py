@@ -90,7 +90,7 @@ class FurnaceProductionWiring(unittest.TestCase):
         self.assertIn("if (taken <= 0) return true;", action)
         self.assertIn("replacement.grow(taken * 4)", action)
         self.assertIn("furnace.setItem(1, replacement)", action)
-        self.assertIn("firepit.fuel.setStackInSlot(0, replacement)", action)
+        self.assertIn("((TileEntityFirePit)entity).fuel.setStackInSlot(0, replacement)", action)
         self.assertNotIn("wood.planks()", src)
         self.assertIn("new ItemStack[]{new ItemStack(Blocks.OAK_PLANKS)}", src)
 
