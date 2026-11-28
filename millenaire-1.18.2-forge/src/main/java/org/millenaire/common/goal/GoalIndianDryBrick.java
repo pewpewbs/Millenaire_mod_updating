@@ -30,6 +30,30 @@ import org.millenaire.common.village.Building;
 @DocumentedElement.Documentation(value="Go and dry bricks in a building with the kiln tag.")
 public class GoalIndianDryBrick
 extends Goal {
+    // A failed refill must not strand a full delivery batch behind an
+    // unreachable point. The normal delivery goal remains eligible.
+    private final java.util.Map<MillVillager,Long> refillRetryAfter = new java.util.WeakHashMap<>();
+
+    private boolean refillTrip(MillVillager villager) {
+        return BrickProductionDemand.refillBeforeDelivery(villager)
+                || BrickProductionDemand.refillAfterGather(villager,this.key.equals(villager.goalKey));
+    }
+
+    private Building nearestLoadedKiln(MillVillager villager) {
+        Building remembered = BrickProductionDemand.lastGatherKiln(villager);
+        if (remembered != null) return remembered;
+        Building best = null;
+        double distance = Double.POSITIVE_INFINITY;
+        for (Building kiln : villager.getTownHall().getBuildingsWithTag("brickkiln")) {
+            for (Point spot : kiln.getResManager().brickspot) {
+                if (spot == null || !villager.level.hasChunkAt(spot.getBlockPos())) continue;
+                double d = spot.horizontalDistanceToSquared(villager);
+                if (d < distance) { distance = d; best = kiln; }
+            }
+        }
+        return best;
+    }
+
     public GoalIndianDryBrick() {
         this.maxSimultaneousInBuilding = 1;
         this.tags.add("tag_construction");
@@ -43,17 +67,23 @@ extends Goal {
 
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws MillLog.MillenaireException {
-        if (BrickProductionDemand.deliveryDue(villager)) return null;
+        boolean refill = refillTrip(villager);
+        if (BrickProductionDemand.deliveryDue(villager) && !refill) return null;
+        if (refill && villager.level.getGameTime() < refillRetryAfter.getOrDefault(villager,0L)) return null;
         var demand = BrickProductionDemand.inspect(villager);
         long drying = BrickProductionDemand.inDryingArea(villager);
         if (!demand.shouldForm(drying)) {
             GoalDiagnostics.note(villager,this,"BRICK_TARGET_COVERED shortage="+demand.shortage()+" drying="+drying);
             return null;
         }
-        boolean minimumBricksNotRequired = demand.urgent() || (villager.goalKey != null && villager.goalKey.equals(this.key) ? true : (!villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L));
+        boolean minimumBricksNotRequired = refill || demand.urgent() || (villager.goalKey != null && villager.goalKey.equals(this.key) ? true : (!villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L));
         ArrayList<Point> vp = new ArrayList<Point>();
         ArrayList<Point> buildingp = new ArrayList<Point>();
+        // Refill only the closest working kiln, rather than crossing the village
+        // to fill a different kiln before delivering the already collected batch.
+        Building local = refill ? nearestLoadedKiln(villager) : null;
         for (Building kiln : villager.getTownHall().getBuildingsWithTag("brickkiln")) {
+            if (refill && kiln != local) continue;
             Point p;
             if (!this.validateDest(villager, kiln)) continue;
             int nb = kiln.getResManager().getNbEmptyBrickLocation();
@@ -108,18 +138,26 @@ extends Goal {
         if (villager.level.isClientSide || villager.getGoalDestPoint() == null || villager.getGoalBuildingDest() == null
                 || !villager.level.hasChunkAt(villager.getGoalDestPoint().getBlockPos())
                 || !villager.getGoalBuildingDest().getResManager().brickspot.contains(villager.getGoalDestPoint())) return true;
-        if (BrickProductionDemand.deliveryDue(villager)) return true;
+        if (BrickProductionDemand.deliveryDue(villager) && !refillTrip(villager)) return true;
         if (!BrickProductionDemand.inspect(villager).shouldForm(BrickProductionDemand.inDryingArea(villager))) return true;
         if (WorldUtilities.getBlock(villager.level, villager.getGoalDestPoint()) == Blocks.AIR) {
             villager.setBlockstate(villager.getGoalDestPoint(), MillBlocks.BS_WET_BRICK);
+            if (villager.level.getBlockState(villager.getGoalDestPoint().getBlockPos()).getBlock() != MillBlocks.WET_BRICK) {
+                if (refillTrip(villager)) refillRetryAfter.put(villager,villager.level.getGameTime()+200L);
+                return true;
+            }
             villager.swing(InteractionHand.MAIN_HAND);
         }
         if (villager.getGoalBuildingDest().getResManager().getNbEmptyBrickLocation() > 0) {
             Goal.GoalInformation next = this.getDestination(villager);
-            if (next == null) return true;
+            if (next == null) {
+                BrickProductionDemand.clearGatherKiln(villager);
+                return true;
+            }
             villager.setGoalInformation(next);
             return false;
         }
+        BrickProductionDemand.clearGatherKiln(villager);
         return true;
     }
 
@@ -127,6 +165,7 @@ extends Goal {
     public int priority(MillVillager villager) {
         var demand = BrickProductionDemand.inspect(villager);
         if (!demand.shouldForm(BrickProductionDemand.inDryingArea(villager))) return 0;
+        if (refillTrip(villager)) return BrickProductionPolicy.REFILL_BEFORE_DELIVERY_PRIORITY;
         int p = demand.priority(false);
         for (MillVillager v : villager.getTownHall().getKnownVillagers()) {
             if (v == villager || !this.key.equals(v.goalKey)) continue;
@@ -137,6 +176,7 @@ extends Goal {
 
     @Override
     public boolean unreachableDestination(MillVillager villager) {
+        if (refillTrip(villager)) refillRetryAfter.put(villager,villager.level.getGameTime()+200L);
         return false;
     }
 }

@@ -5,6 +5,7 @@ public final class BrickProductionPolicy {
     public static final int RESERVE_PER_LEVEL = 128;
     public static final int MAX_RESERVE = 512;
     public static final int DELIVERY_BATCH = 32;
+    public static final int REFILL_BEFORE_DELIVERY_PRIORITY = 950;
     private BrickProductionPolicy() {}
 
     /** Completed internal levels 0..3 correspond to displayed levels 1..4. */
@@ -16,6 +17,14 @@ public final class BrickProductionPolicy {
         return carried > 0 && (carried >= DELIVERY_BATCH || fired);
     }
 
+    public static boolean refillBeforeDelivery(int raw, boolean canDeliverRaw) {
+        return raw >= DELIVERY_BATCH && canDeliverRaw;
+    }
+
+    public static boolean refillAfterGather(int raw, boolean hasReady, boolean alreadyRefilling) {
+        return raw > 0 && (raw >= DELIVERY_BATCH || !hasReady || alreadyRefilling);
+    }
+
     public record Demand(long shortage, long constructionShortage) {
         public boolean shouldGather() { return shortage > 0; }
         public boolean shouldForm(long inDryingArea) { return shortage > Math.max(0, inDryingArea); }
@@ -23,7 +32,7 @@ public final class BrickProductionPolicy {
         public int priority(boolean gathering) {
             int reserveBonus = (int)Math.min(20, shortage);
             int constructionBonus = (int)Math.min(500, constructionShortage * 4);
-            return (gathering ? 220 : 260) + reserveBonus + constructionBonus;
+            return (gathering ? 260 : 220) + reserveBonus + constructionBonus;
         }
     }
 

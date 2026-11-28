@@ -118,6 +118,7 @@ extends Goal {
         if (WorldUtilities.getBlockState(villager.level, villager.getGoalDestPoint()) == MillBlocks.BS_MUD_BRICK) {
             if (!villager.setBlockAndMetadata(villager.getGoalDestPoint(), Blocks.AIR, 0)) return true;
             villager.addToInv(MillBlocks.BS_MUD_BRICK, 1);
+            BrickProductionDemand.rememberGatherKiln(villager,villager.getGoalBuildingDest());
             villager.swing(InteractionHand.MAIN_HAND);
         }
         if (BrickProductionDemand.deliveryDue(villager)) return true;

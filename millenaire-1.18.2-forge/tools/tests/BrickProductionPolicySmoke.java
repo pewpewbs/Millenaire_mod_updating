@@ -7,13 +7,13 @@ public final class BrickProductionPolicySmoke {
     public static void main(String[] args) {
         var empty = BrickProductionPolicy.demand(0, 0, 0, 0, 0, 0);
         check(empty.shortage() == 128 && !empty.urgent(), "reserve");
-        check(empty.priority(false) > empty.priority(true), "refill drying area before collecting");
+        check(empty.priority(true) > empty.priority(false), "collect ready bricks before routine forming");
         check(empty.shouldForm(127) && !empty.shouldForm(128) && empty.shouldGather(), "drying work in progress");
         var full = BrickProductionPolicy.demand(0, 128, 0, 0, 0, 0);
         check(!full.shouldGather() && !full.shouldForm(0), "stop when stocked");
         var urgent = BrickProductionPolicy.demand(200, 80, 0, 0, 0, 0);
         check(urgent.shortage() == 248 && urgent.constructionShortage() == 120, "pending project");
-        check(urgent.priority(false) > urgent.priority(true) && urgent.priority(false) < 900, "delivery and construction precedence");
+        check(urgent.priority(true) > urgent.priority(false) && urgent.priority(true) < 900, "delivery and construction precedence");
         var carried = BrickProductionPolicy.demand(200, 80, 120, 0, 0, 0);
         check(carried.shortage() == 128 && !carried.urgent(), "offsite stock not duplicated");
         var fired = BrickProductionPolicy.demand(100, 100, 0, 80, 20, 10);
@@ -41,6 +41,16 @@ public final class BrickProductionPolicySmoke {
         check(BrickProductionPolicy.deliveryDue(32,false),"full raw batch");
         check(BrickProductionPolicy.deliveryDue(1,true),"finished fired brick");
         check(!BrickProductionPolicy.deliveryDue(0,true),"empty cargo");
-        System.out.println("BrickProductionPolicySmoke: 33 checks passed");
+        check(!BrickProductionPolicy.refillBeforeDelivery(31,true),"not yet a full batch");
+        check(BrickProductionPolicy.refillBeforeDelivery(32,true),"refill with full batch");
+        check(!BrickProductionPolicy.refillBeforeDelivery(32,false),"no receivable delivery");
+        check(BrickProductionPolicy.REFILL_BEFORE_DELIVERY_PRIORITY > 900
+                && BrickProductionPolicy.REFILL_BEFORE_DELIVERY_PRIORITY < 1000,"refill between delivery and building");
+        check(!BrickProductionPolicy.refillAfterGather(0,false,false),"no gathered cargo");
+        check(!BrickProductionPolicy.refillAfterGather(12,true,false),"continue gathering local ready bricks");
+        check(BrickProductionPolicy.refillAfterGather(12,false,false),"refill exhausted local drying area");
+        check(BrickProductionPolicy.refillAfterGather(12,true,true),"finish refill already in progress");
+        check(BrickProductionPolicy.refillAfterGather(32,true,false),"full batch refills before delivery");
+        System.out.println("BrickProductionPolicySmoke passed");
     }
 }

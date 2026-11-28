@@ -81,7 +81,7 @@ class ProductionRuntimeWiring(unittest.TestCase):
         self.assertIn("townHall.location == null ? 0 : townHall.location.level", demand)
         self.assertNotIn("tradeGood.targetQuantity", demand)
         self.assertIn("Math.max(0, reserve)", policy)
-        self.assertIn("gathering ? 220 : 260", policy)
+        self.assertIn("gathering ? 260 : 220", policy)
         for file, gate, gathering in (
             ("GoalIndianDryBrick.java", "shouldForm", "false"),
             ("GoalIndianGatherBrick.java", "shouldGather", "true"),
@@ -115,6 +115,23 @@ class ProductionRuntimeWiring(unittest.TestCase):
         planner=read("village/VillageProgression.java")
         self.assertIn("p.level>centre.location.level",planner)
         self.assertIn("ProductionCapability.hasCooking(plan,null)",planner)
+
+    def test_refill_local_kiln_before_raw_delivery(self):
+        dry=read("goal/GoalIndianDryBrick.java")
+        demand=read("goal/BrickProductionDemand.java")
+        policy=read("goal/BrickProductionPolicy.java")
+        gather=read("goal/GoalIndianGatherBrick.java")
+        self.assertIn("REFILL_BEFORE_DELIVERY_PRIORITY = 950",policy)
+        self.assertIn("raw >= DELIVERY_BATCH && canDeliverRaw",policy)
+        self.assertIn("villager.getTownHall().storageRoom(raw)>0",demand)
+        self.assertIn("if (refill && kiln != local) continue;",dry)
+        self.assertIn("refill || demand.urgent() ||",dry)
+        self.assertIn("deliveryDue(villager) && !refillTrip(villager)",dry)
+        self.assertIn("refillRetryAfter.put",dry)
+        self.assertIn("BrickProductionDemand.lastGatherKiln(villager)",dry)
+        self.assertIn("BrickProductionDemand.rememberGatherKiln",gather)
+        self.assertIn("BrickProductionPolicy.refillAfterGather(raw, ready, alreadyRefilling)",demand)
+        self.assertIn("BrickProductionDemand.deliveryDue(villager)",gather)
 
     def test_source_migration_is_scoped_and_persisted(self):
         source = read("buildingplan/ProductionSourceRepair.java")
