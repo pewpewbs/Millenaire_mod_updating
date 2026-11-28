@@ -84,10 +84,13 @@ class FurnaceProductionWiring(unittest.TestCase):
         self.assertIn("villager.takeFromInv(wood.log().defaultBlockState(), requestedLogs - taken)", take)
         self.assertIn("house.takeGoods(wood.log().defaultBlockState(), requestedLogs - taken)", take)
         self.assertIn("current.is(Blocks.OAK_PLANKS.asItem()) && !current.hasTag()", src)
-        self.assertIn("current.getCount() >= 32 || !acceptsNpcFuel(current)", src)
-        action = src.split("public boolean performAction(", 1)[1]
+        self.assertIn("!acceptsNpcFuel(current) || !FurnaceBatchPolicy.fuelDue(current.getCount(), fuelCapacity(entity, current))", src)
+        policy = read(JAVA / "goal/generic/FurnaceBatchPolicy.java")
+        self.assertIn("FUEL_LOW = 4", policy)
+        self.assertIn("capacity - current >= 4 && current <= Math.min(FUEL_LOW, capacity / 2)", policy)
+        action = src.split("void serviceFuelAt(", 1)[1]
         self.assertLess(action.index("takeFuelLogs"), action.index("new ItemStack(Blocks.OAK_PLANKS, taken * 4)"))
-        self.assertIn("if (taken <= 0) return true;", action)
+        self.assertIn("if (taken <= 0) return;", action)
         self.assertIn("replacement.grow(taken * 4)", action)
         self.assertIn("furnace.setItem(1, replacement)", action)
         self.assertIn("((TileEntityFirePit)entity).fuel.setStackInSlot(0, replacement)", action)
