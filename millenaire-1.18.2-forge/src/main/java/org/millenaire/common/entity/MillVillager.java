@@ -2910,7 +2910,15 @@ IAStarPathedEntity {
                             }
                         }
                         if (this.getTarget() != null) {
-                            this.setGoalDestPoint(new Point((Entity)this.getTarget()));
+                            if (this.isSlaughterCombat()) {
+                                // Update the visible combat target without resetting the
+                                // anchored route every time the animal moves a fraction of a block.
+                                if (this.goalInformation == null)
+                                    this.goalInformation = new Goal.GoalInformation(null, null, null);
+                                this.goalInformation.setDest(new Point(this.getTarget()));
+                            } else {
+                                this.setGoalDestPoint(new Point((Entity)this.getTarget()));
+                            }
                             this.heldItem = this.getWeapon();
                             this.heldItemOffHand = ItemStack.EMPTY;
                             if (this.goalKey != null && !Goal.goals.get(this.goalKey).isFightingGoal()) {

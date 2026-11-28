@@ -55,6 +55,8 @@ class AnimalTrapDoorRecovery(unittest.TestCase):
         self.assertIn("now - this.slaughterLastHitTick >= 1200L", combat)
         self.assertIn("NAV-SLAUGHTER-RETRY", combat)
         self.assertIn("NAV-SLAUGHTER-RESELECT", code)
+        self.assertIn("this.goalInformation.setDest(new Point(this.getTarget()))", code)
+        self.assertIn("anchored route every time the animal moves", code)
         self.assertIn("!this.isSlaughterCombat() && !this.tracksLandEntity()", code)
         clear = code.split("public void clearGoal()", 1)[1].split("public ", 1)[0]
         self.assertNotIn("slaughterTarget = null", clear)
