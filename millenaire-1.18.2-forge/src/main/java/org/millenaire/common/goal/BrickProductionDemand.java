@@ -102,21 +102,19 @@ public final class BrickProductionDemand {
         if (total <= 0) return false;
         for (InvItem item : villager.getInventoryKeys()) {
             if (!isBrick(item) || !carriesForStorage(villager,item) || villager.countInv(item)<=0 || th.storageRoom(item)<=0) continue;
-            int missing = constructionMissing(villager,item);
-            int carried = villager.countInv(item);
-            boolean moreReady = isRawBrick(item) && missing > 0 && carried < Math.min(8,missing)
-                    && hasReadyBricks(villager);
-            if (BrickProductionPolicy.deliveryDue(carried,total,missing,!isRawBrick(item),moreReady)) return true;
+            if (BrickProductionPolicy.deliveryDue(villager.countInv(item),!isRawBrick(item))) return true;
         }
         return false;
     }
 
-    private static boolean hasReadyBricks(MillVillager villager) {
-        for (Building kiln : villager.getTownHall().getBuildingsWithTag("brickkiln"))
-            for (Point point : kiln.getResManager().brickspot)
-                if (point != null && villager.level.hasChunkAt(point.getBlockPos())
-                        && villager.level.getBlockState(point.getBlockPos()) == MillBlocks.BS_MUD_BRICK) return true;
-        return false;
+    // A small residual batch may leave only when production has reached its
+    // target; waiting for a full batch then would strand the last supplies.
+    static boolean waitForRawBatch(MillVillager villager) {
+        if (!brickWorker(villager) || villager.getTownHall()==null) return false;
+        int raw = villager.countInv(MillBlocks.BS_MUD_BRICK);
+        return raw > 0 && raw < BrickProductionPolicy.DELIVERY_BATCH
+                && inspect(villager).shouldGather()
+                && !villager.getTownHall().getBuildingsWithTag("brickkiln").isEmpty();
     }
 
     /** Count only existing wet or dried blocks on registered, loaded drying spots. */

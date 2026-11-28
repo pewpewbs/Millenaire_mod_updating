@@ -24,13 +24,13 @@ public final class BrickProductionPolicySmoke {
         var cultureReserve = BrickProductionPolicy.demand(0, 64, 0, 0, 0, 0, 2048);
         check(cultureReserve.shortage() == 1984 && cultureReserve.shouldForm(0), "culture stock target");
         check(!BrickProductionPolicy.demand(0, 2048, 0, 0, 0, 0, 2048).shouldGather(), "stop at culture target");
-        check(!BrickProductionPolicy.deliveryDue(7,7,100,false,true),"finish urgent batch");
-        check(BrickProductionPolicy.deliveryDue(8,8,100,false,true),"urgent batch");
-        check(BrickProductionPolicy.deliveryDue(3,3,3,false,true),"last needed bricks");
-        check(BrickProductionPolicy.deliveryDue(3,3,100,false,false),"no more dry bricks");
-        check(BrickProductionPolicy.deliveryDue(32,32,0,false,true),"ordinary batch");
-        check(BrickProductionPolicy.deliveryDue(1,1,0,true,true),"finished fired brick");
-        check(!BrickProductionPolicy.deliveryDue(0,32,0,true,false),"empty cargo");
+        check(!BrickProductionPolicy.deliveryDue(7,false),"small raw batch");
+        check(!BrickProductionPolicy.deliveryDue(8,false),"no urgent eight-brick batch");
+        check(!BrickProductionPolicy.deliveryDue(16,false),"half raw batch");
+        check(!BrickProductionPolicy.deliveryDue(31,false),"finish raw batch");
+        check(BrickProductionPolicy.deliveryDue(32,false),"full raw batch");
+        check(BrickProductionPolicy.deliveryDue(1,true),"finished fired brick");
+        check(!BrickProductionPolicy.deliveryDue(0,true),"empty cargo");
         System.out.println("BrickProductionPolicySmoke: 19 checks passed");
     }
 }

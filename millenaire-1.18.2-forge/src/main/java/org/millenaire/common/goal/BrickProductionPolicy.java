@@ -6,9 +6,8 @@ public final class BrickProductionPolicy {
     public static final int DELIVERY_BATCH = 32;
     private BrickProductionPolicy() {}
 
-    public static boolean deliveryDue(int carried, int total, int missing, boolean fired, boolean moreReady) {
-        return carried > 0 && (total >= DELIVERY_BATCH || fired
-                || (missing > 0 && (carried >= Math.min(8, missing) || !moreReady)));
+    public static boolean deliveryDue(int carried, boolean fired) {
+        return carried > 0 && (carried >= DELIVERY_BATCH || fired);
     }
 
     public record Demand(long shortage, long constructionShortage) {

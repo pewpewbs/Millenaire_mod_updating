@@ -86,6 +86,8 @@ extends Goal {
         // Override the old 100-second cooldown once a shepherd has a full
         // batch. Otherwise a large flock repeatedly wins the goal selection.
         if (fullShearingBatch(villager) || BrickProductionDemand.deliveryDue(villager)) return true;
+        if (deliveryBuilding(villager)==villager.getTownHall()
+                && BrickProductionDemand.waitForRawBatch(villager)) return false;
         boolean delayOver = !villager.lastGoalTime.containsKey(this)
                 || villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L;
         return delayOver || nb > 16;
