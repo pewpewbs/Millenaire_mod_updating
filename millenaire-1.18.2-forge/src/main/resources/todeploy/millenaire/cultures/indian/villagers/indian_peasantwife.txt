@@ -46,6 +46,7 @@ goal=makeRasgulla
 goal=makecurry
 goal=makemurgh
 
+goal=bringBackResourcesHome
 goal=slaughterChicken
 goal=breed
 goal=cookchicken
@@ -56,6 +57,13 @@ goal=makepathsandstone
 goal=makestrawbedindian
 goal=makethatchfromrice
 toolneededclass=hoes
+
+collectGood=chickenmeat
+collectGood=egg
+collectGood=feather
+bringBackHomeGood=chickenmeat
+bringBackHomeGood=egg
+bringBackHomeGood=feather
 
 requiredGood=sugarcane,12
 requiredGood=rice,5

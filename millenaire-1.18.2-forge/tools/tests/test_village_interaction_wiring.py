@@ -185,13 +185,18 @@ class VillageInteractionWiring(unittest.TestCase):
         ui=read("client/gui/text/BuildingMapTooltip.java")
         self.assertIn("private static final long ICON_ROTATION_INTERVAL_MILLIS = 1000L;",ui)
         self.assertIn('cycleGroup(goods,BuildingMapTooltip::road,label("Road materials","Матеріали доріг","Материалы дорог"));',ui)
-        self.assertIn('cycleGroup(goods,s->s.getItem().isEdible(),label("Food","Їжа","Еда"));',ui)
+        self.assertIn('cycleGroup(goods,s->s.getItem().isEdible(),null);',ui)
         self.assertIn("String category){",ui.split("private static void cycleGroup(",1)[1])
         self.assertIn("System.currentTimeMillis()/ICON_ROTATION_INTERVAL_MILLIS",ui)
         self.assertIn("groupProduction(produced);",ui)
         self.assertIn("groupProduction(planned);",ui)
         self.assertIn("if(group.size()<2)return;",ui)
         self.assertIn("goods.recipes.getOrDefault(s,List.of())",ui)
+
+    def test_food_rotation_keeps_item_recipe_without_category(self):
+        ui=read("client/gui/text/BuildingMapTooltip.java")
+        self.assertIn("cycleGroup(goods,s->s.getItem().isEdible(),null);",ui)
+        self.assertIn("if(category!=null&&!category.isBlank())",ui)
 
     def test_rotating_map_icon_categories_have_no_rotation_suffix(self):
         ui=read("client/gui/text/BuildingMapTooltip.java")

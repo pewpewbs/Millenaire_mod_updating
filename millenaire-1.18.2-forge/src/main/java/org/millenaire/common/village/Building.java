@@ -6197,6 +6197,21 @@ public class Building {
    }
 
    private void updatePens(boolean completeRespawn) {
+      // Repair existing stock Indian annexes: their first upgrade already
+      // registers chicken spawn points, but the old plan omitted the work tag.
+      if (!this.world.isClientSide && this.location != null && !this.location.isCustomBuilding
+          && this.location.level >= 1 && this.culture != null && "indian".equals(this.culture.key)
+          && "largepeasanthouse_A_secondary".equalsIgnoreCase(this.location.planKey)
+          && !this.containsTags("chicken")) {
+         for (int i=0; i<this.resManager.spawnTypes.size(); i++) {
+            if (Mill.ENTITY_CHICKEN.equals(this.resManager.spawnTypes.get(i))
+                  && i<this.resManager.spawns.size() && !this.resManager.spawns.get(i).isEmpty()) {
+               this.addTags(java.util.List.of("chicken"), "stock Indian annex chicken pen repair");
+               this.requestSave("stock Indian annex chicken pen repair");
+               break;
+            }
+         }
+      }
       if ((completeRespawn || !this.world.isDay())
          && (this.getVillagerRecords().size() > 0 || this.location.getMaleResidents().isEmpty() && this.location.getFemaleResidents().isEmpty())
          && !this.world.isClientSide) {

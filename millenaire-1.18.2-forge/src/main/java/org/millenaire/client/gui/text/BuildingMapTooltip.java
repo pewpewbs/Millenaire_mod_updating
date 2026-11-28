@@ -602,7 +602,7 @@ final class BuildingMapTooltip {
 
     private static void groupProduction(Goods goods){
         cycleGroup(goods,BuildingMapTooltip::road,label("Road materials","Матеріали доріг","Материалы дорог"));
-        cycleGroup(goods,s->s.getItem().isEdible(),label("Food","Їжа","Еда"));
+        cycleGroup(goods,s->s.getItem().isEdible(),null);
     }
 
     private static void cycleGroup(Goods goods,java.util.function.Predicate<ItemStack> predicate,String category){
@@ -610,7 +610,7 @@ final class BuildingMapTooltip {
         if(group.size()<2)return;
         ItemStack chosen=group.get((int)Math.floorMod(System.currentTimeMillis()/ICON_ROTATION_INTERVAL_MILLIS,group.size()));
         goods.icons.removeIf(s->predicate.test(s)&&s!=chosen);
-        goods.details.computeIfAbsent(chosen,k->new LinkedHashSet<>()).add(category);
+        if(category!=null&&!category.isBlank())goods.details.computeIfAbsent(chosen,k->new LinkedHashSet<>()).add(category);
     }
 
     private static boolean softGather(GoalGenericGatherBlocks gather){
