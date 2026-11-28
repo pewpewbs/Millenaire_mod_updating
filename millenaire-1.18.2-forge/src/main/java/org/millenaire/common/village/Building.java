@@ -152,6 +152,8 @@ public class Building {
    private ItemStack bannerStack = ItemStack.EMPTY;
    public String buildingGoal;
    public String buildingGoalIssue;
+   public String buildingGoalSiteHint;
+   public boolean hasSiteIssue() { return this.buildingGoalIssue != null && this.buildingGoalIssue.startsWith("ui.site."); }
    public int buildingGoalLevel = 0;
    public BuildingLocation buildingGoalLocation = null;
    public int buildingGoalVariation = 0;
@@ -284,6 +286,7 @@ public class Building {
          building.addTags(StreamReadWrite.readStringCollection(ds), "reading tags client-side");
          building.buildingGoal = StreamReadWrite.readNullableString(ds);
          building.buildingGoalIssue = StreamReadWrite.readNullableString(ds);
+         building.buildingGoalSiteHint = StreamReadWrite.readNullableString(ds);
          building.buildingGoalLevel = ds.readInt();
          building.buildingGoalVariation = ds.readInt();
          building.buildingGoalLocation = StreamReadWrite.readNullableBuildingLocation(ds);
@@ -2360,10 +2363,11 @@ public class Building {
       this.projectSiteCooldown.defer(project.key,this.world.getGameTime());
       MillLog.major(this,"VILLAGE-SITE-RESERVATION-DEFER project="+project.key+" status="+status);
       if(project.key.equals(this.buildingGoal)){
-         this.buildingGoal=null;
-         this.buildingGoalLocation=null;
-         this.buildingGoalIssue="ui.nospace";
+         if(status==0)this.buildingGoalLocation=null;
+         this.buildingGoalIssue="ui.site.review";
+         this.buildingGoalSiteHint=null;
          this.noProjectsLeft=false;
+         this.markSaveNeeded();
       }
       return false;
    }
@@ -2464,10 +2468,15 @@ public class Building {
                      }
                   }
                } else if (goalProject.location != null && goalProject.location.level < 0) {
-                  if (!ignoreCost && !this.canAffordProject(goalProject.getPlan(this.buildingGoalVariation, this.buildingGoalLevel))) {
-                     this.buildingGoalIssue = "ui.lackingresources";
+                  if (this.projectSiteCooldown.deferred(goalProject.key,this.world.getGameTime())) {
+                     if(!this.hasSiteIssue())this.buildingGoalIssue="ui.site.review";
+                  } else if (!ignoreCost && !this.canAffordProject(goalProject.getPlan(this.buildingGoalVariation, this.buildingGoalLevel))) {
+                     if(!this.hasSiteIssue())this.buildingGoalIssue = "ui.lackingresources";
                   } else {
-                      if(!this.validateCoreReservation(goalProject,pendingPlan))return false;
+                     if(!this.validateCoreReservation(goalProject,pendingPlan))return false;
+                     this.projectSiteCooldown.clear(goalProject.key);
+                     this.buildingGoalIssue=null;
+                     this.buildingGoalSiteHint=null;
                      BuildingLocation blx;
                      if (this.buildingGoalLocation != null) {
                         blx = this.buildingGoalLocation;
@@ -2489,6 +2498,8 @@ public class Building {
                         .findBuildingLocation(this.winfo, this.regionMapper, this.location.pos, this.villageType.radius, MillCommonUtilities.getRandom(), -1);
                      if (location != null) {
                          this.projectSiteCooldown.clear(goalProject.key);
+                         this.buildingGoalIssue=null;
+                         this.buildingGoalSiteHint=null;
                         if (this.brickColourTheme != null && location.getPlan().randomBrickColours.isEmpty()) {
                            location.initialiseBrickColoursFromTheme(this, this.brickColourTheme);
                         }
@@ -2517,21 +2528,21 @@ public class Building {
                            MillLog.major(this, "Found location for building project: " + location);
                         }
                      } else {
-                        this.buildingGoalIssue = "ui.nospace";
+                        var assessment=this.winfo.lastSiteAssessment;
+                        this.buildingGoalIssue=assessment==null?"ui.site.review":assessment.issue();
+                        this.buildingGoalSiteHint=assessment==null?null:assessment.hint();
                         this.projectSiteCooldown.defer(goalProject.key,this.world.getGameTime());
-                         MillLog.major(this,"VILLAGE-SITE-DEFER project="+goalProject.key+" retryTicks="+ProjectSiteCooldown.RETRY_TICKS);
-                         this.buildingGoal=null;
-                         this.buildingGoalLocation=null;
-                         this.noProjectsLeft=false;
-                         this.markSaveNeeded();
-                         return false;
+                        MillLog.major(this,"VILLAGE-SITE-DEFER project="+goalProject.key+" issue="+this.buildingGoalIssue+" retryTicks="+ProjectSiteCooldown.RETRY_TICKS);
+                        // Retain selected goal; other eligible projects may use free slots.
+                        this.noProjectsLeft=false;
+                        this.markSaveNeeded();
                      }
                   } else if (!canAffordProject) {
-                     this.buildingGoalIssue = "ui.lackingresources";
+                     if(!this.hasSiteIssue())this.buildingGoalIssue = "ui.lackingresources";
                      if (MillConfigValues.LogBuildingPlan >= 3) {
                         MillLog.debug(this, "Cannot afford building project.");
                      }
-                  } else {
+                  } else if(!this.hasSiteIssue()) {
                      this.buildingGoalIssue = "ui.nospace";
                   }
                }
@@ -2697,6 +2708,7 @@ public class Building {
    private boolean findBuildingProject(boolean ignoreCost) {
       if (this.buildingGoal != null && this.buildingGoal.length() > 0) {
          if (!VillageProgression.enabled(this)) return false;
+         if(this.hasSiteIssue())return false; // retry visible goal in findBuildingConstruction
          long tick = this.world.getGameTime();
          if (nextProgressionReviewTick != Long.MIN_VALUE && tick < nextProgressionReviewTick
                && nextProgressionReviewTick - tick <= 100L) return false;
@@ -2743,6 +2755,7 @@ public class Building {
       this.buildingGoalLevel = plan.level;
       this.buildingGoalVariation = plan.variation;
       this.buildingGoalIssue = null;
+      this.buildingGoalSiteHint = null;
       if (project.location == null) {
          this.buildingGoalLocation = null;
          ConstructionIP cip = this.findConstructionIPforBuildingPlanKey(this.buildingGoal, true);
@@ -4128,7 +4141,7 @@ public class Building {
                }
             }
 
-            if (reservePendingGoal && !projectHandled && project != null) {
+            if (reservePendingGoal && !projectHandled && project != null && !this.hasSiteIssue()) {
                for (InvItem keyx : project.resCost.keySet()) {
                   if (keyx.matches(ii)) {
                      nb -= project.resCost.get(keyx);
@@ -4575,6 +4588,7 @@ public class Building {
       }
 
       this.buildingGoalIssue = nbttagcompound.getString("buildingGoalIssue");
+      this.buildingGoalSiteHint = nbttagcompound.getString("buildingGoalSiteHint");
       if (this.buildingGoal != null) {
          BuildingPlanSet planSet = this.culture.getBuildingPlanSet(this.buildingGoal);
          if (planSet != null) {
@@ -5232,6 +5246,7 @@ public class Building {
                StreamReadWrite.writeStringCollection(this.getTags(), data);
                StreamReadWrite.writeNullableString(this.buildingGoal, data);
                StreamReadWrite.writeNullableString(this.buildingGoalIssue, data);
+               StreamReadWrite.writeNullableString(this.buildingGoalSiteHint, data);
                data.writeInt(this.buildingGoalLevel);
                data.writeInt(this.buildingGoalVariation);
                StreamReadWrite.writeNullableBuildingLocation(this.buildingGoalLocation, data);
@@ -6706,6 +6721,7 @@ public class Building {
             nbttagcompound.putInt("buildingGoalVariation", this.buildingGoalVariation);
             if (this.buildingGoalIssue != null) {
                nbttagcompound.putString("buildingGoalIssue", this.buildingGoalIssue);
+               if(this.hasSiteIssue() && this.buildingGoalSiteHint!=null)nbttagcompound.putString("buildingGoalSiteHint",this.buildingGoalSiteHint);
             }
 
             if (this.buildingGoalLocation != null) {

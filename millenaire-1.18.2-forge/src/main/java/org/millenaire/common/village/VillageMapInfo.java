@@ -45,6 +45,8 @@ implements Cloneable {
     public boolean[][] danger;
     public BuildingLocation[][] buildingLocRef;
     public boolean[][] canBuild;
+    public boolean[][] surveyed;
+    public org.millenaire.common.buildingplan.BuildingSiteSearch.Assessment lastSiteAssessment;
     public boolean[][] buildingForbidden;
     public boolean[][] water;
     public boolean[][] tree;
@@ -105,6 +107,7 @@ implements Cloneable {
         o.danger = VillageMapInfo.booleanArrayDeepClone(this.danger);
         o.buildingLocRef = VillageMapInfo.blArrayDeepClone(this.buildingLocRef);
         o.canBuild = VillageMapInfo.booleanArrayDeepClone(this.canBuild);
+        o.surveyed = this.surveyed == null ? null : booleanArrayDeepClone(this.surveyed);
         o.buildingForbidden = VillageMapInfo.booleanArrayDeepClone(this.buildingForbidden);
         o.water = VillageMapInfo.booleanArrayDeepClone(this.water);
         o.tree = VillageMapInfo.booleanArrayDeepClone(this.tree);
@@ -139,6 +142,7 @@ implements Cloneable {
         this.buildingLocRef = new BuildingLocation[this.length][this.width];
         this.buildingForbidden = new boolean[this.length][this.width];
         this.canBuild = new boolean[this.length][this.width];
+        this.surveyed = new boolean[this.length][this.width];
         this.buildTested = new boolean[this.length][this.width];
         this.water = new boolean[this.length][this.width];
         this.tree = new boolean[this.length][this.width];
@@ -355,6 +359,7 @@ implements Cloneable {
             int wx = mapStartX + mx, wz = mapStartZ + mz;
             var column = VillageTerrainColumn.scan(y -> chunk.getBlockState(pos.set(wx, y, wz)),
                 yBaseline, minY, maxY, rules);
+            surveyed[mx][mz] = true;
             topGround[mx][mz] = (short)column.top();
             spaceAbove[mx][mz] = (short)column.clearance();
             buildingForbidden[mx][mz] = column.forbidden();

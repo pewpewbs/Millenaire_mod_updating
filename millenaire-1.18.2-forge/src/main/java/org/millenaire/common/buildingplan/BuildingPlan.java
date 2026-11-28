@@ -1365,6 +1365,7 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
 
    public BuildingLocation findBuildingLocation(VillageMapInfo winfo, RegionMapper regionMapper, Point centre, int maxRadius, Random random, int porientation) {
       long start=System.nanoTime();
+      winfo.lastSiteAssessment=null;
       int ci=centre.getiX()-winfo.mapStartX, cj=centre.getiZ()-winfo.mapStartZ;
       int min=(int)(maxRadius*this.minDistance), max=Math.min(maxRadius,(int)(maxRadius*this.maxDistance));
       for(boolean[] row:winfo.buildTested) java.util.Arrays.fill(row,false);
@@ -1381,11 +1382,48 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
          }
          return null;
       });
+      if(result==null) {
+         winfo.lastSiteAssessment=assessFailedSite(winfo,centre,ci,cj,min,max,porientation);
+         MillLog.major(this,"VILLAGE-SITE-ASSESS plan="+this.buildingKey+" result="+winfo.lastSiteAssessment);
+      }
       if(result==null)MillLog.major(this,"VILLAGE-SITE-NONE plan="+this.buildingKey+" centre="+centre
           +" radius="+min+".."+max+" sites="+attempts[0]+" attempts="+attempts[1]+" "+BuildingSiteSearch.failures(errors)
           +" ms="+(System.nanoTime()-start)/1000000.0D);
       else if(MillConfigValues.LogBuildingPlan>=2)MillLog.minor(this,"Time taken for location search: "+(System.nanoTime()-start)/1000000.0D);
       return result;
+   }
+
+   private BuildingSiteSearch.Assessment assessFailedSite(VillageMapInfo winfo,Point centre,
+         int ci,int cj,int min,int max,int requestedOrientation) {
+      var index=new BuildingSiteSearch.FootprintIndex(winfo.length,winfo.width,(x,z)->{
+         boolean unknown=winfo.surveyed==null||!winfo.surveyed[x][z];
+         return (winfo.buildingLocRef[x][z]!=null?1:0)
+               |(unknown||winfo.buildingForbidden[x][z]||winfo.danger[x][z]||winfo.water[x][z]?2:0)
+               |(!winfo.canBuild[x][z]?4:0);
+      });
+      BuildingSiteSearch.Assessment[] best={null};
+      BuildingSiteSearch.find(ci,cj,min,max,winfo.length,winfo.width,(x,z)->{
+         Point pos=new Point(x+winfo.mapStartX,64.0,z+winfo.mapStartZ);
+         for(String tag:farFromTag.keySet())for(BuildingLocation loc:winfo.getBuildingLocations())
+            if(loc.containsPlanTag(tag)&&loc.pos.horizontalDistanceTo(pos)<farFromTag.get(tag))return null;
+         for(String tag:closeToTag.keySet()){
+            boolean nearby=false;
+            for(BuildingLocation loc:winfo.getBuildingLocations())
+               if(loc.containsPlanTag(tag)&&loc.pos.horizontalDistanceTo(pos)<closeToTag.get(tag)){nearby=true;break;}
+            if(!nearby)return null;
+         }
+         int preferred=computeOrientation(pos,centre);
+         for(int raw:BuildingSiteSearch.orientations(requestedOrientation,this.fixedOrientation,preferred)){
+            int orientation=(raw+this.buildingOrientation)%4;
+            int a=this.length+this.areaToClearLengthBefore+this.areaToClearLengthAfter+2;
+            int b=this.width+this.areaToClearWidthBefore+this.areaToClearWidthAfter+2;
+            int hx=(orientation%2==0?a:b)/2,hz=(orientation%2==0?b:a)/2;
+            best[0]=BuildingSiteSearch.prefer(best[0],index.inspect(x,z,hx,hz,winfo.mapStartX,winfo.mapStartZ));
+         }
+         return null;
+      });
+      return best[0]!=null?best[0]:new BuildingSiteSearch.Assessment(
+            BuildingSiteSearch.SiteStatus.NO_LAYOUT_SPACE,0,0,0,0,0);
    }
 
    public BuildingBlock[] getBuildingPoints(

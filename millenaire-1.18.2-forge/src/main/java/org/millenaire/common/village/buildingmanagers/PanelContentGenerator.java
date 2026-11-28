@@ -900,6 +900,8 @@ public class PanelContentGenerator {
          }
 
          page.addLine(name + (status.isBlank() ? "" : " - " + status));
+         if(projectCIP==null&&house.hasSiteIssue()&&house.buildingGoalSiteHint!=null&&!house.buildingGoalSiteHint.isBlank())
+            page.addLine(house.buildingGoalSiteHint);
          page.addLine("");
          Collections.sort(res, new MillVillager.InvItemAlphabeticalComparator());
 
@@ -1068,6 +1070,8 @@ public class PanelContentGenerator {
          if(goalCIP==null && "ui.lackingresources".equals(townHall.buildingGoalIssue)
                && res.stream().allMatch(key->resHas.get(key)>=resCost.get(key)))status="";
          page.addLine(LanguageUtilities.string("panels.buildingproject") + " " + goal.nativeName + " " + goal.getNameTranslated() + (status.isBlank() ? "" : ": " + status));
+         if(goalCIP==null&&townHall.hasSiteIssue()&&townHall.buildingGoalSiteHint!=null&&!townHall.buildingGoalSiteHint.isBlank())
+            page.addLine(townHall.buildingGoalSiteHint);
          page.addLine("");
          page.addLine(LanguageUtilities.string("panels.resourcesneeded") + ":");
          page.addLine("");
