@@ -199,6 +199,7 @@ IAStarPathedEntity {
     public ItemStack heldItemOffHand = ItemStack.EMPTY;
     public long timer = 0L;
     public long actionStart = 0L;
+    private org.millenaire.common.goal.CraftingWorkplaceFacing craftingWorkplaceFacing;
     public boolean allowRandomMoves = false;
     public boolean stopMoving = false;
     public int gender = 0;
@@ -3687,6 +3688,13 @@ IAStarPathedEntity {
         if (this.goalKey != null && (this.getGoalDestPoint() != null || this.getGoalDestEntity() != null)) {
             Player player;
             Goal goal = Goal.goals.get(this.goalKey);
+            if (goal == null) return;
+            if (!this.level.isClientSide && this.actionStart != 0L && this.stopMoving
+                    && goal instanceof org.millenaire.common.goal.generic.GoalGenericCrafting) {
+                if (this.craftingWorkplaceFacing == null)
+                    this.craftingWorkplaceFacing = new org.millenaire.common.goal.CraftingWorkplaceFacing();
+                if (this.craftingWorkplaceFacing.face(this)) return;
+            }
             if (goal.lookAtGoal()) {
                 if (this.getGoalDestEntity() != null && this.getPos().distanceTo(this.getGoalDestEntity()) < (double)goal.range(this)) {
                     this.faceEntityMill(this.getGoalDestEntity(), 10.0f, 10.0f);
