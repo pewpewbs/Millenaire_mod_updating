@@ -55,6 +55,10 @@ def main():
             ROOT / "tools/tests/SeedSurplusSmoke.java")
         run("java","-cp",classes,"SeedSurplusSmoke")
         run("javac","--release","17","-d",classes,
+            JAVA / "goal/generic/FurnaceBatchPolicy.java",
+            ROOT / "tools/tests/FurnaceBatchPolicySmoke.java")
+        run("java","-cp",classes,"FurnaceBatchPolicySmoke")
+        run("javac","--release","17","-d",classes,
             JAVA / "world/VillageGenerationProbe.java",
             ROOT / "tools/tests/VillageGenerationProbeSmoke.java")
         run("java","-cp",classes,"org.millenaire.common.world.VillageGenerationProbeSmoke")

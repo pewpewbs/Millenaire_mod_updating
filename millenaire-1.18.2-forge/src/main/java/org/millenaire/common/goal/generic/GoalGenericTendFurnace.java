@@ -93,10 +93,12 @@ public class GoalGenericTendFurnace extends GoalGeneric {
 
     private static boolean hasCollectableOutput(Building destination, BlockEntity entity) {
         if (entity instanceof FurnaceBlockEntity furnace)
-            return canStoreOutput(destination, furnace.getItem(2));
+            return FurnaceBatchAccess.furnaceOutputDue(destination.world, furnace)
+                    && canStoreOutput(destination, furnace.getItem(2));
         if (entity instanceof TileEntityFirePit firepit) {
             for (int i = 0; i < 3; i++)
-                if (canStoreOutput(destination, firepit.outputs.getStackInSlot(i))) return true;
+                if (FurnaceBatchAccess.firepitOutputDue(destination.world, firepit, i)
+                        && canStoreOutput(destination, firepit.outputs.getStackInSlot(i))) return true;
         }
         return false;
     }
@@ -116,21 +118,32 @@ public class GoalGenericTendFurnace extends GoalGeneric {
     private boolean needsFuel(MillVillager villager, Building destination, BlockEntity entity) {
         if (!(entity instanceof FurnaceBlockEntity) && !(entity instanceof TileEntityFirePit)) return false;
         ItemStack current = fuel(entity);
-        if (current.getCount() >= 32 || !acceptsNpcFuel(current)) return false;
-        return woodCount(villager, destination) >= Math.max(1, minimumFuel);
+        if (!acceptsNpcFuel(current) || !FurnaceBatchPolicy.fuelDue(current.getCount(), fuelCapacity(entity, current))) return false;
+        return woodCount(villager, destination) >= Math.max(1, Math.min(minimumFuel,
+                (fuelCapacity(entity, current) - current.getCount()) / 4));
+    }
+    private static int fuelCapacity(BlockEntity entity, ItemStack current) {
+        int slotLimit = entity instanceof TileEntityFirePit firepit ? firepit.fuel.getSlotLimit(0)
+                : entity instanceof FurnaceBlockEntity furnace ? furnace.getMaxStackSize() : 0;
+        return FurnaceBatchPolicy.capacity(slotLimit,
+                current.isEmpty() ? Blocks.OAK_PLANKS.asItem().getMaxStackSize() : current.getMaxStackSize());
     }
     @Override public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
         for (Building destination : getBuildings(villager)) {
             if (!isDestPossible(villager, destination)) continue;
-            // Empty finished output even when fuel is already sufficient.
+            // Collect only a ready batch or a stalled/finished partial batch.
             for (Point point : destination.getResManager().furnaces)
-                if (hasCollectableOutput(destination, point.getFurnace(villager.level))) return packDest(point, destination);
+                if (point != null && villager.level.hasChunkAt(point.getBlockPos())
+                        && hasCollectableOutput(destination, point.getFurnace(villager.level))) return packDest(point, destination);
             for (Point point : destination.getResManager().firepits)
-                if (hasCollectableOutput(destination, point.getFirePit(villager.level))) return packDest(point, destination);
+                if (point != null && villager.level.hasChunkAt(point.getBlockPos())
+                        && hasCollectableOutput(destination, point.getFirePit(villager.level))) return packDest(point, destination);
             for (Point point : destination.getResManager().furnaces)
-                if (needsFuel(villager, destination, point.getFurnace(villager.level))) return packDest(point, destination);
+                if (point != null && villager.level.hasChunkAt(point.getBlockPos())
+                        && needsFuel(villager, destination, point.getFurnace(villager.level))) return packDest(point, destination);
             for (Point point : destination.getResManager().firepits)
-                if (needsFuel(villager, destination, point.getFirePit(villager.level))) return packDest(point, destination);
+                if (point != null && villager.level.hasChunkAt(point.getBlockPos())
+                        && needsFuel(villager, destination, point.getFirePit(villager.level))) return packDest(point, destination);
         }
         org.millenaire.common.goal.GoalDiagnostics.note(villager, this, "NO_COLLECTABLE_OUTPUT_OR_REFILLABLE_FUEL_SLOT");
         return null;
@@ -152,25 +165,40 @@ public class GoalGenericTendFurnace extends GoalGeneric {
     @Override public boolean performAction(MillVillager villager) throws Exception {
         Building destination = villager.getGoalBuildingDest();
         Point point = villager.getGoalDestPoint();
-        if (destination == null || point == null) return true;
+        if (villager.level.isClientSide || destination == null || point == null
+                || !villager.level.hasChunkAt(point.getBlockPos()) || !getBuildings(villager).contains(destination)
+                || !(destination.getResManager().furnaces.contains(point)
+                     || destination.getResManager().firepits.contains(point))) return true;
         BlockEntity entity = point.getTileEntity(villager.level);
         if (!(entity instanceof FurnaceBlockEntity) && !(entity instanceof TileEntityFirePit)) return true;
         collectOutput(destination, entity);
-        if (!needsFuel(villager, destination, entity)) return true;
+        // Refill eligible ingredients on this same visit; never create a new supply trip here.
+        for (Goal goal : villager.getGoals())
+            if (goal instanceof GoalGenericCooking cooking)
+                cooking.serviceInputAt(villager, destination, point, entity);
+        serviceFuelAt(villager, destination, point, entity);
+        return true;
+    }
+
+    /** Same-device service from either configured furnace goal. */
+    void serviceFuelAt(MillVillager villager, Building destination, Point point, BlockEntity entity) throws Exception {
+        if (!getBuildings(villager).contains(destination) || !passesStockLimits(villager)
+                || !passesResourceBalance(villager) || !isDestPossible(villager, destination)
+                || !(destination.getResManager().furnaces.contains(point)
+                     || destination.getResManager().firepits.contains(point))
+                || !needsFuel(villager, destination, entity)) return;
         ItemStack current = fuel(entity);
-        if (!acceptsNpcFuel(current)) return true;
-        int limit = Math.min(64, current.isEmpty() ? 64 : current.getMaxStackSize());
-        if (entity instanceof TileEntityFirePit firepit) limit = Math.min(limit, firepit.fuel.getSlotLimit(0));
+        if (!acceptsNpcFuel(current)) return;
+        int limit = fuelCapacity(entity, current);
         int requestedLogs = Math.min(Math.max(0, limit - current.getCount()) / 4, woodCount(villager, destination));
-        if (requestedLogs <= 0) return true;
+        if (requestedLogs <= 0) return;
         int taken = takeFuelLogs(villager, destination, requestedLogs);
-        if (taken <= 0) return true;
+        if (taken <= 0) return;
         // Only consumed logs become oak fuel; stale availability cannot create free planks.
         ItemStack replacement = current.isEmpty() ? new ItemStack(Blocks.OAK_PLANKS, taken * 4) : current.copy();
         if (!current.isEmpty()) replacement.grow(taken * 4);
         if (entity instanceof FurnaceBlockEntity furnace) furnace.setItem(1, replacement);
         else ((TileEntityFirePit)entity).fuel.setStackInSlot(0, replacement);
         entity.setChanged();
-        return true;
     }
 }

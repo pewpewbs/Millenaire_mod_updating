@@ -140,10 +140,9 @@ extends GoalGeneric {
         int supply=allowSupply?availableBrickSupply(villager):0;
         for (Building dest : buildings) {
             if (!this.isDestPossible(villager, dest)) continue;
-            if (!passesWorkplaceBalance(villager, dest)) {
+            boolean allowInput = passesWorkplaceBalance(villager, dest);
+            if (!allowInput)
                 org.millenaire.common.goal.GoalDiagnostics.note(villager, this, "WORKPLACE_RESOURCE_BALANCE");
-                continue;
-            }
             int countGoods = dest.countGoods(this.itemToCook) + carriedForCooking(villager);
             if (org.millenaire.common.goal.GoalDiagnostics.recording(villager, this)) {
                 if (countGoods < this.minimumToCook)
@@ -156,17 +155,17 @@ extends GoalGeneric {
                 FurnaceBlockEntity furnace = p.getFurnace(villager.level);
                 if (furnace == null) continue;
                 ItemStack input = furnace.getItem(0);
-                boolean inputSlot=input.isEmpty()
-                        || org.millenaire.common.item.LegacyItemStacks.matches(input,this.itemToCook.getItem(),this.itemToCook.meta)
-                        && input.getCount()<32;
-                boolean canFill = countGoods >= this.minimumToCook && inputSlot;
+                boolean inputSlot=allowInput && inputSlotDue(input, furnace.getMaxStackSize());
+                int required = minimumBatch(furnace.getMaxStackSize());
+                boolean canFill = countGoods >= required && inputSlot;
                 if (canFill && (bestInput == null || p.horizontalDistanceToSquared(villager)<bestInput.horizontalDistanceToSquared(villager))) {
                     bestInput=p; bestInputBuilding=dest;
                 }
-                if (inputSlot && countGoods<this.minimumToCook
-                        && countGoods+(long)supply>=this.minimumToCook && dest!=villager.getTownHall())
+                if (inputSlot && countGoods<required
+                        && countGoods+(long)supply>=required && dest!=villager.getTownHall())
                     supplyNeeded=true;
-                if (!canFill && !GoalGenericTendFurnace.canStoreOutput(dest, furnace.getItem(2))) continue;
+                if (!canFill && !(FurnaceBatchAccess.furnaceOutputDue(villager.level, furnace)
+                        && GoalGenericTendFurnace.canStoreOutput(dest, furnace.getItem(2)))) continue;
                 if (best == null || p.horizontalDistanceToSquared(villager)<best.horizontalDistanceToSquared(villager)) {
                     best=p; bestBuilding=dest;
                 }
@@ -181,7 +180,8 @@ extends GoalGeneric {
                 if (firepit == null) continue;
                 for (slotNb = 0; slotNb < 3; ++slotNb) {
                     stack = firepit.inputs.getStackInSlot(slotNb);
-                    if (countGoods < this.minimumToCook || !stack.isEmpty() && (!org.millenaire.common.item.LegacyItemStacks.matches(stack,this.itemToCook.getItem(),this.itemToCook.meta) || stack.getCount() >= 32)) continue;
+                    int limit = firepit.inputs.getSlotLimit(slotNb);
+                    if (!allowInput || countGoods < minimumBatch(limit) || !inputSlotDue(stack, limit)) continue;
                     if (bestInput == null || p.horizontalDistanceToSquared(villager)<bestInput.horizontalDistanceToSquared(villager)) {
                         bestInput=p; bestInputBuilding=dest;
                     }
@@ -191,7 +191,8 @@ extends GoalGeneric {
                 }
                 for (slotNb = 0; slotNb < 3; ++slotNb) {
                     stack = firepit.outputs.getStackInSlot(slotNb);
-                    if (!GoalGenericTendFurnace.canStoreOutput(dest, stack)) continue;
+                    if (!FurnaceBatchAccess.firepitOutputDue(villager.level, firepit, slotNb)
+                            || !GoalGenericTendFurnace.canStoreOutput(dest, stack)) continue;
                     if (best == null || p.horizontalDistanceToSquared(villager)<best.horizontalDistanceToSquared(villager)) {
                         best=p; bestBuilding=dest;
                     }
@@ -264,7 +265,7 @@ extends GoalGeneric {
         Building dest = villager.getGoalBuildingDest();
         Point target = villager.getGoalDestPoint();
         if(atBrickSupply(villager)){
-            if(target==null || !target.equals(dest.getResManager().getSellingPos())
+            if(dest==null || target==null || !target.equals(dest.getResManager().getSellingPos())
                     || !villager.level.hasChunkAt(target.getBlockPos()))return true;
             if(!this.isWithinActionRange(villager,null))return false;
             // Revalidate actual input capacity, not merely collectable output.
@@ -300,17 +301,54 @@ extends GoalGeneric {
                 TileEntityFirePit firepit = (TileEntityFirePit)tileEntity;
                 this.performAction_firepit(dest, firepit, villager, allowInput);
             }
+            // A cooking visit can also service fuel using the resident's own configured tending goal.
+            for (Goal goal : villager.getGoals()) {
+                if (goal instanceof GoalGenericTendFurnace tending)
+                    tending.serviceFuelAt(villager, dest, target, tileEntity);
+            }
         }
         return true;
+    }
+
+    private int minimumBatch(int slotLimit) {
+        return FurnaceBatchPolicy.minimumBatch(this.minimumToCook,
+                FurnaceBatchPolicy.capacity(slotLimit, this.itemToCook.staticStack.getMaxStackSize()));
+    }
+
+    private boolean inputSlotDue(ItemStack current, int slotLimit) {
+        ItemStack ingredient = org.millenaire.common.item.LegacyItemStacks.stack(
+                this.itemToCook.getItem(), 1, this.itemToCook.meta);
+        return (current.isEmpty() || ItemStack.isSameItemSameTags(current, ingredient))
+                && FurnaceBatchPolicy.inputDue(current.getCount(),
+                    FurnaceBatchPolicy.capacity(slotLimit, ingredient.getMaxStackSize()));
+    }
+
+    /** Called only during a visit to the same registered cooking device. */
+    void serviceInputAt(MillVillager villager, Building dest, Point target, BlockEntity entity) throws Exception {
+        if (itemToCook == null || !getBuildings(villager).contains(dest) || !passesStockLimits(villager)
+                || !passesResourceBalance(villager) || !passesWorkplaceBalance(villager, dest)
+                || !isDestPossible(villager, dest)) return;
+        if (entity instanceof FurnaceBlockEntity furnace && dest.getResManager().furnaces.contains(target)) {
+            ItemStack old = furnace.getItem(0);
+            ItemStack updated = fillCookingInput(dest, villager, old, furnace.getMaxStackSize());
+            if (updated != old) { furnace.setItem(0, updated); furnace.setChanged(); }
+        } else if (entity instanceof TileEntityFirePit firepit && dest.getResManager().firepits.contains(target)
+                && TileEntityFirePit.isFirePitBurnable(villager.level, itemToCook.staticStack)) {
+            for (int slot = 0; slot < 3; slot++) {
+                ItemStack old = firepit.inputs.getStackInSlot(slot);
+                ItemStack updated = fillCookingInput(dest, villager, old, firepit.inputs.getSlotLimit(slot));
+                if (updated != old) firepit.inputs.setStackInSlot(slot, updated);
+            }
+        }
     }
 
     private ItemStack fillCookingInput(Building dest, MillVillager villager, ItemStack current, int slotLimit) {
         ItemStack ingredient = org.millenaire.common.item.LegacyItemStacks.stack(
                 this.itemToCook.getItem(), 1, this.itemToCook.meta);
-        if (!current.isEmpty() && !ItemStack.isSameItemSameTags(current, ingredient)) return current;
+        if (!inputSlotDue(current, slotLimit)) return current;
         long available = (long)dest.countGoods(this.itemToCook) + carriedForCooking(villager);
-        if (current.isEmpty() && available < this.minimumToCook) return current;
-        int capacity = Math.min(slotLimit, ingredient.getMaxStackSize()) - current.getCount();
+        if (available < minimumBatch(slotLimit)) return current;
+        int capacity = FurnaceBatchPolicy.capacity(slotLimit, ingredient.getMaxStackSize()) - current.getCount();
         int requested = (int)Math.max(0L, Math.min((long)capacity, available));
         if (requested == 0) return current;
         int taken = 0;
@@ -353,11 +391,11 @@ extends GoalGeneric {
         if (allowInput) {
             ItemStack oldInput = furnace.getItem(0);
             ItemStack input = fillCookingInput(dest, villager, oldInput, furnace.getMaxStackSize());
-            if (input != oldInput) furnace.setItem(0, input);
+            if (input != oldInput) { furnace.setItem(0, input); furnace.setChanged(); }
         }
         ItemStack oldOutput = furnace.getItem(2);
         ItemStack output = storeCookingOutput(dest, oldOutput);
-        if (output != oldOutput) furnace.setItem(2, output);
+        if (output != oldOutput) { furnace.setItem(2, output); furnace.setChanged(); }
     }
 
     @Override

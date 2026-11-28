@@ -168,7 +168,7 @@ class ProductionRuntimeWiring(unittest.TestCase):
         cook=read("goal/generic/GoalGenericCooking.java")
         self.assertIn('"cookindianbrick".equals(this.key)',cook)
         self.assertIn("th.nbGoodAvailable(this.itemToCook,false,false,false)",cook)
-        self.assertIn("countGoods+(long)supply>=this.minimumToCook",cook)
+        self.assertIn("countGoods+(long)supply>=required",cook)
         self.assertIn("WorkAccess.canAccessStock(villager,target,2.0)",cook)
         action=cook.split("public boolean performAction(",1)[1]
         self.assertLess(action.index("isWithinActionRange"),action.index("villager.takeFromBuilding"))
