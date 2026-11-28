@@ -67,9 +67,10 @@ public final class BrickProductionDemand {
             if (carriesForStorage(villager, raw)) otherRaw += villager.countInv(raw);
             if (makesFired && carriesForStorage(villager, fired)) otherFired += villager.countInv(fired);
         }
-        var tradeGood = townHall.culture.getTradeGood(raw);
-        long reserve = tradeGood == null ? BrickProductionPolicy.RESERVE
-                : Math.max(BrickProductionPolicy.RESERVE, tradeGood.targetQuantity);
+        // Production reserves scale with the completed centre level, not
+        // the independent trade/import stock target in traded_goods.txt.
+        long reserve = BrickProductionPolicy.reserveForCentreLevel(
+                townHall.location == null ? 0 : townHall.location.level);
         return BrickProductionPolicy.demand(rawRequired, townHall.availableForCurrentProject(raw), otherRaw,
                 firedRequired, makesFired ? townHall.availableForCurrentProject(fired) : 0, otherFired, reserve);
     }

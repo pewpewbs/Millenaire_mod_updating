@@ -2,9 +2,15 @@ package org.millenaire.common.goal;
 
 /** Pure scheduling policy: no world reads or mutations. */
 public final class BrickProductionPolicy {
-    public static final int RESERVE = 64;
+    public static final int RESERVE_PER_LEVEL = 128;
+    public static final int MAX_RESERVE = 512;
     public static final int DELIVERY_BATCH = 32;
     private BrickProductionPolicy() {}
+
+    /** Completed internal levels 0..3 correspond to displayed levels 1..4. */
+    public static int reserveForCentreLevel(int internalLevel) {
+        return RESERVE_PER_LEVEL * (1 + Math.max(0, Math.min(3, internalLevel)));
+    }
 
     public static boolean deliveryDue(int carried, boolean fired) {
         return carried > 0 && (carried >= DELIVERY_BATCH || fired);
@@ -23,7 +29,7 @@ public final class BrickProductionPolicy {
 
     public static Demand demand(long rawRequired, long centralRaw, long otherRaw,
                                 long firedRequired, long centralFired, long otherFired) {
-        return demand(rawRequired,centralRaw,otherRaw,firedRequired,centralFired,otherFired,RESERVE);
+        return demand(rawRequired,centralRaw,otherRaw,firedRequired,centralFired,otherFired,reserveForCentreLevel(0));
     }
 
     public static Demand demand(long rawRequired, long centralRaw, long otherRaw,

@@ -75,8 +75,11 @@ class ProductionRuntimeWiring(unittest.TestCase):
         self.assertIn("worker.countInv(raw)", demand)
         self.assertIn("building.countGoods(raw)", demand)
         self.assertIn("hasChunkAt(point.getBlockPos())", demand)
-        self.assertIn("RESERVE = 64", policy)
-        self.assertIn("tradeGood.targetQuantity", demand)
+        self.assertIn("RESERVE_PER_LEVEL = 128", policy)
+        self.assertIn("MAX_RESERVE = 512", policy)
+        self.assertIn("BrickProductionPolicy.reserveForCentreLevel(", demand)
+        self.assertIn("townHall.location == null ? 0 : townHall.location.level", demand)
+        self.assertNotIn("tradeGood.targetQuantity", demand)
         self.assertIn("Math.max(0, reserve)", policy)
         self.assertIn("gathering ? 220 : 260", policy)
         for file, gate, gathering in (
