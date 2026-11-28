@@ -72,6 +72,28 @@ class FurnaceProductionWiring(unittest.TestCase):
         self.assertIn("furnace.getItem(2)", src)
         self.assertIn("if (output.isEmpty() || output.hasTag()) return false", src)
 
+    def test_npc_fuel_uses_all_log_families_and_one_plank_type(self):
+        src = read(JAVA / "goal/generic/GoalGenericTendFurnace.java")
+        count = src.split("private int woodCount(", 1)[1].split("private int takeFuelLogs(", 1)[0]
+        self.assertIn("for (WoodVariant wood : WoodVariant.values())", count)
+        self.assertIn("destination.countGoods(logs) + villager.countInv(logs)", count)
+        self.assertIn("house.countGoods(logs)", count)
+        take = src.split("private int takeFuelLogs(", 1)[1].split("static boolean canStoreOutput", 1)[0]
+        self.assertEqual(take.count("for (WoodVariant wood : WoodVariant.values())"), 3)
+        self.assertIn("destination.takeGoods(wood.log().defaultBlockState(), requestedLogs - taken)", take)
+        self.assertIn("villager.takeFromInv(wood.log().defaultBlockState(), requestedLogs - taken)", take)
+        self.assertIn("house.takeGoods(wood.log().defaultBlockState(), requestedLogs - taken)", take)
+        self.assertIn("current.is(Blocks.OAK_PLANKS.asItem()) && !current.hasTag()", src)
+        self.assertIn("current.getCount() >= 32 || !acceptsNpcFuel(current)", src)
+        action = src.split("public boolean performAction(", 1)[1]
+        self.assertLess(action.index("takeFuelLogs"), action.index("new ItemStack(Blocks.OAK_PLANKS, taken * 4)"))
+        self.assertIn("if (taken <= 0) return true;", action)
+        self.assertIn("replacement.grow(taken * 4)", action)
+        self.assertIn("furnace.setItem(1, replacement)", action)
+        self.assertIn("firepit.fuel.setStackInSlot(0, replacement)", action)
+        self.assertNotIn("wood.planks()", src)
+        self.assertIn("new ItemStack[]{new ItemStack(Blocks.OAK_PLANKS)}", src)
+
     def test_workplace_balance_only_for_matching_local_input(self):
         base = read(JAVA / "goal/Goal.java")
         src = read(JAVA / "goal/generic/GoalGenericCooking.java")

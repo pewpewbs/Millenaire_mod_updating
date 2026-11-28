@@ -29,26 +29,43 @@ public class GoalGenericTendFurnace extends GoalGeneric {
         if (entity instanceof TileEntityFirePit firepit) return firepit.fuel.getStackInSlot(0);
         return ItemStack.EMPTY;
     }
-    private static WoodVariant fuelWood(ItemStack stack) {
-        for (WoodVariant wood : WoodVariant.values()) if (stack.is(wood.planks().asItem())) return wood;
-        return null;
+    /** Only newly produced NPC fuel is normalized. Let existing incompatible
+     * fuel burn out rather than converting or replacing player-supplied items. */
+    private static boolean acceptsNpcFuel(ItemStack current) {
+        return current.isEmpty() || (current.is(Blocks.OAK_PLANKS.asItem()) && !current.hasTag());
     }
-    private int woodCount(MillVillager villager, Building destination, WoodVariant wood) {
-        var logs = wood.log().defaultBlockState();
+
+    private int woodCount(MillVillager villager, Building destination) {
         Building house = villager.getHouse();
-        long count = (long)destination.countGoods(logs) + villager.countInv(logs);
-        if (house != null && house != destination) count += house.countGoods(logs);
+        long count = 0;
+        for (WoodVariant wood : WoodVariant.values()) {
+            var logs = wood.log().defaultBlockState();
+            count += (long)destination.countGoods(logs) + villager.countInv(logs);
+            if (house != null && house != destination) count += house.countGoods(logs);
+        }
         return (int)Math.min(Integer.MAX_VALUE, Math.max(0L, count));
     }
-    private WoodVariant chooseWood(MillVillager villager, Building destination, ItemStack current) {
-        if (!current.isEmpty()) return fuelWood(current);
-        WoodVariant best = null;
-        int most = 0;
+
+    /** Consume real logs of any supported family, mixing families if necessary.
+     * Preserve the local workplace -> inventory -> house source order. */
+    private int takeFuelLogs(MillVillager villager, Building destination, int requestedLogs) {
+        int taken = 0;
         for (WoodVariant wood : WoodVariant.values()) {
-            int available = woodCount(villager, destination, wood);
-            if (available > most) { best = wood; most = available; }
+            if (taken >= requestedLogs) break;
+            taken += destination.takeGoods(wood.log().defaultBlockState(), requestedLogs - taken);
         }
-        return best;
+        for (WoodVariant wood : WoodVariant.values()) {
+            if (taken >= requestedLogs) break;
+            taken += villager.takeFromInv(wood.log().defaultBlockState(), requestedLogs - taken);
+        }
+        Building house = villager.getHouse();
+        if (house != null && house != destination) {
+            for (WoodVariant wood : WoodVariant.values()) {
+                if (taken >= requestedLogs) break;
+                taken += house.takeGoods(wood.log().defaultBlockState(), requestedLogs - taken);
+            }
+        }
+        return taken;
     }
     /** Output recovery is independent of recipe quotas, input batches and fuel. */
     static boolean canStoreOutput(Building destination, ItemStack output) {
@@ -99,9 +116,8 @@ public class GoalGenericTendFurnace extends GoalGeneric {
     private boolean needsFuel(MillVillager villager, Building destination, BlockEntity entity) {
         if (!(entity instanceof FurnaceBlockEntity) && !(entity instanceof TileEntityFirePit)) return false;
         ItemStack current = fuel(entity);
-        if (current.getCount() >= 32) return false;
-        WoodVariant wood = chooseWood(villager, destination, current);
-        return wood != null && woodCount(villager, destination, wood) >= Math.max(1, minimumFuel);
+        if (current.getCount() >= 32 || !acceptsNpcFuel(current)) return false;
+        return woodCount(villager, destination) >= Math.max(1, minimumFuel);
     }
     @Override public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
         for (Building destination : getBuildings(villager)) {
@@ -125,8 +141,8 @@ public class GoalGenericTendFurnace extends GoalGeneric {
         if (destination == null || point == null) return null;
         BlockEntity entity = point.getTileEntity(villager.level);
         if (!(entity instanceof FurnaceBlockEntity) && !(entity instanceof TileEntityFirePit)) return null;
-        WoodVariant wood = chooseWood(villager, destination, fuel(entity));
-        return wood == null ? null : new ItemStack[]{new ItemStack(wood.planks())};
+        return needsFuel(villager, destination, entity)
+                ? new ItemStack[]{new ItemStack(Blocks.OAK_PLANKS)} : null;
     }
     @Override public String getTypeLabel() { return GOAL_TYPE; }
     @Override public boolean isDestPossibleSpecific(MillVillager villager, Building building) { return true; }
@@ -142,21 +158,15 @@ public class GoalGenericTendFurnace extends GoalGeneric {
         collectOutput(destination, entity);
         if (!needsFuel(villager, destination, entity)) return true;
         ItemStack current = fuel(entity);
-        WoodVariant wood = chooseWood(villager, destination, current);
-        if (wood == null) return true;
+        if (!acceptsNpcFuel(current)) return true;
         int limit = Math.min(64, current.isEmpty() ? 64 : current.getMaxStackSize());
         if (entity instanceof TileEntityFirePit firepit) limit = Math.min(limit, firepit.fuel.getSlotLimit(0));
-        int requestedLogs = Math.min(Math.max(0, limit - current.getCount()) / 4, woodCount(villager, destination, wood));
+        int requestedLogs = Math.min(Math.max(0, limit - current.getCount()) / 4, woodCount(villager, destination));
         if (requestedLogs <= 0) return true;
-        var logs = wood.log().defaultBlockState();
-        int taken = destination.takeGoods(logs, requestedLogs);
-        if (taken < requestedLogs) taken += villager.takeFromInv(logs, requestedLogs - taken);
-        Building house = villager.getHouse();
-        if (taken < requestedLogs && house != null && house != destination)
-            taken += house.takeGoods(logs, requestedLogs - taken);
+        int taken = takeFuelLogs(villager, destination, requestedLogs);
         if (taken <= 0) return true;
-        // Only consumed logs become fuel; stale availability must never create free planks.
-        ItemStack replacement = current.isEmpty() ? new ItemStack(wood.planks(), taken * 4) : current.copy();
+        // Only consumed logs become oak fuel; stale availability cannot create free planks.
+        ItemStack replacement = current.isEmpty() ? new ItemStack(Blocks.OAK_PLANKS, taken * 4) : current.copy();
         if (!current.isEmpty()) replacement.grow(taken * 4);
         if (entity instanceof FurnaceBlockEntity furnace) furnace.setItem(1, replacement);
         else ((TileEntityFirePit)entity).fuel.setStackInSlot(0, replacement);
