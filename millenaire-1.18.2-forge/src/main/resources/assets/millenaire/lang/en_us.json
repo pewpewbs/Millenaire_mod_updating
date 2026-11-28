@@ -1,4 +1,8 @@
 {
+  "item.millenaire.growth_wand": "Growth Wand (Creative)",
+  "item.millenaire.growth_wand.success": "The villager has grown up.",
+  "item.millenaire.growth_wand.no_home": "Fully grown; waiting for a suitable home and job.",
+  "item.millenaire.growth_wand.unavailable": "Cannot mature this villager right now.",
   "itemGroup.millenaire": "Millénaire",
   "itemGroup.millenaire_content_creator": "Millenaire - For Content Creators",
   "item.millenaire.denier.name": "Denier",

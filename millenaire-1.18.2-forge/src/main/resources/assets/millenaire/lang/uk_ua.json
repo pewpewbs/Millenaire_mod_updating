@@ -1,4 +1,8 @@
 {
+  "item.millenaire.growth_wand": "Жезл дорослішання (творчий режим)",
+  "item.millenaire.growth_wand.success": "Житель подорослішав.",
+  "item.millenaire.growth_wand.no_home": "Дитина виросла та очікує на відповідне житло й професію.",
+  "item.millenaire.growth_wand.unavailable": "Зараз неможливо зробити цього жителя дорослим.",
   "itemGroup.millenaire": "Millénaire",
   "itemGroup.millenaire_content_creator": "Millénaire — для авторів контенту",
   "item.millenaire.denier.name": "Деньє",

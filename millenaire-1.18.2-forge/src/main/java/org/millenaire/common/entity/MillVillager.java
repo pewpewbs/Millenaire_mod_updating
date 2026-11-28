@@ -3344,6 +3344,9 @@ IAStarPathedEntity {
 
     @Override
     public net.minecraft.world.InteractionResult mobInteract(Player entityplayer, InteractionHand hand) {
+        if (entityplayer.getItemInHand(hand).getItem() instanceof org.millenaire.common.item.ItemGrowthWand wand) {
+            return wand.useOnVillager(entityplayer, this);
+        }
         if (this.isVillagerSleeping()) {
             return net.minecraft.world.InteractionResult.sidedSuccess(this.level.isClientSide);
         }

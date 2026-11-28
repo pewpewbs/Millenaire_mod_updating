@@ -505,17 +505,24 @@ public class Building {
             MillLog.major(this, "Creating " + type + " with child " + child.func_70005_c_() + "/" + child.getVillagerId());
          }
 
+         VillagerRecord childRecord = child.getRecord();
+         if (childRecord == null) return;
          this.mw.removeVillagerRecord(child.getVillagerId());
          VillagerRecord adultRecord = VillagerRecord.createVillagerRecord(
             this.culture, type, this.mw, this.getPos(), this.getTownHallPos(), child.firstName, child.familyName, child.getVillagerId(), false
          );
-         VillagerRecord childRecord = child.getRecord();
-         if (childRecord != null) {
-            adultRecord.rightHanded = childRecord.rightHanded;
+         if (adultRecord == null) {
+            this.mw.registerVillagerRecord(childRecord, true);
+            return;
          }
+         adultRecord.rightHanded = childRecord.rightHanded;
+         adultRecord.fathersName = childRecord.fathersName;
+         adultRecord.mothersName = childRecord.mothersName;
 
          MillVillager adult = MillVillager.createVillager(adultRecord, this.world, child.getPos(), false);
          if (adult == null) {
+            this.mw.removeVillagerRecord(child.getVillagerId());
+            this.mw.registerVillagerRecord(childRecord, true);
             MillLog.error(this, "Couldn't create adult of type " + type + " from child " + child);
          } else {
             adultRecord.updateRecord(adult);
