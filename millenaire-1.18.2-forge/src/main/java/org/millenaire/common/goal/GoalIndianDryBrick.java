@@ -89,10 +89,6 @@ extends Goal {
                 || !villager.getGoalBuildingDest().getResManager().canWorkBrickSpot(villager.getGoalDestPoint(), false)) return true;
         Building kiln=villager.getGoalBuildingDest();
         var demand=BrickProductionDemand.inspect(villager);
-        if (!demand.shouldForm(BrickProductionDemand.inDryingArea(villager))) {
-            BrickWorkCycle.finished(villager,kiln);
-            return true;
-        }
         if(BrickWorkCycle.raw(villager)>0){
             var task=BrickWorkCycle.plan(villager,demand);
             if(task.work()!=BrickWorkCycle.Work.REFILL || !kiln.getPos().equals(task.kiln().getPos())){
@@ -101,6 +97,9 @@ extends Goal {
                 return true;
             }
             BrickWorkCycle.beginRefill(villager,kiln);
+        } else if(!demand.shouldForm(BrickProductionDemand.inDryingArea(villager))) {
+            // Demand controls routine forming, never a started harvest's refill.
+            return true;
         }
         if (villager.level.getBlockState(villager.getGoalDestPoint().getBlockPos()).isAir()) {
             villager.setBlockstate(villager.getGoalDestPoint(), MillBlocks.BS_WET_BRICK);
@@ -122,9 +121,9 @@ extends Goal {
     @Override
     public int priority(MillVillager villager) {
         var demand = BrickProductionDemand.inspect(villager);
-        if (!demand.shouldForm(BrickProductionDemand.inDryingArea(villager))) return 0;
         if (BrickWorkCycle.plan(villager,demand).work()==BrickWorkCycle.Work.REFILL)
             return BrickProductionPolicy.REFILL_BEFORE_DELIVERY_PRIORITY;
+        if (!demand.shouldForm(BrickProductionDemand.inDryingArea(villager))) return 0;
         int p = demand.priority(false);
         for (MillVillager v : villager.getTownHall().getKnownVillagers()) {
             if (v == villager || !this.key.equals(v.goalKey)) continue;

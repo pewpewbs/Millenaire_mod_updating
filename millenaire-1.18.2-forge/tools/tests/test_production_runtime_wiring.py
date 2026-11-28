@@ -84,7 +84,9 @@ class ProductionRuntimeWiring(unittest.TestCase):
         self.assertIn("gathering ? 260 : 220", policy)
         cycle=read("goal/BrickWorkCycle.java")
         self.assertIn("demand.shouldGather()",cycle)
-        self.assertIn("demand.shouldForm(BrickProductionDemand.inDryingArea(v))",cycle)
+        self.assertNotIn("demand.shouldForm(BrickProductionDemand.inDryingArea(v))",cycle)
+        self.assertIn("if(empty!=null)",cycle)
+        self.assertIn("demand.shouldGather()",cycle)
         for file, gathering in (("GoalIndianDryBrick.java","false"),("GoalIndianGatherBrick.java","true")):
             code=read("goal/"+file)
             destination=code.split("getDestination(MillVillager",1)[1].split("@Override",1)[0]
@@ -172,11 +174,12 @@ class ProductionRuntimeWiring(unittest.TestCase):
         self.assertLess(action.index("isWithinActionRange"),action.index("villager.takeFromBuilding"))
         self.assertIn("villager.setGoalInformation(next)",action)
 
-    def test_brick_firing_uses_carried_batch_before_delivery_when_not_reserved(self):
+    def test_brick_firing_can_use_carried_batch_when_raw_delivery_not_due(self):
         cook=read("goal/generic/GoalGenericCooking.java")
         self.assertIn("constructionMissing(villager,this.itemToCook)==0",cook)
         self.assertIn("this.getDestination(villager, false, true)!=null) return 925",cook)
-        self.assertIn("REFILL_BEFORE_DELIVERY_PRIORITY = 950",read("goal/BrickProductionPolicy.java"))
+        self.assertIn("REFILL_BEFORE_DELIVERY_PRIORITY = 1700",read("goal/BrickProductionPolicy.java"))
+        self.assertIn("RAW_BATCH_DELIVERY_PRIORITY = 1600",read("goal/BrickProductionPolicy.java"))
         self.assertIn("return 900",read("goal/GoalBringBackResourcesHome.java"))
         self.assertIn("if ((brick || inputOnly) && bestInput != null)",cook)
         self.assertIn("if (inputOnly && !allowSupply) return null",cook)

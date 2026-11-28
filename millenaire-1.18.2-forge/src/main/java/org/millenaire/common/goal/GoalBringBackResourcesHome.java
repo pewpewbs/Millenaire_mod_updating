@@ -142,7 +142,11 @@ extends Goal {
             // precedence even when animals remain ready for breeding/shearing.
             return 12000 + nbGoods * 3;
         }
-        if (nbGoods > 0 && BrickProductionDemand.deliveryDue(villager)) return 900;
+        if (nbGoods > 0 && BrickProductionDemand.deliveryDue(villager)) {
+            if(BrickWorkCycle.raw(villager)>0 && deliveryBuilding(villager)==villager.getTownHall())
+                return BrickProductionPolicy.RAW_BATCH_DELIVERY_PRIORITY;
+            return 900;
+        }
         return 10 + nbGoods * 3;
     }
 }

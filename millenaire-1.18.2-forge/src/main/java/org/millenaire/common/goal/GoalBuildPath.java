@@ -73,6 +73,8 @@ extends Goal {
 
     @Override
     public boolean isPossibleSpecific(MillVillager villager) {
+        if(BrickProductionDemand.hasAvailableBrickContinuation(villager))
+            return GoalDiagnostics.reject(villager,this,"BRICK_BATCH_IN_PROGRESS");
         return MillConfigValues.BuildVillagePaths && villager.getTownHall().getCurrentPathBuildingBlock() != null;
     }
 

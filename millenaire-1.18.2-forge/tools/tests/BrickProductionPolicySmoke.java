@@ -63,8 +63,8 @@ public final class BrickProductionPolicySmoke {
         check(BrickProductionPolicy.shouldDeliverRaw(18,false),"partial trip with no ready kiln");
         check(!BrickProductionPolicy.shouldDeliverRaw(60,true),"finish active kiln refill before delivery");
         check(!BrickProductionPolicy.shouldDeliverRaw(0,false),"no empty delivery");
-        check(BrickProductionPolicy.REFILL_BEFORE_DELIVERY_PRIORITY > 900
-                && BrickProductionPolicy.REFILL_BEFORE_DELIVERY_PRIORITY < 1000,"active cycle between delivery and building");
+        check(BrickProductionPolicy.REFILL_BEFORE_DELIVERY_PRIORITY > BrickProductionPolicy.RAW_BATCH_DELIVERY_PRIORITY
+                && BrickProductionPolicy.RAW_BATCH_DELIVERY_PRIORITY > 1500,"finish local cycle, then delivery, then construction");
         System.out.println("BrickProductionPolicySmoke passed");
     }
 }

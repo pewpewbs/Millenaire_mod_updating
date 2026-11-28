@@ -116,6 +116,26 @@ public final class BrickProductionDemand {
         return task.work()==BrickWorkCycle.Work.GATHER || task.work()==BrickWorkCycle.Work.REFILL;
     }
 
+    /** Construction cannot claim a worker while a configured continuation
+     * of his brick batch is available: gather, refill, then unload at the
+     * town hall. A full store or unavailable work goal must not deadlock AI. */
+    static boolean hasAvailableBrickContinuation(MillVillager villager) {
+        if(!brickWorker(villager)||BrickWorkCycle.raw(villager)<=0)return false;
+        var task=BrickWorkCycle.plan(villager,inspect(villager));
+        boolean deliverRaw=task.work()==BrickWorkCycle.Work.DELIVER
+                && carriesForStorage(villager,InvItem.createInvItem(MillBlocks.BS_MUD_BRICK))
+                && villager.getTownHall()!=null
+                && villager.getTownHall().storageRoom(InvItem.createInvItem(MillBlocks.BS_MUD_BRICK))>0;
+        for(Goal goal:villager.getGoals()){
+            if((task.work()==BrickWorkCycle.Work.GATHER && goal instanceof GoalIndianGatherBrick)
+                    ||(task.work()==BrickWorkCycle.Work.REFILL && goal instanceof GoalIndianDryBrick)
+                    ||(deliverRaw && goal instanceof GoalBringBackResourcesHome)){
+                if(goal.isPossible(villager))return true;
+            }
+        }
+        return false;
+    }
+
     /** Count only existing wet or dried blocks on registered, loaded drying spots. */
     static long inDryingArea(MillVillager villager) {
         Building townHall = villager.getTownHall();

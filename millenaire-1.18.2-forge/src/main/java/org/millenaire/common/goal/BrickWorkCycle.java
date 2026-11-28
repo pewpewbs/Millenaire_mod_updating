@@ -113,17 +113,18 @@ final class BrickWorkCycle {
         Visit visit=cargo>0?VISITS.get(v):null;
         var kilns=th.getBuildingsWithTag("brickkiln");
         InvItem item=InvItem.createInvItem(MillBlocks.BS_MUD_BRICK);
-        if(th.storageRoom(item)<=0)return completed(cargo);
-        boolean stockAllowed=th.nbGoodAvailable(MillBlocks.BS_MUD_BRICK,false,false,false)<=4096;
-        // A started local harvest is completed, even when it crosses the delivery target.
-        // Demand still gates starting any additional visit and all new forming.
+        boolean stockAllowed=th.storageRoom(item)>0
+                && th.nbGoodAvailable(MillBlocks.BS_MUD_BRICK,false,false,false)<=4096;
+        // Finish a started visit even when the harvested cargo covers demand.
+        // Stock limits still gate gathering; an already-started refill does not
+        // require space in the town hall because the wet bricks stay in the kiln.
         if(visit!=null && visit.current!=null){
             for(Building kiln:kilns){
                 if(!visit.current.equals(kiln.getPos()) || !available(v,kiln))continue;
                 Point ready=visit.refilling?null:nearestSpot(v,kiln,true);
                 if(stockAllowed && ready!=null)return new Task(Work.GATHER,kiln,ready);
                 Point empty=nearestSpot(v,kiln,false);
-                if(empty!=null && demand.shouldForm(BrickProductionDemand.inDryingArea(v)))
+                if(empty!=null)
                     return new Task(Work.REFILL,kiln,empty);
                 break;
             }

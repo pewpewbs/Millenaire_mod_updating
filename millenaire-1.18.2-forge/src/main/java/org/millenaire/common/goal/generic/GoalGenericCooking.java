@@ -111,9 +111,9 @@ extends GoalGeneric {
     @Override
     public int priority(MillVillager villager) throws Exception {
         if (brickKilnSupply(villager)) {
-            // Complete harvest/refill first (950). Then fire available cargo
-            // directly (925), ahead of normal brick delivery (900), but never
-            // preempt delivery of raw bricks missing for construction.
+            // Finish a raw harvest, refill and deliver it to the town hall
+            // first (1700/1600). Direct firing of eligible cargo (925) is
+            // a fallback when a raw delivery is not currently due.
             if (carriedForCooking(villager)>0
                     && org.millenaire.common.goal.BrickProductionDemand.constructionMissing(villager,this.itemToCook)==0
                     && this.getDestination(villager, false, true)!=null) return 925;

@@ -5,7 +5,9 @@ public final class BrickProductionPolicy {
     public static final int RESERVE_PER_LEVEL = 128;
     public static final int MAX_RESERVE = 512;
     public static final int DELIVERY_BATCH = 32;
-    public static final int REFILL_BEFORE_DELIVERY_PRIORITY = 950;
+    // Finish a started batch before ordinary construction (1500) or supply pickup (1000).
+    public static final int REFILL_BEFORE_DELIVERY_PRIORITY = 1700;
+    public static final int RAW_BATCH_DELIVERY_PRIORITY = 1600;
     private BrickProductionPolicy() {}
 
     /** Completed internal levels 0..3 correspond to displayed levels 1..4. */
