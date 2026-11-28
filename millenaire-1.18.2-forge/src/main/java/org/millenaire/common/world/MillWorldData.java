@@ -85,7 +85,7 @@ public class MillWorldData {
             for (Building building : allBuildings()) {
                 if (building == null || building.location == null || building.location.level < 0
                         || !building.containsTags("brickkiln")) continue;
-                for (Point spot : building.getResManager().brickspot)
+                for (Point spot : building.getResManager().getBrickWorkSpots())
                     if (spot != null) brickDryingOwners.putIfAbsent(spot.getBlockPos(), building);
             }
             brickDryingIndexTick = now;
@@ -93,9 +93,16 @@ public class MillWorldData {
         Building kiln = brickDryingOwners.get(pos);
         if (kiln == null || kiln.location == null || kiln.location.level < 0
                 || !kiln.containsTags("brickkiln")
-                || !kiln.getResManager().brickspot.contains(new Point(pos)))
+                || !kiln.getResManager().isBrickWorkSpot(new Point(pos)))
             return org.millenaire.common.block.BrickDryingPolicy.NORMAL_LEVEL;
         return kiln.location.level;
+    }
+
+    /** Called after getBrickDryingLevel has refreshed the owner index. */
+    public boolean isStackedBrickBase(net.minecraft.core.BlockPos pos) {
+        Building kiln = brickDryingOwners.get(pos);
+        return kiln != null && kiln.getResManager().brickspot.contains(new Point(pos))
+                && kiln.getResManager().isUpperBrickSpot(new Point(pos.above()));
     }
     private final HashMap<Long, MillVillager> villagers = new HashMap();
     private final HashMap<Long, VillagerRecord> villagerRecords = new HashMap();

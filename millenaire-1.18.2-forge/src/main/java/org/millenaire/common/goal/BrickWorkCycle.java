@@ -92,10 +92,9 @@ final class BrickWorkCycle {
 
     static Point nearestSpot(MillVillager v,Building kiln,boolean ready){
         Point best=null;
-        for(Point p:kiln.getResManager().brickspot){
+        for(Point p:kiln.getResManager().getBrickWorkSpots()){
             if(p==null || !v.level.hasChunkAt(p.getBlockPos()))continue;
-            var state=v.level.getBlockState(p.getBlockPos());
-            if(ready ? state!=MillBlocks.BS_MUD_BRICK : !state.isAir())continue;
+            if(!kiln.getResManager().canWorkBrickSpot(p,ready))continue;
             if(best==null || p.horizontalDistanceToSquared(v)<best.horizontalDistanceToSquared(v))best=p;
         }
         return best;

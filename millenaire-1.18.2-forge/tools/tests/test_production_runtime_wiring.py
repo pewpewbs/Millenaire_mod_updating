@@ -91,7 +91,7 @@ class ProductionRuntimeWiring(unittest.TestCase):
             action=code.split("public boolean performAction(",1)[1].split("@Override",1)[0]
             self.assertIn("BrickWorkCycle.plan(",destination)
             self.assertIn("BrickProductionDemand.inspect(villager)",action)
-            self.assertIn("brickspot.contains",action)
+            self.assertIn("canWorkBrickSpot",action)
             self.assertIn("demand.priority("+gathering+")",code)
             self.assertIn("BrickWorkCycle.finished(villager,kiln)",action)
             if gathering=="true":

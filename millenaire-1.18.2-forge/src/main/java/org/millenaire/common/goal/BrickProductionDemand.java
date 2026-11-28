@@ -123,7 +123,7 @@ public final class BrickProductionDemand {
         java.util.Set<Point> counted = new java.util.HashSet<>();
         long total = 0;
         for (Building kiln : townHall.getBuildingsWithTag("brickkiln")) {
-            for (Point point : kiln.getResManager().brickspot) {
+            for (Point point : kiln.getResManager().getBrickWorkSpots()) {
                 if (point == null || !villager.level.hasChunkAt(point.getBlockPos()) || !counted.add(point)) continue;
                 var state = villager.level.getBlockState(point.getBlockPos());
                 if (state.getBlock() == MillBlocks.WET_BRICK || state == MillBlocks.BS_MUD_BRICK) total++;

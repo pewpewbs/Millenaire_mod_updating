@@ -74,7 +74,7 @@ extends Goal {
     public boolean performAction(MillVillager villager) throws MillLog.MillenaireException {
         if (villager.level.isClientSide || villager.getGoalDestPoint() == null || villager.getGoalBuildingDest() == null
                 || !villager.level.hasChunkAt(villager.getGoalDestPoint().getBlockPos())
-                || !villager.getGoalBuildingDest().getResManager().brickspot.contains(villager.getGoalDestPoint())) return true;
+                || !villager.getGoalBuildingDest().getResManager().canWorkBrickSpot(villager.getGoalDestPoint(), true)) return true;
         Building kiln=villager.getGoalBuildingDest();
         var task=BrickWorkCycle.plan(villager,BrickProductionDemand.inspect(villager));
         if(task.work()!=BrickWorkCycle.Work.GATHER || !kiln.getPos().equals(task.kiln().getPos())){
