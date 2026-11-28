@@ -179,6 +179,23 @@ public class MillEventController {
         }
     }
 
+    /** Suppress only plain feathers from chickens actually killed by Indian NPCs.
+     * Player drops, custom NBT, other cultures, meat and existing stocks are untouched. */
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
+    public void discardUnusedIndianChickenFeathers(LivingDropsEvent event) {
+        if (event.getEntityLiving().level.isClientSide
+                || !(event.getEntityLiving() instanceof net.minecraft.world.entity.animal.Chicken)
+                || event.getSource() == null
+                || !(event.getSource().getEntity() instanceof MillVillager villager)) return;
+        var culture = villager.getCulture();
+        if (culture == null || !"indian".equals(culture.key)) return;
+        boolean hasPlainFeathers = event.getDrops().stream().anyMatch(drop ->
+                drop.getItem().is(net.minecraft.world.item.Items.FEATHER) && !drop.getItem().hasTag());
+        if (!hasPlainFeathers || !org.millenaire.common.goal.IndianChickenDropPolicy.canDiscardFeathers(culture)) return;
+        event.getDrops().removeIf(drop ->
+                drop.getItem().is(net.minecraft.world.item.Items.FEATHER) && !drop.getItem().hasTag());
+    }
+
     @SubscribeEvent
     public void addInuitDrops(LivingDropsEvent event) {
         if (event.getEntityLiving().level.isClientSide) return;
