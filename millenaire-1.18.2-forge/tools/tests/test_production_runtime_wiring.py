@@ -82,23 +82,24 @@ class ProductionRuntimeWiring(unittest.TestCase):
         self.assertNotIn("tradeGood.targetQuantity", demand)
         self.assertIn("Math.max(0, reserve)", policy)
         self.assertIn("gathering ? 260 : 220", policy)
-        for file, gate, gathering in (
-            ("GoalIndianDryBrick.java", "shouldForm", "false"),
-            ("GoalIndianGatherBrick.java", "shouldGather", "true"),
-        ):
-            code = read("goal/" + file)
-            destination = code.split("getDestination(MillVillager", 1)[1].split("@Override", 1)[0]
-            action = code.split("public boolean performAction(", 1)[1].split("@Override", 1)[0]
-            self.assertIn(gate, destination)
-            self.assertIn("demand.urgent() ||", destination)
-            self.assertIn(gate, action)
-            self.assertIn("brickspot.contains", action)
-            self.assertIn("demand.priority(" + gathering + ")", code)
-            if gathering == "true":
-                self.assertRegex(action, r"if\s*\(next\s*==\s*null\)\s*return\s+true\s*;")
+        cycle=read("goal/BrickWorkCycle.java")
+        self.assertIn("demand.shouldGather()",cycle)
+        self.assertIn("demand.shouldForm(BrickProductionDemand.inDryingArea(v))",cycle)
+        for file, gathering in (("GoalIndianDryBrick.java","false"),("GoalIndianGatherBrick.java","true")):
+            code=read("goal/"+file)
+            destination=code.split("getDestination(MillVillager",1)[1].split("@Override",1)[0]
+            action=code.split("public boolean performAction(",1)[1].split("@Override",1)[0]
+            self.assertIn("BrickWorkCycle.plan(",destination)
+            self.assertIn("BrickProductionDemand.inspect(villager)",action)
+            self.assertIn("brickspot.contains",action)
+            self.assertIn("demand.priority("+gathering+")",code)
+            self.assertIn("BrickWorkCycle.finished(villager,kiln)",action)
+            if gathering=="true":
+                self.assertIn("follow.work()==BrickWorkCycle.Work.REFILL",action)
+                self.assertIn("!kiln.getPos().equals(follow.kiln().getPos())",action)
             else:
-                self.assertRegex(action, r"if\s*\(next\s*==\s*null\)\s*\{\s*BrickProductionDemand\.clearGatherKiln\(villager\);\s*return\s+true\s*;\s*\}")
-        self.assertNotIn("takeFromInv", read("goal/GoalIndianDryBrick.java"))
+                self.assertIn("next == null || !kiln.getPos().equals(next.getDestBuildingPos())",action)
+        self.assertNotIn("takeFromInv",read("goal/GoalIndianDryBrick.java"))
 
     def test_brick_delivery_and_nearest_workplace(self):
         demand=read("goal/BrickProductionDemand.java")
@@ -107,10 +108,10 @@ class ProductionRuntimeWiring(unittest.TestCase):
         cook=read("goal/generic/GoalGenericCooking.java")
         self.assertIn("state == MillBlocks.BS_MUD_BRICK",demand)
         self.assertIn("DELIVERY_BATCH = 32",read("goal/BrickProductionPolicy.java"))
-        self.assertIn("deliveryDue(villager.countInv(item),!isRawBrick(item))",demand)
+        self.assertIn("BrickWorkCycle.plan(villager,inspect(villager)).work()==BrickWorkCycle.Work.DELIVER",demand)
         self.assertIn("BrickProductionDemand.waitForRawBatch(villager)",delivery)
         self.assertNotIn("Math.min(8,missing)",demand)
-        self.assertIn("BrickProductionDemand.deliveryDue(villager)",gather)
+        self.assertNotIn("BrickProductionDemand.deliveryDue(villager)",gather)
         self.assertIn("return 900",delivery)
         self.assertIn("return villager.getTownHall();",delivery)
         self.assertIn("p.horizontalDistanceToSquared(villager)<best.horizontalDistanceToSquared(villager)",cook)
@@ -120,21 +121,33 @@ class ProductionRuntimeWiring(unittest.TestCase):
         self.assertIn("ProductionCapability.hasCooking(plan,null)",planner)
 
     def test_refill_local_kiln_before_raw_delivery(self):
+        cycle=read("goal/BrickWorkCycle.java")
         dry=read("goal/GoalIndianDryBrick.java")
-        demand=read("goal/BrickProductionDemand.java")
-        policy=read("goal/BrickProductionPolicy.java")
         gather=read("goal/GoalIndianGatherBrick.java")
-        self.assertIn("REFILL_BEFORE_DELIVERY_PRIORITY = 950",policy)
-        self.assertIn("raw >= DELIVERY_BATCH && canDeliverRaw",policy)
-        self.assertIn("villager.getTownHall().storageRoom(raw)>0",demand)
-        self.assertIn("if (refill && kiln != local) continue;",dry)
-        self.assertIn("refill || demand.urgent() ||",dry)
-        self.assertIn("deliveryDue(villager) && !refillTrip(villager)",dry)
-        self.assertIn("refillRetryAfter.put",dry)
-        self.assertIn("BrickProductionDemand.lastGatherKiln(villager)",dry)
-        self.assertIn("BrickProductionDemand.rememberGatherKiln",gather)
-        self.assertIn("BrickProductionPolicy.refillAfterGather(raw, ready, alreadyRefilling)",demand)
-        self.assertIn("BrickProductionDemand.deliveryDue(villager)",gather)
+        delivery=read("goal/GoalBringBackResourcesHome.java")
+        self.assertIn("visit.refilling?null:nearestSpot(v,kiln,true)",cycle)
+        self.assertLess(cycle.index("if(stockAllowed && ready!=null)"),cycle.index("mayStartAnotherKiln"))
+        self.assertIn("visit.visited.contains(kiln.getPos())",cycle)
+        self.assertIn("BrickProductionPolicy.shouldDeliverRaw(cargo,false)?DELIVER:NONE",cycle)
+        self.assertIn("visit.lastWorked=v.level.getGameTime()",cycle)
+        self.assertIn("blocked.put(kiln.getPos(),now+200L)",cycle)
+        self.assertIn("BrickWorkCycle.gathered(villager,kiln,newCargo)",gather)
+        self.assertIn("BrickWorkCycle.beginRefill(villager,kiln)",dry)
+        self.assertIn("BrickWorkCycle.failed(villager,villager.getGoalBuildingDest())",dry)
+        self.assertIn("BrickWorkCycle.failed(villager,villager.getGoalBuildingDest())",gather)
+        self.assertIn("BrickWorkCycle.delivered(villager)",delivery)
+        self.assertIn("Math.min(villager.countInv(key),dest.storageRoom(key))",delivery)
+        self.assertIn("hasChunkAt(p.getBlockPos())",cycle)
+
+    def test_brick_firing_uses_physical_reserved_stock_supply(self):
+        cook=read("goal/generic/GoalGenericCooking.java")
+        self.assertIn('"cookindianbrick".equals(this.key)',cook)
+        self.assertIn("th.nbGoodAvailable(this.itemToCook,false,false,false)",cook)
+        self.assertIn("countGoods+(long)supply>=this.minimumToCook",cook)
+        self.assertIn("WorkAccess.canAccessStock(villager,target,2.0)",cook)
+        action=cook.split("public boolean performAction(",1)[1]
+        self.assertLess(action.index("isWithinActionRange"),action.index("villager.takeFromBuilding"))
+        self.assertIn("villager.setGoalInformation(next)",action)
 
     def test_source_migration_is_scoped_and_persisted(self):
         source = read("buildingplan/ProductionSourceRepair.java")

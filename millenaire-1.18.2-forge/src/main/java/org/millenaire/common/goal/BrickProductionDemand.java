@@ -11,41 +11,6 @@ import org.millenaire.common.village.Building;
 public final class BrickProductionDemand {
     private BrickProductionDemand() {}
 
-    // Server-thread-only transient work context; never retain the worker via the value.
-    private static final java.util.Map<MillVillager,Point> LAST_GATHER_KILN = new java.util.WeakHashMap<>();
-
-    static void rememberGatherKiln(MillVillager worker, Building kiln) {
-        LAST_GATHER_KILN.put(worker,kiln.getPos());
-    }
-
-    static void clearGatherKiln(MillVillager worker) {
-        LAST_GATHER_KILN.remove(worker);
-    }
-
-    static Building lastGatherKiln(MillVillager worker) {
-        Point pos = LAST_GATHER_KILN.get(worker);
-        if (pos == null || worker.getTownHall() == null) return null;
-        for (Building kiln : worker.getTownHall().getBuildingsWithTag("brickkiln"))
-            if (pos.equals(kiln.getPos())) return kiln;
-        return null;
-    }
-
-    static boolean refillAfterGather(MillVillager worker, boolean alreadyRefilling) {
-        int raw = worker.countInv(MillBlocks.BS_MUD_BRICK);
-        if (raw <= 0) return false;
-        Building kiln = lastGatherKiln(worker);
-        if (kiln == null) return false;
-        boolean ready = false;
-        for (Point spot : kiln.getResManager().brickspot) {
-            if (spot != null && worker.level.hasChunkAt(spot.getBlockPos())
-                    && worker.level.getBlockState(spot.getBlockPos()) == MillBlocks.BS_MUD_BRICK) {
-                ready = true;
-                break;
-            }
-        }
-        return BrickProductionPolicy.refillAfterGather(raw, ready, alreadyRefilling);
-    }
-
     private static long required(BuildingPlan plan, InvItem item) {
         if (plan == null || plan.resCost == null) return 0;
         long total = 0;
@@ -138,28 +103,17 @@ public final class BrickProductionDemand {
         if (total <= 0) return false;
         for (InvItem item : villager.getInventoryKeys()) {
             if (!isBrick(item) || !carriesForStorage(villager,item) || villager.countInv(item)<=0 || th.storageRoom(item)<=0) continue;
-            if (BrickProductionPolicy.deliveryDue(villager.countInv(item),!isRawBrick(item))) return true;
+            if (isRawBrick(item)) {
+                if (BrickWorkCycle.plan(villager,inspect(villager)).work()==BrickWorkCycle.Work.DELIVER) return true;
+            } else if (BrickProductionPolicy.deliveryDue(villager.countInv(item),true)) return true;
         }
         return false;
     }
 
-    static boolean refillBeforeDelivery(MillVillager villager) {
-        if (!brickWorker(villager) || villager.getTownHall()==null) return false;
-        InvItem raw = InvItem.createInvItem(MillBlocks.BS_MUD_BRICK);
-        int carried = villager.countInv(raw);
-        if (carried < BrickProductionPolicy.DELIVERY_BATCH) return false;
-        return BrickProductionPolicy.refillBeforeDelivery(carried,
-                carriesForStorage(villager,raw) && villager.getTownHall().storageRoom(raw)>0);
-    }
-
-    // A small residual batch may leave only when production has reached its
-    // target; waiting for a full batch then would strand the last supplies.
     static boolean waitForRawBatch(MillVillager villager) {
-        if (!brickWorker(villager) || villager.getTownHall()==null) return false;
-        int raw = villager.countInv(MillBlocks.BS_MUD_BRICK);
-        return raw > 0 && raw < BrickProductionPolicy.DELIVERY_BATCH
-                && inspect(villager).shouldGather()
-                && !villager.getTownHall().getBuildingsWithTag("brickkiln").isEmpty();
+        if (!brickWorker(villager) || BrickWorkCycle.raw(villager)<=0) return false;
+        var task=BrickWorkCycle.plan(villager,inspect(villager));
+        return task.work()==BrickWorkCycle.Work.GATHER || task.work()==BrickWorkCycle.Work.REFILL;
     }
 
     /** Count only existing wet or dried blocks on registered, loaded drying spots. */

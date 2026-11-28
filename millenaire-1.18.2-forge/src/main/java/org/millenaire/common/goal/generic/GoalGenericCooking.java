@@ -78,10 +78,31 @@ extends GoalGeneric {
         return count;
     }
 
+    private boolean brickKilnSupply(MillVillager villager) {
+        return "cookindianbrick".equals(this.key)
+                && org.millenaire.common.goal.BrickProductionDemand.brickWorker(villager)
+                && villager.getTownHall()!=null;
+    }
+
+    private int availableBrickSupply(MillVillager villager) {
+        if(!brickKilnSupply(villager))return 0;
+        Building th=villager.getTownHall();
+        Point stock=th.getResManager().getSellingPos();
+        if(stock==null || !villager.level.hasChunkAt(stock.getBlockPos()))return 0;
+        // The non-construction availability path already reserves active
+        // and pending building plans, household and trade reservations.
+        return th.nbGoodAvailable(this.itemToCook,false,false,false);
+    }
+
+    private boolean atBrickSupply(MillVillager villager) {
+        return brickKilnSupply(villager) && villager.getGoalBuildingDest()==villager.getTownHall();
+    }
+
     @Override
     public int priority(MillVillager villager) throws Exception {
         if (org.millenaire.common.goal.BrickProductionDemand.isRawBrick(this.itemToCook)
-                && carriedForCooking(villager)>=this.minimumToCook) return 850;
+                && (carriedForCooking(villager)>=this.minimumToCook
+                    || availableBrickSupply(villager)>=this.minimumToCook)) return 850;
         return super.priority(villager);
     }
 
@@ -90,6 +111,8 @@ extends GoalGeneric {
         List<Building> buildings = this.getBuildings(villager);
         Point best = null;
         Building bestBuilding = null;
+        boolean supplyNeeded=false;
+        int supply=availableBrickSupply(villager);
         for (Building dest : buildings) {
             if (!this.isDestPossible(villager, dest)) continue;
             if (!passesWorkplaceBalance(villager, dest)) {
@@ -108,9 +131,13 @@ extends GoalGeneric {
                 FurnaceBlockEntity furnace = p.getFurnace(villager.level);
                 if (furnace == null) continue;
                 ItemStack input = furnace.getItem(0);
-                boolean canFill = countGoods >= this.minimumToCook && (input.isEmpty()
+                boolean inputSlot=input.isEmpty()
                         || org.millenaire.common.item.LegacyItemStacks.matches(input,this.itemToCook.getItem(),this.itemToCook.meta)
-                        && input.getCount()<32);
+                        && input.getCount()<32;
+                boolean canFill = countGoods >= this.minimumToCook && inputSlot;
+                if (inputSlot && countGoods<this.minimumToCook
+                        && countGoods+(long)supply>=this.minimumToCook && dest!=villager.getTownHall())
+                    supplyNeeded=true;
                 if (!canFill && !GoalGenericTendFurnace.canStoreOutput(dest, furnace.getItem(2))) continue;
                 if (best == null || p.horizontalDistanceToSquared(villager)<best.horizontalDistanceToSquared(villager)) {
                     best=p; bestBuilding=dest;
@@ -141,6 +168,10 @@ extends GoalGeneric {
             }
         }
         if (best != null) return this.packDest(best,bestBuilding);
+        if(supplyNeeded && supply>0){
+            Building th=villager.getTownHall();
+            return this.packDest(th.getResManager().getSellingPos(),th);
+        }
         org.millenaire.common.goal.GoalDiagnostics.note(villager, this, "NO_ELIGIBLE_COOKING_SLOT_OR_COLLECTABLE_OUTPUT");
         return null;
     }
@@ -174,6 +205,7 @@ extends GoalGeneric {
     public Point getWorkPosition(MillVillager villager) {
         Point furnace = villager.getGoalDestPoint();
         if (furnace == null) return null;
+        if (atBrickSupply(villager)) return furnace;
         var state = villager.level.getBlockState(furnace.getBlockPos());
         if (state.hasProperty(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING))
             return new Point(furnace.getBlockPos().relative(state.getValue(
@@ -183,6 +215,9 @@ extends GoalGeneric {
     @Override public int range(MillVillager villager) { return 1; }
     @Override public boolean isWithinActionRange(MillVillager villager, Point ignored) {
         Point target = villager.getGoalDestPoint(), work = getWorkPosition(villager);
+        if(atBrickSupply(villager))
+            return target!=null && target.distanceTo(villager)<2.0
+                    && org.millenaire.common.goal.WorkAccess.canAccessStock(villager,target,2.0);
         if (target == null || work == null) return false;
         var standing = net.minecraft.world.phys.Vec3.atBottomCenterOf(work.getBlockPos());
         return villager.position().distanceToSqr(standing) < 1.5625
@@ -195,6 +230,26 @@ extends GoalGeneric {
         if (villager.level.isClientSide || this.itemToCook == null) return true;
         Building dest = villager.getGoalBuildingDest();
         Point target = villager.getGoalDestPoint();
+        if(atBrickSupply(villager)){
+            if(target==null || !target.equals(dest.getResManager().getSellingPos())
+                    || !villager.level.hasChunkAt(target.getBlockPos()))return true;
+            if(!this.isWithinActionRange(villager,null))return false;
+            // Re-evaluate the kiln need and reservations on arrival. If local
+            // input appeared meanwhile, walk there instead of taking extra.
+            Goal.GoalInformation next=this.getDestination(villager);
+            if(next==null)return true;
+            if(!dest.getPos().equals(next.getDestBuildingPos())){
+                villager.setGoalInformation(next);
+                return false;
+            }
+            if(!this.passesStockLimits(villager))return true;
+            int amount=Math.min(availableBrickSupply(villager),Math.max(0,64-villager.countInv(this.itemToCook)));
+            if(amount<=0 || villager.takeFromBuilding(dest,this.itemToCook.getItem(),this.itemToCook.meta,amount)<=0)return true;
+            next=this.getDestination(villager);
+            if(next==null || dest.getPos().equals(next.getDestBuildingPos()))return true;
+            villager.setGoalInformation(next);
+            return false;
+        }
         if (dest == null || target == null || !this.getBuildings(villager).contains(dest)
                 || !villager.level.hasChunkAt(target.getBlockPos())
                 || !(dest.getResManager().furnaces.contains(target) || dest.getResManager().firepits.contains(target))) return true;

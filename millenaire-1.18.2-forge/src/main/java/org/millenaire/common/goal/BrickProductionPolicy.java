@@ -17,12 +17,13 @@ public final class BrickProductionPolicy {
         return carried > 0 && (carried >= DELIVERY_BATCH || fired);
     }
 
-    public static boolean refillBeforeDelivery(int raw, boolean canDeliverRaw) {
-        return raw >= DELIVERY_BATCH && canDeliverRaw;
+    /** The threshold gates another kiln visit, never the active harvest. */
+    public static boolean mayStartAnotherKiln(int raw, boolean demandRemaining) {
+        return raw < DELIVERY_BATCH && demandRemaining;
     }
 
-    public static boolean refillAfterGather(int raw, boolean hasReady, boolean alreadyRefilling) {
-        return raw > 0 && (raw >= DELIVERY_BATCH || !hasReady || alreadyRefilling);
+    public static boolean shouldDeliverRaw(int raw, boolean workRemaining) {
+        return raw > 0 && !workRemaining;
     }
 
     public record Demand(long shortage, long constructionShortage) {

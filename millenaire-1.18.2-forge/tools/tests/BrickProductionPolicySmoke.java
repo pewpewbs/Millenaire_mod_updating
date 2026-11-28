@@ -41,16 +41,17 @@ public final class BrickProductionPolicySmoke {
         check(BrickProductionPolicy.deliveryDue(32,false),"full raw batch");
         check(BrickProductionPolicy.deliveryDue(1,true),"finished fired brick");
         check(!BrickProductionPolicy.deliveryDue(0,true),"empty cargo");
-        check(!BrickProductionPolicy.refillBeforeDelivery(31,true),"not yet a full batch");
-        check(BrickProductionPolicy.refillBeforeDelivery(32,true),"refill with full batch");
-        check(!BrickProductionPolicy.refillBeforeDelivery(32,false),"no receivable delivery");
+        check(BrickProductionPolicy.mayStartAnotherKiln(12,true),"12 can visit another kiln");
+        check(BrickProductionPolicy.mayStartAnotherKiln(28,true),"28 can visit another kiln");
+        check(!BrickProductionPolicy.mayStartAnotherKiln(36,true),"12+24 ready to deliver");
+        check(!BrickProductionPolicy.mayStartAnotherKiln(48,true),"28+20 ready to deliver");
+        check(!BrickProductionPolicy.mayStartAnotherKiln(45,true),"whole large kiln delivered");
+        check(!BrickProductionPolicy.mayStartAnotherKiln(18,false),"demand covered");
+        check(BrickProductionPolicy.shouldDeliverRaw(18,false),"partial trip with no ready kiln");
+        check(!BrickProductionPolicy.shouldDeliverRaw(60,true),"finish active kiln refill before delivery");
+        check(!BrickProductionPolicy.shouldDeliverRaw(0,false),"no empty delivery");
         check(BrickProductionPolicy.REFILL_BEFORE_DELIVERY_PRIORITY > 900
-                && BrickProductionPolicy.REFILL_BEFORE_DELIVERY_PRIORITY < 1000,"refill between delivery and building");
-        check(!BrickProductionPolicy.refillAfterGather(0,false,false),"no gathered cargo");
-        check(!BrickProductionPolicy.refillAfterGather(12,true,false),"continue gathering local ready bricks");
-        check(BrickProductionPolicy.refillAfterGather(12,false,false),"refill exhausted local drying area");
-        check(BrickProductionPolicy.refillAfterGather(12,true,true),"finish refill already in progress");
-        check(BrickProductionPolicy.refillAfterGather(32,true,false),"full batch refills before delivery");
+                && BrickProductionPolicy.REFILL_BEFORE_DELIVERY_PRIORITY < 1000,"active cycle between delivery and building");
         System.out.println("BrickProductionPolicySmoke passed");
     }
 }

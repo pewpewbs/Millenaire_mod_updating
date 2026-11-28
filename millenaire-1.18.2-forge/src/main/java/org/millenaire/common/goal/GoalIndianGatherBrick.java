@@ -44,48 +44,10 @@ extends Goal {
 
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws MillLog.MillenaireException {
-        if (BrickProductionDemand.deliveryDue(villager)) return null;
-        var demand = BrickProductionDemand.inspect(villager);
-        if (!demand.shouldGather()) {
-            GoalDiagnostics.note(villager,this,"BRICK_STOCK_TARGET_REACHED");
-            return null;
-        }
-        boolean minimumBricksNotRequired = demand.urgent() || (villager.goalKey != null && villager.goalKey.equals(this.key) ? true : (!villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L));
-        ArrayList<Point> vp = new ArrayList<Point>();
-        ArrayList<Point> buildingp = new ArrayList<Point>();
-        for (Building kiln : villager.getTownHall().getBuildingsWithTag("brickkiln")) {
-            Point p;
-            if (!this.validateDest(villager, kiln)) continue;
-            int nb = kiln.getResManager().getNbFullBrickLocation();
-            boolean validTarget = false;
-            if (nb > 0 && minimumBricksNotRequired) {
-                validTarget = true;
-            }
-            if (nb > 4) {
-                validTarget = true;
-            }
-            if (!validTarget) continue;
-            p = null;
-            for (Point spot : kiln.getResManager().brickspot) {
-                if (spot == null || !villager.level.hasChunkAt(spot.getBlockPos())) continue;
-                if (villager.level.getBlockState(spot.getBlockPos()) != MillBlocks.BS_MUD_BRICK) continue;
-                if (p == null || spot.horizontalDistanceToSquared(villager) < p.horizontalDistanceToSquared(villager)) p = spot;
-            }
-            if (p == null) continue;
-            vp.add(p);
-            buildingp.add(kiln.getPos());
-        }
-        if (vp.isEmpty()) {
-            return null;
-        }
-        Point p = (Point)vp.get(0);
-        Point buildingP = (Point)buildingp.get(0);
-        for (int i = 1; i < vp.size(); ++i) {
-            if (!(((Point)vp.get(i)).horizontalDistanceToSquared((Entity)villager) < p.horizontalDistanceToSquared((Entity)villager))) continue;
-            p = (Point)vp.get(i);
-            buildingP = (Point)buildingp.get(i);
-        }
-        return this.packDest(p, buildingP);
+        var demand=BrickProductionDemand.inspect(villager);
+        var task=BrickWorkCycle.plan(villager,demand);
+        if(task.work()!=BrickWorkCycle.Work.GATHER || !this.validateDest(villager,task.kiln()))return null;
+        return this.packDest(task.point(),task.kiln());
     }
 
     @Override
@@ -113,28 +75,40 @@ extends Goal {
         if (villager.level.isClientSide || villager.getGoalDestPoint() == null || villager.getGoalBuildingDest() == null
                 || !villager.level.hasChunkAt(villager.getGoalDestPoint().getBlockPos())
                 || !villager.getGoalBuildingDest().getResManager().brickspot.contains(villager.getGoalDestPoint())) return true;
-        if (BrickProductionDemand.deliveryDue(villager)) return true;
-        if (!BrickProductionDemand.inspect(villager).shouldGather()) return true;
+        Building kiln=villager.getGoalBuildingDest();
+        var task=BrickWorkCycle.plan(villager,BrickProductionDemand.inspect(villager));
+        if(task.work()!=BrickWorkCycle.Work.GATHER || !kiln.getPos().equals(task.kiln().getPos())){
+            if(task.work()!=BrickWorkCycle.Work.REFILL || !kiln.getPos().equals(task.kiln().getPos()))
+                BrickWorkCycle.finished(villager,kiln);
+            return true;
+        }
         if (WorldUtilities.getBlockState(villager.level, villager.getGoalDestPoint()) == MillBlocks.BS_MUD_BRICK) {
-            if (!villager.setBlockAndMetadata(villager.getGoalDestPoint(), Blocks.AIR, 0)) return true;
+            boolean newCargo=BrickWorkCycle.raw(villager)==0;
+            if (!villager.setBlockAndMetadata(villager.getGoalDestPoint(), Blocks.AIR, 0)) {
+                BrickWorkCycle.failed(villager,kiln);
+                return true;
+            }
             villager.addToInv(MillBlocks.BS_MUD_BRICK, 1);
-            BrickProductionDemand.rememberGatherKiln(villager,villager.getGoalBuildingDest());
+            BrickWorkCycle.gathered(villager,kiln,newCargo);
             villager.swing(InteractionHand.MAIN_HAND);
         }
-        if (BrickProductionDemand.deliveryDue(villager)) return true;
-        if (villager.getGoalBuildingDest().getResManager().getNbFullBrickLocation() > 0) {
-            Goal.GoalInformation next = this.getDestination(villager);
-            if (next == null) return true;
-            villager.setGoalInformation(next);
-            return false;
+        var follow=BrickWorkCycle.plan(villager,BrickProductionDemand.inspect(villager));
+        if(follow.work()==BrickWorkCycle.Work.REFILL && kiln.getPos().equals(follow.kiln().getPos()))
+            return true; // hand off to forming, retaining this visit
+        if(follow.work()!=BrickWorkCycle.Work.GATHER || !kiln.getPos().equals(follow.kiln().getPos())){
+            BrickWorkCycle.finished(villager,kiln);
+            return true;
         }
-        return true;
+        villager.setGoalInformation(this.packDest(follow.point(),kiln));
+        return false;
     }
 
     @Override
     public int priority(MillVillager villager) {
         var demand = BrickProductionDemand.inspect(villager);
-        if (!demand.shouldGather()) return 0;
+        var task=BrickWorkCycle.plan(villager,demand);
+        if(task.work()!=BrickWorkCycle.Work.GATHER)return 0;
+        if(BrickWorkCycle.raw(villager)>0)return BrickProductionPolicy.REFILL_BEFORE_DELIVERY_PRIORITY;
         int p = demand.priority(true);
         for (MillVillager v : villager.getTownHall().getKnownVillagers()) {
             if (v == villager || !this.key.equals(v.goalKey)) continue;
@@ -145,6 +119,7 @@ extends Goal {
 
     @Override
     public boolean unreachableDestination(MillVillager villager) {
+        BrickWorkCycle.failed(villager,villager.getGoalBuildingDest());
         return false;
     }
 }

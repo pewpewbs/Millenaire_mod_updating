@@ -85,9 +85,10 @@ extends Goal {
         if (nb <= 0) return GoalDiagnostics.reject(villager, this, "NO_DELIVERABLE_GOODS_OR_HOME_STORAGE");
         // Override the old 100-second cooldown once a shepherd has a full
         // batch. Otherwise a large flock repeatedly wins the goal selection.
-        if (fullShearingBatch(villager) || BrickProductionDemand.deliveryDue(villager)) return true;
+        if (fullShearingBatch(villager)) return true;
         if (deliveryBuilding(villager)==villager.getTownHall()
                 && BrickProductionDemand.waitForRawBatch(villager)) return false;
+        if (BrickProductionDemand.deliveryDue(villager)) return true;
         boolean delayOver = !villager.lastGoalTime.containsKey(this)
                 || villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L;
         return delayOver || nb > 16;
@@ -114,10 +115,13 @@ extends Goal {
         for (InvItem key : new ArrayList<>(villager.getInventoryKeys())) {
             if (isDeliverable(villager, key) && villager.countInv(key) > 0
                     && (dest == villager.getHouse() || BrickProductionDemand.isBrick(key))) {
-                int amount = Math.min(256, dest.storageRoom(key));
+                int amount = BrickProductionDemand.brickWorker(villager) && BrickProductionDemand.isRawBrick(key)
+                        ? Math.min(villager.countInv(key),dest.storageRoom(key))
+                        : Math.min(256, dest.storageRoom(key));
                 if (amount > 0) villager.putInBuilding(dest, key.getItem(), key.meta, amount);
             }
         }
+        BrickWorkCycle.delivered(villager);
         return true;
     }
 
