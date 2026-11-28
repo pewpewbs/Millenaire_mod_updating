@@ -40,17 +40,51 @@ public final class ConstructionSupportOrder {
     }
 
     static void prepare(Level world,List<BuildingBlock> operations) {
+        prepare(world, operations, false);
+    }
+
+    /** In a new independent building, excavation is a separate first phase.
+     * Do not apply this exception to updates or existing fixtures/structures. */
+    private static boolean preserveNewTerrainClear(Level world, BuildingBlock b, boolean prepareNewGround) {
+        if (!prepareNewGround || b.special != BuildingBlock.CLEARGROUND) return false;
+        BlockPos p = b.p.getBlockPos();
+        // Keep the planned excavation if its state cannot yet be inspected.
+        if (!world.hasChunkAt(p)) return true;
+        BlockState s = world.getBlockState(p);
+        if (world.getBlockEntity(p) != null) return false;
+        Block block = s.getBlock();
+        return block == Blocks.GRASS_BLOCK || block == Blocks.DIRT || block == Blocks.COARSE_DIRT
+                || block == Blocks.ROOTED_DIRT || block == Blocks.PODZOL || block == Blocks.MYCELIUM
+                || block == Blocks.SAND || block == Blocks.RED_SAND || block == Blocks.GRAVEL
+                || block == Blocks.CLAY || block == Blocks.STONE || block == Blocks.GRANITE
+                || block == Blocks.DIORITE || block == Blocks.ANDESITE || block == Blocks.DEEPSLATE
+                || block == Blocks.TUFF || block == Blocks.CALCITE || block == Blocks.SANDSTONE
+                || block == Blocks.RED_SANDSTONE || block == Blocks.TERRACOTTA
+                || block == Blocks.WHITE_TERRACOTTA || block == Blocks.ORANGE_TERRACOTTA
+                || block == Blocks.MAGENTA_TERRACOTTA || block == Blocks.LIGHT_BLUE_TERRACOTTA
+                || block == Blocks.YELLOW_TERRACOTTA || block == Blocks.LIME_TERRACOTTA
+                || block == Blocks.PINK_TERRACOTTA || block == Blocks.GRAY_TERRACOTTA
+                || block == Blocks.LIGHT_GRAY_TERRACOTTA || block == Blocks.CYAN_TERRACOTTA
+                || block == Blocks.PURPLE_TERRACOTTA || block == Blocks.BLUE_TERRACOTTA
+                || block == Blocks.BROWN_TERRACOTTA || block == Blocks.GREEN_TERRACOTTA
+                || block == Blocks.RED_TERRACOTTA || block == Blocks.BLACK_TERRACOTTA;
+    }
+
+    static void prepare(Level world,List<BuildingBlock> operations,boolean prepareNewGround) {
         // A clear followed by a concrete replacement at the same coordinate
         // is not a real demolition. Replace in one write instead of exposing air.
         // Called only for live construction; CLEARGROUND has no below-ground
         // write in this mode. Preserve other special ground/tree operations.
+        // Exception: actual terrain inside a new footprint must be excavated
+        // before any walls are erected, even at future wall positions.
         Set<BlockPos> laterReplacement=new HashSet<>();
         Set<BuildingBlock> redundant=Collections.newSetFromMap(new IdentityHashMap<>());
         for(int i=operations.size()-1;i>=0;i--){
             BuildingBlock b=operations.get(i);
             BlockPos p=b.p.getBlockPos();
             if((clear(b) || b.special==BuildingBlock.CLEARGROUND)
-                    && laterReplacement.contains(p)){
+                    && laterReplacement.contains(p)
+                    && !preserveNewTerrainClear(world,b,prepareNewGround)){
                 redundant.add(b);
                 continue;
             }

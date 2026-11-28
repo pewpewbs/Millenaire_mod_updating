@@ -1458,6 +1458,8 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
          );
       }
 
+      boolean prepareNewGround = !this.isUpdate && !this.isSubBuilding && !location.isSubBuildingLocation
+            && !location.bedrocklevel && location.level == 0;
       if (!this.isUpdate && !this.isSubBuilding && !location.bedrocklevel) {
          this.getBuildingPoints_prepareGround(location, locationX, locationY, locationZ, orientation, bblocksCombined);
       }
@@ -1568,7 +1570,10 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
       }
 
       this.autoGuessLaddersDoorsStairs(bblocksCombined);
-      if (!villageGeneration && !includeSpecialPoints) ConstructionSupportOrder.prepare(world,bblocksCombined);
+      if (!villageGeneration && !includeSpecialPoints) {
+         if (prepareNewGround) ConstructionSupportOrder.prepare(world,bblocksCombined,true);
+         else ConstructionSupportOrder.prepare(world,bblocksCombined);
+      }
       if (location.sleepingPos == null) {
          location.sleepingPos = location.chestPos;
       }
@@ -2213,7 +2218,7 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
 
             if (deltaY >= --offset - 2) {
                Point p = adjustForOrientation(locationX, locationY + deltaY, locationZ, deltaX - this.lengthOffset, deltaZ - this.widthOffset, orientation);
-               if (deltaX >= 0 && deltaZ >= 0 && deltaX <= this.length && deltaZ <= this.width) {
+               if (deltaX >= 0 && deltaZ >= 0 && deltaX < this.length && deltaZ < this.width) {
                   bblocks.add(new BuildingBlock(p, BuildingBlock.CLEARGROUND));
                } else if (deltaY != offset - 2 && deltaY != 0) {
                   if (deltaX != -this.areaToClearLengthBefore
@@ -2236,7 +2241,7 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
 
       for (int xzPos = 0; xzPos < XZCoords.length; xzPos += 2) {
          short deltaX = (short)(XZCoords[xzPos] - this.areaToClearLengthBefore);
-         short deltaZ = (short)(XZCoords[xzPos + 1] - this.areaToClearWidthAfter);
+         short deltaZ = (short)(XZCoords[xzPos + 1] - this.areaToClearWidthBefore);
 
          for (short deltaY = (short)(-this.foundationDepth + this.startLevel); deltaY < 0; deltaY++) {
             int offsetXx = 0;
