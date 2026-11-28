@@ -281,7 +281,7 @@ extends BookManager {
         if (level == 0) {
             page.addLine(LanguageUtilities.string("travelbook.initial"), "\u00a71");
         } else {
-            page.addLine(LanguageUtilities.string("travelbook.upgrade", "" + level), "\u00a71");
+            page.addLine(LanguageUtilities.string("travelbook.upgrade", "" + (level + 1)), "\u00a71");
         }
         page.getLastLine().canCutAfter = false;
         ArrayList<TextLine> infoColumns = new ArrayList<TextLine>();

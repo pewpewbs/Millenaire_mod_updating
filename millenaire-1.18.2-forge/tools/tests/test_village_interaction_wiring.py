@@ -142,7 +142,7 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertIn('singular?"дитина":few?"дитини":"дітей"',ui)
         self.assertIn("lastTwo!=11",ui)
         self.assertIn("lastTwo<12||lastTwo>14",ui)
-        self.assertIn('levelLabel=label("Level: ","Рівень: ","Уровень: ")+loc.level;',ui)
+        self.assertIn('levelLabel=label("Level: ","Рівень: ","Уровень: ")+(loc.level+1);',ui)
         self.assertIn("levelDetail=upgradeDetail(loc,plan",ui)
         self.assertIn("new RecipeView(stacks,List.of())",ui)
         self.assertNotIn("Перебудова за планом наступного рівня",ui)
@@ -226,7 +226,7 @@ class VillageInteractionWiring(unittest.TestCase):
         ui=read("client/gui/text/BuildingMapTooltip.java")
         self.assertIn("if(!construction&&loc.level>=0",ui)
         status=ui.split("if(construction){",1)[1].split("else if(loc.level<0)",1)[0]
-        self.assertIn('if(loc.level>0)add(lines,label("Upgrade: ","Поліпшення: ","Улучшение: ")+(loc.level-1)+" → "+loc.level,GOLD);',status)
+        self.assertIn('if(loc.level>0)add(lines,label("Upgrade: ","Поліпшення: ","Улучшение: ")+loc.level+" → "+(loc.level+1),GOLD);',status)
         self.assertIn('else add(lines,label("Under construction","Будується","Строится"),GOLD);',status)
         self.assertNotIn('label("Level "',status)
         building=read("common/village/Building.java")
@@ -284,7 +284,7 @@ class VillageInteractionWiring(unittest.TestCase):
         panel = read("common/village/buildingmanagers/PanelContentGenerator.java")
         self.assertNotIn('LanguageUtilities.string("ui.upgrading")', panel)
         for name in ("cip", "projectCIP", "goalCIP", "cipxx"):
-            self.assertIn('LanguageUtilities.string("ui.upgrading", "" + ' + name + '.getBuildingLocation().level)', panel)
+            self.assertIn('LanguageUtilities.string("ui.upgrading", "" + (' + name + '.getBuildingLocation().level + 1))', panel)
         lang = ROOT.parents[2] / "resources/todeploy/millenaire/languages/uk/strings.txt"
         self.assertIn("ui.upgrading=Поліпшення до рівня <0>", lang.read_text(encoding="utf-8-sig"))
 

@@ -238,7 +238,12 @@ final class BuildingMapTooltip {
     /** Only report differences actually declared by the next authored plan. */
     private static String upgradeDetail(BuildingLocation loc,BuildingPlan current,BuildingPlan next){
         List<String> changes=new ArrayList<>();
-        changes.add(label("Next level: ","Наступний рівень: ","Следующий уровень: ")+next.level);
+        changes.add(label("Next level: ","Наступний рівень: ","Следующий уровень: ")+(next.level+1));
+        if(current!=null && current.containsTags("brickkiln") && next.containsTags("brickkiln")
+                && org.millenaire.common.block.BrickDryingPolicy.meanSeconds(current.level)
+                != org.millenaire.common.block.BrickDryingPolicy.meanSeconds(next.level))
+            changes.add(label("Mean drying time: ","Середній час сушіння: ","Среднее время сушки: ")
+                    +dryingTime(current.level)+" → "+dryingTime(next.level));
         if(current!=null){
             int before=loc.getMaleResidents().size()+loc.getFemaleResidents().size();
             int after=next.getMaleResident().size()+next.getFemaleResident().size();
@@ -250,6 +255,11 @@ final class BuildingMapTooltip {
         }
         if(next.resCost!=null&&!next.resCost.isEmpty())changes.add(label("Required materials:","Необхідні матеріали:","Необходимые материалы:"));
         return String.join("; ",changes);
+    }
+
+    private static String dryingTime(int level){
+        int seconds=org.millenaire.common.block.BrickDryingPolicy.meanSeconds(level);
+        return "~"+(seconds/60)+label("m "," хв "," мин ")+(seconds%60)+label("s"," с"," с");
     }
 
     static List<Line> describe(BuildingLocation loc, Building townHall, String nativeName, boolean construction,boolean expanded) {
@@ -276,10 +286,12 @@ final class BuildingMapTooltip {
                     &&set.plans.get(variation).length>loc.level){
                 int maximum=set.plans.get(variation).length-1;
                 if(maximum>0){
-                    levelLabel=label("Level: ","Рівень: ","Уровень: ")+loc.level;
+                    levelLabel=label("Level: ","Рівень: ","Уровень: ")+(loc.level+1);
                     if(loc.level==maximum){
                         nameColor=GOLD;
                         levelDetail=label("Maximum level","Максимальний рівень","Максимальный уровень");
+                        if(plan!=null && plan.containsTags("brickkiln"))
+                            levelDetail+="; "+label("Mean drying time: ","Середній час сушіння: ","Среднее время сушки: ")+dryingTime(loc.level);
                     }else if(expanded){
                         BuildingPlan next=set.plans.get(variation)[loc.level+1];
                         levelDetail=upgradeDetail(loc,plan,next);
@@ -296,7 +308,7 @@ final class BuildingMapTooltip {
         if(levelLabel!=null)lines.add(new Line(levelLabel,nameColor,List.of(),List.of(),levelDetail,List.of(levelMaterials),true));
         if(construction){
             // ConstructionIP carries the target level; standard upgrades advance exactly one level.
-            if(loc.level>0)add(lines,label("Upgrade: ","Поліпшення: ","Улучшение: ")+(loc.level-1)+" → "+loc.level,GOLD);
+            if(loc.level>0)add(lines,label("Upgrade: ","Поліпшення: ","Улучшение: ")+loc.level+" → "+(loc.level+1),GOLD);
             else add(lines,label("Under construction","Будується","Строится"),GOLD);
         }
         else if(loc.level<0)add(lines,label("Not built yet","Ще не збудовано","Ещё не построено"),0xFF7777);

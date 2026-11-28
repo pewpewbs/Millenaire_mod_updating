@@ -73,6 +73,30 @@ public class MillWorldData {
     private static HashMap<Point, Integer> buildingsVariation = new HashMap();
     private static HashMap<Point, String> buildingsLocation = new HashMap();
     private final HashMap<Point, Building> buildings = new HashMap();
+    // Rebuilt lazily at most every 100 ticks, only while a wet brick is drying.
+    private final HashMap<net.minecraft.core.BlockPos, Building> brickDryingOwners = new HashMap<>();
+    private long brickDryingIndexTick = Long.MIN_VALUE;
+
+    public int getBrickDryingLevel(net.minecraft.core.BlockPos pos) {
+        if (world.isClientSide) return org.millenaire.common.block.BrickDryingPolicy.NORMAL_LEVEL;
+        long now = world.getGameTime();
+        if (brickDryingIndexTick == Long.MIN_VALUE || now < brickDryingIndexTick || now - brickDryingIndexTick >= 100L) {
+            brickDryingOwners.clear();
+            for (Building building : allBuildings()) {
+                if (building == null || building.location == null || building.location.level < 0
+                        || !building.containsTags("brickkiln")) continue;
+                for (Point spot : building.getResManager().brickspot)
+                    if (spot != null) brickDryingOwners.putIfAbsent(spot.getBlockPos(), building);
+            }
+            brickDryingIndexTick = now;
+        }
+        Building kiln = brickDryingOwners.get(pos);
+        if (kiln == null || kiln.location == null || kiln.location.level < 0
+                || !kiln.containsTags("brickkiln")
+                || !kiln.getResManager().brickspot.contains(new Point(pos)))
+            return org.millenaire.common.block.BrickDryingPolicy.NORMAL_LEVEL;
+        return kiln.location.level;
+    }
     private final HashMap<Long, MillVillager> villagers = new HashMap();
     private final HashMap<Long, VillagerRecord> villagerRecords = new HashMap();
     public final List<String> globalTags = new ArrayList<String>();
@@ -107,6 +131,7 @@ public class MillWorldData {
 
     public void addBuilding(Building b, Point p) {
         this.buildings.put(p, b);
+        brickDryingIndexTick = Long.MIN_VALUE;
     }
 
     public Collection<Building> allBuildings() {
@@ -771,6 +796,7 @@ public class MillWorldData {
 
     public void removeBuilding(Point p) {
         this.buildings.remove(p);
+        brickDryingIndexTick = Long.MIN_VALUE;
     }
 
     public void removeVillageOrLoneBuilding(Point p) {

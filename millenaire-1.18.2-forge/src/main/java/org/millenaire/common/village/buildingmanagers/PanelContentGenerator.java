@@ -162,7 +162,7 @@ public class PanelContentGenerator {
             if (cip.getBuildingLocation().level == 0) {
                status = LanguageUtilities.string("ui.inconstruction");
             } else {
-               status = LanguageUtilities.string("ui.upgrading", "" + cip.getBuildingLocation().level);
+               status = LanguageUtilities.string("ui.upgrading", "" + (cip.getBuildingLocation().level + 1));
             }
 
             String loc;
@@ -191,8 +191,8 @@ public class PanelContentGenerator {
                      level = LanguageUtilities.string("ui.notyetbuilt");
                   }
 
-                  if (project.location.level > 0) {
-                     level = LanguageUtilities.string("panels.upgrade") + " " + project.location.level;
+                  if (project.location.level >= 0) {
+                     level = LanguageUtilities.string("ui.level") + " " + (project.location.level + 1);
                   }
 
                   List<String> effects = project.location.getBuildingEffects(townHall.world);
@@ -891,7 +891,7 @@ public class PanelContentGenerator {
             if (projectCIP.getBuildingLocation().level == 0) {
                status = LanguageUtilities.string("ui.inconstruction");
             } else {
-               status = LanguageUtilities.string("ui.upgrading", "" + projectCIP.getBuildingLocation().level);
+               status = LanguageUtilities.string("ui.upgrading", "" + (projectCIP.getBuildingLocation().level + 1));
             }
          } else {
             status = "ui.lackingresources".equals(house.buildingGoalIssue)
@@ -1035,7 +1035,7 @@ public class PanelContentGenerator {
             if (goalCIP.getBuildingLocation().level == 0) {
                status = LanguageUtilities.string("ui.inconstruction");
             } else {
-               status = LanguageUtilities.string("ui.upgrading", "" + goalCIP.getBuildingLocation().level);
+               status = LanguageUtilities.string("ui.upgrading", "" + (goalCIP.getBuildingLocation().level + 1));
             }
          } else {
             status = LanguageUtilities.string(townHall.buildingGoalIssue);
@@ -1114,7 +1114,7 @@ public class PanelContentGenerator {
             if (cipxx.getBuildingLocation().level == 0) {
                status = LanguageUtilities.string("ui.inconstruction");
             } else {
-               status = LanguageUtilities.string("ui.upgrading", "" + cipxx.getBuildingLocation().level);
+               status = LanguageUtilities.string("ui.upgrading", "" + (cipxx.getBuildingLocation().level + 1));
             }
 
             int distance = Mth.floor(townHall.getPos().distanceTo(cipxx.getBuildingLocation().pos));

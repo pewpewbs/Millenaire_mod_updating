@@ -42,8 +42,11 @@ public class BlockWetBrick extends Block implements IMetaBlockName, LegacyVarian
     @Override public void randomTick(BlockState state, ServerLevel level, BlockPos pos, Random random) {
         int current = state.getValue(PROGRESS).getMetadata();
         if (level.getMaxLocalRawBrightness(pos.above()) <= 14) return;
-        int next = current + 1;
-        if (next < 2 && random.nextBoolean()) next++;
+        var data = org.millenaire.common.forge.Mill.getMillWorld(level);
+        int kilnLevel = data != null && data.world == level
+                ? data.getBrickDryingLevel(pos) : BrickDryingPolicy.NORMAL_LEVEL;
+        int next = BrickDryingPolicy.advance(current, kilnLevel, random);
+        if (next == current) return;
         if (next < 3) level.setBlockAndUpdate(pos, state.setValue(PROGRESS, EnumType.byMetadata(next)));
         else level.setBlockAndUpdate(pos, MillBlocks.STONE_DECORATION.defaultBlockState().setValue(BlockDecorativeStone.VARIANT, BlockDecorativeStone.EnumType.MUDBRICK));
     }

@@ -30,6 +30,10 @@ def main():
             ROOT / "tools/tests/BrickProductionPolicySmoke.java")
         run("java","-cp",classes,"BrickProductionPolicySmoke")
         run("javac","--release","17","-d",classes,
+            JAVA / "block/BrickDryingPolicy.java",
+            ROOT / "tools/tests/BrickDryingPolicySmoke.java")
+        run("java","-cp",classes,"BrickDryingPolicySmoke")
+        run("javac","--release","17","-d",classes,
             JAVA / "buildingplan/DoorPairRules.java",
             JAVA / "village/PenAllocationRules.java",
             ROOT / "tools/tests/VillageInteractionRulesSmoke.java")
