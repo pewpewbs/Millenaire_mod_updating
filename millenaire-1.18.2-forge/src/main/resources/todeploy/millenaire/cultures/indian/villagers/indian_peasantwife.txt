@@ -40,7 +40,6 @@ goal=harvestcotton
 goal=plantindianflowers
 goal=harvestflower_blue_orchid
 goal=harvestflower_poppy
-goal=harvestcotton
 
 goal=makeRasgulla
 goal=makecurry
@@ -64,6 +63,7 @@ collectGood=feather
 bringBackHomeGood=chickenmeat
 bringBackHomeGood=egg
 bringBackHomeGood=feather
+bringBackHomeGood=cotton
 
 requiredGood=sugarcane,12
 requiredGood=rice,5
