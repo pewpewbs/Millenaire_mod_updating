@@ -71,16 +71,32 @@ extends GoalGeneric {
         return raw >= cooked;
     }
 
+    private int carriedForCooking(MillVillager villager) {
+        int count = villager.countInv(this.itemToCook);
+        if (org.millenaire.common.goal.BrickProductionDemand.isRawBrick(this.itemToCook))
+            count = Math.max(0,count-org.millenaire.common.goal.BrickProductionDemand.constructionMissing(villager,this.itemToCook));
+        return count;
+    }
+
+    @Override
+    public int priority(MillVillager villager) throws Exception {
+        if (org.millenaire.common.goal.BrickProductionDemand.isRawBrick(this.itemToCook)
+                && carriedForCooking(villager)>=this.minimumToCook) return 850;
+        return super.priority(villager);
+    }
+
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
         List<Building> buildings = this.getBuildings(villager);
+        Point best = null;
+        Building bestBuilding = null;
         for (Building dest : buildings) {
             if (!this.isDestPossible(villager, dest)) continue;
             if (!passesWorkplaceBalance(villager, dest)) {
                 org.millenaire.common.goal.GoalDiagnostics.note(villager, this, "WORKPLACE_RESOURCE_BALANCE");
                 continue;
             }
-            int countGoods = dest.countGoods(this.itemToCook) + villager.countInv(this.itemToCook);
+            int countGoods = dest.countGoods(this.itemToCook) + carriedForCooking(villager);
             if (org.millenaire.common.goal.GoalDiagnostics.recording(villager, this)) {
                 if (countGoods < this.minimumToCook)
                     org.millenaire.common.goal.GoalDiagnostics.note(villager, this, "INPUT_BELOW_MINIMUM " + this.itemToCook + " " + countGoods + "/" + this.minimumToCook);
@@ -88,34 +104,43 @@ extends GoalGeneric {
                     org.millenaire.common.goal.GoalDiagnostics.note(villager, this, "NO_REGISTERED_FURNACE_OR_FIREPIT");
             }
             for (Point p : dest.getResManager().furnaces) {
+                if (p==null || !villager.level.hasChunkAt(p.getBlockPos())) continue;
                 FurnaceBlockEntity furnace = p.getFurnace(villager.level);
                 if (furnace == null) continue;
-                if (countGoods >= this.minimumToCook && (furnace.getItem(0) == ItemStack.EMPTY || furnace.getItem(0).getItem() == Items.AIR || furnace.getItem(0).getItem() == this.itemToCook.getItem() && furnace.getItem(0).getDamageValue() == this.itemToCook.meta && furnace.getItem(0).getCount() < 32)) {
-                    return this.packDest(p, dest);
+                ItemStack input = furnace.getItem(0);
+                boolean canFill = countGoods >= this.minimumToCook && (input.isEmpty()
+                        || org.millenaire.common.item.LegacyItemStacks.matches(input,this.itemToCook.getItem(),this.itemToCook.meta)
+                        && input.getCount()<32);
+                if (!canFill && !GoalGenericTendFurnace.canStoreOutput(dest, furnace.getItem(2))) continue;
+                if (best == null || p.horizontalDistanceToSquared(villager)<best.horizontalDistanceToSquared(villager)) {
+                    best=p; bestBuilding=dest;
                 }
-                // Only schedule output-only visits when the building can actually store the output.
-                if (!GoalGenericTendFurnace.canStoreOutput(dest, furnace.getItem(2))) continue;
-                return this.packDest(p, dest);
             }
             boolean firepitBurnable = TileEntityFirePit.isFirePitBurnable(villager.level, this.itemToCook.staticStack);
             if (!firepitBurnable) continue;
             for (Point p : dest.getResManager().firepits) {
+                if (p==null || !villager.level.hasChunkAt(p.getBlockPos())) continue;
                 ItemStack stack;
                 int slotNb;
                 TileEntityFirePit firepit = p.getFirePit(villager.level);
                 if (firepit == null) continue;
                 for (slotNb = 0; slotNb < 3; ++slotNb) {
                     stack = firepit.inputs.getStackInSlot(slotNb);
-                    if (countGoods < this.minimumToCook || !stack.isEmpty() && (stack.getItem() != this.itemToCook.getItem() || stack.getDamageValue() != this.itemToCook.meta || stack.getCount() >= 32)) continue;
-                    return this.packDest(p, dest);
+                    if (countGoods < this.minimumToCook || !stack.isEmpty() && (!org.millenaire.common.item.LegacyItemStacks.matches(stack,this.itemToCook.getItem(),this.itemToCook.meta) || stack.getCount() >= 32)) continue;
+                    if (best == null || p.horizontalDistanceToSquared(villager)<best.horizontalDistanceToSquared(villager)) {
+                        best=p; bestBuilding=dest;
+                    }
                 }
                 for (slotNb = 0; slotNb < 3; ++slotNb) {
                     stack = firepit.outputs.getStackInSlot(slotNb);
                     if (!GoalGenericTendFurnace.canStoreOutput(dest, stack)) continue;
-                    return this.packDest(p, dest);
+                    if (best == null || p.horizontalDistanceToSquared(villager)<best.horizontalDistanceToSquared(villager)) {
+                        best=p; bestBuilding=dest;
+                    }
                 }
             }
         }
+        if (best != null) return this.packDest(best,bestBuilding);
         org.millenaire.common.goal.GoalDiagnostics.note(villager, this, "NO_ELIGIBLE_COOKING_SLOT_OR_COLLECTABLE_OUTPUT");
         return null;
     }
@@ -195,13 +220,13 @@ extends GoalGeneric {
         ItemStack ingredient = org.millenaire.common.item.LegacyItemStacks.stack(
                 this.itemToCook.getItem(), 1, this.itemToCook.meta);
         if (!current.isEmpty() && !ItemStack.isSameItemSameTags(current, ingredient)) return current;
-        long available = (long)dest.countGoods(this.itemToCook) + villager.countInv(this.itemToCook);
+        long available = (long)dest.countGoods(this.itemToCook) + carriedForCooking(villager);
         if (current.isEmpty() && available < this.minimumToCook) return current;
         int capacity = Math.min(slotLimit, ingredient.getMaxStackSize()) - current.getCount();
         int requested = (int)Math.max(0L, Math.min((long)capacity, available));
         if (requested == 0) return current;
         int taken = dest.takeGoods(this.itemToCook, requested);
-        if (taken < requested) taken += villager.takeFromInv(this.itemToCook, requested - taken);
+        if (taken < requested) taken += villager.takeFromInv(this.itemToCook, Math.min(requested - taken,carriedForCooking(villager)));
         if (taken == 0) return current;
         ItemStack result = current.isEmpty() ? ingredient : current.copy();
         result.setCount(current.getCount() + taken);

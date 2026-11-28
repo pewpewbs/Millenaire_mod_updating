@@ -43,6 +43,7 @@ extends Goal {
 
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws MillLog.MillenaireException {
+        if (BrickProductionDemand.deliveryDue(villager)) return null;
         var demand = BrickProductionDemand.inspect(villager);
         long drying = BrickProductionDemand.inDryingArea(villager);
         if (!demand.shouldForm(drying)) {
@@ -63,7 +64,14 @@ extends Goal {
             if (nb > 4) {
                 validTarget = true;
             }
-            if (!validTarget || (p = kiln.getResManager().getEmptyBrickLocation()) == null) continue;
+            if (!validTarget) continue;
+            p = null;
+            for (Point spot : kiln.getResManager().brickspot) {
+                if (spot == null || !villager.level.hasChunkAt(spot.getBlockPos())) continue;
+                if (!villager.level.getBlockState(spot.getBlockPos()).isAir()) continue;
+                if (p == null || spot.horizontalDistanceToSquared(villager) < p.horizontalDistanceToSquared(villager)) p = spot;
+            }
+            if (p == null) continue;
             vp.add(p);
             buildingp.add(kiln.getPos());
         }
@@ -100,6 +108,7 @@ extends Goal {
         if (villager.level.isClientSide || villager.getGoalDestPoint() == null || villager.getGoalBuildingDest() == null
                 || !villager.level.hasChunkAt(villager.getGoalDestPoint().getBlockPos())
                 || !villager.getGoalBuildingDest().getResManager().brickspot.contains(villager.getGoalDestPoint())) return true;
+        if (BrickProductionDemand.deliveryDue(villager)) return true;
         if (!BrickProductionDemand.inspect(villager).shouldForm(BrickProductionDemand.inDryingArea(villager))) return true;
         if (WorldUtilities.getBlock(villager.level, villager.getGoalDestPoint()) == Blocks.AIR) {
             villager.setBlockstate(villager.getGoalDestPoint(), MillBlocks.BS_WET_BRICK);

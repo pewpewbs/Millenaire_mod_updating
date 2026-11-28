@@ -3,7 +3,13 @@ package org.millenaire.common.goal;
 /** Pure scheduling policy: no world reads or mutations. */
 public final class BrickProductionPolicy {
     public static final int RESERVE = 64;
+    public static final int DELIVERY_BATCH = 32;
     private BrickProductionPolicy() {}
+
+    public static boolean deliveryDue(int carried, int total, int missing, boolean fired, boolean moreReady) {
+        return carried > 0 && (total >= DELIVERY_BATCH || fired
+                || (missing > 0 && (carried >= Math.min(8, missing) || !moreReady)));
+    }
 
     public record Demand(long shortage, long constructionShortage) {
         public boolean shouldGather() { return shortage > 0; }
@@ -12,7 +18,7 @@ public final class BrickProductionPolicy {
         public int priority(boolean gathering) {
             int reserveBonus = (int)Math.min(20, shortage);
             int constructionBonus = (int)Math.min(500, constructionShortage * 4);
-            return (gathering ? 220 : 120) + reserveBonus + constructionBonus;
+            return (gathering ? 220 : 260) + reserveBonus + constructionBonus;
         }
     }
 

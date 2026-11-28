@@ -8,7 +8,7 @@ import org.millenaire.common.utilities.Point;
 import org.millenaire.common.village.Building;
 
 /** Read-only village demand shared by Indian and Seljuk brickmaking goals. */
-final class BrickProductionDemand {
+public final class BrickProductionDemand {
     private BrickProductionDemand() {}
 
     private static long required(BuildingPlan plan, InvItem item) {
@@ -72,6 +72,51 @@ final class BrickProductionDemand {
                 : Math.max(BrickProductionPolicy.RESERVE, tradeGood.targetQuantity);
         return BrickProductionPolicy.demand(rawRequired, townHall.availableForCurrentProject(raw), otherRaw,
                 firedRequired, makesFired ? townHall.availableForCurrentProject(fired) : 0, otherFired, reserve);
+    }
+
+    public static boolean isRawBrick(InvItem item) {
+        return item != null && item.matches(InvItem.createInvItem(MillBlocks.BS_MUD_BRICK));
+    }
+    public static boolean isBrick(InvItem item) {
+        return isRawBrick(item) || (item != null && item.matches(InvItem.createInvItem(MillBlocks.PAINTED_BRICK_WHITE)));
+    }
+    public static boolean brickWorker(MillVillager villager) {
+        return villager.getGoals() != null && villager.getGoals().stream()
+                .anyMatch(goal -> goal instanceof GoalIndianGatherBrick);
+    }
+    public static int constructionMissing(MillVillager villager, InvItem item) {
+        Building townHall = villager.getTownHall();
+        if (townHall == null) return 0;
+        return (int)Math.min(Integer.MAX_VALUE,Math.max(0,
+                required(pendingPlan(townHall), item) - townHall.availableForCurrentProject(item)));
+    }
+    static int carriedBricks(MillVillager villager) {
+        return villager.countInv(MillBlocks.BS_MUD_BRICK)
+                + villager.countInv(InvItem.createInvItem(MillBlocks.PAINTED_BRICK_WHITE));
+    }
+    static boolean deliveryDue(MillVillager villager) {
+        if (!brickWorker(villager)) return false;
+        Building th = villager.getTownHall();
+        if (th == null) return false;
+        int total = carriedBricks(villager);
+        if (total <= 0) return false;
+        for (InvItem item : villager.getInventoryKeys()) {
+            if (!isBrick(item) || !carriesForStorage(villager,item) || villager.countInv(item)<=0 || th.storageRoom(item)<=0) continue;
+            int missing = constructionMissing(villager,item);
+            int carried = villager.countInv(item);
+            boolean moreReady = isRawBrick(item) && missing > 0 && carried < Math.min(8,missing)
+                    && hasReadyBricks(villager);
+            if (BrickProductionPolicy.deliveryDue(carried,total,missing,!isRawBrick(item),moreReady)) return true;
+        }
+        return false;
+    }
+
+    private static boolean hasReadyBricks(MillVillager villager) {
+        for (Building kiln : villager.getTownHall().getBuildingsWithTag("brickkiln"))
+            for (Point point : kiln.getResManager().brickspot)
+                if (point != null && villager.level.hasChunkAt(point.getBlockPos())
+                        && villager.level.getBlockState(point.getBlockPos()) == MillBlocks.BS_MUD_BRICK) return true;
+        return false;
     }
 
     /** Count only existing wet or dried blocks on registered, loaded drying spots. */

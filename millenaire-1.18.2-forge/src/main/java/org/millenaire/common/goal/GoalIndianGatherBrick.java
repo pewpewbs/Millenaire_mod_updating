@@ -44,6 +44,7 @@ extends Goal {
 
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws MillLog.MillenaireException {
+        if (BrickProductionDemand.deliveryDue(villager)) return null;
         var demand = BrickProductionDemand.inspect(villager);
         if (!demand.shouldGather()) {
             GoalDiagnostics.note(villager,this,"BRICK_STOCK_TARGET_REACHED");
@@ -63,7 +64,14 @@ extends Goal {
             if (nb > 4) {
                 validTarget = true;
             }
-            if (!validTarget || (p = kiln.getResManager().getFullBrickLocation()) == null) continue;
+            if (!validTarget) continue;
+            p = null;
+            for (Point spot : kiln.getResManager().brickspot) {
+                if (spot == null || !villager.level.hasChunkAt(spot.getBlockPos())) continue;
+                if (villager.level.getBlockState(spot.getBlockPos()) != MillBlocks.BS_MUD_BRICK) continue;
+                if (p == null || spot.horizontalDistanceToSquared(villager) < p.horizontalDistanceToSquared(villager)) p = spot;
+            }
+            if (p == null) continue;
             vp.add(p);
             buildingp.add(kiln.getPos());
         }
@@ -105,12 +113,14 @@ extends Goal {
         if (villager.level.isClientSide || villager.getGoalDestPoint() == null || villager.getGoalBuildingDest() == null
                 || !villager.level.hasChunkAt(villager.getGoalDestPoint().getBlockPos())
                 || !villager.getGoalBuildingDest().getResManager().brickspot.contains(villager.getGoalDestPoint())) return true;
+        if (BrickProductionDemand.deliveryDue(villager)) return true;
         if (!BrickProductionDemand.inspect(villager).shouldGather()) return true;
         if (WorldUtilities.getBlockState(villager.level, villager.getGoalDestPoint()) == MillBlocks.BS_MUD_BRICK) {
             if (!villager.setBlockAndMetadata(villager.getGoalDestPoint(), Blocks.AIR, 0)) return true;
             villager.addToInv(MillBlocks.BS_MUD_BRICK, 1);
             villager.swing(InteractionHand.MAIN_HAND);
         }
+        if (BrickProductionDemand.deliveryDue(villager)) return true;
         if (villager.getGoalBuildingDest().getResManager().getNbFullBrickLocation() > 0) {
             Goal.GoalInformation next = this.getDestination(villager);
             if (next == null) return true;

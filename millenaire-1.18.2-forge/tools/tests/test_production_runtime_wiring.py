@@ -78,7 +78,7 @@ class ProductionRuntimeWiring(unittest.TestCase):
         self.assertIn("RESERVE = 64", policy)
         self.assertIn("tradeGood.targetQuantity", demand)
         self.assertIn("Math.max(0, reserve)", policy)
-        self.assertIn("gathering ? 220 : 120", policy)
+        self.assertIn("gathering ? 220 : 260", policy)
         for file, gate, gathering in (
             ("GoalIndianDryBrick.java", "shouldForm", "false"),
             ("GoalIndianGatherBrick.java", "shouldGather", "true"),
@@ -93,6 +93,22 @@ class ProductionRuntimeWiring(unittest.TestCase):
             self.assertIn("demand.priority(" + gathering + ")", code)
             self.assertIn("if (next == null) return true;", action)
         self.assertNotIn("takeFromInv", read("goal/GoalIndianDryBrick.java"))
+
+    def test_brick_delivery_and_nearest_workplace(self):
+        demand=read("goal/BrickProductionDemand.java")
+        gather=read("goal/GoalIndianGatherBrick.java")
+        delivery=read("goal/GoalBringBackResourcesHome.java")
+        cook=read("goal/generic/GoalGenericCooking.java")
+        self.assertIn("state == MillBlocks.BS_MUD_BRICK",demand)
+        self.assertIn("DELIVERY_BATCH = 32",read("goal/BrickProductionPolicy.java"))
+        self.assertIn("BrickProductionDemand.deliveryDue(villager)",gather)
+        self.assertIn("return 900",delivery)
+        self.assertIn("return villager.getTownHall();",delivery)
+        self.assertIn("p.horizontalDistanceToSquared(villager)<best.horizontalDistanceToSquared(villager)",cook)
+        self.assertIn("constructionMissing(villager,this.itemToCook)",cook)
+        planner=read("village/VillageProgression.java")
+        self.assertIn("p.level>centre.location.level",planner)
+        self.assertIn("ProductionCapability.hasCooking(plan,null)",planner)
 
     def test_source_migration_is_scoped_and_persisted(self):
         source = read("buildingplan/ProductionSourceRepair.java")

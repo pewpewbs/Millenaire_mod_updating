@@ -29,11 +29,23 @@ extends Goal {
         return GoalShearSheep.hasShearingGoal(villager) && GoalShearSheep.isSheepWool(key);
     }
 
+    private static org.millenaire.common.village.Building deliveryBuilding(MillVillager villager) {
+        if (BrickProductionDemand.brickWorker(villager) && villager.getTownHall()!=null) {
+            for (InvItem item : villager.getInventoryKeys())
+                if (isDeliverable(villager,item) && BrickProductionDemand.isBrick(item)
+                        && villager.countInv(item)>0 && villager.getTownHall().storageRoom(item)>0)
+                    return villager.getTownHall();
+        }
+        return villager.getHouse();
+    }
+
     private static int countDeliverableGoods(MillVillager villager) {
         int total = 0;
+        var dest = deliveryBuilding(villager);
+        if (dest == null) return 0;
         for (InvItem key : villager.getInventoryKeys()) {
-            if (isDeliverable(villager, key) && villager.getHouse() != null)
-                total += Math.min(villager.countInv(key), villager.getHouse().storageRoom(key));
+            if (isDeliverable(villager, key) && (dest == villager.getHouse() || BrickProductionDemand.isBrick(key)))
+                total += Math.min(villager.countInv(key), dest.storageRoom(key));
         }
         return total;
     }
@@ -50,7 +62,8 @@ extends Goal {
 
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) {
-        return this.packDest(villager.getHouse().getResManager().getSellingPos(), villager.getHouse());
+        var dest = deliveryBuilding(villager);
+        return dest == null ? null : this.packDest(dest.getResManager().getSellingPos(), dest);
     }
 
     @Override
@@ -72,7 +85,7 @@ extends Goal {
         if (nb <= 0) return GoalDiagnostics.reject(villager, this, "NO_DELIVERABLE_GOODS_OR_HOME_STORAGE");
         // Override the old 100-second cooldown once a shepherd has a full
         // batch. Otherwise a large flock repeatedly wins the goal selection.
-        if (fullShearingBatch(villager)) return true;
+        if (fullShearingBatch(villager) || BrickProductionDemand.deliveryDue(villager)) return true;
         boolean delayOver = !villager.lastGoalTime.containsKey(this)
                 || villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L;
         return delayOver || nb > 16;
@@ -93,11 +106,14 @@ extends Goal {
     public boolean performAction(MillVillager villager) {
         // Never deposit remotely at an intermediate route endpoint.
         org.millenaire.common.utilities.Point destination = villager.getGoalDestPoint();
-        if (!LocalLogistics.access(this,villager,villager.getHouse())) return false;
-        for (InvItem key : villager.getInventoryKeys()) {
-            if (isDeliverable(villager, key) && villager.countInv(key) > 0) {
-                int amount = Math.min(256, villager.getHouse().storageRoom(key));
-                if (amount > 0) villager.putInBuilding(villager.getHouse(), key.getItem(), key.meta, amount);
+        var dest = villager.getGoalBuildingDest();
+        if (dest == null || (dest != villager.getHouse() && dest != villager.getTownHall())) return true;
+        if (!LocalLogistics.access(this,villager,dest)) return false;
+        for (InvItem key : new ArrayList<>(villager.getInventoryKeys())) {
+            if (isDeliverable(villager, key) && villager.countInv(key) > 0
+                    && (dest == villager.getHouse() || BrickProductionDemand.isBrick(key))) {
+                int amount = Math.min(256, dest.storageRoom(key));
+                if (amount > 0) villager.putInBuilding(dest, key.getItem(), key.meta, amount);
             }
         }
         return true;
@@ -111,6 +127,7 @@ extends Goal {
             // precedence even when animals remain ready for breeding/shearing.
             return 12000 + nbGoods * 3;
         }
+        if (nbGoods > 0 && BrickProductionDemand.deliveryDue(villager)) return 900;
         return 10 + nbGoods * 3;
     }
 }

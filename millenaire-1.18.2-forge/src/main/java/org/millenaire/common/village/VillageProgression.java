@@ -106,8 +106,22 @@ final class VillageProgression {
         return new StyleGate(new Candidate(centre, next), VillageProgressionRules.futureOnly(past, future));
     }
 
+    private static boolean aheadOfCentre(Building v, BuildingPlan p) {
+        BuildingProject centre=centreProject(v);
+        if (centre==null || p==null || p.level<=0 || Objects.equals(p.buildingKey,centre.key)
+                || !centre.location.upgradesAllowed) return false;
+        BuildingPlan next=centre.getNextBuildingPlan(false);
+        return next!=null && v.validProgressionPlan(centre,next) && p.level>centre.location.level;
+    }
+
     static boolean deferStyle(Building v, BuildingPlan p, boolean ignoreCost) {
-        return styleGate(v, ignoreCost).blocks(p);
+        if (styleGate(v, ignoreCost).blocks(p)) return true;
+        if (!aheadOfCentre(v,p)) return false;
+        BuildingProject centre=centreProject(v);
+        for(BuildingProject project:v.getFlatProjectList())
+            if(project.getNextBuildingPlan(false)==p)
+                return prerequisite(v,List.of(new Candidate(project,p)),centre.getNextBuildingPlan(false),false)==null;
+        return true;
     }
 
     private static boolean busy(Building v, BuildingProject p) {
@@ -158,14 +172,26 @@ final class VillageProgression {
                     return c;
                 }
         }
-        Candidate preferred = options.stream().max(Comparator.comparingInt(VillageProgression::rank)
+        BuildingProject centre=centreProject(v);
+        Candidate centreOption=options.stream().filter(c->c.project()==centre).findFirst().orElse(null);
+        List<Candidate> ordinary=options.stream().filter(c->!aheadOfCentre(v,c.plan())).toList();
+        if(centreOption!=null && (ignoreCost || v.canAffordProgression(centreOption.plan(),false))) {
+            decision(v,"centre-first",centreOption,waiting,options.size());
+            return centreOption;
+        }
+        if(centre!=null && centre.getNextBuildingPlan(false)!=null && !ignoreCost) {
+            Candidate supplier=prerequisite(v,options,centre.getNextBuildingPlan(false),affordable);
+            if(supplier!=null) return supplier;
+        }
+        if(ordinary.isEmpty()){decision(v,"centre-level-hold",null,waiting,options.size());return null;}
+        Candidate preferred = ordinary.stream().max(Comparator.comparingInt(VillageProgression::rank)
                 .thenComparing(c -> c.project().key, Comparator.reverseOrder())).orElse(null);
         BuildingPlan target = waiting != null ? waiting : preferred.plan();
         if (!ignoreCost && !v.canAffordProgression(target,false)) {
-            Candidate supplier = prerequisite(v,options,target,affordable);
+            Candidate supplier = prerequisite(v,ordinary,target,affordable);
             if (supplier != null) {decision(v,"construction-supplier",supplier,target,options.size());return supplier;}
         }
-        Candidate operating = operatingSupplier(v,options,preferred.plan(),ignoreCost);
+        Candidate operating = operatingSupplier(v,ordinary,preferred.plan(),ignoreCost);
         Candidate chosen=operating==null?preferred:operating;
         decision(v,operating==null?"rank":"operating-supplier",chosen,target,options.size());
         return chosen;
@@ -174,12 +200,21 @@ final class VillageProgression {
     static Candidate replacement(Building v, List<BuildingProject> projects, BuildingPlan waiting, boolean ignoreCost) {
         StyleGate gate = styleGate(v,ignoreCost);
         if (gate.blocks(waiting) && !busy(v,gate.centre().project())) return gate.centre();
+        BuildingProject centre=centreProject(v);
+        BuildingPlan centreTarget=centre==null?null:centre.getNextBuildingPlan(false);
+        if(centreTarget!=null && centreTarget!=waiting && v.validProgressionPlan(centre,centreTarget) && !busy(v,centre)
+                && (ignoreCost || v.canAffordProgression(centreTarget,false)))
+            return new Candidate(centre,centreTarget);
         List<Candidate> options=candidates(v,projects,false,ignoreCost,gate);
+        if(centreTarget!=null && v.validProgressionPlan(centre,centreTarget) && !ignoreCost) {
+            Candidate centreSupplier=prerequisite(v,options,centreTarget,false);
+            if(centreSupplier!=null)return centreSupplier;
+        }
         if (!ignoreCost && !v.canAffordProgression(waiting,false)) {
-            Candidate buildingSupplier=prerequisite(v,options,waiting,false);
+            Candidate buildingSupplier=prerequisite(v,options.stream().filter(c->!aheadOfCentre(v,c.plan())).toList(),waiting,false);
             if(buildingSupplier!=null)return buildingSupplier;
         }
-        return operatingSupplier(v,options,waiting,ignoreCost);
+        return operatingSupplier(v,options.stream().filter(c->!aheadOfCentre(v,c.plan())).toList(),waiting,ignoreCost);
     }
 
     // Operational inputs are separate from the one-time construction cost.
@@ -342,7 +377,8 @@ final class VillageProgression {
                     for(InvItem good:ProductionCapability.animalGoods(slaughter.animalKey,type))output(out,good,Map.of());
                     for (var bonus : slaughter.bonusItem)
                         if(bonus.tag==null||tags.contains(bonus.tag))output(out,bonus.item,Map.of());
-                } else if (g instanceof GoalGenericCooking cook && cook.itemToCook != null && cook.itemToCook.staticStack != null) {
+                } else if (g instanceof GoalGenericCooking cook && cook.itemToCook != null && cook.itemToCook.staticStack != null
+                        && ProductionCapability.hasCooking(plan,null)) {
                     v.world.getRecipeManager().getRecipeFor(RecipeType.SMELTING,new SimpleContainer(cook.itemToCook.staticStack.copy()),v.world)
                             .ifPresent(recipe -> {
                                 var stack = recipe.getResultItem();
