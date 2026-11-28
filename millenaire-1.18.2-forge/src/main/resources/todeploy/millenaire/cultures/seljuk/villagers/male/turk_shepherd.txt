@@ -69,6 +69,7 @@ collectGood=wool_brown
 collectGood=wool_pink
 
 bringBackHomeGood=mutton
+bringBackHomeGood=bone
 bringBackHomeGood=beefraw
 bringBackHomeGood=leather
 bringBackHomeGood=wool_white

@@ -4,7 +4,8 @@
 package org.millenaire.common.pathing.atomicstryker;
 
 import java.util.ArrayList;
-import java.util.PriorityQueue;
+import java.util.HashMap;
+import java.util.Map;
 import org.millenaire.common.config.MillConfigValues;
 import org.millenaire.common.pathing.atomicstryker.AStarNode;
 import org.millenaire.common.pathing.atomicstryker.AStarPathPlannerJPS;
@@ -17,49 +18,97 @@ public class AStarWorkerJPS
 extends AStarWorker {
     private static final int MAX_SKIP_DISTANCE = 25;
     private static final int[][] neighbourOffsets = new int[][]{{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
-    private final PriorityQueue<AStarNode> openQueue = new PriorityQueue();
+    private final AStarOpenSet openQueue = new AStarOpenSet();
+    private final Map<AStarOpenSet.Position, AStarNode> closedIndex = new HashMap<>();
     private AStarNode currentNode;
 
     public AStarWorkerJPS(AStarPathPlannerJPS creator) {
         super(creator);
     }
 
-    private void addOrUpdateNode(AStarNode newNode) {
-        boolean found = false;
-        for (AStarNode toUpdate : this.closedNodes) {
-            if (!newNode.equals(toUpdate)) continue;
-            toUpdate.updateDistance(newNode.getG(), newNode.parent);
-            found = true;
-            break;
+    private void addOrUpdateNode(AStarNode candidate) {
+        AStarOpenSet.Position position = AStarOpenSet.Position.of(candidate);
+        AStarNode closed = this.closedIndex.get(position);
+        if (closed != null) {
+            if (closed.updateDistance(candidate.getG(), candidate.parent)) {
+                // An improved closed node must be searched again, not just
+                // given a new parent while remaining outside the open queue.
+                this.closedIndex.remove(position);
+                this.closedNodes.remove(closed);
+                this.openQueue.offer(closed);
+            }
+            return;
         }
-        if (!found) {
-            this.openQueue.offer(newNode);
-        }
+        // The indexed heap updates both the cost and heap ordering of an
+        // already-open node. PriorityQueue.offer could leave duplicates.
+        this.openQueue.offer(candidate);
     }
 
     private ArrayList<AStarNode> backTrace(AStarNode start) throws ThreadSafeUtilities.ChunkAccessException {
-        ArrayList<AStarNode> foundpath = new ArrayList<AStarNode>();
-        foundpath.add(this.currentNode);
-        while (!this.currentNode.equals(start)) {
-            int x = this.currentNode.x;
-            int y = this.currentNode.y;
-            int z = this.currentNode.z;
-            int px = this.currentNode.parent.x;
-            int pz = this.currentNode.parent.z;
-            int dx = (px - x) / Math.max(Math.abs(x - px), 1);
-            int dz = (pz - z) / Math.max(Math.abs(z - pz), 1);
-            x += dx;
-            z += dz;
-            while (x != px || z != pz) {
-                y = this.getGroundNodeHeight(x, y, z);
-                foundpath.add(new AStarNode(x, y, z, 0, null));
-                x += dx;
-                z += dz;
-            }
-            foundpath.add(this.currentNode.parent);
-            this.currentNode = this.currentNode.parent;
+        // Parent links are goal -> start, but terrain choices are directed.
+        // Reconstruct each macroedge FROM its parent, never by re-solving
+        // ground heights backwards from the goal (which can select another floor).
+        ArrayList<AStarNode> chain = new ArrayList<>();
+        for (AStarNode node = this.currentNode; node != null; node = node.parent) {
+            if (this.shouldInterrupt() || chain.size() >= 4096) return null;
+            chain.add(node);
+            if (node.equals(start)) break;
         }
+        if (chain.isEmpty() || !chain.get(chain.size() - 1).equals(start)) return null;
+        java.util.Collections.reverse(chain);
+        ArrayList<AStarNode> foundpath = new ArrayList<>();
+        foundpath.add(start);
+        for (int i = 1; i < chain.size(); i++) {
+            AStarNode from = chain.get(i - 1), end = chain.get(i);
+            int dx = Integer.compare(end.x, from.x), dz = Integer.compare(end.z, from.z);
+            int length = Math.max(Math.abs(end.x - from.x), Math.abs(end.z - from.z));
+            if (length == 0 || (dx != 0 && dz != 0
+                    && Math.abs(end.x - from.x) != Math.abs(end.z - from.z))) return null;
+            int y = from.y;
+            for (int step = 1; step <= length; step++) {
+                if (this.shouldInterrupt()) return null;
+                int x = from.x + dx * step, z = from.z + dz * step;
+                y = this.getGroundNodeHeight(x, y, z);
+                if (y == 0) return null; // existing JPS no-ground sentinel
+                if (step == length && y != end.y) return null;
+                foundpath.add(new AStarNode(x, y, z, 0, null));
+            }
+        }
+        java.util.Collections.reverse(foundpath); // public result contract
         return foundpath;
+    }
+
+    /**
+     * JPS jumps over many intermediate blocks. Before accepting a route,
+     * expand it and verify every adjacent move using the same physical
+     * clearance rules as classic A*. Rejecting an invalid JPS solution
+     * causes AStarPathPlannerJPS to retry with its classic worker.
+     */
+    private ArrayList<AStarNode> validatedBackTrace(AStarNode start)
+            throws ThreadSafeUtilities.ChunkAccessException {
+        ArrayList<AStarNode> path = this.backTrace(start);
+        if (path == null) return null;
+        // backTrace is ordered target -> start.
+        for (int i = path.size() - 1; i > 0; i--) {
+            // Validation shares the worker's 150 ms deadline with JPS search.
+            if (this.shouldInterrupt()) return null;
+            AStarNode from = path.get(i);
+            AStarNode to = path.get(i - 1);
+            if (!AStarStatic.isViable(this.world, to, 0, this.config)
+                    || !AStarStatic.isTransitionViable(this.world, from, to, this.config)) {
+                return null;
+            }
+            // translateAStarPathtoPathEntity inserts an orthogonal corner
+            // for same-height diagonals. Verify that a real safe corner exists.
+            if (!this.config.canTakeDiagonals && from.y == to.y
+                    && Math.abs(from.x - to.x) == 1
+                    && Math.abs(from.z - to.z) == 1
+                    && AStarStatic.findSafeOrthogonalCorner(
+                            this.world, from, to, this.config) == null) {
+                return null;
+            }
+        }
+        return path;
     }
 
     private ArrayList<AStarNode> findNeighbours(AStarNode node) throws ThreadSafeUtilities.ChunkAccessException {
@@ -153,7 +202,8 @@ extends AStarWorker {
             for (int[] offset : neighbourOffsets) {
                 int nY = this.getGroundNodeHeight(x + offset[0], y, z + offset[1]);
                 if (nY <= 0) continue;
-                r.add(new AStarNode(x + offset[0], nY, z + offset[1], nY, node));
+                r.add(new AStarNode(x + offset[0], nY, z + offset[1],
+                        node.getG() + Math.abs(offset[0]) + Math.abs(offset[1]), node));
             }
         }
         return r;
@@ -191,8 +241,9 @@ extends AStarWorker {
         while (!this.openQueue.isEmpty() && !this.shouldInterrupt()) {
             this.currentNode = this.openQueue.poll();
             this.closedNodes.add(this.currentNode);
+            this.closedIndex.put(AStarOpenSet.Position.of(this.currentNode), this.currentNode);
             if (this.isNodeEnd(this.currentNode, end) || this.identifySuccessors(this.currentNode, nbLoop)) {
-                return this.backTrace(start);
+                return this.validatedBackTrace(start);
             }
             ++nbLoop;
         }
@@ -206,7 +257,7 @@ extends AStarWorker {
         ArrayList<AStarNode> successors = this.findNeighbours(node);
         for (AStarNode s : successors) {
             AStarNode jumpPoint = this.jump(s.x, s.y, s.z, x, y, z);
-            if (jumpPoint == null || this.closedNodes.contains(jumpPoint)) continue;
+            if (jumpPoint == null) continue;
             this.addOrUpdateNode(jumpPoint);
         }
         if (nbLoop == 0 && this.openQueue.isEmpty() && MillConfigValues.LogChunkLoader >= 1) {
@@ -228,7 +279,8 @@ extends AStarWorker {
         if ((y = this.getGroundNodeHeight(x, py, z)) == 0) {
             return null;
         }
-        if (this.isCoordsEnd(x, y, z, this.targetNode) || dist >= 25) {
+        if (this.isCoordsEnd(x, y, z, this.targetNode)
+                || dist - this.currentNode.getG() >= MAX_SKIP_DISTANCE) {
             return new AStarNode(x, y, z, dist, this.currentNode, this.targetNode);
         }
         int nxY = dx != 0 ? this.getGroundNodeHeight(x + dx, y, z) : 0;

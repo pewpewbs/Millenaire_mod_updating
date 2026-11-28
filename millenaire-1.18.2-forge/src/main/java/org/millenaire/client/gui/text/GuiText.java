@@ -258,6 +258,9 @@ extends Screen {
         for (int i=0;i<line.icons.size();i++) {
             ItemStack icon=line.icons.get(i); int iconX=x+18*i;
             if (icon==null || icon.isEmpty()) continue;
+            // Non-reference items still deserve the same visible slot frame.
+            fill(framePose,iconX-1,y-1,iconX+17,y+17,0xff303030);
+            fill(framePose,iconX,y,iconX+16,y+16,0xff999999);
             itemRenderer.renderAndDecorateItem(icon,iconX,y);
             if (mouseX>=iconX && mouseX<iconX+16 && mouseY>=y && mouseY<y+16) {
                 String legend=line.iconExtraLegends!=null && i<line.iconExtraLegends.size() ? line.iconExtraLegends.get(i) : null;

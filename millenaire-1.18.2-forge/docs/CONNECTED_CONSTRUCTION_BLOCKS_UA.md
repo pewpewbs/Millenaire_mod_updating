@@ -1,0 +1,12 @@
+# Connected construction blocks — 24.11.2026
+
+## Причина
+`WorldUtilities.setBlockstate` попередньо перераховував тільки FenceBlock, WallBlock, FenceGateBlock і BlockMillWall. Відсутні IronBarsBlock (ванільні скляні панелі, Millenaire stained glass/panes/bars/rosettes), StairBlock та їхні підкласи. `setBlock` і `setBlockMetadata` обходили цей механізм. План будівництва порівнював legacy state (часто з усіма connection=false) із динамічним станом світу, що міг як пропускати неправильну геометрію, так і повторно вимагати правильно з'єднані блоки.
+
+## Виправлення
+- ConnectedBlockPlacement використовується всіма трьома методами WorldUtilities. Встановлення через BuildingBlock (звичайне будівництво, генерація, імпорт, покращення, дороги) отримує native shape до запису.
+- Підтримка CrossCollisionBlock (fences, IronBarsBlock/panes; BlockMillStainedGlass, BlockMillPane, BlockBars, BlockRosetteBars, BlockRosette), WallBlock, BlockMillWall/BlockPaintedWall, FenceGateBlock, StairBlock/BlockMillStairs/BlockPaintedStairs. Rosette має вертикальні та горизонтальні зв'язки; використовується його власний updateShape. Теги minecraft:walls уже включають кастомні стіни.
+- Після запису або no-op з'єднуваного блока перевіряється сам блок та його шість прямих сусідів. Запис тільки якщо native shape змінилася; при неповністю завантаженій області нормалізація пропускається, чанки примусово не завантажуються для ремонту. Не з'єднуємо несумісні блоки силоміць.
+- BuildingBlock.alreadyDone та фільтр BuildingPlan.getBuildingPoints враховують реальний динамічний стан. При симуляції попередніх операцій у тому самому плані залишено пряме порівняння (сусіди ще не встановлені).
+- Не переписано спеціальні lifecycle rules скринь, дверей, ліжок, рейок, редстоуну, рослин чи рідин; вони мають власні правила встановлення. Не запускаємо глобальний скан старих споруд. Виправлення застосовується до нових/повторних операцій будівництва і безпосередньо зачеплених сусідів.
+- Потрібен Forge build і runtime playtest. Перевірити: дерево/камінь/паркан/ворота; кольорові vanilla panes, Millenaire stained glass різних variant, bars/rosettes; кути stairs/painted stairs; custom walls + vanilla walls; встановлення з двох напрямків, вилучення середнього сегмента, заміна повним блоком, з'єднання вертикальних rosette, збереження кольору/орієнтації, генерація та upgrade. Повний аудит усіх сторонніх модів або абсолютна гарантія для незавантажених чанків не заявляється.

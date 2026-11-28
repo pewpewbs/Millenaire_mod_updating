@@ -31,6 +31,7 @@ implements Runnable {
     private long timeLimit;
     long requestGeneration;
     boolean classicAttempt;
+    int resultTransitCost;
     private final AStarOpenSet queue;
     private final Map<AStarOpenSet.Position, AStarNode> closedIndex = new HashMap<>();
     private volatile boolean isBusy = false;
@@ -51,23 +52,40 @@ implements Runnable {
         this.queue.offer(input);
     }
 
+    /**
+     * Classic A* vertical edges for a real contiguous ladder. JPS has no
+     * vertical successor expansion, so its fallback runs this worker.
+     * Every rung is validated against the detached pathfinding snapshot.
+     */
     private void checkPossibleLadder(AStarNode node) throws ThreadSafeUtilities.ChunkAccessException {
-        int x = node.x;
-        int y = node.y;
-        int z = node.z;
-        if (AStarStatic.isLadder(this.world, ThreadSafeUtilities.getBlock(this.world, x, y, z), x, y, z)) {
-            AStarNode ladder = null;
-            if (AStarStatic.isLadder(this.world, ThreadSafeUtilities.getBlock(this.world, x, y + 1, z), x, y + 1, z)) {
-                // empty if block
-            }
-            if (!this.tryToUpdateExistingHeapNode(node, ladder = new AStarNode(x, y + 1, z, node.getG() + 2, node, this.targetNode))) {
-                this.addToBinaryHeap(ladder);
-            }
-            if (AStarStatic.isLadder(this.world, ThreadSafeUtilities.getBlock(this.world, x, y - 1, z), x, y - 1, z)) {
-                // empty if block
-            }
-            if (!this.tryToUpdateExistingHeapNode(node, ladder = new AStarNode(x, y - 1, z, node.getG() + 2, node, this.targetNode))) {
-                this.addToBinaryHeap(ladder);
+        final int x = node.x, y = node.y, z = node.z;
+        // Only vanilla ladder blocks are supported by the matching movement
+        // controller. CLIMBABLE also contains vines, which this controller
+        // must not accidentally treat as a vertical ladder route.
+        if (ThreadSafeUtilities.getBlock(this.world, x, y, z)
+                != net.minecraft.world.level.block.Blocks.LADDER) return;
+        for (int direction : new int[] {1, -1}) {
+            final int nextY = y + direction;
+            if (nextY <= this.world.getMinBuildHeight()) continue;
+            if (ThreadSafeUtilities.getBlock(this.world, x, nextY, z)
+                    != net.minecraft.world.level.block.Blocks.LADDER) continue;
+            // Both feet and head must be clear. No climbing through solid ceilings.
+            boolean feetClear = AStarStatic.isPassableBlock(this.world, x, nextY, z, this.config);
+            boolean headClear = AStarStatic.isPassableBlock(this.world, x, nextY + 1, z, this.config);
+            if (!org.millenaire.common.pathing.LadderTransitionRules.canTraverse(
+                    true, true, feetClear, headClear)) continue;
+            AStarNode candidate = new AStarNode(x, nextY, z, node.getG() + 2
+                    + this.config.transit.cost(this.world, x, nextY, z), node, this.targetNode);
+            AStarOpenSet.Position key = AStarOpenSet.Position.of(candidate);
+            AStarNode closed = this.closedIndex.get(key);
+            if (closed != null) {
+                if (closed.updateDistance(candidate.getG(), node)) {
+                    this.closedIndex.remove(key);
+                    this.closedNodes.remove(closed);
+                    this.queue.offer(closed);
+                }
+            } else if (!this.tryToUpdateExistingHeapNode(node, candidate)) {
+                this.addToBinaryHeap(candidate);
             }
         }
     }
@@ -82,14 +100,27 @@ implements Runnable {
         int z = parent.z;
         int[][] c = droppingAllowed ? AStarStatic.candidates_allowdrops : AStarStatic.candidates;
         for (int i = 0; i < c.length; ++i) {
-            AStarNode check = new AStarNode(x + c[i][0], y + c[i][1], z + c[i][2], parent.getG() + c[i][3], parent, this.targetNode);
+            int nx = x + c[i][0], ny = y + c[i][1], nz = z + c[i][2];
+            AStarNode check = new AStarNode(nx, ny, nz, parent.getG() + c[i][3]
+                    + this.config.transit.cost(this.world, nx, ny, nz), parent, this.targetNode);
             try {
+                // Clearance must be checked BEFORE improving either an open
+                // or a closed node. A blocked transition is not a cheaper path.
+                if (!AStarStatic.isViable(this.world, check, c[i][1], this.config)
+                        || !AStarStatic.isTransitionViable(this.world, parent, check, this.config)) continue;
                 AStarNode closed = this.closedIndex.get(AStarOpenSet.Position.of(check));
                 if (closed != null) {
-                    closed.updateDistance(check.getG() + this.getCostNodeToNode(closed, check), parent);
+                    // A better route to a previously expanded coordinate must
+                    // be reopened; changing a closed node's parent alone never
+                    // lets the priority queue explore its improved successors.
+                    if (closed.updateDistance(check.getG(), parent)) {
+                        this.closedIndex.remove(AStarOpenSet.Position.of(closed));
+                        this.closedNodes.remove(closed);
+                        this.queue.offer(closed);
+                    }
                     continue;
                 }
-                if (this.tryToUpdateExistingHeapNode(parent, check) || !AStarStatic.isViable(this.world, check, c[i][1], this.config)) continue;
+                if (this.tryToUpdateExistingHeapNode(parent, check)) continue;
                 this.addToBinaryHeap(check);
                 continue;
             }
@@ -98,29 +129,31 @@ implements Runnable {
                 MillLog.minor(this, e.getLocalizedMessage());
             }
         }
+        // The old implementation never invoked checkPossibleLadder().
+        // This enables actual up/down edges only on consecutive ladder rungs.
+        this.checkPossibleLadder(parent);
     }
 
     public ArrayList<AStarNode> getPath(AStarNode start, AStarNode end, boolean searchMode) throws ThreadSafeUtilities.ChunkAccessException {
-        this.queue.offer(start);
         this.targetNode = end;
-        AStarNode current = start;
-        while (!this.isNodeEnd(current, end)) {
-            AStarNode visited = this.queue.poll();
-            this.closedNodes.add(visited);
-            this.closedIndex.put(AStarOpenSet.Position.of(visited), visited);
-            this.getNextCandidates(current, searchMode);
-            if (this.queue.isEmpty() || this.shouldInterrupt()) {
-                return null;
+        this.queue.offer(start);
+        while (!this.queue.isEmpty() && !this.shouldInterrupt()) {
+            AStarNode current = this.queue.poll();
+            if (this.isNodeEnd(current, end)) {
+                ArrayList<AStarNode> foundPath = new ArrayList<>();
+                AStarNode cursor = current;
+                while (cursor != null) {
+                    foundPath.add(cursor);
+                    if (cursor == start) return foundPath;
+                    cursor = cursor.parent;
+                }
+                return null; // Never publish a path with a broken parent chain.
             }
-            current = this.queue.peek();
+            this.closedNodes.add(current);
+            this.closedIndex.put(AStarOpenSet.Position.of(current), current);
+            this.getNextCandidates(current, searchMode);
         }
-        ArrayList<AStarNode> foundpath = new ArrayList<AStarNode>();
-        foundpath.add(current);
-        while (current != start) {
-            foundpath.add(current.parent);
-            current = current.parent;
-        }
-        return foundpath;
+        return null;
     }
 
     public boolean isBusy() {
@@ -138,16 +171,136 @@ implements Runnable {
         return this.isCoordsEnd(cn.x, cn.y, cn.z, end);
     }
 
+    /**
+     * A path discovered in B->A may be a useful candidate for A->B, notably
+     * at a top-of-ladder entrance. NEVER assume that reversing a route is
+     * physically valid: a jump, one-way drop or top exit may be directional.
+     * The candidate is validated in the requested A->B direction.
+     *
+     * Called only after classic A* failed or found a large detour, not for
+     * every ordinary village walk. The reverse worker has its own 150 ms cap.
+     */
+    private ArrayList<AStarNode> tryReverseClassic(ArrayList<AStarNode> forward) {
+        if (this instanceof AStarWorkerJPS || this.config.allowDropping
+                || this.startNode == null || this.targetNode == null
+                || this.world == null || this.shouldInterrupt()) return forward;
+        int vertical = Math.abs(this.startNode.y - this.targetNode.y);
+        int dx = this.startNode.x - this.targetNode.x;
+        int dz = this.startNode.z - this.targetNode.z;
+        if (vertical < 2 || vertical > 48 || (long) dx * dx + (long) dz * dz > 96L * 96L) {
+            return forward;
+        }
+        double direct = Math.sqrt((double)dx * dx + (double)dz * dz + (double)vertical * vertical);
+        if (forward != null && routeCost(forward) <= direct * 1.8D + 4.0D) {
+            return forward; // Forward route is already reasonably direct.
+        }
+        org.millenaire.common.pathing.NavigationMetrics.reverseTried();
+        long started = System.nanoTime();
+        // Reverse search gets its own 150 ms budget; reserve a small additional
+        // window for checking the candidate in the requested direction.
+        long reverseDeadline = started + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(175L);
+        AStarWorker opposite = new AStarWorker(this.boss);
+        opposite.setup(this.world, new AStarNode(this.targetNode.x, this.targetNode.y, this.targetNode.z),
+                new AStarNode(this.startNode.x, this.startNode.y, this.startNode.z), this.config);
+        ArrayList<AStarNode> discovered = opposite.runSync();
+        boolean valid = discovered != null && discovered.size() > 1;
+        String invalidReason = valid ? "NONE" : "NO_REVERSE_PATH";
+        ArrayList<AStarNode> candidate = null;
+        if (valid) {
+            candidate = new ArrayList<>(discovered);
+            java.util.Collections.reverse(candidate);
+            valid = candidate.get(0).equals(this.targetNode)
+                    && candidate.get(candidate.size() - 1).equals(this.startNode);
+            if (!valid) {
+                AStarNode actualGoal = candidate.get(0);
+                AStarNode actualStart = candidate.get(candidate.size() - 1);
+                invalidReason = "ENDPOINT_MISMATCH actualStart="
+                        + actualStart.x + "," + actualStart.y + "," + actualStart.z
+                        + " actualGoal=" + actualGoal.x + "," + actualGoal.y + "," + actualGoal.z;
+            }
+        }
+        if (valid) {
+            try {
+                for (int i = candidate.size() - 1; i > 0; i--) {
+                    if (Thread.currentThread().isInterrupted()
+                            || System.nanoTime() > reverseDeadline) {
+                        invalidReason = "VALIDATION_TIMEOUT";
+                        valid = false;
+                        break;
+                    }
+                    AStarNode from = candidate.get(i), to = candidate.get(i - 1);
+                    if (Math.abs(from.y - to.y) > 1
+                            || Math.abs(from.x - to.x) > 1
+                            || Math.abs(from.z - to.z) > 1
+                            || !AStarStatic.isViable(this.world, to, 0, this.config)
+                            || !AStarStatic.isTransitionViable(this.world, from, to, this.config)
+                            || (!this.config.canTakeDiagonals && from.y == to.y
+                                && from.x != to.x && from.z != to.z
+                                && AStarStatic.findSafeOrthogonalCorner(
+                                    this.world, from, to, this.config) == null)) {
+                        invalidReason = "BLOCKED_EDGE " + from.x + "," + from.y + "," + from.z
+                                + "->" + to.x + "," + to.y + "," + to.z;
+                        valid = false;
+                        break;
+                    }
+                }
+            } catch (ThreadSafeUtilities.ChunkAccessException exception) {
+                invalidReason = "UNLOADED_CHUNK " + exception.x + "," + exception.z;
+                valid = false;
+            }
+        }
+        ArrayList<AStarNode> chosen = forward;
+        if (valid && (chosen == null || routeCost(candidate) < routeCost(chosen))) {
+            chosen = candidate;
+            org.millenaire.common.pathing.NavigationMetrics.reverseFound();
+        }
+        if (MillConfigValues.LogPathing >= 2) {
+            MillLog.major(this, "NAV-OPT-REVERSE from=" + this.startNode
+                    + " to=" + this.targetNode
+                    + " candidateValid=" + valid
+                    + " reason=" + invalidReason
+                    + " forwardCost=" + String.format(java.util.Locale.ROOT, "%.2f", routeCost(forward))
+                    + " reverseCost=" + String.format(java.util.Locale.ROOT, "%.2f",
+                            valid ? routeCost(candidate) : Double.POSITIVE_INFINITY)
+                    + " chosen=" + (chosen == null ? "NONE"
+                            : chosen == candidate ? "REVERSED" : "FORWARD")
+                    + " tookMs=" + String.format(java.util.Locale.ROOT, "%.2f",
+                            (System.nanoTime() - started) / 1.0E6D));
+        }
+        return chosen;
+    }
+
+    private double routeCost(ArrayList<AStarNode> nodes) {
+        if (nodes == null || nodes.size() < 2) return Double.POSITIVE_INFINITY;
+        double result = 0.0D;
+        for (int i = 1; i < nodes.size(); i++) {
+            AStarNode a = nodes.get(i - 1), b = nodes.get(i);
+            int x = a.x - b.x, y = a.y - b.y, z = a.z - b.z;
+            result += Math.sqrt(x * x + y * y + z * z);
+            result += this.config.transit.cost(this.world, a.x, a.y, a.z);
+            if (x == 0 && z == 0 && y != 0) result += 0.8D;
+        }
+        return result;
+    }
+
     @Override
     public void run() {
         this.isRunning = true;
         this.isBusy = true;
-        this.timeLimit = System.nanoTime() + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(150L);
+        final long began = System.nanoTime();
+        this.timeLimit = began + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(150L);
         try {
             ArrayList<AStarNode> result = null;
             try {
                 if (this.world instanceof Level) throw new IllegalArgumentException("Background search requires a detached block snapshot");
                 result = this.getPath(this.startNode, this.targetNode, this.config.allowDropping);
+                if (!this.shouldInterrupt()) {
+                    result = this.tryReverseClassic(result);
+                }
+                if (result != null && this.config.transit != org.millenaire.common.pathing.VillageTransit.NONE) {
+                    for (AStarNode node : result)
+                        this.resultTransitCost += this.config.transit.cost(this.world, node.x, node.y, node.z);
+                }
             }
             catch (ThreadSafeUtilities.ChunkAccessException e) {
                 MillLog.error(this, "Chunk access violation while calculating a path for " + this.boss);
@@ -157,6 +310,9 @@ implements Runnable {
             }
             if (!Thread.currentThread().isInterrupted()) this.boss.completed(this, result);
         } finally {
+            org.millenaire.common.pathing.NavigationMetrics.search(
+                    this instanceof AStarWorkerJPS ? 0 : 1,
+                    System.nanoTime() - began, this.closedNodes.size());
             this.isBusy = false;
             this.isRunning = false;
         }

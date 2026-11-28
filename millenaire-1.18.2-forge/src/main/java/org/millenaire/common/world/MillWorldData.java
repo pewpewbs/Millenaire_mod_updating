@@ -73,6 +73,37 @@ public class MillWorldData {
     private static HashMap<Point, Integer> buildingsVariation = new HashMap();
     private static HashMap<Point, String> buildingsLocation = new HashMap();
     private final HashMap<Point, Building> buildings = new HashMap();
+    // Rebuilt lazily at most every 100 ticks, only while a wet brick is drying.
+    private final HashMap<net.minecraft.core.BlockPos, Building> brickDryingOwners = new HashMap<>();
+    private long brickDryingIndexTick = Long.MIN_VALUE;
+
+    public int getBrickDryingLevel(net.minecraft.core.BlockPos pos) {
+        if (world.isClientSide) return org.millenaire.common.block.BrickDryingPolicy.NORMAL_LEVEL;
+        long now = world.getGameTime();
+        if (brickDryingIndexTick == Long.MIN_VALUE || now < brickDryingIndexTick || now - brickDryingIndexTick >= 100L) {
+            brickDryingOwners.clear();
+            for (Building building : allBuildings()) {
+                if (building == null || building.location == null || building.location.level < 0
+                        || !building.containsTags("brickkiln")) continue;
+                for (Point spot : building.getResManager().getBrickWorkSpots())
+                    if (spot != null) brickDryingOwners.putIfAbsent(spot.getBlockPos(), building);
+            }
+            brickDryingIndexTick = now;
+        }
+        Building kiln = brickDryingOwners.get(pos);
+        if (kiln == null || kiln.location == null || kiln.location.level < 0
+                || !kiln.containsTags("brickkiln")
+                || !kiln.getResManager().isBrickWorkSpot(new Point(pos)))
+            return org.millenaire.common.block.BrickDryingPolicy.NORMAL_LEVEL;
+        return kiln.location.level;
+    }
+
+    /** Called after getBrickDryingLevel has refreshed the owner index. */
+    public boolean isLegacyStackedBrickBase(net.minecraft.core.BlockPos pos) {
+        Building kiln = brickDryingOwners.get(pos);
+        return kiln != null && kiln.getResManager().brickspot.contains(new Point(pos))
+                && kiln.getResManager().isLegacyUpperBrick(new Point(pos.above()));
+    }
     private final HashMap<Long, MillVillager> villagers = new HashMap();
     private final HashMap<Long, VillagerRecord> villagerRecords = new HashMap();
     public final List<String> globalTags = new ArrayList<String>();
@@ -107,6 +138,7 @@ public class MillWorldData {
 
     public void addBuilding(Building b, Point p) {
         this.buildings.put(p, b);
+        brickDryingIndexTick = Long.MIN_VALUE;
     }
 
     public Collection<Building> allBuildings() {
@@ -258,19 +290,21 @@ public class MillWorldData {
             centreZ = server.getSharedSpawnPos().getZ() >> 4;
         }
         int nbGenerated = 0;
-        for (int radius = 1; radius < MillConfigValues.forcePreload; ++radius) {
-            for (int i = -MillConfigValues.forcePreload; i < MillConfigValues.forcePreload && nbGenerated < 100; ++i) {
-                for (int j = -MillConfigValues.forcePreload; j < MillConfigValues.forcePreload && nbGenerated < 100; ++j) {
+        // Optional preloading must not synchronously generate a batch of 100
+        // chunks on one server tick. Visit each ring once, nearest first.
+        preload: for (int radius = 1; radius < MillConfigValues.forcePreload; ++radius) {
+            for (int i = -radius; i <= radius; ++i) {
+                for (int j = -radius; j <= radius; ++j) {
+                    if (i*i+j*j < (radius-1)*(radius-1)) continue;
                     if (i * i + j * j >= radius * radius || org.millenaire.common.utilities.WorldUtilities.isChunkGenerated(server, i + centreX, j + centreZ)) continue;
                     server.getChunk(i + centreX, j + centreZ);
                     MillLog.minor(this, "Forcing population of chunk " + (i + centreX) + "/" + (j + centreZ));
                     ++nbGenerated;
+                    if (nbGenerated >= 1) break preload;
                 }
             }
         }
-        if (nbGenerated > 0) {
-            server.getChunkSource().save(false);
-        }
+        // Normal Minecraft autosave persists generated chunks.
     }
 
     public Collection<MillVillager> getAllKnownVillagers() {
@@ -681,7 +715,8 @@ public class MillWorldData {
         }
         for (Player player : world.players()) {
             int distance;
-            if (!newVillage || !type.keyLonebuilding && type.keyLoneBuildingGenerateTag == null || (distance = Mth.floor((double)pos.horizontalDistanceTo((Entity)player))) > 2000) continue;
+            if (!newVillage || world.isClientSide
+                    || (distance = Mth.floor((double)pos.horizontalDistanceTo((Entity)player))) > 2000) continue;
             String direction = new Point((Entity)player).directionTo(pos, true);
             ServerSender.sendTranslatedSentence(player, 'e', "command.newlonebuildingfound", type.name, "" + distance, direction);
         }
@@ -768,6 +803,7 @@ public class MillWorldData {
 
     public void removeBuilding(Point p) {
         this.buildings.remove(p);
+        brickDryingIndexTick = Long.MIN_VALUE;
     }
 
     public void removeVillageOrLoneBuilding(Point p) {
@@ -1062,9 +1098,20 @@ public class MillWorldData {
         this.testLog();
     }
 
+    private void reportSlowStage(String stage, long started) {
+        long elapsed = System.nanoTime() - started;
+        if (elapsed >= 100_000_000L)
+            MillLog.major(this, "MILL-SLOW stage=" + stage + " ms=" + elapsed / 1_000_000L
+                    + " tick=" + this.world.getGameTime());
+    }
+
     public void updateWorldServer() {
+        long totalStarted = System.nanoTime();
+        long stageStarted = totalStarted;
         this.testTimeReset();
         this.rebuildVillagerList();
+        this.reportSlowStage("villager-index", stageStarted);
+        stageStarted = System.nanoTime();
         for (int i = 0; i < this.villagesList.pos.size(); ++i) {
             this.villagesList.buildingsTime.get(i).add(0L);
             this.villagesList.villagersTime.get(i).add(0L);
@@ -1075,10 +1122,17 @@ public class MillWorldData {
         for (Building b : this.allBuildings()) {
             long startTime = System.nanoTime();
             b.updateBuildingServer();
+            if (System.nanoTime() - startTime >= 100_000_000L)
+                this.reportSlowStage("building:" + b.getPos(), startTime);
+            long backgroundStarted = System.nanoTime();
             b.updateBackgroundVillage();
+            if (System.nanoTime() - backgroundStarted >= 100_000_000L)
+                this.reportSlowStage("background:" + b.getPos(), backgroundStarted);
             if (b.getTownHall() == null) continue;
             this.reportTime(b.getTownHall(), System.nanoTime() - startTime, false);
         }
+        this.reportSlowStage("building-loop", stageStarted);
+        stageStarted = System.nanoTime();
         this.checkConnections();
         ArrayList<UserProfile> profilesCopy = new ArrayList<UserProfile>(this.profiles.values());
         for (UserProfile profile : profilesCopy) {
@@ -1095,8 +1149,14 @@ public class MillWorldData {
         if (MillConfigValues.DEV) {
             DevModUtilities.runAutoMove(this.world);
         }
+        this.reportSlowStage("profiles-and-quests", stageStarted);
+        stageStarted = System.nanoTime();
         this.forcePreload();
+        this.reportSlowStage("force-preload", stageStarted);
         this.testLog();
+        if(this.world instanceof net.minecraft.server.level.ServerLevel server)
+            VillagePreparationQueue.tick(server,this,totalStarted);
+        this.reportSlowStage("world-total", totalStarted);
     }
 }
 

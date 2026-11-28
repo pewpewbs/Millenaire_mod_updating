@@ -8,6 +8,7 @@ building.areatoclear=4
 
 initial.startlevel=-1
 initial.nativename=Kapaas Ka Khet
+initial.priority=6000
 initial.tag=cottonfield
 initial.tag=flowerfield
 initial.villagetag=cottonfield

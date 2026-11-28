@@ -123,6 +123,7 @@ import org.millenaire.common.culture.VillagerType;
 import org.millenaire.common.entity.VillagerConfig;
 import org.millenaire.common.forge.Mill;
 import org.millenaire.common.goal.Goal;
+import org.millenaire.common.goal.MiningAccess;
 import org.millenaire.common.item.InvItem;
 import org.millenaire.common.item.ItemClothes;
 import org.millenaire.common.item.ItemMillenaireBow;
@@ -198,6 +199,7 @@ IAStarPathedEntity {
     public ItemStack heldItemOffHand = ItemStack.EMPTY;
     public long timer = 0L;
     public long actionStart = 0L;
+    private org.millenaire.common.goal.CraftingWorkplaceFacing craftingWorkplaceFacing;
     public boolean allowRandomMoves = false;
     public boolean stopMoving = false;
     public int gender = 0;
@@ -230,6 +232,42 @@ IAStarPathedEntity {
     public String dialogueTargetFirstName = null;
     public String dialogueTargetLastName = null;
     private Point doorToClose = null;
+    private org.millenaire.common.pathing.DoorCrossing observedDoor;
+
+    public void observeDoorApproach(BlockPos door, net.minecraft.core.Direction direction,
+            BlockState state, boolean manual, boolean powered) {
+        if (this.observedDoor == null) {
+            var route = this.getNavigation().getPath();
+            if (route == null || route.isDone()) return;
+            this.observedDoor = org.millenaire.common.pathing.DoorCrossing.approach(door, direction,
+                    this.level.getGameTime(), getX(), getY(), getZ(), getBbWidth(), this.goalKey,
+                    this.goalStarted, System.identityHashCode(route), route.getNextNodeIndex());
+            if (this.observedDoor != null) this.observedDoor.entryState = state.toString();
+        }
+        if (this.observedDoor != null && this.observedDoor.door.equals(door)) {
+            this.observedDoor.manual |= manual;
+            this.observedDoor.powered |= powered;
+        }
+    }
+
+    private void finishDoorObservation(org.millenaire.common.pathing.DoorCrossing.Result result) {
+        var observation = this.observedDoor;
+        this.observedDoor = null;
+        if (MillConfigValues.LogPathing < 2) return;
+        MillLog.major(this, "DOOR-CROSS result=" + result + " actorId=" + getId()
+                + " residentId=" + getVillagerId() + " goal=" + observation.goal
+                + " job=" + observation.job + " route=" + observation.routeId + " node=" + observation.nodeIndex
+                + " door=" + observation.door + " direction=" + observation.direction
+                + " startTick=" + observation.started + " ticks=" + (level.getGameTime()-observation.started)
+                + " stationaryTicks=" + observation.stationaryTicks
+                + " playerOverride=" + observation.manual + " powered=" + observation.powered
+                + " initialState=" + observation.entryState);
+    }
+
+    private void noteDoorTeleport() {
+        if (this.observedDoor != null)
+            this.finishDoorObservation(org.millenaire.common.pathing.DoorCrossing.Result.DISCONTINUITY);
+    }
     public int visitorNbNights = 0;
     public int foreignMerchantStallId = -1;
     public boolean lastAttackByPlayer = false;
@@ -247,6 +285,39 @@ IAStarPathedEntity {
     public MillWorldData mw;
     private volatile boolean pathFailedSincelastTick = false;
     private long nextVanillaPathAttempt = 0L;
+    private long nextTrackedEntityPathAttempt;
+    private long nextPhysicalTrapRetry;
+    private BlockPos lastPhysicalTrap;
+    private long lastPhysicalTrapTick=Long.MIN_VALUE;
+    private Point avoidedTrapDestination;
+    private long avoidedTrapUntil;
+    private long nextChatPathAttempt;
+    private final java.util.LinkedHashMap<Integer, Long> unavailableAnimalTargets = new java.util.LinkedHashMap<>();
+    private MiningAccess miningAccess;
+    private int approachAnimalId = -1;
+    private long approachAnimalProgressTick;
+    private Vec3 approachAnimalProgressPosition;
+    // Keep profession routing context after clearGoal() hands slaughter to combat.
+    private LivingEntity slaughterTarget;
+    private org.millenaire.common.goal.generic.GoalGenericSlaughterAnimal slaughterGoal;
+    private Vec3 slaughterProgressPosition;
+    private long slaughterProgressTick, slaughterLastHitTick;
+    private boolean slaughterRetried;
+    private long nextRouteDecisionLog = 0L;
+    private String lastRouteDecision = "";
+    // Door recovery uses physical displacement, not per-tick velocity,
+    // which can remain nonzero while a mob presses into a closed door.
+    private long doorStationarySince = -1L;
+    private double doorStationaryX, doorStationaryZ;
+    // Per-resident, per-door emergency-scan throttle. A route-node opening
+    // bypasses it, and changing goals / actually moving immediately resets it.
+    private net.minecraft.core.BlockPos lastScannerOpenedDoor;
+    private net.minecraft.core.BlockPos lastScannerDoorDestination;
+    private String lastScannerDoorGoal;
+    private long lastScannerDoorTick = -1L;
+    private double lastScannerDoorX, lastScannerDoorZ;
+    private net.minecraft.core.BlockPos lastSideDoorTrace;
+    private long nextSideDoorTraceTick;
     private final org.millenaire.common.pathing.MovementWatchdog movementWatchdog = new org.millenaire.common.pathing.MovementWatchdog();
     private long nextPathFailureDiagnostic = 0L;
     private final PathFailureRecovery pathFailureRecovery = new PathFailureRecovery();
@@ -336,6 +407,7 @@ IAStarPathedEntity {
 
     protected MillVillager(EntityType<? extends MillVillager> type, Level world) {
         super(type, world);
+        this.moveControl = new VillagerMoveControl(this);
         this.level = world;
         this.mw = Mill.getMillWorld(world);
         this.inventory = new HashMap();
@@ -424,13 +496,49 @@ IAStarPathedEntity {
 
     private void applyPathCalculatedSinceLastTick() {
         try {
-            AS_PathEntity path = AStarStatic.translateAStarPathtoPathEntity(this.level, this.pathCalculatedSinceLastTick, this.getPathingConfig());
+            AStarConfig routeConfig = this.getPathingConfig();
+            AS_PathEntity path = AStarStatic.translateAStarPathtoPathEntity(this.level, this.pathCalculatedSinceLastTick, routeConfig);
             // A builder may have changed the world after this snapshot was captured.
+            // Revalidate actual edges, not just the destination node. The
+            // detached-snapshot planner already checked them off-thread.
             for (int i = 1; i < path.getNodeCount(); i++) {
+                Node previous = path.getNode(i - 1);
                 Node node = path.getNode(i);
-                if (!AStarStatic.isViable(this.level, node.x, node.y, node.z, 0, this.getPathingConfig())) {
+                AStarNode from = new AStarNode(previous.x, previous.y, previous.z);
+                AStarNode to = new AStarNode(node.x, node.y, node.z);
+                if (!AStarStatic.isViable(this.level, node.x, node.y, node.z, 0, routeConfig)
+                        || !AStarStatic.isTransitionViable(this.level, from, to, routeConfig)
+                        || (!routeConfig.canTakeDiagonals && from.y == to.y
+                            && from.x != to.x && from.z != to.z)) {
                     org.millenaire.common.pathing.NavigationMetrics.stale();
+                    // Rejecting a stale primary route is a primary failure.
+                    // Schedule the same Vanilla fallback used on failed A*/JPS.
+                    this.pathFailedSincelastTick = true;
                     this.nextVanillaPathAttempt = 0L;
+                    return;
+                }
+            }
+            Goal active = this.getActiveGoal();
+            if (this.isMiningTrip(active)) {
+                Point source = this.getGoalDestPoint();
+                Node end = path.getEndNode();
+                if (end == null || (path.getNodeCount() <= 1 && !active.isWithinActionRange(this, source))
+                        || !MiningAccess.canWorkFrom(this.level, source.getBlockPos(),
+                                end.asBlockPos(), active.range(this), routeConfig)) {
+                    this.pathFailedSincelastTick = true;
+                    return;
+                }
+            }
+            if (this.tracksLandEntity() && path.getNodeCount() <= 1 && active != null
+                    && !active.isWithinActionRange(this, this.getPathDestPoint())) {
+                this.pathFailedSincelastTick = true;
+                return;
+            }
+            if (this.isSlaughterCombat() && this.tracksLandEntity()) {
+                Node end = path.getEndNode();
+                if (end == null || !this.canReachTrackedAnimalFromNode(end.x, end.y, end.z, this.routingGoal())
+                        || (path.getNodeCount() <= 1 && !this.routingInRange(this.routingGoal(), this.getPathDestPoint()))) {
+                    this.pathFailedSincelastTick = true;
                     return;
                 }
             }
@@ -438,6 +546,10 @@ IAStarPathedEntity {
         }
         catch (Exception e) {
             MillLog.printException("Exception when finding JPS path:", e);
+            // A stale/unusable physical route must not silently leave the
+            // villager without movement. Reuse the existing Vanilla fallback.
+            this.pathFailedSincelastTick = true;
+            this.nextVanillaPathAttempt = 0L;
         }
         finally { this.pathCalculatedSinceLastTick = null; }
     }
@@ -663,12 +775,18 @@ IAStarPathedEntity {
             if (heldItems != null && heldItems.length > 0) {
                 this.heldItemId = (this.heldItemId + 1) % heldItems.length;
                 this.heldItem = heldItems[this.heldItemId];
+            } else {
+                this.heldItem = ItemStack.EMPTY;
+                this.heldItemId = -1;
             }
             heldItems = null;
             heldItems = target != null && target.horizontalDistanceTo((Entity)this) < (double)goal.range(this) ? goal.getHeldItemsOffHandDestination(this) : goal.getHeldItemsOffHandTravelling(this);
             if (heldItems != null && heldItems.length > 0) {
                 this.heldItemOffHandId = (this.heldItemOffHandId + 1) % heldItems.length;
                 this.heldItemOffHand = heldItems[this.heldItemOffHandId];
+            } else {
+                this.heldItemOffHand = ItemStack.EMPTY;
+                this.heldItemOffHandId = -1;
             }
             this.heldItemCount = 0;
         }
@@ -690,9 +808,24 @@ IAStarPathedEntity {
                 this.setGoalDestEntity(null);
                 this.setPathDestPoint(null, 0);
             } else {
-                this.setPathDestPoint(new Point(this.getGoalDestEntity()), 2);
+                this.refreshTrackedEntityDestination();
             }
         }
+        // Temporarily reject a destination which just led back into a physical trap.
+        // Never blacklist a whole profession or a building permanently.
+        Point retryDestination=this.getPathDestPoint();
+        if(avoidedTrapDestination!=null && this.level.getGameTime()<avoidedTrapUntil
+                && retryDestination!=null && retryDestination.distanceTo(avoidedTrapDestination)<1.5D){
+            this.navigation.stop();
+            this.pathEntity=null;
+            if(this.pathPlannerJPS!=null)this.pathPlannerJPS.stopPathSearch(true);
+            this.pathCalculatedSinceLastTick=null;
+            this.pathFailedSincelastTick=false;
+            this.clearGoal();
+            this.setPathDestPoint(null,0);
+            return;
+        }
+        if (this.trackAnimalWorkProgress(goal)) return;
         Point target = null;
         boolean continuingGoal = true;
         if (this.getPathDestPoint() != null) {
@@ -711,15 +844,30 @@ IAStarPathedEntity {
                 MillLog.minor(this, "Goal destination: " + this.getGoalDestPoint() + "/" + this.getGoalDestEntity());
             }
         } else if (goal.isWithinActionRange(this, target)) {
+            // tick() resets stopMoving before checkGoals(). Preserve the
+            // construction pause on EVERY active work tick, not only the
+            // first one, otherwise builders continue paddling in water.
+            if ((this.tracksLandEntity() || goal == Goal.construction || goal instanceof org.millenaire.common.goal.GoalSleep
+                    || goal instanceof org.millenaire.common.goal.GoalMinerMineResource
+                    || goal instanceof org.millenaire.common.goal.GoalFish
+                    || goal instanceof org.millenaire.common.goal.generic.GoalGenericMining
+                    || goal instanceof org.millenaire.common.goal.generic.GoalGenericCrafting
+                    || goal instanceof org.millenaire.common.goal.generic.GoalGenericCooking) && this.actionStart != 0L) {
+                this.stopMoving = goal.stopMovingWhileWorking();
+            }
             if (this.actionStart == 0L) {
                 this.stopMoving = goal.stopMovingWhileWorking();
                 this.actionStart = this.level.getGameTime();
-                this.shouldLieDown = goal.shouldVillagerLieDown();
+                // GoalSleep owns this flag after its live occupancy check. Do not
+                // clear a validated lying pose when the next work interval starts.
+                if (!(goal instanceof org.millenaire.common.goal.GoalSleep)) {
+                    this.shouldLieDown = goal.shouldVillagerLieDown();
+                }
                 if (MillConfigValues.LogGeneralAI >= 2 && this.extraLog) {
                     MillLog.minor(this, "Starting action: " + this.actionStart);
                 }
             }
-            if (this.level.getGameTime() - this.actionStart >= (long)goal.actionDuration(this)) {
+            if (this.level.getGameTime() - this.actionStart >= (long)org.millenaire.common.config.TestTuning.duration(this, goal, goal.actionDuration(this))) {
                 if (goal.performAction(this)) {
                     this.clearGoal();
                     this.goalKey = goal.nextGoal(this);
@@ -738,6 +886,12 @@ IAStarPathedEntity {
                 this.goalStarted = this.level.getGameTime();
             }
         } else {
+            // A resident must spend the entire work interval at an accessible target.
+            if (this.tracksLandEntity() || goal instanceof org.millenaire.common.goal.GoalMinerMineResource
+                    || goal instanceof org.millenaire.common.goal.GoalFish
+                    || goal instanceof org.millenaire.common.goal.generic.GoalGenericMining
+                    || goal instanceof org.millenaire.common.goal.generic.GoalGenericCrafting
+                    || goal instanceof org.millenaire.common.goal.generic.GoalGenericCooking) this.actionStart = 0L;
             this.stopMoving = false;
             this.shouldLieDown = false;
         }
@@ -774,6 +928,19 @@ IAStarPathedEntity {
     }
 
     public void clearGoal() {
+        Goal previous = this.getActiveGoal();
+        if(previous instanceof org.millenaire.common.goal.leisure.GoalGoChat){
+            this.dialogueKey=null;
+            this.dialogueChat=false;
+        }
+        if ((this.isAnimalWorkGoal(previous) && this.getGoalDestEntity() != null) || MiningAccess.isMining(previous)) {
+            if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
+            this.pathCalculatedSinceLastTick = null;
+            this.pathFailedSincelastTick = false;
+        }
+        this.actionStart = 0L;
+        this.approachAnimalId = -1;
+        this.approachAnimalProgressPosition = null;
         this.setGoalDestPoint(null);
         this.setGoalBuildingDestPoint(null);
         this.setGoalDestEntity(null);
@@ -808,25 +975,329 @@ IAStarPathedEntity {
         return this.vtype.health;
     }
 
-    private List<Node> computeNewPath(Point dest) {
+    // These values are sampled when a path-search REQUEST starts, rather
+    // than when its asynchronous callback completes. A changed task must not
+    // be mistaken for the cause of the previous request's failure.
+    @Override
+    public long navigationActorId() { return this.getId(); }
+
+    @Override
+    public String navigationActorName() { return this.func_70005_c_(); }
+
+    @Override
+    public String navigationBehaviorKey() {
+        return this.goalKey == null ? "unknown" : this.goalKey;
+    }
+
+    /** Optional, rate-limited route selection diagnostics for real playtests. */
+    private void logRouteDecision(String mode, Point destination) {
+        if (MillConfigValues.LogPathing < 2) return;
+        long tick = this.level.getGameTime();
+        if (mode.equals(this.lastRouteDecision) && tick < this.nextRouteDecisionLog) return;
+        this.lastRouteDecision = mode;
+        this.nextRouteDecisionLog = tick + 200L;
+        MillLog.major(this, "NAV-CHOICE=" + mode + " goal=" + this.goalKey
+                + " pos=" + this.blockPosition() + " target=" + destination);
+    }
+
+    private boolean tracksLandEntity() {
+        Entity target = this.trackedNavigationEntity();
+        return target != null && target.isAlive() && !target.isInWater() && !this.isInWater();
+    }
+
+    private boolean isSlaughterCombat() {
+        return this.slaughterTarget != null && this.getTarget() == this.slaughterTarget;
+    }
+
+    private Entity trackedNavigationEntity() {
+        return this.isSlaughterCombat() ? this.slaughterTarget : this.getGoalDestEntity();
+    }
+
+    private Goal routingGoal() {
+        return this.isSlaughterCombat() ? this.slaughterGoal : this.getActiveGoal();
+    }
+
+    private boolean routingInRange(Goal goal, Point dest) {
+        return this.isSlaughterCombat() ? this.canHitSlaughterTarget(this.position())
+                : goal != null && goal.isWithinActionRange(this, dest);
+    }
+
+    public void startSlaughterCombat(LivingEntity animal,
+            org.millenaire.common.goal.generic.GoalGenericSlaughterAnimal goal) {
+        this.setTarget(animal);
+        this.slaughterTarget = animal;
+        this.slaughterGoal = goal;
+        this.slaughterProgressPosition = this.position();
+        this.slaughterProgressTick = this.level.getGameTime();
+        this.slaughterLastHitTick = this.slaughterProgressTick;
+        this.slaughterRetried = false;
+    }
+
+    private boolean canHitSlaughterTarget(Vec3 feet) {
+        LivingEntity animal = this.slaughterTarget;
+        if (animal == null || !animal.isAlive()) return false;
+        // Match melee distance, vertical overlap and unobstructed access.
+        return feet.distanceToSqr(animal.position()) < 4.0D
+                && animal.getBoundingBox().maxY > feet.y
+                && animal.getBoundingBox().minY < feet.y + this.getBbHeight()
+                && org.millenaire.common.goal.WorkAccess.visible(this.level,
+                    feet.add(0.0D, 0.8D, 0.0D), animal.getBoundingBox().getCenter(), null);
+    }
+
+    private void resetSlaughterRoute() {
+        this.navigation.stop();
+        this.pathEntity = null;
+        if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
         this.pathCalculatedSinceLastTick = null;
         this.pathFailedSincelastTick = false;
-        if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
+        this.pathFailureRecovery.reset();
+        this.nextTrackedEntityPathAttempt = 0L;
+        this.nextVanillaPathAttempt = 0L;
+    }
+
+    private void endSlaughterCombat(boolean retryLater, String reason) {
+        LivingEntity animal = this.slaughterTarget;
+        if (animal == null) return;
+        boolean ownsTarget = this.isSlaughterCombat();
+        if (retryLater && animal.isAlive()) {
+            long now = this.level.getGameTime();
+            this.unavailableAnimalTargets.entrySet().removeIf(entry -> entry.getValue() <= now);
+            this.unavailableAnimalTargets.put(animal.getId(), now + 200L);
+            if (this.unavailableAnimalTargets.size() > 16)
+                this.unavailableAnimalTargets.remove(this.unavailableAnimalTargets.keySet().iterator().next());
+            MillLog.major(this, "NAV-SLAUGHTER-RESELECT reason=" + reason
+                    + " target=" + animal.getId() + " position=" + this.blockPosition()
+                    + " animalPos=" + animal.blockPosition());
+        }
+        this.slaughterTarget = null;
+        this.slaughterGoal = null;
+        this.slaughterProgressPosition = null;
+        this.slaughterRetried = false;
+        // Do not clear a defensive target that has replaced the animal.
+        if (ownsTarget) {
+            this.setTarget(null);
+            this.clearGoal();
+            this.setPathDestPoint(null, 0);
+            this.resetSlaughterRoute();
+            this.stopMoving = false;
+        }
+    }
+
+    private boolean tickSlaughterCombat() {
+        if (!this.isSlaughterCombat()) return false;
+        LivingEntity animal = this.slaughterTarget;
+        if (!animal.isAlive() || animal.isRemoved()) {
+            this.endSlaughterCombat(false, "TARGET_GONE");
+            return false;
+        }
+        if (this.getPos().distanceTo(animal) > 80.0D) {
+            this.endSlaughterCombat(true, "TARGET_TOO_FAR");
+            return false;
+        }
+        long now = this.level.getGameTime();
+        this.shouldLieDown = false;
+        this.allowRandomMoves = false;
+        boolean land = this.tracksLandEntity();
+        boolean canHit = this.canHitSlaughterTarget(this.position());
+        float health = animal.getHealth();
+        if (canHit) this.attackEntity(animal);
+        else if (this.attackTime > 0) --this.attackTime;
+        if (!animal.isAlive()) {
+            this.endSlaughterCombat(false, "TARGET_KILLED");
+            return false;
+        }
+        if (animal.getHealth() < health) {
+            this.slaughterLastHitTick = now;
+            this.slaughterProgressTick = now;
+            this.slaughterProgressPosition = this.position();
+            this.slaughterRetried = false;
+        }
+        if (this.slaughterProgressPosition == null || now < this.slaughterProgressTick
+                || this.slaughterProgressPosition.distanceToSqr(this.position()) >= 0.25D) {
+            this.slaughterProgressPosition = this.position();
+            this.slaughterProgressTick = now;
+            this.slaughterRetried = false;
+        }
+        // Bound pursuit even when the worker is moving but never hits.
+        if (now - this.slaughterLastHitTick >= 1200L) {
+            this.endSlaughterCombat(true, "NO_HIT_TIMEOUT");
+            return false;
+        }
+        if (land) this.refreshTrackedEntityDestination();
+        else this.setPathDestPoint(new Point(animal), 1);
+        if (now - this.slaughterProgressTick >= 160L) {
+            if (this.slaughterRetried) {
+                this.endSlaughterCombat(true, "NO_PROGRESS");
+                return false;
+            }
+            this.slaughterRetried = true;
+            this.slaughterProgressTick = now;
+            this.resetSlaughterRoute();
+            MillLog.major(this, "NAV-SLAUGHTER-RETRY target=" + animal.getId()
+                    + " position=" + this.blockPosition() + " animalPos=" + animal.blockPosition());
+            if (!canHit) this.tryGroundRoute(this.getPathDestPoint());
+        }
+        if (canHit) {
+            this.stopMoving = true;
+            this.navigation.stop();
+            this.pathEntity = null;
+            if (this.pathPlannerJPS != null && this.pathPlannerJPS.isBusy())
+                this.pathPlannerJPS.stopPathSearch(true);
+        } else this.stopMoving = false;
+        return true;
+    }
+
+    private MiningAccess miningAccess() {
+        if (this.miningAccess == null) this.miningAccess = new MiningAccess();
+        return this.miningAccess;
+    }
+
+    public boolean hasMiningAccess(Goal goal, Point source) {
+        return source != null && (miningAccess().first(this, goal, source.getBlockPos()) != null
+                || org.millenaire.common.goal.WorkAccess.canAccessResource(this, source, goal.range(this)));
+    }
+
+    private boolean isMiningTrip(Goal goal) {
+        // Combat can temporarily own the route while the profession goal still exists.
+        return MiningAccess.isMining(goal) && this.getTarget() == null && this.getGoalDestPoint() != null
+                && this.getPathDestPoint() != null && this.getGoalDestPoint().sameBlock(this.getPathDestPoint());
+    }
+
+    private void abandonMiningSource(Goal goal) {
+        miningAccess().retryLater(this, goal, this.getGoalDestPoint().getBlockPos());
+        this.clearGoal();
+        this.stopMoving = false;
+    }
+
+    private boolean isAnimalWorkGoal(Goal goal) {
+        return goal instanceof org.millenaire.common.goal.GoalShearSheep
+                || goal instanceof org.millenaire.common.goal.GoalBreedAnimals
+                || goal instanceof org.millenaire.common.goal.generic.GoalGenericSlaughterAnimal;
+    }
+
+    public boolean isAnimalWorkTargetCoolingDown(Entity target) {
+        if (target == null) return false;
+        Long until = this.unavailableAnimalTargets.get(target.getId());
+        if (until == null) return false;
+        if (this.level.getGameTime() >= until) {
+            this.unavailableAnimalTargets.remove(target.getId());
+            return false;
+        }
+        return true;
+    }
+
+    // Watch actual displacement rather than the moving animal's changing block.
+    // A target that cannot be approached is retried later, not waited for forever.
+    private boolean trackAnimalWorkProgress(Goal goal) {
+        if (!this.isAnimalWorkGoal(goal) || !this.tracksLandEntity()) {
+            this.approachAnimalId = -1;
+            this.approachAnimalProgressPosition = null;
+            return false;
+        }
+        Entity animal = this.getGoalDestEntity();
+        long now = this.level.getGameTime();
+        Vec3 position = this.position();
+        if (this.approachAnimalId != animal.getId()
+                || this.approachAnimalProgressPosition == null
+                || now < this.approachAnimalProgressTick
+                || goal.isWithinActionRange(this, this.getPathDestPoint())
+                || this.approachAnimalProgressPosition.distanceToSqr(position) >= 0.25D) {
+            this.approachAnimalId = animal.getId();
+            this.approachAnimalProgressPosition = position;
+            this.approachAnimalProgressTick = now;
+            return false;
+        }
+        if (now - this.approachAnimalProgressTick < 160L) return false;
+        this.unavailableAnimalTargets.entrySet().removeIf(entry -> entry.getValue() <= now);
+        this.unavailableAnimalTargets.put(animal.getId(), now + 200L);
+        if (this.unavailableAnimalTargets.size() > 16)
+            this.unavailableAnimalTargets.remove(this.unavailableAnimalTargets.keySet().iterator().next());
+        MillLog.major(this, "NAV-ANIMAL-RESELECT goal=" + this.goalKey
+                + " target=" + animal.getId() + " position=" + this.blockPosition());
+        this.clearGoal();
+        this.stopMoving = false;
+        return true;
+    }
+
+    private boolean canReachTrackedAnimalFromNode(int x, int y, int z, Goal goal) {
+        Entity animal = this.trackedNavigationEntity();
+        if (animal == null || !animal.isAlive() || goal == null) return false;
+        BlockPos stand = new BlockPos(x, y, z);
+        if (!this.level.hasChunkAt(stand) || !this.level.hasChunkAt(animal.blockPosition())) return false;
+        Vec3 foot = Vec3.atBottomCenterOf(stand);
+        if (this.isSlaughterCombat()) return this.canHitSlaughterTarget(foot);
+        double range = goal.range(this);
+        return foot.distanceToSqr(animal.position()) < range * range
+                && org.millenaire.common.goal.WorkAccess.visible(this.level,
+                    foot.add(0.0D, 0.8D, 0.0D), animal.getBoundingBox().getCenter(), null);
+    }
+
+    private void refreshTrackedEntityDestination() {
+        Entity target = this.trackedNavigationEntity();
+        if (!this.tracksLandEntity()) {
+            this.setPathDestPoint(new Point(target), 2);
+            return;
+        }
+        Point previous = this.getPathDestPoint();
+        Point live = new Point(target);
+        if("chat".equals(this.goalKey)){
+            // Conversations are short-range leisure, not pursuit of livestock.
+            // Keep a route anchored until the partner has moved materially.
+            if(previous!=null && previous.distanceTo(live)<3.0D
+                    && this.pathEntity!=null && !this.pathEntity.isDone())return;
+        }
+        if (previous != null && previous.sameBlock(live)) return;
+        // Keep a useful active route for small movements; measure drift against
+        // its unchanged anchor, not the target's immediately preceding tick.
+        if (previous != null && this.pathEntity != null && !this.pathEntity.isDone()
+                && previous.distanceTo(live) < 1.5D) return;
+        this.setPathDestPoint(new Point(live.getiX(), live.getiY(), live.getiZ()), 0);
+    }
+
+    private List<Node> computeNewPath(Point dest) {
+        if("chat".equals(this.goalKey)){
+            Goal chat=this.getActiveGoal();
+            if(chat!=null && chat.isWithinActionRange(this,dest))return null;
+            long now=this.level.getGameTime();
+            if(now<nextChatPathAttempt)return null;
+            nextChatPathAttempt=now+40L;
+        }
+        if (this.tracksLandEntity()) {
+            long now = this.level.getGameTime();
+            if (now < this.nextTrackedEntityPathAttempt) return null;
+            this.nextTrackedEntityPathAttempt = now + 10L;
+        }
+        this.pathCalculatedSinceLastTick = null;
+        this.pathFailedSincelastTick = false;
+        // NAV-OPT-09: do not cancel a still-running route before checking
+        // whether the request is IDENTICAL. The planner owns that decision.
         block9: {
-            if (this.getPos().sameBlock(dest)) {
+            if (this.getPos().sameBlock(dest)
+                    && !this.isMiningTrip(this.getActiveGoal())
+                    && !(this.tracksLandEntity() && this.isAnimalWorkGoal(this.routingGoal()))) {
+                if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
                 return null;
             }
             try {
                 Goal goal;
                 if (this.goalKey != null && Goal.goals.containsKey(this.goalKey) && (goal = Goal.goals.get(this.goalKey)).isWithinActionRange(this, this.getPathDestPoint())) {
+                    if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
                     return null;
                 }
-                if (this.tryGroundRoute(dest)) return null;
-                if (this.pathPlannerJPS.isBusy()) {
-                    this.pathPlannerJPS.stopPathSearch(true);
-                }
+                // PRIMARY: try the Millenaire snapshot-based A*/JPS route first.
+                // Vanilla GroundPathNavigation is reserved for failed, deferred
+                // or physically stuck primary paths, never an early success exit.
                 AStarNode destNode = null;
-                if (this.goalKey != null && (Goal.goals.get(this.goalKey) == Goal.construction
+                if (this.isMiningTrip(this.getActiveGoal())) {
+                    Point source = this.getGoalDestPoint();
+                    BlockPos stand = miningAccess().first(this, this.getActiveGoal(), source.getBlockPos());
+                    if (stand == null) {
+                        this.clearGoal();
+                        this.stopMoving = false;
+                        return null;
+                    }
+                    destNode = new AStarNode(stand.getX(), stand.getY(), stand.getZ());
+                } else if (this.goalKey != null && (Goal.goals.get(this.goalKey) == Goal.construction
                         || Goal.goals.get(this.goalKey) instanceof org.millenaire.common.goal.GoalLumbermanChopTrees)) {
                     // Building search already accepts a walkable node near the target,
                     // including ground below a canopy. Do not offset that tolerance
@@ -834,8 +1305,24 @@ IAStarPathedEntity {
                     destNode = new AStarNode(dest.getiX(), dest.getiY(), dest.getiZ());
                 } else {
                     AStarNode[] possibles = AStarStatic.getAccessNodesSorted(this.level, this.doubleToInt(this.getX()), this.doubleToInt(this.getY()), this.doubleToInt(this.getZ()), this.getPathDestPoint().getiX(), this.getPathDestPoint().getiY(), this.getPathDestPoint().getiZ(), this.getPathingConfig());
-                    if (possibles.length != 0) {
-                        destNode = possibles[0];
+                    boolean stockGoal = isStockTransferGoal(Goal.goals.get(this.goalKey));
+                    boolean entityGoal = this.tracksLandEntity();
+                    Goal currentGoal = this.routingGoal();
+                    boolean animalWork = entityGoal && this.isAnimalWorkGoal(currentGoal);
+                    for (AStarNode candidate : possibles) {
+                        if (entityGoal && (candidate.x == this.blockPosition().getX()
+                                && candidate.y == this.blockPosition().getY()
+                                && candidate.z == this.blockPosition().getZ())) continue;
+                        if (entityGoal && Math.abs(candidate.y - dest.getiY()) > 1) continue;
+                        if (animalWork && !this.canReachTrackedAnimalFromNode(candidate.x,
+                                candidate.y, candidate.z, currentGoal)) continue;
+                        // The closest geometrical node can be on the other side of a wall.
+                        // A genuine stock access node must have line of sight to the stock point.
+                        if (!stockGoal || canSeeStockFromNode(candidate.x, candidate.y,
+                                candidate.z, dest)) {
+                            destNode = candidate;
+                            break;
+                        }
                     }
                 }
                 if (destNode != null) {
@@ -844,13 +1331,34 @@ IAStarPathedEntity {
                         startPos = startPos.getAbove();
                     }
                     this.pathPlannerJPS.getPath(this.doubleToInt(this.getX()), this.doubleToInt(this.getY()), this.doubleToInt(this.getZ()), destNode.x, destNode.y, destNode.z, this.getPathingConfig());
+                    if (this.pathPlannerJPS.isBusy()) {
+                        this.logRouteDecision(this.pathPlannerJPS.hadJoinedSearch()
+                                ? "ASTAR-JOIN" : "ASTAR-SEARCH", dest);
+                    } else if (this.pathPlannerJPS.hadImmediatePath()) {
+                        // A validated cached route has been delivered without
+                        // submitting another expensive worker search.
+                        this.logRouteDecision("ASTAR-CACHE", dest);
+                    } else if (this.pathPlannerJPS.wasDeferred()) {
+                        // Budget exhaustion is NOT the same as NO_PATH.
+                        // Leave any existing route in place and try again
+                        // after the planner's small, staggered cooldown.
+                        // Do not stampede the synchronous Vanilla fallback.
+                    } else {
+                        this.logRouteDecision("ASTAR-NO-WORKER", dest);
+                        this.onNoPathAvailable();
+                    }
                 } else {
+                    if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
+                    this.logRouteDecision("ASTAR-NO-ACCESS", dest);
                     this.onNoPathAvailable();
                 }
             }
             catch (ThreadSafeUtilities.ChunkAccessException e) {
-                if (MillConfigValues.LogChunkLoader < 2) break block9;
-                MillLog.minor(this, "Chunk access violation while calculating path.");
+                if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
+                this.onNoPathAvailable();
+                if (MillConfigValues.LogChunkLoader >= 2) {
+                    MillLog.minor(this, "Chunk access violation while calculating path.");
+                }
             }
         }
         return null;
@@ -1393,8 +1901,16 @@ IAStarPathedEntity {
     }
 
     private AStarConfig getPathingConfig() {
-        if (this.getActiveGoal() != null) {
-            return this.getActiveGoal().getPathingConfig(this);
+        Goal routingGoal = this.routingGoal();
+        if (routingGoal != null) {
+            AStarConfig config = routingGoal.getPathingConfig(this);
+            if (this.tracksLandEntity() && config.tolerance) {
+                // Exact access node for moving land targets, not the broad
+                // tolerance used by construction and other static workplaces.
+                return new AStarConfig(config.canUseDoors, config.canTakeDiagonals,
+                        config.allowDropping, config.canSwim, config.canClearLeaves);
+            }
+            return config;
         }
         return this.getVillagerPathingConfig();
     }
@@ -1525,41 +2041,431 @@ IAStarPathedEntity {
         }
     }
 
+    /**
+     * Diagnostics for a door the navigator did not open. In particular this
+     * distinguishes a missing path, a goal with stopMoving=true, and actual
+     * powered/hinged door states. Called only when LogPathing >= 2 and bounded
+     * to once every 100 ticks per resident.
+     */
+    private void noteScannerDoorProgress(net.minecraft.core.BlockPos door,
+            Point destination, long now) {
+        if (!door.equals(this.lastScannerOpenedDoor)) return;
+        double movedX = this.getX() - this.lastScannerDoorX;
+        double movedZ = this.getZ() - this.lastScannerDoorZ;
+        if (movedX * movedX + movedZ * movedZ >= 0.25D) {
+            this.lastScannerDoorTick = now;
+            this.lastScannerDoorX = this.getX();
+            this.lastScannerDoorZ = this.getZ();
+            this.lastScannerDoorGoal = this.goalKey;
+            this.lastScannerDoorDestination =
+                    destination == null ? null : destination.getBlockPos().immutable();
+        }
+    }
+
+    private boolean doorScannerHoldExpired(net.minecraft.core.BlockPos door,
+            Point destination, long now) {
+        double movedX = this.getX() - this.lastScannerDoorX;
+        double movedZ = this.getZ() - this.lastScannerDoorZ;
+        boolean sameDoor = door.equals(this.lastScannerOpenedDoor);
+        boolean sameGoal = java.util.Objects.equals(this.goalKey, this.lastScannerDoorGoal)
+                && java.util.Objects.equals(
+                    destination == null ? null : destination.getBlockPos(),
+                    this.lastScannerDoorDestination);
+        return org.millenaire.common.pathing.DoorApproachRules.expiredStationaryScannerHold(
+                sameDoor, sameGoal, movedX * movedX + movedZ * movedZ,
+                now - this.lastScannerDoorTick);
+    }
+
+    private String doorRoutePreview(Path route) {
+        if (route == null) return "none";
+        StringBuilder result = new StringBuilder();
+        int start = Math.max(0, route.getNextNodeIndex());
+        for (int i = start; i < Math.min(route.getNodeCount(), start + 5); i++) {
+            var node = route.getNode(i);
+            if (node == null) continue;
+            if (result.length() > 0) result.append(">");
+            result.append(node.asBlockPos());
+        }
+        return result.toString();
+    }
+
+    private void logNearbyClosedDoor(String reason, Path route) {
+        if (MillConfigValues.LogPathing < 2
+                || (this.level.getGameTime() + this.getVillagerId()) % 100L != 0L) return;
+        var feet = this.blockPosition();
+        net.minecraft.core.BlockPos nearest = null;
+        net.minecraft.world.level.block.state.BlockState nearestState = null;
+        double best = 6.25D;
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
+                for (int y = -1; y <= 1; y++) {
+                    var p = feet.offset(x, y, z);
+                    if (!this.level.hasChunkAt(p)) continue;
+                    var state = this.level.getBlockState(p);
+                    if (!BlockItemUtilities.isWoodenDoor(state.getBlock())) continue;
+                    if (state.getValue(net.minecraft.world.level.block.DoorBlock.OPEN)) continue;
+                    if (state.getValue(net.minecraft.world.level.block.DoorBlock.HALF)
+                            == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER)
+                        p = p.below();
+                    double dx = p.getX() + 0.5D - this.getX();
+                    double dz = p.getZ() + 0.5D - this.getZ();
+                    double distance = dx * dx + dz * dz;
+                    if (distance >= best) continue;
+                    best = distance;
+                    nearest = p.immutable();
+                    nearestState = this.level.getBlockState(p);
+                }
+            }
+        }
+        if (nearest == null) return;
+        var block = nearestState.getBlock();
+        MillLog.major(this, "DOOR-BLOCKED reason=" + reason
+                + " door=" + nearest
+                + " block=" + net.minecraft.core.Registry.BLOCK.getKey(block)
+                + " facing=" + nearestState.getValue(net.minecraft.world.level.block.DoorBlock.FACING)
+                + " hinge=" + nearestState.getValue(net.minecraft.world.level.block.DoorBlock.HINGE)
+                + " powered=" + nearestState.getValue(net.minecraft.world.level.block.DoorBlock.POWERED)
+                + " feet=" + feet + " stopMoving=" + this.stopMoving
+                + " goal=" + this.goalKey + " dest=" + this.getPathDestPoint()
+                + " path=" + (route == null ? "none"
+                    : route.getNextNodeIndex() + "/" + route.getNodeCount())
+                + " next=" + this.doorRoutePreview(route));
+    }
+
     private void handleDoorsAndFenceGates() {
         if (this.level.isClientSide) return;
+
+        // Convert the previous per-villager closing hint into a shared lease.
         if (this.doorToClose != null) {
-            var pos = this.doorToClose.getBlockPos();
-            if (this.position().distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos)) > 9.0
-                    && this.level.getEntitiesOfClass(LivingEntity.class,
-                        new AABB(pos).inflate(0.7, 1.0, 0.7), e -> e.isAlive()).isEmpty()) {
-                var state = this.level.getBlockState(pos);
-                if (BlockItemUtilities.isWoodenDoor(state.getBlock()) && state.getValue(DoorBlock.OPEN))
-                    ((DoorBlock)state.getBlock()).setOpen(null, this.level, state, pos, false);
-                else if (state.getBlock() instanceof FenceGateBlock)
-                    this.closeFenceGate(pos.getX(), pos.getY(), pos.getZ());
-                this.doorToClose = null;
-            }
+            org.millenaire.common.pathing.VillageDoorAccess.adoptLegacy(
+                this.level, this.doorToClose.getBlockPos());
+            this.doorToClose = null;
         }
-        // Use the route actually followed by navigation, including native recomputations.
+
+        // Open only upcoming door/gate nodes. Including nextNodeIndex()-1
+        // repeatedly re-opened the door BEHIND a resident after they crossed
+        // it, making some homes appear to close on arrival and open on exit.
+        // The shared manager keeps a doorway open while someone occupies it.
         Path route = this.navigation.getPath();
-        if (route == null || route.isDone()) return;
-        java.util.Set<net.minecraft.core.BlockPos> candidates = new java.util.LinkedHashSet<>();
-        for (int i = Math.max(0, route.getNextNodeIndex() - 1);
-                i < Math.min(route.getNodeCount(), route.getNextNodeIndex() + 3); i++) {
-            var pos = route.getNode(i).asBlockPos();
-            candidates.add(pos); candidates.add(pos.below()); candidates.add(pos.above());
-        }
-        for (var pos : candidates) {
-            if (this.position().distanceToSqr(Vec3.atCenterOf(pos)) > 6.25) continue;
-            var state = this.level.getBlockState(pos);
-            if (BlockItemUtilities.isWoodenDoor(state.getBlock())) {
-                ((DoorBlock)state.getBlock()).setOpen(null, this.level, state, pos, true);
-                this.doorToClose = new Point(pos);
-            } else if (state.getBlock() instanceof FenceGateBlock) {
-                this.openFenceGate(pos.getX(), pos.getY(), pos.getZ());
-                this.doorToClose = new Point(pos);
+        if (route != null && !route.isDone()) {
+            java.util.Set<net.minecraft.core.BlockPos> candidates = new java.util.LinkedHashSet<>();
+            // The pathfinder may advance its next-node index while the resident
+            // is still physically crossing the previous doorway. In that case
+            // keep the shared lease alive, but NEVER reopen a door already
+            // fully behind the resident (the old -1 lookahead regression).
+            int previous = route.getNextNodeIndex() - 1;
+            if (previous >= 0 && previous < route.getNodeCount()) {
+                var prevNode = route.getNode(previous);
+                if (prevNode != null) {
+                    var previousPos = prevNode.asBlockPos();
+                    for (int dy = -1; dy <= 1; dy++) {
+                        var pos = previousPos.offset(0, dy, 0);
+                        if (this.getBoundingBox().inflate(0.12D, 0.0D, 0.12D)
+                                .intersects(new AABB(pos).inflate(0.12D, 0.12D, 0.12D))) {
+                            candidates.add(pos);
+                        }
+                    }
+                }
+            }
+            for (int i = Math.max(0, route.getNextNodeIndex());
+                    i < Math.min(route.getNodeCount(), route.getNextNodeIndex() + 3); i++) {
+                var node = route.getNode(i);
+                if (node == null) continue;
+                var pos = node.asBlockPos();
+                candidates.add(pos);
+                candidates.add(pos.below());
+                candidates.add(pos.above());
+            }
+            // DOOR-15 regression isolation: return to the older route-node
+            // opener. The later panel-orientation and passed-panel heuristics
+            // can incorrectly withhold access to a legitimate wooden door.
+            // Preserve the existing gate path and the shared close lease.
+            for (var pos : candidates) {
+                if (this.position().distanceToSqr(Vec3.atCenterOf(pos)) > 8.0D) continue;
+                if (!this.level.hasChunkAt(pos)) continue;
+                var state = this.level.getBlockState(pos);
+                if (BlockItemUtilities.isWoodenDoor(state.getBlock())
+                        || state.getBlock() instanceof net.minecraft.world.level.block.FenceGateBlock) {
+                    org.millenaire.common.pathing.VillageDoorAccess.openForResident(
+                            this.level, pos, this, "ROUTE");
+                }
             }
         }
+
+        // JPS may omit a doorway node or aim at an offset waypoint beyond it.
+        // Track real displacement while a villager has a travel intent; this is
+        // different from instantaneous velocity, which can be nonzero while
+        // colliding with a closed door. Never force a working/sleeping villager
+        // to interact with an unrelated door.
+        Point destination = this.getPathDestPoint();
+        boolean hasRoute = route != null && !route.isDone();
+        if (this.stopMoving || this.getTarget() != null || (!hasRoute && destination == null)) {
+            this.logNearbyClosedDoor(this.stopMoving ? "STOP_MOVING"
+                    : this.getTarget() != null ? "COMBAT" : "NO_DESTINATION", route);
+            this.doorStationarySince = -1L;
+            return;
+        }
+        long now = this.level.getGameTime();
+        double travelledX = this.getX() - this.doorStationaryX;
+        double travelledZ = this.getZ() - this.doorStationaryZ;
+        if (this.doorStationarySince < 0L || now < this.doorStationarySince
+                || travelledX * travelledX + travelledZ * travelledZ >= 0.16D) {
+            this.doorStationarySince = now;
+            this.doorStationaryX = this.getX();
+            this.doorStationaryZ = this.getZ();
+        }
+        boolean physicallyStalled = now - this.doorStationarySince >= 20L;
+        if ((now + this.getVillagerId()) % 4L != 0L) return;
+
+        // Prefer the first genuinely forward route node, not a node that is
+        // already underneath the resident or just behind them.
+        Vec3 desired = null;
+        if (hasRoute) {
+            for (int i = route.getNextNodeIndex();
+                    i < Math.min(route.getNodeCount(), route.getNextNodeIndex() + 5); i++) {
+                var next = route.getNode(i);
+                if (next == null) continue;
+                Vec3 candidate = Vec3.atCenterOf(next.asBlockPos());
+                double vx = candidate.x - this.getX(), vz = candidate.z - this.getZ();
+                if (vx * vx + vz * vz >= 0.25D) {
+                    desired = candidate;
+                    break;
+                }
+            }
+        }
+        if (desired == null && destination != null) {
+            desired = Vec3.atCenterOf(destination.getBlockPos());
+        }
+        if (desired == null) {
+            this.logNearbyClosedDoor("NO_DIRECTION", route);
+            return;
+        }
+        double dx = desired.x - this.getX(), dz = desired.z - this.getZ();
+        double len = Math.sqrt(dx * dx + dz * dz);
+        if (len < 0.25D) {
+            this.logNearbyClosedDoor("AT_WAYPOINT", route);
+            return;
+        }
+        dx /= len;
+        dz /= len;
+        if (physicallyStalled && this.openContactWoodenDoor(dx, dz)) return;
+        // Eyes are only a secondary hint after a *physical* stall, never a
+        // replacement for movement intent: the NPC may glance at a player.
+        Vec3 look = this.getLookAngle();
+        double lookLen = Math.sqrt(look.x * look.x + look.z * look.z);
+
+        net.minecraft.core.BlockPos best = null;
+        double bestScore = Double.POSITIVE_INFINITY;
+        var feet = this.blockPosition();
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
+                for (int y = -1; y <= 1; y++) {
+                    var samplePos = feet.offset(x, y, z);
+                    if (!this.level.hasChunkAt(samplePos)) continue;
+                    var blockState = this.level.getBlockState(samplePos);
+                    var block = blockState.getBlock();
+                    // DOOR-15: revert speculative wooden-door scanner.
+                    // The scanner repeatedly opened and reclosed a door for
+                    // the same stationary NPC (confirmed in latest(6).log).
+                    // KEEP its established fence-gate handling unchanged.
+                    if (BlockItemUtilities.isWoodenDoor(block)) continue;
+                    if (!(block instanceof net.minecraft.world.level.block.FenceGateBlock)
+                            && !BlockItemUtilities.isWoodenDoor(block)) continue;
+                    var door = block instanceof net.minecraft.world.level.block.DoorBlock
+                            && blockState.getValue(net.minecraft.world.level.block.DoorBlock.HALF)
+                                == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER
+                                    ? samplePos.below() : samplePos;
+                    if (!this.level.hasChunkAt(door)) continue;
+                    var doorState = this.level.getBlockState(door);
+                    boolean closed = BlockItemUtilities.isWoodenDoor(doorState.getBlock())
+                            ? !doorState.getValue(net.minecraft.world.level.block.DoorBlock.OPEN)
+                            : doorState.getBlock() instanceof net.minecraft.world.level.block.FenceGateBlock
+                                && !doorState.getValue(net.minecraft.world.level.block.FenceGateBlock.OPEN);
+
+                    // A CLOSED wooden door's collision plane can be at EITHER
+                    // end of the block, depending on FACING. Its center is
+                    // *not* the panel center. Always score and raycast against
+                    // the same physical panel, including if already OPEN.
+                    // This preserves side symmetry even for hinged double doors.
+                    double panelX = door.getX() + 0.5D;
+                    double panelZ = door.getZ() + 0.5D;
+                    double panelMidX = panelX, panelMidZ = panelZ;
+                    boolean woodenDoor = BlockItemUtilities.isWoodenDoor(doorState.getBlock());
+                    if (woodenDoor) {
+                        boolean eastWestDoor = doorState.getValue(
+                                net.minecraft.world.level.block.DoorBlock.FACING).getAxis()
+                                == net.minecraft.core.Direction.Axis.X;
+                        var shutState = doorState.setValue(net.minecraft.world.level.block.DoorBlock.OPEN, false);
+                        var panel = shutState.getCollisionShape(this.level, door).bounds();
+                        panelX = org.millenaire.common.pathing.DoorApproachRules.closestPanelCoordinate(
+                                this.getX(), door.getX() + panel.minX, door.getX() + panel.maxX);
+                        panelZ = org.millenaire.common.pathing.DoorApproachRules.closestPanelCoordinate(
+                                this.getZ(), door.getZ() + panel.minZ, door.getZ() + panel.maxZ);
+                        panelMidX = door.getX() + (panel.minX + panel.maxX) * 0.5D;
+                        panelMidZ = door.getZ() + (panel.minZ + panel.maxZ) * 0.5D;
+                        // The closed panel may be at either EDGE of this
+                        // block. Measure approach to the actual panel, not
+                        // the block center, which would reject a resident
+                        // already standing in the door block itself.
+                        if (!org.millenaire.common.pathing.DoorApproachRules.facingDoorPanel(
+                                this.getX(), this.getZ(),
+                                panelMidX, panelMidZ, eastWestDoor)) continue;
+                    }
+                    double ox = panelX - this.getX();
+                    double oz = panelZ - this.getZ();
+                    double elevation = Math.abs(door.getY() - this.getY());
+                    // Do not keep an already OPEN door leased just because a
+                    // stationary resident looks back at it. Only the forward
+                    // route direction may renew its lease. The world manager
+                    // separately protects anyone physically in the doorway.
+                    double forwardScore = org.millenaire.common.pathing.DoorApproachRules.score(
+                            dx, dz, ox, oz, elevation);
+                    if (!closed && !Double.isFinite(forwardScore)) continue;
+                    double score = closed
+                            ? org.millenaire.common.pathing.DoorApproachRules.recoveryScore(
+                                dx, dz, ox, oz, elevation, physicallyStalled)
+                            : forwardScore;
+                    if (closed && physicallyStalled && lookLen >= 0.25D) {
+                        // Head direction is a last-resort hint for a closed
+                        // doorway only, never a reason to keep one open.
+                        double lookScore = org.millenaire.common.pathing.DoorApproachRules.recoveryScore(
+                                look.x / lookLen, look.z / lookLen, ox, oz,
+                                elevation, true);
+                        score = Math.min(score, 4.0D + lookScore);
+                    }
+                    if (!Double.isFinite(score)) continue;
+
+                    // Don't interact with a door beyond an intervening wall.
+                    Vec3 from = new Vec3(this.getX(), this.getY() + 0.9D, this.getZ());
+                    Vec3 to = new Vec3(panelX, door.getY() + 0.9D, panelZ);
+                    var hit = this.level.clip(new net.minecraft.world.level.ClipContext(from, to,
+                            net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                            net.minecraft.world.level.ClipContext.Fluid.NONE, this));
+                    // Doors are thin collision shapes at one edge of their
+                    // block, so a ray aimed at the block CENTER may legitimately
+                    // miss the closed panel. MISS means the door is unobstructed;
+                    // reject only if a DIFFERENT solid block occludes the ray.
+                    boolean hitBlock = hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK;
+                    boolean hitDoor = hit.getBlockPos().equals(door)
+                            || hit.getBlockPos().equals(door.above());
+                    if (!org.millenaire.common.pathing.DoorApproachRules.clearSight(hitBlock, hitDoor)) {
+                        // A ray to the nearest panel corner may graze a solid
+                        // door frame. Test the MIDDLE of the actual door panel
+                        // as a second sight line. A wall blocks both; do not
+                        // apply this relaxation to fence gates.
+                        if (!woodenDoor) continue;
+                        Vec3 panelMiddle = new Vec3(panelMidX, door.getY() + 0.9D, panelMidZ);
+                        var centerHit = this.level.clip(new net.minecraft.world.level.ClipContext(
+                                from, panelMiddle,
+                                net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                                net.minecraft.world.level.ClipContext.Fluid.NONE, this));
+                        boolean centerBlocked = centerHit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK;
+                        boolean centerOnDoor = centerHit.getBlockPos().equals(door)
+                                || centerHit.getBlockPos().equals(door.above());
+                        if (!org.millenaire.common.pathing.DoorApproachRules.clearSight(
+                                centerBlocked, centerOnDoor)) continue;
+                    }
+
+                    if (!closed) {
+                        if (woodenDoor) this.noteScannerDoorProgress(door, destination, now);
+                        // Opened door: only keep renewing a stalled scanner
+                        // interaction for the first 120 ticks without progress.
+                        // Otherwise the door may remain open forever while
+                        // the resident cannot move. This is for scanner
+                        // leases, NOT explicit route-node opening.
+                        if (!woodenDoor || !this.doorScannerHoldExpired(door, destination, now)) {
+                            org.millenaire.common.pathing.VillageDoorAccess.openForResident(
+                                    this.level, door, this, "SCANNER-RENEW");
+                        }
+                    } else if (score < bestScore) {
+                        bestScore = score;
+                        best = door.immutable();
+                    }
+                }
+            }
+        }
+        if (MillConfigValues.LogPathing >= 2
+                && (this.level.getGameTime() + this.getVillagerId()) % 100L == 0L) {
+            MillLog.major(this, "DOOR-APPROACH selected=" + best + " feet="
+                    + this.blockPosition() + " target=" + destination
+                    + " stalled=" + physicallyStalled
+                    + " path=" + (route == null ? "none" : route.getNextNodeIndex()
+                    + "/" + route.getNodeCount())
+                    + " next=" + (physicallyStalled ? this.doorRoutePreview(route) : "-"));
+        }
+        if (best != null) {
+            double movedX = this.getX() - this.lastScannerDoorX;
+            double movedZ = this.getZ() - this.lastScannerDoorZ;
+            boolean sameDoor = best.equals(this.lastScannerOpenedDoor);
+            boolean sameGoalAndDestination = java.util.Objects.equals(
+                    this.goalKey, this.lastScannerDoorGoal)
+                    && java.util.Objects.equals(
+                        destination == null ? null : destination.getBlockPos(),
+                        this.lastScannerDoorDestination);
+            long elapsed = now - this.lastScannerDoorTick;
+            boolean woodenCandidate =
+                    BlockItemUtilities.isWoodenDoor(this.level.getBlockState(best).getBlock());
+            if (woodenCandidate) this.noteScannerDoorProgress(best, destination, now);
+            boolean repeatedWithoutProgress = woodenCandidate
+                    && org.millenaire.common.pathing.DoorApproachRules.suppressStationaryScannerReopen(
+                        sameDoor, sameGoalAndDestination,
+                        movedX * movedX + movedZ * movedZ, elapsed);
+            // DOOR-11 suppressed opening for 120 ticks after a resident
+            // stalled; that left the very door they needed CLOSED. Instead
+            // keep it open while attempting passage, and end the lease
+            // after 120 ticks without progress so it will auto-close.
+            boolean holdExpired = woodenCandidate
+                    && this.doorScannerHoldExpired(best, destination, now);
+            if (holdExpired) {
+                if (MillConfigValues.LogPathing >= 2
+                        && (now + this.getVillagerId()) % 100L == 0L) {
+                    MillLog.major(this, "DOOR-SCANNER-HOLD-EXPIRED door=" + best
+                            + " ticksSinceOpen=" + elapsed
+                            + " feet=" + this.blockPosition()
+                            + " path=" + (route == null ? "none"
+                                : route.getNextNodeIndex() + "/" + route.getNodeCount()));
+                }
+            } else {
+                org.millenaire.common.pathing.VillageDoorAccess.openForResident(
+                        this.level, best, this, repeatedWithoutProgress
+                                ? "SCANNER-HOLD" : "SCANNER-OPEN");
+                var openedState = this.level.getBlockState(best);
+                if (!repeatedWithoutProgress && woodenCandidate
+                        && openedState.getValue(net.minecraft.world.level.block.DoorBlock.OPEN)) {
+                    this.lastScannerOpenedDoor = best.immutable();
+                    this.lastScannerDoorDestination =
+                            destination == null ? null : destination.getBlockPos().immutable();
+                    this.lastScannerDoorGoal = this.goalKey;
+                    this.lastScannerDoorTick = now;
+                    this.lastScannerDoorX = this.getX();
+                    this.lastScannerDoorZ = this.getZ();
+                }
+            }
+        } else {
+            this.logNearbyClosedDoor("NO_VISIBLE_DOOR_CANDIDATE", route);
+        }
+    }
+
+    // A separate, physically bounded recovery for closed wooden panels.
+    // The broad speculative wooden-door scanner remains disabled.
+    private boolean openContactWoodenDoor(double dx, double dz) {
+        AABB swept = this.getBoundingBox().expandTowards(dx * 0.28D, 0.0D, dz * 0.28D);
+        BlockPos min = new BlockPos(swept.minX, swept.minY, swept.minZ);
+        BlockPos max = new BlockPos(swept.maxX, swept.maxY, swept.maxZ);
+        for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
+            if (!this.level.hasChunkAt(pos)) continue;
+            BlockState state = this.level.getBlockState(pos);
+            if (!BlockItemUtilities.isWoodenDoor(state.getBlock())
+                    || state.getValue(net.minecraft.world.level.block.DoorBlock.OPEN)) continue;
+            boolean contact = state.getCollisionShape(this.level, pos).toAabbs().stream()
+                    .anyMatch(panel -> swept.intersects(panel.move(pos.getX(), pos.getY(), pos.getZ())));
+            if (!contact) continue;
+            org.millenaire.common.pathing.VillageDoorAccess.openForResident(
+                    this.level, pos, this, "PHYSICAL-CONTACT");
+            if (this.level.getBlockState(pos).getValue(net.minecraft.world.level.block.DoorBlock.OPEN))
+                return true;
+        }
+        return false;
     }
 
     private void handleLeaveClearing() {
@@ -1745,6 +2651,7 @@ IAStarPathedEntity {
             if (MillConfigValues.LogPathing >= 1 && this.extraLog) {
                 MillLog.major(this, "Jumping from " + this.getPos() + " to " + jumpTo);
             }
+            this.noteDoorTeleport();
             this.setPos((double)jumpTo.getiX() + 0.5, (double)jumpTo.getiY(), (double)jumpTo.getiZ() + 0.5);
             this.longDistanceStuck = 0;
             this.localStuck = 0;
@@ -1897,6 +2804,16 @@ IAStarPathedEntity {
                 super.tick();
                 return;
             }
+            if (this.observedDoor != null) {
+                if (MillConfigValues.LogPathing < 2) this.observedDoor = null;
+                else {
+                    var result = this.observedDoor.sample(this.level.getGameTime(), getX(), getY(), getZ(),
+                            this.goalKey, this.goalStarted);
+                    if (result != null) this.finishDoorObservation(result);
+                }
+            }
+            this.recoverPhysicalTrap();
+            org.millenaire.common.config.TestTuning.applyMovement(this);
             if (Math.abs(this.level.getGameTime() + (long)this.hashCode()) % 10L == 2L) {
                 this.sendVillagerPacket();
             }
@@ -1946,6 +2863,8 @@ IAStarPathedEntity {
                                         this.townHall.getConstructionsInProgress().get(this.constructionJobId).setBuilder(this);
                                     }
                                 }
+                                if (this.slaughterTarget != null && (!this.isSlaughterCombat() || this.getTownHall().underAttack))
+                                    this.endSlaughterCombat(false, "INTERRUPTED");
                                 if (this.getTownHall().underAttack) {
                                     if (this.goalKey == null || !this.goalKey.equals(Goal.raidVillage.key) && !this.goalKey.equals(Goal.defendVillage.key) && !this.goalKey.equals(Goal.hide.key)) {
                                         this.clearGoal();
@@ -1960,6 +2879,9 @@ IAStarPathedEntity {
                                         this.goalKey = Goal.hide.key;
                                     }
                                     this.checkGoals();
+                                }
+                                if (this.isSlaughterCombat()) {
+                                    if (this.tickSlaughterCombat()) break block80;
                                 }
                                 if (this.getTarget() == null) break block79;
                                 if (this.vtype.isDefensive && this.getPos().distanceTo(this.getHouse().getResManager().getDefendingPos()) > 20.0) {
@@ -1995,7 +2917,15 @@ IAStarPathedEntity {
                             }
                         }
                         if (this.getTarget() != null) {
-                            this.setGoalDestPoint(new Point((Entity)this.getTarget()));
+                            if (this.isSlaughterCombat()) {
+                                // Update the visible combat target without resetting the
+                                // anchored route every time the animal moves a fraction of a block.
+                                if (this.goalInformation == null)
+                                    this.goalInformation = new Goal.GoalInformation(null, null, null);
+                                this.goalInformation.setDest(new Point(this.getTarget()));
+                            } else {
+                                this.setGoalDestPoint(new Point((Entity)this.getTarget()));
+                            }
                             this.heldItem = this.getWeapon();
                             this.heldItemOffHand = ItemStack.EMPTY;
                             if (this.goalKey != null && !Goal.goals.get(this.goalKey).isFightingGoal()) {
@@ -2121,6 +3051,48 @@ IAStarPathedEntity {
         return true;
     }
 
+    private void recoverPhysicalTrap() {
+        long now = this.level.getGameTime();
+        if (now < this.nextPhysicalTrapRetry || this.isPassenger()
+                || this.isInWater() || this.onClimbable()) return;
+        if (!org.millenaire.common.pathing.PhysicalTrapRecovery.isTrapped(this)) return;
+        // Retry an impossible rescue at most once per second, without loading chunks.
+        this.nextPhysicalTrapRetry = now + 20L;
+        BlockPos safe = org.millenaire.common.pathing.PhysicalTrapRecovery.findExit(this);
+        if (safe == null) return;
+        BlockPos old = this.blockPosition();
+        boolean repeated=lastPhysicalTrap!=null && old.distSqr(lastPhysicalTrap)<=4
+                && now>=lastPhysicalTrapTick && now-lastPhysicalTrapTick<=200;
+        lastPhysicalTrap=old;lastPhysicalTrapTick=now;
+        Point failedDestination=this.getPathDestPoint();
+        String failedGoal=this.goalKey;
+        this.navigation.stop();
+        this.pathEntity = null;
+        if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
+        this.pathCalculatedSinceLastTick = null;
+        this.pathFailedSincelastTick = false;
+        this.pathFailureRecovery.reset();
+        this.movementWatchdog.reset();
+        this.actionStart = 0L;
+        this.noteDoorTeleport();
+        this.setPos(safe.getX() + 0.5D, safe.getY(), safe.getZ() + 0.5D);
+        this.setDeltaMovement(Vec3.ZERO);
+        this.fallDistance = 0.0F;
+        this.nextTrackedEntityPathAttempt = 0L;
+        this.nextVanillaPathAttempt = 0L;
+        if(repeated && failedDestination!=null){
+            // A rescue followed by a return to the same trap is a failed goal,
+            // not evidence of successful navigation. Avoid re-entering it.
+            this.avoidedTrapDestination=failedDestination;
+            this.avoidedTrapUntil=now+200L;
+            this.clearGoal();
+            this.setPathDestPoint(null,0);
+            this.stopMoving=false;
+        }
+        MillLog.major(this, "NAV-TRAP-RESCUE from=" + old + " to=" + safe
+                + " goal="+failedGoal+" repeated="+repeated+" abandoned="+(repeated&&failedDestination!=null));
+    }
+
     private void recoverStationaryMovement() {
         Goal goal = Goal.goals.get(this.goalKey);
         Point dest = this.getPathDestPoint();
@@ -2131,40 +3103,198 @@ IAStarPathedEntity {
             return;
         }
         var action = this.movementWatchdog.sample(this.level.getGameTime(),
-                dest.getBlockPos(), this.getX(), this.getY(), this.getZ());
+                dest.getBlockPos(), this.getX(), this.getY(), this.getZ(), this.onClimbable());
         if (action == org.millenaire.common.pathing.MovementWatchdog.Action.NONE) return;
+        // At eight seconds of no progress, switch once to the independent
+        // Vanilla algorithm. A*/JPS remains the primary for normal requests.
+        // Leave navigation's own detour work to its fallback route planner.
+        if (MillConfigValues.LogPathing >= 1 && this.extraLog) {
+            MillLog.major(this, "NAV-STALLED action=" + action + " goal=" + this.goalKey
+                    + " position=" + this.blockPosition() + " target=" + dest);
+        }
         this.navigation.stop();
         this.pathEntity = null;
-        this.nextVanillaPathAttempt = 0L;
+        // A stalled A*/JPS route is not considered successful just because a
+        // list of nodes exists. At the second watchdog stage, attempt an
+        // independent Vanilla route before falling back to the primary search.
+        if (action == org.millenaire.common.pathing.MovementWatchdog.Action.DETOUR) {
+            if (this.isInWater() && isStockTransferGoal(goal)) {
+                AS_PathEntity shore = org.millenaire.common.pathing.ShoreRecovery.findPath(
+                        this.level, this.blockPosition(), dest.getBlockPos());
+                if (shore != null && this.navigation.moveTo(shore, 0.5D)) {
+                    if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
+                    this.pathCalculatedSinceLastTick = null;
+                    this.pathFailedSincelastTick = false;
+                    this.pathEntity = shore;
+                    this.pathFailureRecovery.reset();
+                    MillLog.major(this, "NAV-SHORE from=" + this.blockPosition() + " inland=" + shore.getTarget()
+                            + " target=" + dest + " goal=" + this.goalKey);
+                    return;
+                }
+            }
+            this.nextVanillaPathAttempt = 0L;
+            if (this.navigation instanceof PathNavigateSimple groundNavigation) {
+                groundNavigation.requestRecoveryDetour();
+            }
+            if (this.tryGroundRoute(dest)) return;
+        }
+        if (action == org.millenaire.common.pathing.MovementWatchdog.Action.RECOVER && this.isMiningTrip(goal)) {
+            this.abandonMiningSource(goal);
+            return;
+        }
         if (action == org.millenaire.common.pathing.MovementWatchdog.Action.RECOVER
-                && this.vtype != null && (!this.vtype.noTeleport
+                && !this.tracksLandEntity() && this.vtype != null && (!this.vtype.noTeleport
                     || this.getRecord() != null && this.getRecord().raidingVillage)) {
+            if (isStockTransferGoal(goal)) {
+                MillLog.major(this, "NAV-TELEPORT stock recovery: at=" + this.blockPosition()
+                        + " target=" + dest + " goal=" + this.goalKey);
+            }
             this.jumpToDest();
         }
     }
 
+    private static boolean isStockTransferGoal(Goal goal) {
+        // Builders also collect supplies from a stock point. Without this,
+        // recovery can accept a partial path ending outside the town hall.
+        return goal instanceof org.millenaire.common.goal.GoalGetResourcesForBuild
+                || goal instanceof org.millenaire.common.goal.GoalGetResourcesForShops
+                || goal instanceof org.millenaire.common.goal.GoalGetGoodsForHousehold
+                || goal instanceof org.millenaire.common.goal.GoalDeliverResourcesShop
+                || goal instanceof org.millenaire.common.goal.GoalDeliverGoodsHousehold
+                || goal instanceof org.millenaire.common.goal.GoalBringBackResourcesHome;
+    }
+
+    private boolean canSeeStockFromNode(int x, int y, int z, Point dest) {
+        if (dest == null) return false;
+        net.minecraft.core.BlockPos stand = new net.minecraft.core.BlockPos(x, y, z);
+        Vec3 eye = Vec3.atBottomCenterOf(stand).add(0, 0.8D, 0);
+        return org.millenaire.common.goal.WorkAccess.visible(
+            this.level, eye, Vec3.atCenterOf(dest.getBlockPos()), dest.getBlockPos());
+    }
+
+    // Movement is selected by path cost and terrain clearance; no fixed
+    // courtyard/side-gate waypoints are injected into normal navigation.
+
     private boolean tryGroundRoute(Point dest) {
         long now = this.level.getGameTime();
-        if (now >= this.nextVanillaPathAttempt) {
-            this.nextVanillaPathAttempt = now + 40L;
-            this.navigation.stop();
-            Goal goal = Goal.goals.get(this.goalKey);
-            int range = goal == null ? 1 : Math.max(1, goal.range(this));
-            Path fallback = this.navigation.createPath(dest.getBlockPos(), Math.min(2, range - 1));
-            boolean reached = fallback != null && fallback.canReach() && fallback.getNodeCount() > 0
-                    && new Point(fallback.getEndNode()).horizontalDistanceTo(dest) < range;
-            boolean progressing = org.millenaire.common.pathing.PartialPathRecovery.canUse(fallback,
-                    this.position(), new Vec3(dest.x, dest.y, dest.z));
-            if (reached || progressing) {
-                Node[] nodes = new Node[fallback.getNodeCount()];
-                for (int i = 0; i < nodes.length; i++) nodes[i] = fallback.getNode(i);
-                AS_PathEntity adapted = new AS_PathEntity(nodes, fallback.getTarget(), fallback.canReach());
-                if (this.navigation.moveTo(adapted, 0.5)) {
-                    this.pathEntity = adapted;
-                    this.pathFailureRecovery.reset();
-                    return true;
+        if (now < this.nextVanillaPathAttempt) return false;
+        this.nextVanillaPathAttempt = now + 40L;
+        this.navigation.stop();
+        Goal goal = this.routingGoal();
+        int range = goal == null ? 1 : Math.max(1, goal.range(this));
+        boolean stockGoal = isStockTransferGoal(goal);
+        boolean entityGoal = this.tracksLandEntity();
+        boolean mining = this.isMiningTrip(goal);
+        Path fallback;
+        if (mining) {
+            Point source = this.getGoalDestPoint();
+            var stands = MiningAccess.alternatives(this.level, source.getBlockPos(), range, this.getPathingConfig());
+            if (!goal.isWithinActionRange(this, source)) stands.remove(this.blockPosition());
+            if (stands.isEmpty()) return false;
+            fallback = this.navigation.createPath(stands, 0);
+            if (fallback == null || !fallback.canReach() || fallback.getEndNode() == null
+                    || !stands.contains(fallback.getEndNode().asBlockPos())) return false;
+        } else {
+            fallback = this.navigation.createPath(dest.getBlockPos(), entityGoal ? 0 : Math.min(2, range - 1));
+        }
+        boolean reached = fallback != null && fallback.canReach() && fallback.getNodeCount() > 0
+                && (mining || new Point(fallback.getEndNode()).horizontalDistanceTo(dest) < range);
+        if (reached && stockGoal) {
+            Node end = fallback.getEndNode();
+            reached = canSeeStockFromNode(end.x, end.y, end.z, dest);
+        }
+
+        // A partial route that stops at the outside face of a wall is not a route
+        // to the stock. Search all visible, physically valid approach positions
+        // in one multi-target search, rather than picking the first candidate.
+        if (entityGoal && this.isAnimalWorkGoal(goal) && reached) {
+            Node end = fallback.getEndNode();
+            reached = this.canReachTrackedAnimalFromNode(end.x, end.y, end.z, goal);
+        }
+        if (entityGoal && this.isAnimalWorkGoal(goal) && !reached) {
+            try {
+                java.util.Set<BlockPos> access = new java.util.LinkedHashSet<>();
+                AStarNode[] candidates = AStarStatic.getAccessNodesSorted(this.level,
+                        this.blockPosition().getX(), this.blockPosition().getY(), this.blockPosition().getZ(),
+                        dest.getiX(), dest.getiY(), dest.getiZ(), this.getPathingConfig());
+                for (AStarNode candidate : candidates) {
+                    if (this.canReachTrackedAnimalFromNode(candidate.x, candidate.y, candidate.z, goal))
+                        access.add(new BlockPos(candidate.x, candidate.y, candidate.z));
+                    if (access.size() >= 16) break;
                 }
+                if (!access.isEmpty()) {
+                    Path alternative = this.navigation.createPath(access, 0);
+                    if (alternative != null && alternative.canReach() && alternative.getNodeCount() > 0) {
+                        Node end = alternative.getEndNode();
+                        if (this.canReachTrackedAnimalFromNode(end.x, end.y, end.z, goal)) {
+                            fallback = alternative;
+                            reached = true;
+                        }
+                    }
+                }
+            } catch (ThreadSafeUtilities.ChunkAccessException exception) {
+                // A subsequent attempt may have all the required chunks loaded.
             }
+        }
+        if (stockGoal && !reached) {
+            try {
+                java.util.Set<net.minecraft.core.BlockPos> access =
+                        new java.util.LinkedHashSet<>();
+                AStarNode[] candidates = AStarStatic.getAccessNodesSorted(
+                        this.level, this.blockPosition().getX(), this.blockPosition().getY(),
+                        this.blockPosition().getZ(), dest.getiX(), dest.getiY(),
+                        dest.getiZ(), this.getPathingConfig());
+                for (AStarNode candidate : candidates) {
+                    if (Math.abs(candidate.y - dest.getiY()) > 1
+                            || Math.abs(candidate.x - dest.getiX()) > 2
+                            || Math.abs(candidate.z - dest.getiZ()) > 2
+                            || !canSeeStockFromNode(candidate.x, candidate.y, candidate.z, dest)) {
+                        continue;
+                    }
+                    access.add(new net.minecraft.core.BlockPos(
+                            candidate.x, candidate.y, candidate.z));
+                    if (access.size() >= 32) break;
+                }
+                if (!access.isEmpty()) {
+                    Path alternatives = this.navigation.createPath(access, 0);
+                    if (alternatives != null && alternatives.canReach()
+                            && alternatives.getNodeCount() > 0) {
+                        Node end = alternatives.getEndNode();
+                        if (new Point(end).horizontalDistanceTo(dest) < range
+                                && canSeeStockFromNode(end.x, end.y, end.z, dest)) {
+                            fallback = alternatives;
+                            reached = true;
+                        }
+                    }
+                }
+            } catch (ThreadSafeUtilities.ChunkAccessException exception) {
+                // The normal pathfinder can still retry as chunks become available.
+            }
+        }
+
+        boolean progressing = !reached
+                && org.millenaire.common.pathing.PartialPathRecovery.canUse(
+                    fallback, this.position(), new Vec3(dest.x, dest.y, dest.z));
+        if (stockGoal && fallback != null && fallback.getEndNode() != null
+                && new Point(fallback.getEndNode()).horizontalDistanceTo(dest)
+                    <= Math.max(6, range + 2)) {
+            // Never accept a short partial approach ending immediately at a wall.
+            progressing = false;
+        }
+        if (entityGoal && this.isAnimalWorkGoal(goal) && !reached
+                && fallback != null && fallback.getEndNode() != null
+                && new Point(fallback.getEndNode()).distanceTo(dest) < range + 1.0D) progressing = false;
+        if (entityGoal && fallback != null && fallback.getNodeCount() <= 1
+                && goal != null && !this.routingInRange(goal, dest)) return false;
+        if (!reached && !progressing) return false;
+        Node[] nodes = new Node[fallback.getNodeCount()];
+        for (int i = 0; i < nodes.length; i++) nodes[i] = fallback.getNode(i);
+        AS_PathEntity adapted = new AS_PathEntity(nodes, fallback.getTarget(), fallback.canReach());
+        if (this.navigation.moveTo(adapted, 0.5)) {
+            this.logRouteDecision("VANILLA-FALLBACK", dest);
+            this.pathEntity = adapted;
+            this.pathFailureRecovery.reset();
+            return true;
         }
         return false;
     }
@@ -2184,8 +3314,11 @@ IAStarPathedEntity {
                     + " position=" + this.getPos() + " target=" + dest
                     + " distance=" + dest.horizontalDistanceTo((Entity)this));
         }
-        if (this.pathFailureRecovery.failed(now)
-            && (!this.vtype.noTeleport || this.getRecord() != null && this.getRecord().raidingVillage)) {
+        if (!this.pathFailureRecovery.failed(now)) return;
+        Goal failedGoal = this.getActiveGoal();
+        if (this.isMiningTrip(failedGoal)) {
+            this.abandonMiningSource(failedGoal);
+        } else if (!this.isSlaughterCombat() && !this.tracksLandEntity() && (!this.vtype.noTeleport || this.getRecord() != null && this.getRecord().raidingVillage)) {
             this.jumpToDest();
         }
     }
@@ -2212,6 +3345,9 @@ IAStarPathedEntity {
 
     @Override
     public net.minecraft.world.InteractionResult mobInteract(Player entityplayer, InteractionHand hand) {
+        if (entityplayer.getItemInHand(hand).getItem() instanceof org.millenaire.common.item.ItemGrowthWand wand) {
+            return wand.useOnVillager(entityplayer, this);
+        }
         if (this.isVillagerSleeping()) {
             return net.minecraft.world.InteractionResult.sidedSuccess(this.level.isClientSide);
         }
@@ -2238,9 +3374,24 @@ IAStarPathedEntity {
     }
 
     public int putInBuilding(Building building, Item item, int meta, int nb) {
-        nb = this.takeFromInv(item, meta, nb);
-        building.storeGoods(item, meta, nb);
-        return nb;
+        if (building == null || nb <= 0 || this.level.isClientSide) return 0;
+        // A wildcard is a request, not an inventory stack. Preserve each
+        // concrete species/variant, including any remainder in a full chest.
+        if (meta == -1) {
+            int stored = 0;
+            InvItem requested = InvItem.createInvItem(item, meta);
+            for (InvItem actual : new ArrayList<>(this.inventory.keySet())) {
+                if (stored >= nb) break;
+                if (actual.meta == -1 || !requested.matches(actual)) continue;
+                stored += this.putInBuilding(building, actual.getItem(), actual.meta, nb - stored);
+            }
+            return stored;
+        }
+        int taken = this.takeFromInv(item, meta, nb);
+        if (taken <= 0) return 0;
+        int stored = building.storeGoods(item, meta, taken);
+        if (stored < taken) this.addToInv(item, meta, taken - stored);
+        return stored;
     }
 
     public void readAdditionalSaveData(CompoundTag nbttagcompound) {
@@ -2394,6 +3545,7 @@ IAStarPathedEntity {
             this.clothTexture[i] = StreamReadWrite.readNullableResourceLocation(data);
         }
         this.setGoalDestPoint(StreamReadWrite.readNullablePoint(data));
+        this.setGoalBuildingDestPoint(StreamReadWrite.readNullablePoint(data));
         this.shouldLieDown = data.readBoolean();
         this.dialogueTargetFirstName = StreamReadWrite.readNullableString(data);
         this.dialogueTargetLastName = StreamReadWrite.readNullableString(data);
@@ -2445,6 +3597,7 @@ IAStarPathedEntity {
             }
         } else {
             this.pathFailureRecovery.reset();
+            this.logRouteDecision("ASTAR-RESULT", this.getPathDestPoint());
             try {
                 this.navigation.moveTo((Path)path, 0.5);
             }
@@ -2517,6 +3670,8 @@ IAStarPathedEntity {
 
     @Override
     public void remove(Entity.RemovalReason reason) {
+        if (this.observedDoor != null)
+            this.finishDoorObservation(org.millenaire.common.pathing.DoorCrossing.Result.REMOVED);
         if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
         this.pathCalculatedSinceLastTick = null;
         if (!isRemoved() && reason.shouldDestroy() && this.getHealth() <= 0.0F) {
@@ -2533,6 +3688,13 @@ IAStarPathedEntity {
         if (this.goalKey != null && (this.getGoalDestPoint() != null || this.getGoalDestEntity() != null)) {
             Player player;
             Goal goal = Goal.goals.get(this.goalKey);
+            if (goal == null) return;
+            if (!this.level.isClientSide && this.actionStart != 0L && this.stopMoving
+                    && goal instanceof org.millenaire.common.goal.generic.GoalGenericCrafting) {
+                if (this.craftingWorkplaceFacing == null)
+                    this.craftingWorkplaceFacing = new org.millenaire.common.goal.CraftingWorkplaceFacing();
+                if (this.craftingWorkplaceFacing.face(this)) return;
+            }
             if (goal.lookAtGoal()) {
                 if (this.getGoalDestEntity() != null && this.getPos().distanceTo(this.getGoalDestEntity()) < (double)goal.range(this)) {
                     this.faceEntityMill(this.getGoalDestEntity(), 10.0f, 10.0f);
@@ -2606,17 +3768,35 @@ IAStarPathedEntity {
         ConstructionIP cip;
         Goal nextGoal = null;
         this.clearGoal();
-        for (Goal goal : this.getGoals()) {
-            if (!goal.isPossible(this)) continue;
-            if (MillConfigValues.LogGeneralAI >= 2 && this.extraLog) {
-                MillLog.minor(this, "Priority for goal " + goal.gameName(this) + ": " + goal.priority(this));
-            }
-            if (nextGoal == null || nextGoal.leasure && !goal.leasure) {
+        // Observe the existing decision pass only; preserve every priority call and its order.
+        var diagnostic = org.millenaire.common.goal.GoalDiagnostics.begin(this);
+        try {
+            for (Goal goal : this.getGoals()) {
+                if (diagnostic != null) diagnostic.candidate(goal);
+                boolean possible = goal.isPossible(this);
+                if (diagnostic != null) diagnostic.possible(possible);
+                if (!possible) continue;
+                if (MillConfigValues.LogGeneralAI >= 2 && this.extraLog) {
+                    MillLog.minor(this, "Priority for goal " + goal.gameName(this) + ": " + goal.priority(this));
+                }
+                if (nextGoal == null || nextGoal.leasure && !goal.leasure) {
+                    nextGoal = goal;
+                    continue;
+                }
+                // Leisure is subordinate to available work in BOTH iteration orders.
+                if (!nextGoal.leasure && goal.leasure) continue;
+                int previousPriority = nextGoal.priority(this);
+                int candidatePriority = goal.priority(this);
+                if (diagnostic != null) {
+                    diagnostic.priority(nextGoal, previousPriority);
+                    diagnostic.priority(goal, candidatePriority);
+                }
+                if (previousPriority >= candidatePriority) continue;
                 nextGoal = goal;
-                continue;
             }
-            if (nextGoal != null && nextGoal.priority(this) >= goal.priority(this)) continue;
-            nextGoal = goal;
+            if (diagnostic != null) diagnostic.finish(nextGoal);
+        } finally {
+            if (diagnostic != null) diagnostic.close();
         }
         if (MillConfigValues.LogGeneralAI >= 2 && this.extraLog) {
             MillLog.minor(this, "Selected this: " + nextGoal);
@@ -2707,19 +3887,19 @@ IAStarPathedEntity {
 
     public int takeFromBuilding(Building building, Item item, int meta, int nb) {
         if (nb <= 0) return 0;
-        if (item == Blocks.OAK_LOG.asItem() && meta == -1) {
+        if (meta == -1) {
+            // Do not turn a wildcard request into an actual inventory item.
+            InvItem requested = InvItem.createInvItem(item, meta);
             int total = 0;
-            for (org.millenaire.common.block.WoodVariant wood : org.millenaire.common.block.WoodVariant.values()) {
-                if (total == nb) break;
-                Item log = wood.log().asItem();
-                int taken = building.takeGoods(log, 0, nb - total);
-                if (taken > 0) this.addToInv(log, 0, taken);
-                total += taken;
+            for (InvItem actual : building.stockKeys()) {
+                if (total >= nb) break;
+                if (actual.meta == -1 || !requested.matches(actual)) continue;
+                total += this.takeFromBuilding(building, actual.getItem(), actual.meta, nb - total);
             }
             return total;
         }
         nb = building.takeGoods(item, meta, nb);
-        this.addToInv(item, meta, nb);
+        if (nb > 0) this.addToInv(item, meta, nb);
         return nb;
     }
 
@@ -2840,6 +4020,7 @@ IAStarPathedEntity {
             this.setPos(d3, d4, d5);
             return false;
         }
+        this.noteDoorTeleport();
         return true;
     }
 
@@ -2928,6 +4109,13 @@ IAStarPathedEntity {
 
     private void updateDialogue() {
         if (this.dialogueKey == null) {
+            return;
+        }
+        if(!(this.getGoalDestEntity() instanceof MillVillager partner)||!partner.isAlive()
+                ||!(this.getActiveGoal() instanceof org.millenaire.common.goal.leisure.GoalGoChat)
+                ||partner.getGoalDestEntity()!=this||!java.util.Objects.equals(this.dialogueKey,partner.dialogueKey)){
+            this.dialogueKey=null;
+            this.dialogueChat=false;
             return;
         }
         CultureLanguage.Dialogue d = this.getCulture().getDialogue(this.dialogueKey);
@@ -3045,8 +4233,25 @@ IAStarPathedEntity {
         if (dest == null) {
             return;
         }
-        if (this.getNavigation().isStuck()) {
+        if("chat".equals(this.goalKey) && this.getActiveGoal()!=null
+                && this.getActiveGoal().isWithinActionRange(this,dest)){
+            this.navigation.stop();this.pathEntity=null;
+            if(this.pathPlannerJPS!=null && this.pathPlannerJPS.isBusy())this.pathPlannerJPS.stopPathSearch(true);
+            return;
+        }
+        // Vanilla stops the failed path. Its stale flag may still be set when
+        // a new, independently planned path has already been accepted.
+        if (this.getNavigation().isStuck() && this.getNavigation().isDone()) {
             this.pathEntity = null;
+        }
+        if (this.tracksLandEntity() && this.isAnimalWorkGoal(this.routingGoal())
+                && this.pathEntity != null && (this.pathEntity.isDone() || this.navigation.isDone())) {
+            this.pathEntity = null;
+            if (!this.routingInRange(this.routingGoal(), dest)) {
+                this.pathFailedSincelastTick = true;
+                this.nextVanillaPathAttempt = 0L;
+                return;
+            }
         }
         if (this.pathEntity != null && this.pathEntity.getNodeCount() > 0 && this.pathEntity.getCurrentTargetPathPoint() != null) {
             this.getNavigation().moveTo((Path)this.pathEntity, 0.5);
@@ -3209,6 +4414,7 @@ IAStarPathedEntity {
             StreamReadWrite.writeNullableResourceLocation(this.clothTexture[i], data);
         }
         StreamReadWrite.writeNullablePoint(this.getGoalDestPoint(), data);
+        StreamReadWrite.writeNullablePoint(this.getGoalBuildingDestPoint(), data);
         data.writeBoolean(this.shouldLieDown);
         StreamReadWrite.writeNullableString(this.dialogueTargetFirstName, data);
         StreamReadWrite.writeNullableString(this.dialogueTargetLastName, data);

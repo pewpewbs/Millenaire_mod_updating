@@ -22,11 +22,16 @@ import net.minecraft.server.level.ServerLevel;
 
 public class ThreadSafeUtilities {
     public static Block getBlock(BlockGetter world, int x, int y, int z) throws ChunkAccessException {
-        ThreadSafeUtilities.validateCoords(world, x, z);
-        return world.getBlockState(new BlockPos(x, y, z)).getBlock();
+        return getBlockState(world, x, y, z).getBlock();
     }
 
     public static BlockState getBlockState(BlockGetter world, int x, int y, int z) throws ChunkAccessException {
+        // Most A*/JPS block reads use an immutable snapshot; bypass creating
+        // a BlockPos while keeping EXACTLY the same palette/boundary semantics.
+        // Live ServerLevel/ClientLevel still use validateCoords as before.
+        if (world instanceof org.millenaire.common.pathing.PathWorldSnapshot snapshot) {
+            return snapshot.getBlockState(x, y, z);
+        }
         ThreadSafeUtilities.validateCoords(world, x, z);
         return world.getBlockState(new BlockPos(x, y, z));
     }

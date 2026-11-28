@@ -320,6 +320,7 @@ public class LanguageUtilities {
     }
 
     public static String string(String key) {
+        if (key == null || key.isBlank()) return "";
         String rawResult;
         if (!LanguageUtilities.isTranslationLoaded()) {
             return "";
@@ -333,6 +334,7 @@ public class LanguageUtilities {
     }
 
     public static String string(String key, String ... values) {
+        if (key == null || key.isBlank()) return "";
         String s = LanguageUtilities.string(key);
         if (!s.equalsIgnoreCase(key)) {
             int pos = 0;

@@ -49,7 +49,7 @@ goal=gopraymalemuslim
 goal=takebath
 goal=godrinkayran
 
-goal=MakeSandstone
+goal=makesandstoneseljuk
 goal=MakeMudbrickSandstone
 goal=MakeMudbrickDecorated
 goal=MakeMudbrickOrnamented
@@ -60,6 +60,7 @@ goal=cookstone
 goal=tendfurnace
 
 goal=bringBackResourcesHome
+bringBackHomeGood=mudbrick
 
 requiredGood=wood,8
 requiredGood=mudbrick,16

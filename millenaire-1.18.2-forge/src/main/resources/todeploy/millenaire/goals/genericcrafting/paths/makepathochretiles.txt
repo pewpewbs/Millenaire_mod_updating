@@ -23,7 +23,7 @@ output=pathochretiles,8
 //s'il y a plus d'objets dans le batiment que ça, arrêter le but
 //if more than that number of item is present in building, stop goal
 townhalllimit=pathochretiles,128
-buildinglimit=dirtwall,64
+buildinglimit=pathochretiles,64
 
 //son à jouer quand un objet est fabriqué
 //sound to play once an object is done

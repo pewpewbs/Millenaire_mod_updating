@@ -74,7 +74,7 @@ extends Goal {
             if (rand < (double)(irrigation / 100.0f)) {
                 ++nbcrop;
             }
-            villager.addToInv(Items.COCOA_BEANS, 0, nbcrop);
+            villager.addToInv(Items.COCOA_BEANS, 0, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, nbcrop));
             villager.swing(InteractionHand.MAIN_HAND);
         }
         return true;

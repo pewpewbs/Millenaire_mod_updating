@@ -34,10 +34,11 @@ public class ContentDeployer {
                 var destination = mods.resolve(folder);
                 var version = destination.resolve("version.txt");
                 if (Files.exists(destination)) {
-                    if (folder.equals("millenaire-custom")) continue;
-                    if (Files.isRegularFile(version) && Files.readString(version).trim().equals(Mill.VERSION_NUMBER)) continue;
-                    // Preserve previous content rather than deleting a user's edited files.
-                    Files.move(destination, mods.resolve(folder + "-backup-" + java.util.UUID.randomUUID()));
+                    if (!Files.isDirectory(destination) || Files.isSymbolicLink(destination))
+                        throw new IOException("Invalid deployed directory " + destination);
+                    // Reconcile stock files below, even across version changes.
+                    // Never replace an existing user configuration or custom directory.
+                    continue;
                 }
                 var input = source.resolve(folder);
                 if (!Files.isDirectory(input)) throw new IOException("Missing bundled directory: " + input);
@@ -51,7 +52,12 @@ public class ContentDeployer {
                 }
                 if (folder.equals("millenaire")) Files.writeString(version, Mill.VERSION_NUMBER);
             }
-            LanguageBundleUpdater.update(source.resolve("millenaire"), mods.resolve("millenaire"));
+            // Reconcile the entire managed stock bundle, even when VERSION_NUMBER
+            // has not changed. The SHA-256 baseline preserves later local edits.
+            var bundled = source.resolve("millenaire");
+            var installed = mods.resolve("millenaire");
+            ContentBundleUpdater.update(bundled, installed, message -> Mill.LOGGER.info(message));
+            Files.writeString(installed.resolve("version.txt"), Mill.VERSION_NUMBER);
         } catch (IOException error) {
             throw new IllegalStateException("Unable to deploy Millenaire content", error);
         }

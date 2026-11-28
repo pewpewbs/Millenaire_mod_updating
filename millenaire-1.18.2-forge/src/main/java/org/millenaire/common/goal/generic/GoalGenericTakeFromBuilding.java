@@ -34,9 +34,24 @@ extends GoalGeneric {
         this.icon = InvItem.createInvItem(Blocks.FURNACE);
     }
 
+    private boolean urgentBrickPickup(MillVillager villager) {
+        return "gatherfrombrickkiln".equalsIgnoreCase(this.key)
+                && this.collectGoods.keySet().stream().anyMatch(item ->
+                    org.millenaire.common.goal.BrickProductionDemand.constructionMissing(villager,item)>0);
+    }
+
+    @Override
+    public int priority(MillVillager villager) throws Exception {
+        if (urgentBrickPickup(villager)) return 820;
+        if ("gatherfrombrickkiln".equalsIgnoreCase(this.key)) return 400;
+        return super.priority(villager);
+    }
+
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
         List<Building> buildings = this.getBuildings(villager);
+        Building best = null;
+        org.millenaire.common.utilities.Point bestPoint = null;
         for (Building dest : buildings) {
             if (!this.isDestPossible(villager, dest)) continue;
             int totalCount = 0;
@@ -45,10 +60,13 @@ extends GoalGeneric {
                 if (quantityNeeded <= 0) continue;
                 totalCount += Math.min(quantityNeeded, dest.nbGoodAvailable(ii, false, false, false));
             }
-            if (totalCount < this.minimumpickup) continue;
-            return this.packDest(dest.getResManager().getSellingPos(), dest);
+            if (totalCount < (urgentBrickPickup(villager)?1:this.minimumpickup)) continue;
+            var point=dest.getResManager().getSellingPos();
+            if (point != null && (bestPoint == null || point.horizontalDistanceToSquared(villager)<bestPoint.horizontalDistanceToSquared(villager))) {
+                best=dest; bestPoint=point;
+            }
         }
-        return null;
+        return best==null?null:this.packDest(bestPoint,best);
     }
 
     @Override

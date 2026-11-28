@@ -45,6 +45,8 @@ implements Cloneable {
     public boolean[][] danger;
     public BuildingLocation[][] buildingLocRef;
     public boolean[][] canBuild;
+    public boolean[][] surveyed;
+    public org.millenaire.common.buildingplan.BuildingSiteSearch.Assessment lastSiteAssessment;
     public boolean[][] buildingForbidden;
     public boolean[][] water;
     public boolean[][] tree;
@@ -105,6 +107,7 @@ implements Cloneable {
         o.danger = VillageMapInfo.booleanArrayDeepClone(this.danger);
         o.buildingLocRef = VillageMapInfo.blArrayDeepClone(this.buildingLocRef);
         o.canBuild = VillageMapInfo.booleanArrayDeepClone(this.canBuild);
+        o.surveyed = this.surveyed == null ? null : booleanArrayDeepClone(this.surveyed);
         o.buildingForbidden = VillageMapInfo.booleanArrayDeepClone(this.buildingForbidden);
         o.water = VillageMapInfo.booleanArrayDeepClone(this.water);
         o.tree = VillageMapInfo.booleanArrayDeepClone(this.tree);
@@ -139,6 +142,7 @@ implements Cloneable {
         this.buildingLocRef = new BuildingLocation[this.length][this.width];
         this.buildingForbidden = new boolean[this.length][this.width];
         this.canBuild = new boolean[this.length][this.width];
+        this.surveyed = new boolean[this.length][this.width];
         this.buildTested = new boolean[this.length][this.width];
         this.water = new boolean[this.length][this.width];
         this.tree = new boolean[this.length][this.width];
@@ -195,6 +199,23 @@ implements Cloneable {
                 this.buildingLocRef[i][j] = null;
             }
         }
+    }
+
+    /** Geometry only: safe before map allocation, chunk reads or village activation. */
+    public record ActivationBounds(int startX,int startZ,int length,int width) {}
+    public static ActivationBounds activationBounds(List<BuildingLocation> locations,Point centre,int radius){
+        int minX=centre.getiX()-radius, maxX=centre.getiX()+radius;
+        int minZ=centre.getiZ()-radius, maxZ=centre.getiZ()+radius;
+        for(BuildingLocation location:locations){
+            if(location==null||location.pos==null)continue;
+            minX=Math.min(minX,location.pos.getiX()-location.length/2);
+            maxX=Math.max(maxX,location.pos.getiX()+location.length/2);
+            minZ=Math.min(minZ,location.pos.getiZ()-location.width/2);
+            maxZ=Math.max(maxZ,location.pos.getiZ()+location.width/2);
+        }
+        int sx=(minX-MAP_MARGIN)>>4,sz=(minZ-MAP_MARGIN)>>4;
+        int ex=(maxX+MAP_MARGIN)>>4,ez=(maxZ+MAP_MARGIN)>>4;
+        return new ActivationBounds(sx,sz,(ex-sx+1)*16,(ez-sz+1)*16);
     }
 
     public boolean update(Level world, List<BuildingLocation> locations, Point centre, int radius) throws MillLog.MillenaireException {
@@ -258,12 +279,11 @@ implements Cloneable {
         if (MillConfigValues.LogWorldInfo >= 1) {
             MillLog.major(this, "Values: " + startX + "/" + startZ + "/" + endX + "/" + endZ);
         }
-        int chunkStartXTemp = startX >> 4;
-        int chunkStartZTemp = startZ >> 4;
-        int mapStartXTemp = chunkStartXTemp << 4;
-        int mapStartZTemp = chunkStartZTemp << 4;
-        int lengthTemp = ((endX >> 4) + 1 << 4) - mapStartXTemp;
-        int widthTemp = ((endZ >> 4) + 1 << 4) - mapStartZTemp;
+        ActivationBounds bounds=activationBounds(locations,centre,radius);
+        int mapStartXTemp=bounds.startX()<<4;
+        int mapStartZTemp=bounds.startZ()<<4;
+        int lengthTemp=bounds.length();
+        int widthTemp=bounds.width();
         if (MillConfigValues.LogWorldInfo >= 1) {
             MillLog.major(this, "Values after chunks: " + mapStartXTemp + "/" + mapStartZTemp + "/" + (mapStartXTemp + lengthTemp) + "/" + (mapStartZTemp + widthTemp));
         }
@@ -293,6 +313,31 @@ implements Cloneable {
         public boolean explicitlyForbidden(Block b) { return MillConfigValues.forbiddenBlocks.contains(b); }
     };
 
+    // Cache classifications only within one synchronous chunk scan.
+    private static final class ScanRules implements VillageTerrainColumn.Rules {
+        private final java.util.IdentityHashMap<Block,Integer> flags=new java.util.IdentityHashMap<>();
+        private int flags(Block b){
+            Integer known=flags.get(b);
+            if(known!=null)return known;
+            int v=(TERRAIN_RULES.ground(b)?1:0)|(TERRAIN_RULES.solid(b)?2:0)
+                |(TERRAIN_RULES.liquid(b)?4:0)|(TERRAIN_RULES.forbidden(b)?8:0)
+                |(TERRAIN_RULES.dangerous(b)?16:0)|(TERRAIN_RULES.water(b)?32:0)
+                |(TERRAIN_RULES.fence(b)?64:0)|(TERRAIN_RULES.path(b)?128:0)
+                |(TERRAIN_RULES.explicitlyForbidden(b)?256:0);
+            flags.put(b,v);return v;
+        }
+        public boolean ground(Block b){return (flags(b)&1)!=0;}
+        public boolean solid(Block b){return (flags(b)&2)!=0;}
+        public boolean liquid(Block b){return (flags(b)&4)!=0;}
+        public boolean forbidden(Block b){return (flags(b)&8)!=0;}
+        public boolean dangerous(Block b){return (flags(b)&16)!=0;}
+        public boolean water(Block b){return (flags(b)&32)!=0;}
+        public boolean fence(Block b){return (flags(b)&64)!=0;}
+        public boolean path(Block b){return (flags(b)&128)!=0;}
+        public boolean explicitlyForbidden(Block b){return (flags(b)&256)!=0;}
+        public boolean tree(BlockState state){return TERRAIN_RULES.tree(state);}
+    }
+
     private void updateChunk(int startX, int startZ) throws ThreadSafeUtilities.ChunkAccessException {
         if (startX < 0 || startZ < 0 || startX + 16 > length || startZ + 16 > width) return;
         int cx = (mapStartX + startX) >> 4;
@@ -306,12 +351,15 @@ implements Cloneable {
             ? server.getChunkSource().getChunkNow(cx, cz)
             : world.getChunkSource().getChunk(cx, cz, net.minecraft.world.level.chunk.ChunkStatus.FULL, false);
         if (!(available instanceof LevelChunk chunk)) return;
+        ScanRules rules=new ScanRules();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY=world.getMinBuildHeight(),maxY=world.getMaxBuildHeight();
         for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) {
             int mx = startX + x, mz = startZ + z;
             int wx = mapStartX + mx, wz = mapStartZ + mz;
-            BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
             var column = VillageTerrainColumn.scan(y -> chunk.getBlockState(pos.set(wx, y, wz)),
-                yBaseline, world.getMinBuildHeight(), world.getMaxBuildHeight(), TERRAIN_RULES);
+                yBaseline, minY, maxY, rules);
+            surveyed[mx][mz] = true;
             topGround[mx][mz] = (short)column.top();
             spaceAbove[mx][mz] = (short)column.clearance();
             buildingForbidden[mx][mz] = column.forbidden();
@@ -326,6 +374,37 @@ implements Cloneable {
                 topGround[mx][mz] = (short)buildingLocRef[mx][mz].pos.y;
                 spaceAbove[mx][mz] = 3;
             }
+        }
+    }
+
+    /** 1 = valid, 0 = loaded terrain changed, -1 = cannot safely evaluate now. */
+    public int validateReservedSite(BuildingLocation site, org.millenaire.common.buildingplan.BuildingPlan plan, Point centre) {
+        if(world==null||topGround==null||plan==null)return -1;
+        int x=site.pos.getiX()-mapStartX,z=site.pos.getiZ()-mapStartZ;
+        int a=plan.length+plan.areaToClearLengthBefore+plan.areaToClearLengthAfter+2;
+        int d=plan.width+plan.areaToClearWidthBefore+plan.areaToClearWidthAfter+2;
+        int hx=(site.orientation%2==0?a:d)/2,hz=(site.orientation%2==0?d:a)/2;
+        if(x-hx<0||z-hz<0||x+hx>=length||z+hz>=width)return 0;
+        try {
+            VillageMapInfo fresh=this.clone();
+            fresh.buildingLocations.removeIf(l->l.isSameLocation(site));
+            List<BuildingLocation> others=new ArrayList<>(fresh.buildingLocations);
+            fresh.buildingLocations.clear();
+            for(BuildingLocation[] row:fresh.buildingLocRef)java.util.Arrays.fill(row,null);
+            for(BuildingLocation l:others)fresh.addBuildingLocationToMap(l);
+            for(int ix=(x-hx)/16;ix<=(x+hx)/16;ix++)for(int iz=(z-hz)/16;iz<=(z+hz)/16;iz++){
+                int cx=chunkStartX+ix,cz=chunkStartZ+iz;
+                for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++)
+                    if(!world.hasChunk(cx+dx,cz+dz))return -1;
+                if(world instanceof net.minecraft.server.level.ServerLevel server
+                    && server.getChunkSource().getChunkNow(cx,cz)==null)return -1;
+                fresh.updateChunk(ix*16,iz*16);
+            }
+            var result=plan.testSpot(fresh,null,centre,x,z,new java.util.Random(0L),
+                Math.floorMod(site.orientation-plan.buildingOrientation,4),false);
+            return result.location!=null&&result.location.pos.getiY()==site.pos.getiY()?1:0;
+        }catch(CloneNotSupportedException|ThreadSafeUtilities.ChunkAccessException error){
+            MillLog.printException(error);return -1;
         }
     }
 

@@ -25,7 +25,7 @@ minimumtocook=32
 
 //Pair d'objets dont les quantités doivent être équilibrées dans le bâtiment central. S'il y a plus du second que du premier, le but est arrêté
 //Pair of items whose quantity to balance in the TH. If there are more of the second than the first, the goal won't trigger
-itemsbalance=stone,brick
+itemsbalance=clay,brick
 
 
 helditems=clay

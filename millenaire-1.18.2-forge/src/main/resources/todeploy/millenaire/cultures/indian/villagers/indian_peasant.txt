@@ -40,6 +40,8 @@ bringBackHomeGood=paintedbrickwhite
 bringBackHomeGood=rice
 bringBackHomeGood=turmeric
 bringBackHomeGood=chickenmeat
+bringBackHomeGood=egg
+bringBackHomeGood=feather
 bringBackHomeGood=sugarcane
 bringBackHomeGood=chickenmeatcooked
 

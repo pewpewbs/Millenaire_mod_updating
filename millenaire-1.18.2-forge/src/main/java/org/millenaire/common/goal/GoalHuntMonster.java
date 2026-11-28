@@ -35,6 +35,7 @@ extends Goal {
 
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
+        if (villager.getTownHall() == null) return null;
         List<Entity> mobs = WorldUtilities.getEntitiesWithinAABB(villager.level, Monster.class, villager.getTownHall().getPos(), 50, 10);
         if (mobs == null) {
             return null;
@@ -69,10 +70,10 @@ extends Goal {
 
     @Override
     public boolean isStillValidSpecific(MillVillager villager) throws Exception {
-        if (villager.level.getDayTime() % 10L == 0L) {
-            this.setVillagerDest(villager);
-        }
-        return villager.getGoalDestPoint() != null;
+        Entity target = villager.getGoalDestEntity();
+        return target instanceof Monster && !(target instanceof Creeper) && target.isAlive()
+                && villager.getTownHall() != null
+                && villager.getTownHall().getPos().horizontalDistanceTo(target) <= 50.0;
     }
 
     @Override

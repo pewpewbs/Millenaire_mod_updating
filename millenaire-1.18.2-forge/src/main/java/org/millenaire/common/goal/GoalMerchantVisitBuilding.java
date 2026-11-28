@@ -31,8 +31,9 @@ extends Goal {
 
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
+        if (!LocalLogistics.usable(villager.getHouse()) || !LocalLogistics.usable(villager.getTownHall())) return null;
         for (TradeGood good : villager.getTownHall().culture.goodsList) {
-            if (good.item.meta < 0 || villager.countInv(good.item.getItem(), good.item.meta) <= 0 || villager.getTownHall().nbGoodNeeded(good.item.getItem(), good.item.meta) <= 0) continue;
+            if (good.item.meta < 0 || villager.countInv(good.item.getItem(), good.item.meta) <= 0 || villager.getTownHall().storageRoom(good.item) <= 0 || villager.getTownHall().nbGoodNeeded(good.item.getItem(), good.item.meta) <= 0) continue;
             if (MillConfigValues.LogMerchant >= 3) {
                 MillLog.debug(villager, "TH needs " + villager.getTownHall().nbGoodNeeded(good.item.getItem(), good.item.meta) + " good " + good.item.getName() + ", merchant has " + villager.countInv(good.item.getItem(), good.item.meta));
             }
@@ -40,8 +41,9 @@ extends Goal {
         }
         HashMap<TradeGood, Integer> neededGoods = villager.getTownHall().getImportsNeededbyOtherVillages();
         for (Building shop : villager.getTownHall().getShops()) {
+            if (!LocalLogistics.usable(shop)) continue;
             for (TradeGood good : villager.getTownHall().culture.goodsList) {
-                if (good.item.meta < 0 || shop.isInn || shop.nbGoodAvailable(good.item.getItem(), good.item.meta, false, true, false) <= 0 || !neededGoods.containsKey(good) || neededGoods.get(good) <= villager.getHouse().countGoods(good.item.getItem(), good.item.meta) + villager.countInv(good.item.getItem(), good.item.meta)) continue;
+                if (good.item.meta < 0 || shop.isInn || villager.getHouse().storageRoom(good.item) <= villager.countInv(good.item) || shop.nbGoodAvailable(good.item.getItem(), good.item.meta, false, true, false) <= 0 || !neededGoods.containsKey(good) || neededGoods.get(good) <= villager.getHouse().countGoods(good.item.getItem(), good.item.meta) + villager.countInv(good.item.getItem(), good.item.meta)) continue;
                 if (MillConfigValues.LogMerchant >= 3) {
                     MillLog.debug(villager, "Shop " + shop + " has " + shop.nbGoodAvailable(good.item.getItem(), good.item.meta, false, true, false) + " good to pick up.");
                 }
@@ -73,6 +75,7 @@ extends Goal {
         if (shop == null || shop.isInn) {
             return true;
         }
+        if (!LocalLogistics.access(this,villager,shop)) return false;
         if (shop.isTownhall) {
             for (TradeGood good : villager.getTownHall().culture.goodsList) {
                 int nb;
@@ -84,11 +87,18 @@ extends Goal {
         for (TradeGood good : villager.getTownHall().culture.goodsList) {
             if (good.item.meta < 0 || !neededGoods.containsKey(good) || shop.nbGoodAvailable(good.item.getItem(), good.item.meta, false, true, false) <= 0 || villager.getHouse().countGoods(good.item.getItem(), good.item.meta) + villager.countInv(good.item.getItem(), good.item.meta) >= neededGoods.get(good)) continue;
             int nb = Math.min(shop.nbGoodAvailable(good.item.getItem(), good.item.meta, false, true, false), neededGoods.get(good) - villager.getHouse().countGoods(good.item.getItem(), good.item.meta) - villager.countInv(good.item.getItem(), good.item.meta));
+            nb = Math.min(nb, Math.max(0,villager.getHouse().storageRoom(good.item)-villager.countInv(good.item)));
+            if (nb <= 0) continue;
             nb = villager.takeFromBuilding(shop, good.item.getItem(), good.item.meta, nb);
             if (MillConfigValues.LogMerchant < 2) continue;
             MillLog.minor(shop, villager + " took " + nb + " " + good.getName() + " for trading.");
         }
         return true;
+    }
+
+    @Override
+    public boolean isWithinActionRange(MillVillager villager,org.millenaire.common.utilities.Point destination) {
+        return WorkAccess.canAccessStock(villager,destination,this.range(villager));
     }
 
     @Override

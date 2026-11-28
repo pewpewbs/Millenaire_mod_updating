@@ -18,7 +18,18 @@ import org.millenaire.common.utilities.WorldUtilities;
 @DocumentedElement.Documentation(value="Make the villager meet a villager looking for someone to chat, to initiate a dialog")
 public class GoalGoChat
 extends Goal {
-    private final char[] chatColours = new char[]{'f', '3', 'a', '7', 'c'};
+    /** A dialogue is a pair of available residents already near each other. */
+    private List<MillVillager> partners(MillVillager villager) {
+        List<MillVillager> candidates=new java.util.ArrayList<>();
+        if(villager.getTownHall()==null)return candidates;
+        for(MillVillager v:villager.getTownHall().getKnownVillagers()){
+            if(v==villager||!v.isAlive()||!Goal.gosocialise.key.equals(v.goalKey)||v.dialogueKey!=null
+                    ||v.getPos().distanceToSquared((Entity)villager)>9.0)continue;
+            var meeting=Goal.gosocialise.getCurrentGoalTarget(v);
+            if(meeting!=null&&meeting.distanceTo((Entity)v)<=Goal.gosocialise.range(v))candidates.add(v);
+        }
+        return candidates;
+    }
 
     public GoalGoChat() {
         this.leasure = true;
@@ -33,11 +44,8 @@ extends Goal {
 
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
-        for (MillVillager v : villager.getTownHall().getKnownVillagers()) {
-            if (v == villager || !Goal.gosocialise.key.equals(v.goalKey) || !(v.getPos().distanceToSquared((Entity)villager) < 25.0)) continue;
-            return this.packDest(null, null, (Entity)v);
-        }
-        return null;
+        List<MillVillager> candidates=partners(villager);
+        return candidates.isEmpty()?null:this.packDest(null,null,(Entity)candidates.get(MillCommonUtilities.randomInt(candidates.size())));
     }
 
     @Override
@@ -52,42 +60,50 @@ extends Goal {
 
     @Override
     public void onAccept(MillVillager villager) throws Exception {
-        Goal.GoalInformation info = this.getDestination(villager);
-        if (info != null) {
-            MillVillager target = (MillVillager)info.getTargetEnt();
+        List<MillVillager> candidates=partners(villager);
+        java.util.Collections.shuffle(candidates,MillCommonUtilities.random);
+        for(MillVillager target:candidates){
+            CultureLanguage.Dialogue dialog=villager.getCulture().pickNewDialogue(villager,target);
+            if(dialog==null)continue;
+            int role=dialog.validRoleFor(villager);
+            if(role!=1&&role!=2)continue;
+            // Do not claim a partner until a compatible dialogue actually exists.
             target.clearGoal();
-            target.goalKey = this.key;
+            target.setGoalInformation(null);
+            target.goalKey=this.key;
+            target.goalStarted=target.level.getGameTime();
             target.setGoalDestEntity((Entity)villager);
-            CultureLanguage.Dialogue dialog = villager.getCulture().pickNewDialogue(villager, target);
-            if (dialog != null) {
-                int role = dialog.validRoleFor(villager);
-                villager.setGoalInformation(null);
-                villager.setGoalDestEntity((Entity)target);
-                int col = this.chatColours[MillCommonUtilities.randomInt(this.chatColours.length)];
-                col = 102;
-                if (dialog != null) {
-                    List<Entity> entities = WorldUtilities.getEntitiesWithinAABB(villager.level, MillVillager.class, villager.getPos(), 5, 5);
-                    boolean dialogueChat = true;
-                    for (Entity ent : entities) {
-                        if (ent == villager || ent == target) continue;
-                        MillVillager v = (MillVillager)ent;
-                        if (!this.key.equals(v.goalKey) || !v.dialogueChat) continue;
-                        dialogueChat = false;
-                    }
-                    villager.dialogueKey = dialog.key;
-                    villager.dialogueRole = role;
-                    villager.dialogueStart = villager.level.getDayTime();
-                    villager.dialogueColour = (char)col;
-                    villager.dialogueChat = dialogueChat;
-                    target.dialogueKey = dialog.key;
-                    target.dialogueRole = 3 - role;
-                    target.dialogueStart = villager.level.getDayTime();
-                    target.dialogueColour = (char)col;
-                    target.dialogueChat = dialogueChat;
-                }
+            villager.setGoalInformation(null);
+            villager.setGoalDestEntity((Entity)target);
+            boolean dialogueChat=true;
+            for(Entity ent:WorldUtilities.getEntitiesWithinAABB(villager.level,MillVillager.class,villager.getPos(),5,5)){
+                if(ent==villager||ent==target)continue;
+                MillVillager v=(MillVillager)ent;
+                if(this.key.equals(v.goalKey)&&v.dialogueChat){dialogueChat=false;break;}
             }
+            long start=villager.level.getDayTime();
+            villager.dialogueKey=dialog.key;
+            villager.dialogueRole=role;
+            villager.dialogueStart=start;
+            villager.dialogueColour=(char)102;
+            villager.dialogueChat=dialogueChat;
+            target.dialogueKey=dialog.key;
+            target.dialogueRole=3-role;
+            target.dialogueStart=start;
+            target.dialogueColour=(char)102;
+            target.dialogueChat=dialogueChat;
+            return;
         }
+        // Nothing compatible: leave other residents available for the group.
+        villager.clearGoal();
         super.onAccept(villager);
+    }
+
+    @Override
+    protected boolean isStillValidSpecific(MillVillager villager) {
+        return villager.getGoalDestEntity() instanceof MillVillager partner && partner.isAlive()
+                && this.key.equals(partner.goalKey) && partner.getGoalDestEntity()==villager
+                && villager.getPos().distanceToSquared((Entity)partner)<=25.0;
     }
 
     @Override

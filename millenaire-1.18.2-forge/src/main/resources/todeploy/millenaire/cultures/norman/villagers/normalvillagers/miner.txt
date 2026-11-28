@@ -40,6 +40,7 @@ bringBackHomeGood=glass
 bringBackHomeGood=stone
 bringBackHomeGood=sand
 
+requiredGood=cobblestone,16
 requiredGood=wood,64
 requiredGood=wood_pine,64
 requiredGood=wood_birch,64

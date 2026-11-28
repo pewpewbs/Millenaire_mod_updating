@@ -1,0 +1,230 @@
+"""Synthetic regression tests for the offline economy auditor; no game dependencies."""
+from pathlib import Path
+import sys
+import tempfile
+import unittest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from audit_production import audit, matches, reachable
+
+class ProductionAuditTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name)
+        self.data, self.java = root / "data", root / "java"
+        self.put(self.java, "goal/Goal.java", 'goals.put("bringbackresourceshome", x);\ngoals.put("fish", x);')
+        self.put(self.data, "itemlist.txt", "\n".join(
+            f"{key};minecraft:{key};0" for key in ("sand", "glass", "pane", "gravel", "fishraw", "fishcooked", "fuel")) +
+            "\nwood_any;minecraft:log;-1\nwood_acacia;minecraft:log2;0\nwood;minecraft:log;0\n")
+        self.put(self.data, "blocklist.txt", "sandsource;;0;;200/20/20;;;0\n")
+        self.put(self.data, "goals/genericmining/minesand.txt", "sourceblockstate=minecraft:sand\nloot=sand,1\n")
+        self.put(self.data, "goals/genericcooking/cooksand.txt", "itemtocook=sand\nitemsbalance=sand,glass\n")
+        self.put(self.data, "goals/genericcrafting/makepane.txt", "input=glass,1\noutput=pane,1\n")
+        self.put(self.data, "goals/generictendfurnace/tend.txt", "minimumfuel=3\n")
+        self.put(self.data, "cultures/test/villagers/miner.txt", "goal=MineSand\ngoal=bringBackResourcesHome\nbringBackHomeGood=sand\n")
+        self.put(self.data, "cultures/test/villagers/crafter.txt", "goal=cooksand\ngoal=makepane\ngoal=tend\nrequiredGood=fuel,2\n")
+        self.put(self.data, "cultures/test/buildings/quarry_A.txt", "initial.male=miner\nupgrade1.female=crafter\n")
+        self.put(self.data, "cultures/test/villages/demo.txt", "centre=quarry\n")
+        self.put(self.data, "cultures/test/traded_goods.txt", "fuel,2,1,0,0,0,false,,0\n")
+        self.put(self.data, "cultures/test/shops/workshop.txt", "deliverto=sand,glass\n")
+
+    @staticmethod
+    def put(root, name, content):
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+
+    def run_audit(self):
+        return audit(self.data, self.java)
+
+    def test_catalog_graph_and_stage(self):
+        result = self.run_audit()
+        self.assertEqual(result["summary"]["profiles"], 2)
+        self.assertEqual(result["summary"]["cultures"], 1)
+        self.assertEqual(result["summary"]["findings"].get("ERROR", 0), 0)
+        village = result["cultures"]["test"]["villages"][0]
+        self.assertEqual(village["initial_roles"], ["miner"])
+        self.assertEqual(village["possible_roles"], ["crafter", "miner"])
+        self.assertEqual(village["potential_internal_outputs"], ["glass", "pane", "sand"])
+        self.assertIn("fuel", result["cultures"]["test"]["player_buy"])
+        self.assertEqual(village["unresolved_recipe_inputs"], [])
+
+    def test_missing_return_and_unknown_goal(self):
+        self.put(self.data, "cultures/test/villagers/miner.txt",
+                 "goal=minesand\ngoal=bringbackresourceshome\ngoal=not_registered\n")
+        findings = self.run_audit()["findings"]
+        self.assertTrue(any(f["code"] == "MISSING_HOME_RETURN" and f["level"] == "REVIEW" for f in findings))
+        self.assertTrue(any(f["code"] == "UNKNOWN_GOAL" and f["level"] == "ERROR" for f in findings))
+
+    def test_maintenance_partner_and_scope(self):
+        self.put(self.data, "cultures/test/villagers/miner.txt", "goal=minesand\ngoal=tend\n")
+        self.put(self.data, "cultures/test/villagers/crafter.txt", "goal=cooksand\n")
+        findings = self.run_audit()["findings"]
+        self.assertFalse(any(f["code"] == "FURNACE_MAINTENANCE_UNCONFIRMED" for f in findings))
+        self.put(self.data, "goals/generictendfurnace/tend.txt", "buildingtag=kitchen\n")
+        findings = self.run_audit()["findings"]
+        self.assertTrue(any(f["code"] == "FURNACE_MAINTENANCE_UNCONFIRMED" for f in findings))
+
+    def test_invalid_quantity(self):
+        self.put(self.data, "goals/genericcrafting/makepane.txt", "input=glass,0\noutput=pane,1\n")
+        self.assertTrue(any(f["code"] == "INVALID_QUANTITY" for f in self.run_audit()["findings"]))
+
+    def test_legacy_wood_variants(self):
+        aliases = {"wood_any": ("minecraft:log", "-1"), "acacia": ("minecraft:log2", "0"),
+                   "oak": ("minecraft:log", "0"), "birch": ("minecraft:log", "2")}
+        self.assertTrue(matches("wood_any", "acacia", aliases))
+        self.assertFalse(matches("oak", "birch", aliases))
+
+    def test_cycle_needs_external_seed(self):
+        edges = [dict(role="r", output="a", inputs=["b"]), dict(role="r", output="b", inputs=["a"])]
+        self.assertEqual(reachable(edges, {"r"}, {}), set())
+        self.assertEqual(reachable(edges, {"r"}, {}, {"a"}), {"a", "b"})
+
+    def test_legacy_encoding_across_config_readers(self):
+        paths = [
+            self.data / "goals/genericmining/minesand.txt",
+            self.data / "cultures/test/villagers/miner.txt",
+            self.data / "cultures/test/traded_goods.txt",
+            self.data / "itemlist.txt",
+            self.data / "blocklist.txt",
+        ]
+        original = {}
+        for path in paths:
+            raw = b"// ancien r\xf4le et co\xfbts\n" + path.read_bytes()
+            path.write_bytes(raw)
+            original[path] = raw
+        result = audit(self.data, self.java, True)
+        self.assertEqual(result["summary"]["profiles"], 2)
+        self.assertEqual(result["summary"]["findings"].get("ERROR", 0), 0)
+        for path, raw in original.items():
+            self.assertEqual(path.read_bytes(), raw)
+
+    def test_latin1_fallback_and_utf8_bom(self):
+        from audit_production import read_legacy_text
+        path = self.data / "encoding.txt"
+        path.write_bytes(b"// \x81\xf4\nloot=sand,1\n")
+        self.assertIn("loot=sand,1", read_legacy_text(path))
+        path.write_bytes(b"\xef\xbb\xbfloot=sand,1\n")
+        self.assertEqual(read_legacy_text(path), "loot=sand,1\n")
+
+    def test_drops_require_collection_and_are_inferred(self):
+        self.put(self.data, "itemlist.txt", (self.data / "itemlist.txt").read_text() +
+                 "beefraw;minecraft:beef;0\nleather;minecraft:leather;0\n")
+        self.put(self.data, "goals/genericslaughteranimal/cow.txt",
+                 "animalkey=minecraft:cow\n")
+        self.put(self.data, "cultures/test/villagers/butcher.txt",
+                 "goal=cow\ngoal=bringbackresourceshome\ncollectGood=beefraw\nbringBackHomeGood=beefraw\n")
+        result = self.run_audit()
+        edges = [e for e in result["edges"] if e["role"] == "butcher"]
+        self.assertEqual([e["output"] for e in edges], ["beefraw"])
+        self.assertTrue(edges[0]["inferred"])
+        self.assertEqual(edges[0]["collection"], "potential_drop")
+        self.assertEqual(result["goal_catalog"]["cow"]["possible_entity_drops"], ["beefraw", "leather"])
+
+    def test_planting_seed_retention_not_missing_return(self):
+        self.put(self.data, "goals/genericplanting/plant.txt", "seed=sand\n")
+        self.put(self.data, "cultures/test/villagers/miner.txt",
+                 "goal=minesand\ngoal=plant\ngoal=bringbackresourceshome\n")
+        result = self.run_audit()
+        self.assertFalse(any(f["code"] == "MISSING_HOME_RETURN" and "miner.txt" in f["file"]
+                             for f in result["findings"]))
+        edge = next(e for e in result["edges"] if e["role"] == "miner" and e["output"] == "sand")
+        self.assertTrue(edge["retained_planting_input"])
+
+    def test_png_optional_source_evidence(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("Pillow not installed")
+        path = self.data / "cultures/test/buildings/quarry_A0.png"
+        Image.new("RGBA", (1,1), (200,20,20,255)).save(path)
+        result = audit(self.data, self.java, True)
+        self.assertTrue(result["cultures"]["test"]["png_scanned"])
+        self.assertFalse(any(f["code"] == "NO_HOME_SOURCE_MARKER_SEEN" for f in result["findings"]))
+        for alpha in (0, 128):
+            Image.new("RGBA", (1,1), (200,20,20,alpha)).save(path)
+            result = audit(self.data, self.java, True)
+            self.assertTrue(any(f["code"] == "NO_HOME_SOURCE_MARKER_SEEN" for f in result["findings"]))
+
+
+    def test_crafting_limit_mismatch_is_review(self):
+        self.put(self.data, "goals/genericcrafting/makepane.txt",
+                 "input=glass,1\noutput=pane,1\nbuildinglimit=gravel,64\n")
+        findings = self.run_audit()["findings"]
+        flagged = [f for f in findings if f["code"] == "CRAFT_LIMIT_DIFFERS_FROM_OUTPUT"]
+        self.assertEqual(len(flagged), 1)
+        self.assertEqual(flagged[0]["level"], "REVIEW")
+        self.put(self.data, "goals/genericcrafting/makepane.txt",
+                 "input=glass,1\noutput=pane,1\nbuildinglimit=pane,64\n")
+        self.assertFalse(any(f["code"] == "CRAFT_LIMIT_DIFFERS_FROM_OUTPUT"
+                             for f in self.run_audit()["findings"]))
+
+    def test_legacy_mining_requires_home_plan_marker(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("Pillow not installed")
+        self.put(self.java, "goal/Goal.java",
+                 'goals.put("mining", x);\ngoals.put("bringbackresourceshome", x);')
+        self.put(self.data, "cultures/test/villagers/miner.txt",
+                 "goal=mining\ngoal=bringbackresourceshome\nbringBackHomeGood=sand\n")
+        self.put(self.data, "cultures/test/villagers/unassigned.txt",
+                 "goal=mining\n")
+        path = self.data / "cultures/test/buildings/quarry_A0.png"
+        Image.new("RGB", (1, 1), (200, 20, 20)).save(path)
+        self.assertFalse(any(e["goal"] == "mining" for e in self.run_audit()["edges"]))
+        result = audit(self.data, self.java, True)
+        mining = [e for e in result["edges"] if e["goal"] == "mining"]
+        self.assertEqual([(e["role"], e["output"], e["source"]) for e in mining],
+                         [("miner", "sand", "minecraft:sand")])
+        self.assertTrue(mining[0]["inferred"])
+        Image.new("RGB", (1, 1), (0, 0, 0)).save(path)
+        self.assertFalse(any(e["goal"] == "mining" for e in audit(self.data, self.java, True)["edges"]))
+
+
+    def test_supply_review_context_preserves_findings_and_distinguishes_channels(self):
+        self.put(self.data, "cultures/test/shops/workshop.txt",
+                 "deliverto=sand,glass,gravel,fishraw\nbuysoptional=fishraw\n")
+        self.put(self.data, "cultures/test/villages/demo.txt",
+                 "centre=quarry\npathmaterial=gravel\n")
+        self.put(self.data, "cultures/test/villagers/miner.txt",
+                 "goal=minesand\ngoal=bringbackresourceshome\nbringBackHomeGood=sand\n"
+                 "requiredGood=fuel,2\nrequiredGood=glass,1\nrequiredGood=fishraw,1\n")
+        result = self.run_audit()
+        findings = result["findings"]
+        routes = {f["context"]["item"]: f for f in findings
+                  if f["code"] == "SHOP_SUPPLY_UNCONFIRMED"}
+        self.assertEqual(routes["gravel"]["context"]["category"], "delivery_route_only")
+        self.assertEqual(routes["gravel"]["context"]["configured_path_villages"],
+                         ["cultures/test/villages/demo.txt"])
+        self.assertEqual(routes["fishraw"]["context"]["category"], "shop_trade_and_delivery")
+        self.assertEqual(routes["fishraw"]["context"]["recipe_consumers"], ["miner"])
+        self.assertEqual(routes["gravel"]["level"], "REVIEW")
+        start = {f["context"]["item"]: f["context"] for f in findings
+                 if f["code"] == "STARTING_SUPPLY_UNCONFIRMED"}
+        self.assertEqual(start["fuel"]["category"], "external_price_listed")
+        self.assertEqual(start["glass"]["category"], "later_producer")
+        self.assertEqual(start["glass"]["later_roles"], ["crafter"])
+        self.assertEqual(start["fishraw"]["category"], "source_unconfirmed")
+        supply = {f["context"]["item"]: f["context"] for f in findings
+                  if f["code"] == "NO_CONFIGURED_PRODUCER"}
+        self.assertTrue(supply["fuel"]["player_price"])
+        self.assertEqual(supply["fuel"]["player_buy_shops"], [])
+        self.assertEqual(supply["fishraw"]["player_buy_shops"], ["workshop"])
+        self.assertEqual(result["summary"]["review_context_counts"]
+                         ["SHOP_SUPPLY_UNCONFIRMED:delivery_route_only"], 1)
+
+    def test_path_material_default_and_zero_price_trade_entry(self):
+        self.put(self.data, "cultures/test/villagers/miner.txt",
+                 "goal=minesand\ngoal=bringbackresourceshome\nbringBackHomeGood=sand\n"
+                 "requiredGood=gravel,1\n")
+        self.put(self.data, "cultures/test/traded_goods.txt", "gravel,0,0,0,0,0\n")
+        result = self.run_audit()
+        self.assertEqual(result["cultures"]["test"]["villages"][0]["path_materials"], ["pathgravel"])
+        finding = next(f for f in result["findings"] if f["code"] == "STARTING_SUPPLY_UNCONFIRMED"
+                       and f["context"]["item"] == "gravel")
+        self.assertEqual(finding["context"]["category"], "trade_entry_without_positive_price")
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

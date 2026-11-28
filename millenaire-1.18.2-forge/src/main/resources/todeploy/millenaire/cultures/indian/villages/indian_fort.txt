@@ -55,6 +55,8 @@ player=playerestate
 player=gifthouse
 
 //to be built in priority
+core=cottonfield
+core=weaverhouse
 core=largepeasanthouse
 core=quarry
 core=grove
@@ -71,8 +73,6 @@ secondary=quarry
 secondary=villagetree
 secondary=soldierhouse
 secondary=bazaar
-secondary=cottonfield
-secondary=weaverhouse
 secondary=painterhouse
 secondary=scultorhouse
 

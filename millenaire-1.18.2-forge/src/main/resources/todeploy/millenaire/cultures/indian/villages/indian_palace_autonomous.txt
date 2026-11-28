@@ -59,6 +59,8 @@ player=playerestate
 player=gifthouse
 
 //to be built in priority
+core=cottonfield
+core=weaverhouse
 core=largepeasanthouse
 core=largepeasanthouse
 core=quarry

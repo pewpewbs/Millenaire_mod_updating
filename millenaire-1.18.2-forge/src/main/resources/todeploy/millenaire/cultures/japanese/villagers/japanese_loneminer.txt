@@ -14,6 +14,7 @@ goal=gorest
 goal=gopray
 goal=minestone
 goal=minegravel
+goal=minesand
 goal=cookstone
 goal=cooksand
 goal=tendfurnace
@@ -29,6 +30,7 @@ bringBackHomeGood=sandStone
 bringBackHomeGood=stone
 bringBackHomeGood=sand
 bringBackHomeGood=clay
+bringBackHomeGood=gravel
 
 toolneededclass=pickaxes
 toolneededclass=shovels

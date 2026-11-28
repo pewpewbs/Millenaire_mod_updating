@@ -127,6 +127,26 @@ implements IEntityAdditionalSpawnData {
         this.type = this.millArt.type;
     }
 
+    /** Display the synchronized decoration category rather than the shared entity ID. */
+    @Override
+    protected net.minecraft.network.chat.Component getTypeName() {
+        String suffix = switch (this.type) {
+            case NORMAN_TAPESTRY -> "tapestry";
+            case INDIAN_STATUE -> "indianstatue";
+            case MAYAN_STATUE -> "mayanstatue";
+            case BYZANTINE_ICON_SMALL -> "byzantineiconsmall";
+            case BYZANTINE_ICON_MEDIUM -> "byzantineiconmedium";
+            case BYZANTINE_ICON_LARGE -> "byzantineiconlarge";
+            case HIDE_HANGING -> "hidehanging";
+            case WALL_CARPET_SMALL -> "wallcarpetsmall";
+            case WALL_CARPET_MEDIUM -> "wallcarpetmedium";
+            case WALL_CARPET_LARGE -> "wallcarpetlarge";
+            default -> "";
+        };
+        return new net.minecraft.network.chat.TranslatableComponent(
+                "entity.millenaire.walldecoration" + (suffix.isEmpty() ? "" : "." + suffix));
+    }
+
     public Item getDropItem() {
         if (this.type == 1) {
             return MillItems.TAPESTRY;

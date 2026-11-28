@@ -35,6 +35,7 @@ toolneededclass=axes
 toolneededclass=pickaxes
 toolneededclass=toolssword
 
+requiredGood=cobblestone,16
 requiredGood=wood,64
 requiredGood=wood_pine,64
 requiredGood=wood_jungle,64

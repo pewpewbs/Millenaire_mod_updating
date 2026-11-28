@@ -81,6 +81,10 @@ goal=gogardeningseljuk
 goal=harvestflower_dandelion
 goal=harvestflower_blue_orchid
 goal=harvestflower_poppy
+goal=bringBackResourcesHome
+bringBackHomeGood=dye_yellow
+bringBackHomeGood=dye_lightblue
+bringBackHomeGood=dye_red
 
 goal=buildpath
 goal=makestrawbed

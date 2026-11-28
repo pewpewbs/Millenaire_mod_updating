@@ -56,7 +56,10 @@ extends Goal {
         ArrayList<Point> buildingp = new ArrayList<Point>();
         for (Building grove : villager.getTownHall().getBuildingsWithTag("grove")) {
             Point p;
-            if (grove.getWoodCount() <= 4 || (p = grove.getWoodLocation()) == null) continue;
+            // A damaged or partially harvested acacia may have fewer than five
+            // remaining logs. Leaving it unselected forever prevents the grove
+            // from recovering, even though a valid log is still present.
+            if ((p = grove.getWoodLocation()) == null) continue;
             woodPos.add(p);
             buildingp.add(grove.getPos());
             if (MillConfigValues.LogLumberman < 3) continue;
@@ -127,14 +130,14 @@ extends Goal {
                             villager.setBlock(p, Blocks.AIR);
                             villager.swing(InteractionHand.MAIN_HAND);
                             // Axis/bark is placement state; harvested stock remains the species' ordinary log.
-                            villager.addToInv(wood.log(), 0, 1);
+                            villager.addToInv(wood.log(), 0, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
                             woodFound = true;
                             if (MillConfigValues.LogLumberman >= 3) MillLog.debug(this, "Gathered wood at: " + p);
                             continue;
                         }
                         // Preserve the original grove sapling chances: dark oak 1/2, other species 1/4.
                         if (MillCommonUtilities.randomInt(wood == WoodVariant.DARK_OAK ? 2 : 4) == 0)
-                            villager.addToInv(wood.sapling(), 0, 1);
+                            villager.addToInv(wood.sapling(), 0, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
                         villager.setBlock(p, Blocks.AIR);
                         villager.swing(InteractionHand.MAIN_HAND);
                         if (MillConfigValues.LogLumberman >= 3) MillLog.debug(this, "Destroyed leaves at: " + p);

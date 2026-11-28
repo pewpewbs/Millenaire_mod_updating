@@ -435,6 +435,7 @@ public class MillItems {
     public static void registerItems(RegistryEvent.Register<Item> event) {
         event.getRegistry().register(new ItemSummoningWand("summoningwand"));
         event.getRegistry().register(new ItemNegationWand("negationwand"));
+        event.getRegistry().register(new ItemGrowthWand());
         event.getRegistry().register(new ItemMill("denier"));
         event.getRegistry().register(new ItemMill("denierargent"));
         event.getRegistry().register(new ItemMill("denieror"));

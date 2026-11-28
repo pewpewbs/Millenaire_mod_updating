@@ -409,10 +409,70 @@ public class BuildingResManager {
         return this.getSellingPos();
     }
 
+    /** Acacia seedlings cannot become trees under low roofs or a dense solid canopy. */
+    private boolean hasAcaciaGrowthRoom(Point plantingPoint) {
+        net.minecraft.core.BlockPos pos = plantingPoint.getBlockPos();
+        Level level = this.building.world;
+        if(level instanceof net.minecraft.server.level.ServerLevel server){
+            if(server.getChunkSource().getChunkNow(pos.getX()>>4,pos.getZ()>>4)==null)return false;
+            if(this.building.containsTags("grove"))
+                return GroveAcaciaGrowth.hasCompactRoom(server,pos,Blocks.ACACIA_SAPLING.defaultBlockState());
+        }
+        if (!Blocks.ACACIA_SAPLING.defaultBlockState().canSurvive(level, pos)) return false;
+
+        // Legacy non-compact sites retain the original spacing rule.
+        // Legacy Byzantine groves place saplings only four blocks apart.
+        // A surviving neighbour can obstruct the next tree's trunk or crown.
+        // Check only recorded planting markers (bounded per grove), avoiding a
+        // costly cubic scan or any changes to player-placed blocks.
+        for (Point other : this.woodspawn) {
+            if (other.equals(plantingPoint)
+                    || !"acaciaspawn".equals(this.woodspawnTypes.get(other))) continue;
+            int dx = other.getiX() - plantingPoint.getiX();
+            int dz = other.getiZ() - plantingPoint.getiZ();
+            if (dx * dx + dz * dz >= 25
+                    || Math.abs(other.getiY() - plantingPoint.getiY()) > 2) continue;
+            net.minecraft.core.BlockPos otherPos = other.getBlockPos();
+            if (!level.hasChunkAt(otherPos)) return false;
+            Block neighbour = level.getBlockState(otherPos).getBlock();
+            if (neighbour == Blocks.ACACIA_SAPLING || neighbour == Blocks.ACACIA_LOG
+                    || neighbour == Blocks.ACACIA_WOOD) return false;
+        }
+
+        // Acacia needs a clear vertical trunk and room for the spreading
+        // crown. Leaves and replaceable plants may be displaced by worldgen,
+        // but solid roof/wood/stone blocks prevent even bonemeal growth.
+        for (int dy = 1; dy <= 6; dy++) {
+            int radius = dy <= 2 ? 0 : 2;
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    net.minecraft.core.BlockPos check = pos.offset(dx, dy, dz);
+                    if (level.isOutsideBuildHeight(check) || !level.hasChunkAt(check)) return false;
+                    BlockState above = level.getBlockState(check);
+                    if (!above.isAir() && !above.is(net.minecraft.tags.BlockTags.LEAVES)
+                            && !above.getMaterial().isReplaceable()) return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /** Recheck a registered acacia marker at action time, not just during selection. */
+    public boolean canPlantAcaciaAt(Point p){
+        return p!=null&&"acaciaspawn".equals(this.woodspawnTypes.get(p))&&hasAcaciaGrowthRoom(p);
+    }
+
     public Point getPlantingLocation() {
         for (Point p : this.woodspawn) {
+            if(this.building.world instanceof net.minecraft.server.level.ServerLevel server
+                    &&server.getChunkSource().getChunkNow(p.getChunkX(),p.getChunkZ())==null)continue;
             Block block = WorldUtilities.getBlock(this.building.world, p);
-            if (block != Blocks.AIR && block != Blocks.SNOW && (!BlockItemUtilities.isBlockDecorativePlant(block) || block instanceof SaplingBlock || block instanceof BlockMillSapling)) continue;
+            if (block != Blocks.AIR && block != Blocks.SNOW
+                    && (!BlockItemUtilities.isBlockDecorativePlant(block)
+                            || block instanceof SaplingBlock || block instanceof BlockMillSapling)) continue;
+            // Check the actual compact growth volume for registered groves.
+            if ("acaciaspawn".equals(this.woodspawnTypes.get(p))
+                    && !canPlantAcaciaAt(p)) continue;
             return p;
         }
         return null;

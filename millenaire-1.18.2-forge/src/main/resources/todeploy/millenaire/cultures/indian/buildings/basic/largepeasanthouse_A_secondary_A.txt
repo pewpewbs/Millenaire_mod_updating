@@ -17,6 +17,7 @@ initial.female=indian_peasantwife
 
 //Parameters for specific upgrades
 upgrade1.priority=40
+upgrade1.tag=chicken
 
 upgrade2.priority=35
 upgrade2.rebuildpath=true

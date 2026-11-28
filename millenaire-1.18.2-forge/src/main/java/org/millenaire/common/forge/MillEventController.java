@@ -62,6 +62,73 @@ import org.millenaire.common.world.MillWorldData;
 import org.millenaire.common.world.UserProfile;
 
 public class MillEventController {
+    // NAV-OPT-12: these are conservative known-mutation notifications, NOT a
+    // universal block-state revision feed. Never permit cross-tick snapshot
+    // reuse solely on the strength of these events.
+    private static void invalidatePathSnapshot(net.minecraft.world.level.LevelAccessor world,
+                                              net.minecraft.core.BlockPos pos) {
+        if (world instanceof ServerLevel server) {
+            org.millenaire.common.pathing.PathWorldSnapshot.onKnownBlockMutation(server, pos);
+        }
+    }
+
+    private static void invalidatePathWorld(net.minecraft.world.level.LevelAccessor world) {
+        if (world instanceof ServerLevel server) {
+            org.millenaire.common.pathing.PathWorldSnapshot.onKnownWorldMutation(server);
+        }
+    }
+
+    @SubscribeEvent
+    public void onSnapshotBlockPlaced(net.minecraftforge.event.world.BlockEvent.EntityPlaceEvent event) {
+        if (event instanceof net.minecraftforge.event.world.BlockEvent.EntityMultiPlaceEvent) {
+            // Multiple blocks may change at coordinates other than getPos().
+            invalidatePathWorld(event.getWorld());
+        } else {
+            invalidatePathSnapshot(event.getWorld(), event.getPos());
+        }
+    }
+
+    @SubscribeEvent
+    public void onSnapshotBlockBroken(net.minecraftforge.event.world.BlockEvent.BreakEvent event) {
+        // Even if another listener cancels the break, false invalidation is
+        // safe; missed invalidation would not be.
+        invalidatePathSnapshot(event.getWorld(), event.getPos());
+    }
+
+    @SubscribeEvent
+    public void onSnapshotFluidPlaced(net.minecraftforge.event.world.BlockEvent.FluidPlaceBlockEvent event) {
+        invalidatePathSnapshot(event.getWorld(), event.getPos());
+    }
+
+    @SubscribeEvent
+    public void onSnapshotCropGrown(net.minecraftforge.event.world.BlockEvent.CropGrowEvent.Post event) {
+        invalidatePathSnapshot(event.getWorld(), event.getPos());
+    }
+
+    @SubscribeEvent
+    public void onSnapshotPistonFinished(net.minecraftforge.event.world.PistonEvent.Post event) {
+        // A piston can update an entire line of blocks, including boundaries
+        // between sections. Discard all current-tick copy candidates.
+        invalidatePathWorld(event.getWorld());
+    }
+
+    @SubscribeEvent
+    public void onSnapshotChunkLoaded(net.minecraftforge.event.world.ChunkEvent.Load event) {
+        invalidatePathWorld(event.getWorld());
+    }
+
+    @SubscribeEvent
+    public void onSnapshotChunkUnloaded(net.minecraftforge.event.world.ChunkEvent.Unload event) {
+        invalidatePathWorld(event.getWorld());
+    }
+
+    @SubscribeEvent
+    public void onSnapshotWorldUnloaded(net.minecraftforge.event.world.WorldEvent.Unload event) {
+        if (event.getWorld() instanceof ServerLevel server) {
+            org.millenaire.common.pathing.PathWorldSnapshot.onWorldUnload(server);
+        }
+    }
+
     @SubscribeEvent
     public void protectPanelClick(net.minecraftforge.event.entity.player.PlayerInteractEvent.LeftClickBlock event) {
         if (event.getWorld().getBlockState(event.getPos()).getBlock() instanceof org.millenaire.common.block.BlockPanel
@@ -72,6 +139,61 @@ public class MillEventController {
     public void protectPanelBreak(net.minecraftforge.event.world.BlockEvent.BreakEvent event) {
         if (event.getState().getBlock() instanceof org.millenaire.common.block.BlockPanel
                 && !event.getPlayer().isShiftKeyDown()) event.setCanceled(true);
+    }
+
+    private static final String NPC_ANIMAL_KILL = "millenaire:npc_animal_kill";
+
+    // Capture the actual fatal damage source, not the most recent player hit.
+    // XP may be emitted later during death ticking.
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
+    public void markNpcAnimalDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
+        LivingEntity victim = event.getEntityLiving();
+        if (victim.level.isClientSide) return;
+        boolean animal = victim instanceof net.minecraft.world.entity.animal.Animal
+                || victim instanceof net.minecraft.world.entity.animal.WaterAnimal;
+        victim.getPersistentData().putBoolean(NPC_ANIMAL_KILL,
+                animal && event.getSource().getEntity() instanceof MillVillager);
+    }
+
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
+    public void suppressNpcAnimalExperience(net.minecraftforge.event.entity.living.LivingExperienceDropEvent event) {
+        if (event.getEntityLiving().level.isClientSide) return;
+        if (event.getEntityLiving().getPersistentData().getBoolean(NPC_ANIMAL_KILL))
+            event.setDroppedExperience(0);
+    }
+
+    @SubscribeEvent
+    public void normalizeByzantineSheepWool(LivingDropsEvent event){
+        if(event.getEntityLiving().level.isClientSide
+                ||!(event.getEntityLiving() instanceof net.minecraft.world.entity.animal.Sheep)
+                ||event.getSource()==null
+                ||!(event.getSource().getEntity() instanceof MillVillager villager)
+                ||!org.millenaire.common.goal.GoalShearSheep.usesWhiteWool(villager.getCulture()))return;
+        for(var drop:event.getDrops()){
+            var stack=drop.getItem();
+            var key=net.minecraft.core.Registry.ITEM.getKey(stack.getItem());
+            if(key!=null&&"minecraft".equals(key.getNamespace())&&key.getPath().endsWith("_wool")
+                    &&!stack.is(net.minecraft.world.item.Items.WHITE_WOOL)){
+                drop.setItem(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WHITE_WOOL,stack.getCount()));
+            }
+        }
+    }
+
+    /** Suppress only plain feathers from chickens actually killed by Indian NPCs.
+     * Player drops, custom NBT, other cultures, meat and existing stocks are untouched. */
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
+    public void discardUnusedIndianChickenFeathers(LivingDropsEvent event) {
+        if (event.getEntityLiving().level.isClientSide
+                || !(event.getEntityLiving() instanceof net.minecraft.world.entity.animal.Chicken)
+                || event.getSource() == null
+                || !(event.getSource().getEntity() instanceof MillVillager villager)) return;
+        var culture = villager.getCulture();
+        if (culture == null || !"indian".equals(culture.key)) return;
+        boolean hasPlainFeathers = event.getDrops().stream().anyMatch(drop ->
+                drop.getItem().is(net.minecraft.world.item.Items.FEATHER) && !drop.getItem().hasTag());
+        if (!hasPlainFeathers || !org.millenaire.common.goal.IndianChickenDropPolicy.canDiscardFeathers(culture)) return;
+        event.getDrops().removeIf(drop ->
+                drop.getItem().is(net.minecraft.world.item.Items.FEATHER) && !drop.getItem().hasTag());
     }
 
     @SubscribeEvent
@@ -231,6 +353,8 @@ public class MillEventController {
 
     @SubscribeEvent
     public void worldUnloaded(WorldEvent.Unload event) {
+        if(event.getWorld() instanceof ServerLevel server)
+            org.millenaire.common.world.VillagePreparationQueue.unload(server);
         // Always release matching state, including failed startup and client dimension changes.
         if (Mill.clientWorld != null && Mill.clientWorld.world == event.getWorld()) Mill.clientWorld = null;
         if (Mill.serverWorlds != null) {

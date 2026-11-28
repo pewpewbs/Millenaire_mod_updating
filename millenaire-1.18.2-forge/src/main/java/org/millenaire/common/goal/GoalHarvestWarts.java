@@ -58,7 +58,7 @@ extends Goal {
         Point cropPoint = villager.getGoalDestPoint().getAbove();
         if (villager.getBlock(cropPoint) == Blocks.NETHER_WART && villager.getBlockMeta(cropPoint) == 3) {
             villager.setBlockAndMetadata(cropPoint, Blocks.AIR, 0);
-            villager.getHouse().storeGoods(Items.NETHER_WART, 1);
+            villager.getHouse().storeGoods(Items.NETHER_WART, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             villager.swing(InteractionHand.MAIN_HAND);
         }
         return true;

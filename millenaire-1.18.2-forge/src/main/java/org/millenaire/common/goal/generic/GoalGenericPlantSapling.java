@@ -97,7 +97,10 @@ extends GoalGeneric {
     @Override
     public boolean performAction(MillVillager villager) {
         if (villager.getGoalBuildingDest() == null || villager.getGoalDestPoint() == null) return true;
-        Block block = WorldUtilities.getBlock(villager.level, villager.getGoalDestPoint());
+        Point target=villager.getGoalDestPoint();
+        if(villager.level instanceof net.minecraft.server.level.ServerLevel server
+                &&server.getChunkSource().getChunkNow(target.getChunkX(),target.getChunkZ())==null)return true;
+        Block block = WorldUtilities.getBlock(villager.level, target);
         if (block == Blocks.AIR || block == Blocks.SNOW || BlockItemUtilities.isBlockDecorativePlant(block) && !(block instanceof SaplingBlock)) {
             String saplingType = villager.getGoalBuildingDest().getResManager().getPlantingLocationType(villager.getGoalDestPoint());
             BlockState saplingBS = Blocks.OAK_SAPLING.defaultBlockState();
@@ -108,6 +111,7 @@ extends GoalGeneric {
             } else if ("junglespawn".equals(saplingType)) {
                 saplingBS = WoodVariant.JUNGLE.sapling().defaultBlockState();
             } else if ("acaciaspawn".equals(saplingType)) {
+                if(!villager.getGoalBuildingDest().getResManager().canPlantAcaciaAt(target))return true;
                 saplingBS = WoodVariant.ACACIA.sapling().defaultBlockState();
             } else if ("darkoakspawn".equals(saplingType)) {
                 saplingBS = WoodVariant.DARK_OAK.sapling().defaultBlockState();
@@ -122,9 +126,13 @@ extends GoalGeneric {
             } else if ("sakuratreespawn".equals(saplingType)) {
                 saplingBS = MillBlocks.SAPLING_SAKURA.defaultBlockState();
             }
+            // Preserve the existing planting supply policy (saplings can be
+            // planted without inventory); do not consume one if placement failed.
+            if(!villager.setBlockstate(target,saplingBS))return true;
             villager.takeFromInv(saplingBS, 1);
-            villager.setBlockstate(villager.getGoalDestPoint(), saplingBS);
             villager.swing(InteractionHand.MAIN_HAND);
+            if("acaciaspawn".equals(saplingType))
+                MillLog.major(this,"GROVE-ACACIA planted pos="+target);
             if (MillConfigValues.LogLumberman >= 3 && villager.extraLog) {
                 MillLog.debug(this, "Planted at: " + villager.getGoalDestPoint());
             }

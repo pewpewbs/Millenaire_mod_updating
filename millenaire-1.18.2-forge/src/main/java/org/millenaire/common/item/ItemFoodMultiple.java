@@ -23,6 +23,8 @@ import org.millenaire.common.block.MillBlocks;
 /** Millenaire food keeps its original 64-durability-per-serving convention. */
 public class ItemFoodMultiple extends Item {
     public static final int DAMAGE_PER_PORTION = 64;
+    public static final int FULL_STACK_LIMIT = 64;
+    public static final int MULTI_SERVING_STACK_LIMIT = 16;
     private final int healthAmount;
     private final int regenerationDuration;
     private final int drunkDuration;
@@ -56,6 +58,15 @@ public class ItemFoodMultiple extends Item {
         return properties;
     }
 
+    /** Forge 1.18.2 stack-sensitive limit. Existing saved counts are not
+     * rewritten or clamped; only subsequent insertion/merging uses this limit. */
+    @Override
+    public int getItemStackLimit(ItemStack stack) {
+        if (stack.getDamageValue() > 0) return 1;
+        return drink || stack.getMaxDamage() > DAMAGE_PER_PORTION
+                ? MULTI_SERVING_STACK_LIMIT : FULL_STACK_LIMIT;
+    }
+
     @Override
     public FoodProperties getFoodProperties() {
         FoodProperties.Builder builder = new FoodProperties.Builder()
@@ -86,7 +97,8 @@ public class ItemFoodMultiple extends Item {
 
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity entity) {
-        if (entity instanceof Player player && !level.isClientSide) {
+        if (level.isClientSide || stack.isEmpty()) return stack;
+        if (entity instanceof Player player) {
             if (clearEffects) player.curePotionEffects(new ItemStack(Items.MILK_BUCKET));
             player.getFoodData().eat(nutrition, saturation);
             player.heal(healthAmount);
@@ -104,11 +116,25 @@ public class ItemFoodMultiple extends Item {
             if (player instanceof ServerPlayer serverPlayer)
                 CriteriaTriggers.CONSUME_ITEM.trigger(serverPlayer, stack);
         }
-        // Do not invoke Item.finishUsingItem: it would consume the entire stack item
-        // rather than a single portion of the original multi-use food.
-        if (stack.getDamageValue() + DAMAGE_PER_PORTION < stack.getMaxDamage()) {
-            stack.setDamageValue(stack.getDamageValue() + DAMAGE_PER_PORTION);
+        // A serving changes only one item. Keep the opened food in hand, and
+        // transfer the unopened remainder after the held stack is damaged so
+        // Inventory.add cannot merge the remainder back into the held stack.
+        int nextDamage = stack.getDamageValue() + DAMAGE_PER_PORTION;
+        if (nextDamage < stack.getMaxDamage()) {
+            ItemStack remainder = stack.getCount() > 1
+                    ? stack.split(stack.getCount() - 1) : ItemStack.EMPTY;
+            stack.setDamageValue(nextDamage);
+            if (!remainder.isEmpty()) {
+                if (entity instanceof Player player) {
+                    player.getInventory().add(remainder);
+                    // Never discard unopened food if there is no inventory room.
+                    if (!remainder.isEmpty()) player.drop(remainder, false);
+                } else {
+                    entity.spawnAtLocation(remainder);
+                }
+            }
         } else {
+            // Single-portion foods and the last serving of an opened item.
             stack.shrink(1);
         }
         return stack;

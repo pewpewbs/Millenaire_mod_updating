@@ -100,7 +100,7 @@ extends Goal {
     @Override
     public boolean performAction(MillVillager villager) {
         if (WorldUtilities.getBlock(villager.level, villager.getGoalDestPoint()) == MillBlocks.SILK_WORM && WorldUtilities.getBlockState(villager.level, villager.getGoalDestPoint()).getValue(BlockSilkWorm.PROGRESS) == BlockSilkWorm.EnumType.SILKWORMFULL) {
-            villager.addToInv(MillItems.SILK, 0, 1);
+            villager.addToInv(MillItems.SILK, 0, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             villager.setBlockAndMetadata(villager.getGoalDestPoint(), MillBlocks.SILK_WORM, 0);
             villager.swing(InteractionHand.MAIN_HAND);
             return false;

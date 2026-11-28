@@ -165,35 +165,41 @@ public class Mill {
         org.millenaire.common.item.MillBannerPatterns.initialize();
     }
 
+    private void startupStage(String name,long start){
+        MillLog.major(this,"MILL-STARTUP stage="+name+" ms="+(System.nanoTime()-start)/1_000_000L);
+    }
+
     private void initializeData() {
         if (startupError) {
             return;
         }
+        long stage=System.nanoTime();
         MillBlocks.initBlockStates();
+        startupStage("block-states",stage);
         boolean error = false;
         Consumer<String> bar = StartupMessageManager::addModMessage;
         bar.accept("Items...");
         if (!error) {
-            InvItem.loadItemList();
+            stage=System.nanoTime(); InvItem.loadItemList(); startupStage("items",stage);
         }
         bar.accept("Building points...");
         if (!error) {
-            error = BuildingPlan.loadBuildingPoints();
+            stage=System.nanoTime(); error = BuildingPlan.loadBuildingPoints(); startupStage("building-points",stage);
         }
         bar.accept("Villager configs...");
         if (!error) {
-            VillagerConfig.loadConfigs();
+            stage=System.nanoTime(); VillagerConfig.loadConfigs(); startupStage("villager-configs",stage);
         }
         bar.accept("Villager goals...");
         if (!error) {
-            Goal.initGoals();
+            stage=System.nanoTime(); Goal.initGoals(); startupStage("goals",stage);
         }
         if (!error) {
-            error = Culture.loadCultures(bar);
+            stage=System.nanoTime(); error = Culture.loadCultures(bar); startupStage("cultures",stage);
         }
         bar.accept("Quests...");
         if (!error) {
-            Quest.loadQuests();
+            stage=System.nanoTime(); Quest.loadQuests(); startupStage("quests",stage);
         }
         if (MillConfigValues.generateHelpData) {
             ParametersManager.generateHelpFiles();
@@ -209,7 +215,7 @@ public class Mill {
                 MillLog.major(this, "Mill\u00e9naire Mill\u00e9naire 8.1.2 loaded successfully.");
             }
         }
-        proxy.loadLanguagesIfNeeded();
+        stage=System.nanoTime(); proxy.loadLanguagesIfNeeded(); startupStage("languages",stage);
         if (MillConfigValues.DEV && !proxy.isTrueServer()) {
             BuildingDevUtilities.exportMissingTravelBookDesc();
             BuildingDevUtilities.exportTravelBookDescCSV();

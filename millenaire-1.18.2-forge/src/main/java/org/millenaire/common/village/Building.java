@@ -152,6 +152,8 @@ public class Building {
    private ItemStack bannerStack = ItemStack.EMPTY;
    public String buildingGoal;
    public String buildingGoalIssue;
+   public String buildingGoalSiteHint;
+   public boolean hasSiteIssue() { return this.buildingGoalIssue != null && this.buildingGoalIssue.startsWith("ui.site."); }
    public int buildingGoalLevel = 0;
    public BuildingLocation buildingGoalLocation = null;
    public int buildingGoalVariation = 0;
@@ -170,8 +172,8 @@ public class Building {
    public boolean isMarket = false;
    public boolean hasVisitors = false;
    public boolean hasAutoSpawn = false;
-   private long lastFailedOtherLocationSearch = 0L;
-   private long lastFailedProjectLocationSearch = 0L;
+   private final ProjectSiteCooldown projectSiteCooldown = new ProjectSiteCooldown();
+   private long nextProgressionReviewTick = Long.MIN_VALUE;
    public long lastPathingUpdate;
    private long lastSaved = 0L;
    public long lastVillagerRecordsRepair = 0L;
@@ -188,6 +190,7 @@ public class Building {
    public Player closestPlayer = null;
    private Point pos = null;
    private boolean rebuildingRegionMapper = false;
+   private boolean productionSourcesChecked = false;
    private boolean saveNeeded = false;
    private String saveReason = null;
    public MillVillager seller = null;
@@ -196,6 +199,13 @@ public class Building {
    private Set<MillVillager> villagers = new LinkedHashSet<>();
    public CopyOnWriteArrayList<String> visitorsList = new CopyOnWriteArrayList<>();
    private final Map<Long, VillagerRecord> vrecords = new HashMap<>();
+   // Complete server roster, independent of locally tracked entities.
+   private Map<Long,VillagerRecord> mapResidentSnapshot;
+
+   public Collection<VillagerRecord> getMapResidentRecords() {
+      if (!this.world.isClientSide) return this.getVillagerRecords().values();
+      return this.mapResidentSnapshot==null?null:this.mapResidentSnapshot.values();
+   }
    public VillageType villageType = null;
    private ConcurrentHashMap<Point, Integer> relations = new ConcurrentHashMap<>();
    public Point parentVillage = null;
@@ -221,6 +231,7 @@ public class Building {
    private long lastGoodsRefresh = 0L;
    private boolean refreshGoodsNightActionPerformed;
    private BuildingChunkLoader chunkLoader = null;
+   private long lastActivationWaitLog=Long.MIN_VALUE;
    private final CopyOnWriteArrayList<ConstructionIP> constructionsIP = new CopyOnWriteArrayList<>();
    public List<List<BuildingBlock>> pathsToBuild = null;
    private Building.PathCreatorQueue pathQueue = null;
@@ -275,6 +286,7 @@ public class Building {
          building.addTags(StreamReadWrite.readStringCollection(ds), "reading tags client-side");
          building.buildingGoal = StreamReadWrite.readNullableString(ds);
          building.buildingGoalIssue = StreamReadWrite.readNullableString(ds);
+         building.buildingGoalSiteHint = StreamReadWrite.readNullableString(ds);
          building.buildingGoalLevel = ds.readInt();
          building.buildingGoalVariation = ds.readInt();
          building.buildingGoalLocation = StreamReadWrite.readNullableBuildingLocation(ds);
@@ -316,6 +328,7 @@ public class Building {
             building.marvelManager = new MarvelManager(building);
             building.marvelManager.readDataStream(ds);
          }
+         if(building.isTownhall)building.mapResidentSnapshot=Map.copyOf(vrecords);
       } catch (IOException var13) {
          MillLog.printException(var13);
       }
@@ -492,17 +505,24 @@ public class Building {
             MillLog.major(this, "Creating " + type + " with child " + child.func_70005_c_() + "/" + child.getVillagerId());
          }
 
+         VillagerRecord childRecord = child.getRecord();
+         if (childRecord == null) return;
          this.mw.removeVillagerRecord(child.getVillagerId());
          VillagerRecord adultRecord = VillagerRecord.createVillagerRecord(
             this.culture, type, this.mw, this.getPos(), this.getTownHallPos(), child.firstName, child.familyName, child.getVillagerId(), false
          );
-         VillagerRecord childRecord = child.getRecord();
-         if (childRecord != null) {
-            adultRecord.rightHanded = childRecord.rightHanded;
+         if (adultRecord == null) {
+            this.mw.registerVillagerRecord(childRecord, true);
+            return;
          }
+         adultRecord.rightHanded = childRecord.rightHanded;
+         adultRecord.fathersName = childRecord.fathersName;
+         adultRecord.mothersName = childRecord.mothersName;
 
          MillVillager adult = MillVillager.createVillager(adultRecord, this.world, child.getPos(), false);
          if (adult == null) {
+            this.mw.removeVillagerRecord(child.getVillagerId());
+            this.mw.registerVillagerRecord(childRecord, true);
             MillLog.error(this, "Couldn't create adult of type " + type + " from child " + child);
          } else {
             adultRecord.updateRecord(adult);
@@ -993,7 +1013,46 @@ public class Building {
       }
    }
 
+   boolean canAffordProgression(BuildingPlan plan, boolean reservePendingGoal) {
+      if (plan == null || plan.resCost == null) return false;
+      for (var entry : plan.resCost.entrySet()) {
+         if (entry.getValue() > this.nbGoodAvailable(entry.getKey(), true, false, false, reservePendingGoal)) return false;
+      }
+      return true;
+   }
+
+   /** Same stock rule as canAffordProject for an unstarted current goal. */
+   public int availableForCurrentProject(InvItem item) {
+      return Math.max(0,VillageProgression.enabled(this)
+            ? this.nbGoodAvailable(item,true,false,false,false) : this.countGoods(item));
+   }
+
+   int progressionAvailable(InvItem item) {
+      return this.nbGoodAvailable(item, true, false, false, false);
+   }
+
+   boolean validProgressionPlan(BuildingProject project, BuildingPlan plan) {
+      return validProgressionPlan(project, plan, false);
+   }
+
+   // Lookahead only: retain every other validity gate, but allow a project
+   // whose explicit village-tag prerequisite can be supplied by another plan.
+   boolean validProgressionDependencyPlan(BuildingProject project, BuildingPlan plan) {
+      return validProgressionPlan(project, plan, true);
+   }
+
+   private boolean validProgressionPlan(BuildingProject project, BuildingPlan plan, boolean lookahead) {
+      if (plan == null || plan.priority <= 0) return false;
+      if (project.location != null && project.location.level >= 0) {
+         if (!project.location.upgradesAllowed || plan.version != project.location.version
+               || plan.level != project.location.level + 1) return false;
+      } else if (plan.level != 0 || (!this.villageType.playerControlled
+               && (plan.price > 0 || plan.isgift) && !this.buildingsBought.contains(project.key))) return false;
+      return this.checkProjectValidity(project, plan, lookahead);
+   }
+
    private boolean canAffordProject(BuildingPlan plan) {
+      if (VillageProgression.enabled(this)) return this.canAffordProgression(plan, false);
       if (plan == null) {
          MillLog.error(this, "Needed to compute plan cost but the plan is null.");
          return false;
@@ -1119,6 +1178,8 @@ public class Building {
       int nbAttackers = 0;
       int nbLiveAttackers = 0;
       int nbLiveDefenders = 0;
+      int knownResidents = 0, livingResidents = 0, knownDefenders = 0, survivingDefenders = 0;
+      boolean unknownResidentType = false;
       Point attackingVillagePos = null;
 
       for (VillagerRecord vr : this.getVillagerRecords().values()) {
@@ -1129,18 +1190,38 @@ public class Building {
             }
 
             attackingVillagePos = vr.originalVillagePos;
-         } else if (vr.getType().helpInAttacks && !vr.killed && !vr.awayraiding && !vr.awayhired) {
-            nbLiveDefenders++;
+         } else {
+            knownResidents++;
+            if (!vr.killed) livingResidents++;
+            if (vr.getType() == null) {
+               unknownResidentType = true;
+               continue;
+            }
+            if (vr.getType().helpInAttacks) {
+               knownDefenders++;
+               if (!vr.killed) {
+                  survivingDefenders++;
+                  if (!vr.awayraiding && !vr.awayhired) nbLiveDefenders++;
+               }
+            }
          }
       }
 
+      // Records persist when entities/chunks unload. An empty or unresolved
+      // roster is NOT evidence of defeat; civilian-only homes are protected
+      // while residents live. Absent or hired guards are not dead.
+      boolean rosterKnown = knownResidents > 0 && !unknownResidentType;
+      boolean defeated = rosterKnown && (knownDefenders > 0
+            ? survivingDefenders == 0 : livingResidents == 0);
+      boolean protectedByResidents = rosterKnown && (knownDefenders > 0
+            ? survivingDefenders > 0 : livingResidents > 0);
       if (this.isTownhall) {
-         if (this.chestLocked && nbLiveDefenders == 0) {
+         if (this.chestLocked && defeated) {
             this.unlockAllChests();
             ServerSender.sendTranslatedSentenceInRange(
                this.world, this.getPos(), MillConfigValues.BackgroundRadius, '4', "ui.allchestsunlocked", this.getVillageQualifiedName()
             );
-         } else if (!this.chestLocked && nbLiveDefenders > 0) {
+         } else if (!this.chestLocked && protectedByResidents) {
             this.lockAllBuildingsChests();
          }
       }
@@ -1213,6 +1294,10 @@ public class Building {
    }
 
    private boolean checkProjectValidity(BuildingProject project, BuildingPlan plan) {
+      return checkProjectValidity(project, plan, false);
+   }
+
+   private boolean checkProjectValidity(BuildingProject project, BuildingPlan plan, boolean lookahead) {
       if (plan.requiredGlobalTag != null && !this.mw.isGlobalTagSet(plan.requiredGlobalTag)) {
          return false;
       } else {
@@ -1266,7 +1351,7 @@ public class Building {
          }
 
          for (String tagx : plan.requiredVillageTags) {
-            if (!this.containsTags(tagx)) {
+            if (!lookahead && !this.containsTags(tagx)) {
                if (MillConfigValues.LogTags >= 2) {
                   MillLog.minor(this, "Can't build plan " + plan + " as village is missing tag:" + tagx);
                }
@@ -2267,6 +2352,33 @@ public class Building {
       return this.resManager.getDefendingPos();
    }
 
+   private boolean validateCoreReservation(BuildingProject project, BuildingPlan plan) {
+      if(project==null||project.location==null||project.location.level>=0
+            ||project.projectTier!=BuildingProject.EnumProjects.CORE)return true;
+      BuildingLocation site=project.location;
+      int status=this.winfo.validateReservedSite(site,plan,this.location.pos);
+      if(status==1)return true;
+      if(status==0){
+         project.location=null;
+         // Rebuild all occupancy references, including in-progress sites.
+         List<BuildingLocation> occupied=new ArrayList<>(this.getLocations());
+         for(ConstructionIP cip:this.getConstructionsInProgress())if(cip.getBuildingLocation()!=null)occupied.add(cip.getBuildingLocation());
+         try{this.winfo.update(this.world,occupied,this.location.pos,this.villageType.radius);}
+         catch(MillLog.MillenaireException error){MillLog.printException(error);}
+         this.markSaveNeeded();
+      }
+      this.projectSiteCooldown.defer(project.key,this.world.getGameTime());
+      MillLog.major(this,"VILLAGE-SITE-RESERVATION-DEFER project="+project.key+" status="+status);
+      if(project.key.equals(this.buildingGoal)){
+         if(status==0)this.buildingGoalLocation=null;
+         this.buildingGoalIssue="ui.site.review";
+         this.buildingGoalSiteHint=null;
+         this.noProjectsLeft=false;
+         this.markSaveNeeded();
+      }
+      return false;
+   }
+
    private boolean findBuildingConstruction(boolean ignoreCost) {
       if (this.buildingGoal == null) {
          return false;
@@ -2326,6 +2438,14 @@ public class Building {
                   return false;
                }
 
+               BuildingPlan pendingPlan = goalProject.getPlan(this.buildingGoalVariation, this.buildingGoalLevel);
+               if (VillageProgression.enabled(this) && (!this.validProgressionPlan(goalProject, pendingPlan)
+                       || VillageProgression.deferStyle(this, pendingPlan, ignoreCost))) {
+                  this.buildingGoal = null;
+                  this.buildingGoalLocation = null;
+                  this.buildingGoalIssue = null;
+                  return true;
+               }
                if (goalProject.location != null && goalProject.location.level >= 0 && goalProject.location.upgradesAllowed) {
                   if (!ignoreCost && !this.canAffordProject(goalProject.getPlan(this.buildingGoalVariation, this.buildingGoalLevel))) {
                      this.buildingGoalIssue = "ui.lackingresources";
@@ -2355,9 +2475,15 @@ public class Building {
                      }
                   }
                } else if (goalProject.location != null && goalProject.location.level < 0) {
-                  if (!ignoreCost && !this.canAffordProject(goalProject.getPlan(this.buildingGoalVariation, this.buildingGoalLevel))) {
-                     this.buildingGoalIssue = "ui.lackingresources";
+                  if (this.projectSiteCooldown.deferred(goalProject.key,this.world.getGameTime())) {
+                     if(!this.hasSiteIssue())this.buildingGoalIssue="ui.site.review";
+                  } else if (!ignoreCost && !this.canAffordProject(goalProject.getPlan(this.buildingGoalVariation, this.buildingGoalLevel))) {
+                     if(!this.hasSiteIssue())this.buildingGoalIssue = "ui.lackingresources";
                   } else {
+                     if(!this.validateCoreReservation(goalProject,pendingPlan))return false;
+                     this.projectSiteCooldown.clear(goalProject.key);
+                     this.buildingGoalIssue=null;
+                     this.buildingGoalSiteHint=null;
                      BuildingLocation blx;
                      if (this.buildingGoalLocation != null) {
                         blx = this.buildingGoalLocation;
@@ -2374,12 +2500,13 @@ public class Building {
                   }
                } else if (goalProject.location == null) {
                   boolean canAffordProject = ignoreCost || this.canAffordProject(goalProject.getPlan(this.buildingGoalVariation, 0));
-                  if (System.currentTimeMillis() - this.lastFailedProjectLocationSearch > 80000L && canAffordProject) {
+                  if (!this.projectSiteCooldown.deferred(goalProject.key,this.world.getGameTime()) && canAffordProject) {
                      BuildingLocation location = goalProject.getPlan(this.buildingGoalVariation, 0)
                         .findBuildingLocation(this.winfo, this.regionMapper, this.location.pos, this.villageType.radius, MillCommonUtilities.getRandom(), -1);
-                     this.lastFailedProjectLocationSearch = System.currentTimeMillis();
                      if (location != null) {
-                        this.lastFailedProjectLocationSearch = 0L;
+                         this.projectSiteCooldown.clear(goalProject.key);
+                         this.buildingGoalIssue=null;
+                         this.buildingGoalSiteHint=null;
                         if (this.brickColourTheme != null && location.getPlan().randomBrickColours.isEmpty()) {
                            location.initialiseBrickColoursFromTheme(this, this.brickColourTheme);
                         }
@@ -2408,18 +2535,21 @@ public class Building {
                            MillLog.major(this, "Found location for building project: " + location);
                         }
                      } else {
-                        this.buildingGoalIssue = "ui.nospace";
-                        this.lastFailedProjectLocationSearch = System.currentTimeMillis();
-                        if (MillConfigValues.LogBuildingPlan >= 1) {
-                           MillLog.major(this, "Searching for a location for the new project failed.");
-                        }
+                        var assessment=this.winfo.lastSiteAssessment;
+                        this.buildingGoalIssue=assessment==null?"ui.site.review":assessment.issue();
+                        this.buildingGoalSiteHint=assessment==null?null:assessment.hint();
+                        this.projectSiteCooldown.defer(goalProject.key,this.world.getGameTime());
+                        MillLog.major(this,"VILLAGE-SITE-DEFER project="+goalProject.key+" issue="+this.buildingGoalIssue+" retryTicks="+ProjectSiteCooldown.RETRY_TICKS);
+                        // Retain selected goal; other eligible projects may use free slots.
+                        this.noProjectsLeft=false;
+                        this.markSaveNeeded();
                      }
                   } else if (!canAffordProject) {
-                     this.buildingGoalIssue = "ui.lackingresources";
+                     if(!this.hasSiteIssue())this.buildingGoalIssue = "ui.lackingresources";
                      if (MillConfigValues.LogBuildingPlan >= 3) {
                         MillLog.debug(this, "Cannot afford building project.");
                      }
-                  } else {
+                  } else if(!this.hasSiteIssue()) {
                      this.buildingGoalIssue = "ui.nospace";
                   }
                }
@@ -2428,7 +2558,6 @@ public class Building {
             if (targetConstruction.getBuildingLocation() != null) {
                return true;
             } else {
-               boolean attemptedConstruction = false;
                List<BuildingProject> possibleProjects = this.getAllPossibleProjects();
                List<BuildingProject> affordableProjects = new ArrayList<>();
 
@@ -2436,23 +2565,26 @@ public class Building {
                   if (projectx.planSet != null && (goalProject == null || projectx != goalProject)) {
                      if (projectx.location != null && projectx.location.level >= 0) {
                         if (this.findConstructionIPforLocation(projectx.location) == null) {
-                           BuildingPlan plan = projectx.getNextBuildingPlan(true);
+                           BuildingPlan plan = projectx.getNextBuildingPlan(false);
                            if (ignoreCost || this.canAffordBuild(plan)) {
                               affordableProjects.add(projectx);
                            }
                         }
                      } else if (this.findConstructionIPforBuildingPlanKey(projectx.planSet.key, true) == null
-                        && (ignoreCost || this.canAffordBuild(projectx.planSet.getFirstStartingPlan()))) {
+                        && (ignoreCost || this.canAffordBuild(projectx.getNextBuildingPlan(false)))) {
                         affordableProjects.add(projectx);
                      }
                   }
                }
 
                if (affordableProjects.isEmpty()) {
-                  this.lastFailedOtherLocationSearch = System.currentTimeMillis();
                   return false;
                } else {
-                  BuildingProject newProject = BuildingProject.getRandomProject(affordableProjects);
+                  VillageProgression.Candidate progression = VillageProgression.enabled(this)
+                        ? VillageProgression.select(this, affordableProjects, this.getCurrentGoalBuildingPlan(), true, ignoreCost) : null;
+                  if (VillageProgression.enabled(this) && progression == null) return false;
+                  BuildingProject newProject = progression != null ? progression.project() : BuildingProject.getRandomProject(affordableProjects);
+                  if (newProject == null) return false;
                   if (newProject.location != null && newProject.location.level >= 0) {
                      int level = newProject.location.level + 1;
                      int variation = newProject.location.getVariation();
@@ -2474,20 +2606,22 @@ public class Building {
                         );
                      }
                   } else {
-                     BuildingPlan plan = newProject.planSet.getRandomStartingPlan();
+                     BuildingPlan plan = newProject.location != null ? newProject.getNextBuildingPlan(false) : progression != null ? progression.plan() : newProject.planSet.getRandomStartingPlan();
+                     if (plan == null) return false;
                      BuildingLocation location = null;
                      if (ignoreCost || this.canAffordBuild(plan)) {
-                        if (newProject.location == null && System.currentTimeMillis() - this.lastFailedOtherLocationSearch > 80000L) {
+                        if (newProject.location == null && !this.projectSiteCooldown.deferred(newProject.key,this.world.getGameTime())) {
                            location = plan.findBuildingLocation(
                               this.winfo, this.regionMapper, this.location.pos, this.villageType.radius, MillCommonUtilities.getRandom(), -1
                            );
                         } else if (newProject.location != null) {
+                           if(!this.validateCoreReservation(newProject,plan))return false;
                            location = newProject.location.createLocationForLevel(0);
                         }
                      }
 
                      if (location != null) {
-                        this.lastFailedOtherLocationSearch = 0L;
+                        this.projectSiteCooldown.clear(newProject.key);
                         targetConstruction.startNewConstruction(location, plan.getBuildingPoints(this.world, location, false, false, false));
                         if (MillConfigValues.LogBuildingPlan >= 1) {
                            MillLog.major(
@@ -2495,15 +2629,14 @@ public class Building {
                            );
                         }
                      } else {
-                        attemptedConstruction = true;
-                     }
-                  }
-
-                  if (attemptedConstruction) {
-                     this.lastFailedOtherLocationSearch = System.currentTimeMillis();
-                  }
-
-                  return true;
+                        if(newProject.location==null&&(ignoreCost||this.canAffordBuild(plan))){
+                            this.projectSiteCooldown.defer(newProject.key,this.world.getGameTime());
+                            MillLog.major(this,"VILLAGE-SITE-DEFER project="+newProject.key+" retryTicks="+ProjectSiteCooldown.RETRY_TICKS);
+                         }
+                         return false;
+                      }
+                   }
+                   return targetConstruction.getBuildingLocation()!=null;
                }
             }
          }
@@ -2534,7 +2667,9 @@ public class Building {
       } else if (!this.buildingProjects.containsKey(BuildingProject.EnumProjects.WALLBUILDING)) {
          return false;
       } else {
+         var progressionStyle = VillageProgression.styleGate(this, ignoreCost);
          for (BuildingProject project : this.buildingProjects.get(BuildingProject.EnumProjects.WALLBUILDING)) {
+            if (project.location == null || progressionStyle.blocks(project.getNextBuildingPlan(false))) continue;
             if (project.planSet != null && this.findConstructionIPforLocation(project.location) == null) {
                if (project.location.level >= 0 || !ignoreCost && !this.canAffordBuild(project.location.getPlan())) {
                   int level = project.location.level + 1;
@@ -2577,9 +2712,21 @@ public class Building {
       }
    }
 
-   private boolean findBuildingProject() {
+   private boolean findBuildingProject(boolean ignoreCost) {
       if (this.buildingGoal != null && this.buildingGoal.length() > 0) {
-         return false;
+         if (!VillageProgression.enabled(this)) return false;
+         if(this.hasSiteIssue())return false; // retry visible goal in findBuildingConstruction
+         long tick = this.world.getGameTime();
+         if (nextProgressionReviewTick != Long.MIN_VALUE && tick < nextProgressionReviewTick
+               && nextProgressionReviewTick - tick <= 100L) return false;
+         nextProgressionReviewTick = tick + 100L;
+         if (this.findConstructionIPforLocation(this.buildingGoalLocation) != null
+               || this.findConstructionIPforBuildingPlanKey(this.buildingGoal, false) != null) return false;
+         BuildingPlan waiting = this.getCurrentGoalBuildingPlan();
+         if (waiting == null) return false;
+         var replacement = VillageProgression.replacement(this, this.getAllPossibleProjects(), waiting, ignoreCost);
+         if (replacement == null) return false;
+         return this.setProgressionGoal(replacement.project(), replacement.plan());
       } else if (this.noProjectsLeft && (this.world.getDayTime() + this.hashCode()) % 600L != 3L) {
          return false;
       } else {
@@ -2595,31 +2742,39 @@ public class Building {
             return false;
          } else {
             this.noProjectsLeft = false;
+            if (VillageProgression.enabled(this)) {
+               var selection = VillageProgression.select(this, possibleProjects, null, false, ignoreCost);
+               if (selection == null) return false;
+               return this.setProgressionGoal(selection.project(), selection.plan());
+            }
             BuildingProject project = BuildingProject.getRandomProject(possibleProjects);
-            BuildingPlan plan = project.getNextBuildingPlan(true);
-            this.buildingGoal = project.key;
-            this.buildingGoalLevel = plan.level;
-            this.buildingGoalVariation = plan.variation;
-            if (project.location == null) {
-               this.buildingGoalLocation = null;
-               ConstructionIP cip = this.findConstructionIPforBuildingPlanKey(this.buildingGoal, true);
-               if (cip != null) {
-                  this.buildingGoalLocation = cip.getBuildingLocation();
-               }
-            } else {
-               this.buildingGoalLocation = project.location.createLocationForLevel(this.buildingGoalLevel);
-            }
-
-            if (MillConfigValues.LogBuildingPlan >= 1) {
-               MillLog.major(
-                  this,
-                  "Picked new upgrade goal: " + this.buildingGoal + " level: " + this.buildingGoalLevel + " buildingGoalLocation: " + this.buildingGoalLocation
-               );
-            }
-
-            return true;
+            return project != null && this.setProgressionGoal(project, project.getNextBuildingPlan(true));
          }
       }
+   }
+
+   private boolean setProgressionGoal(BuildingProject project, BuildingPlan plan) {
+      if (project == null || plan == null) return false;
+      if(VillageProgression.enabled(this))
+         MillLog.major(this,"VILLAGE-PROGRESSION picked="+project.key+" level="+plan.level
+               +" affordable="+this.canAffordProgression(plan,false)+" reserved="+(project.location!=null&&project.location.level<0));
+      this.buildingGoal = project.key;
+      this.buildingGoalLevel = plan.level;
+      this.buildingGoalVariation = plan.variation;
+      this.buildingGoalIssue = null;
+      this.buildingGoalSiteHint = null;
+      if (project.location == null) {
+         this.buildingGoalLocation = null;
+         ConstructionIP cip = this.findConstructionIPforBuildingPlanKey(this.buildingGoal, true);
+         if (cip != null) this.buildingGoalLocation = cip.getBuildingLocation();
+      } else {
+         this.buildingGoalLocation = project.location.createLocationForLevel(this.buildingGoalLevel);
+      }
+      if (MillConfigValues.LogBuildingPlan >= 1) {
+         MillLog.major(this, "Picked new upgrade goal: " + this.buildingGoal + " level: "
+               + this.buildingGoalLevel + " buildingGoalLocation: " + this.buildingGoalLocation);
+      }
+      return true;
    }
 
    public ConstructionIP findConstructionIPforBuildingPlanKey(String key, boolean newBuildingOnly) {
@@ -2826,7 +2981,9 @@ public class Building {
 
             for (BuildingProject project : projectsLevel) {
                project.projectTier = ep;
-               if ((project.location == null || project.location.level < 0) && !foundNewBuildingsLevel) {
+               if ((project.location == null || project.location.level < 0) && this.projectSiteCooldown.deferred(project.key,this.world.getGameTime())) continue;
+               if ((project.location == null || project.location.level < 0)
+                    && (!foundNewBuildingsLevel || VillageProgression.enabled(this))) {
                   if (this.isValidProject(project)) {
                      possibleProjects.add(project);
                      includedNewBuildings = true;
@@ -3448,44 +3605,46 @@ public class Building {
       return this.visitorManager;
    }
 
-   public int getWoodCount() {
-      if (!this.containsTags("grove")) {
-         return 0;
-      } else {
-         int nb = 0;
+   /** Only harvest unstripped logs/wood belonging to a vanilla tree family. */
+   private static boolean isHarvestableGroveLog(BlockState state) {
+      WoodVariant variant = WoodVariant.fromState(state);
+      if (variant == null) return false;
+      Block block = state.getBlock();
+      return block == variant.log()
+         || Registry.BLOCK.getKey(block).getPath().equals(variant.getSerializedName() + "_wood");
+   }
 
-         for (int i = this.location.minx - 3; i < this.location.maxx + 3; i++) {
-            for (int j = this.location.pos.getiY() - 1; j < this.location.pos.getiY() + 10; j++) {
-               for (int k = this.location.minz - 3; k < this.location.maxz + 3; k++) {
-                  if (LegacyBlockStates.matchesName(WorldUtilities.getBlock(this.world, i, j, k), "minecraft:log")
-                     || LegacyBlockStates.matchesName(WorldUtilities.getBlock(this.world, i, j, k), "minecraft:log2")) {
-                     nb++;
-                  }
+   public int getWoodCount() {
+      if (!this.containsTags("grove")) return 0;
+      int count = 0;
+      // Count the same spatial region that getWoodLocation actually searches.
+      // Acacia crowns can be much higher than centreY+10.
+      for (int y = this.location.miny - 1; y < this.location.maxy + 20; y++) {
+         for (int x = this.location.minx - 3; x < this.location.maxx + 3; x++) {
+            for (int z = this.location.minz - 3; z < this.location.maxz + 3; z++) {
+               if (isHarvestableGroveLog(this.world.getBlockState(new BlockPos(x, y, z)))) {
+                  count++;
                }
             }
          }
-
-         return nb;
       }
+      return count;
    }
 
    public Point getWoodLocation() {
-      if (!this.containsTags("grove")) {
-         return null;
-      } else {
-         for (int xPos = this.location.minx - 3; xPos < this.location.maxx + 3; xPos++) {
-            for (int yPos = this.location.miny - 1; yPos < this.location.maxy + 20; yPos++) {
-               for (int zPos = this.location.minz - 3; zPos < this.location.maxz + 3; zPos++) {
-                  Block block = WorldUtilities.getBlock(this.world, xPos, yPos, zPos);
-                  if (LegacyBlockStates.matchesName(block, "minecraft:log") || LegacyBlockStates.matchesName(block, "minecraft:log2")) {
-                     return new Point(xPos, yPos, zPos);
-                  }
+      if (!this.containsTags("grove")) return null;
+      // Search from low to high to select an accessible trunk/stump instead
+      // of the first horizontal branch of a leaning acacia canopy.
+      for (int y = this.location.miny - 1; y < this.location.maxy + 20; y++) {
+         for (int x = this.location.minx - 3; x < this.location.maxx + 3; x++) {
+            for (int z = this.location.minz - 3; z < this.location.maxz + 3; z++) {
+               if (isHarvestableGroveLog(this.world.getBlockState(new BlockPos(x, y, z)))) {
+                  return new Point(x, y, z);
                }
             }
          }
-
-         return null;
       }
+      return null;
    }
 
    public void growTree(Level world, int x, int y, int z, Random random) {
@@ -3496,6 +3655,9 @@ public class Building {
       WoodVariant family = WoodVariant.fromState(state);
       if (family == null || state.getBlock() != family.sapling()) return;
       if (family == WoodVariant.DARK_OAK && !MillCommonUtilities.chanceOn(5)) return;
+      if(family==WoodVariant.ACACIA && this.containsTags("grove")
+            && "acaciaspawn".equals(this.resManager.woodspawnTypes.get(new Point(x,y,z)))
+            && GroveAcaciaGrowth.tryGrow(server,position,state,random))return;
       sapling.advanceTree(server, position, state.setValue(SaplingBlock.STAGE, 1), random);
    }
 
@@ -3768,23 +3930,32 @@ public class Building {
       }
    }
 
-   private boolean isVillageChunksLoaded() {
-      if (this.world.isClientSide) {
-         MillLog.printException("Trying to check chunk status client side", new Exception());
-         return false;
-      } else {
-         ServerChunkCache chunkProvider = ((ServerLevel)this.world).getChunkSource();
+   private List<BuildingLocation> activationLocations(){
+      List<BuildingLocation> locations=new ArrayList<>(this.getLocations());
+      for(ConstructionIP cip:this.getConstructionsInProgress())
+         if(cip.getBuildingLocation()!=null)locations.add(cip.getBuildingLocation());
+      return locations;
+   }
 
-         for (int x = this.winfo.mapStartX; x < this.winfo.mapStartX + this.winfo.width; x += 16) {
-            for (int z = this.winfo.mapStartZ; z < this.winfo.mapStartZ + this.winfo.length; z += 16) {
-               if (!chunkProvider.hasChunk(x >> 4, z >> 4)) {
-                  return false;
-               }
-            }
-         }
+   private VillageMapInfo.ActivationBounds getActivationBounds(){
+      if(this.location==null||this.villageType==null)return null;
+      // Saved buildings start with a new, empty VillageMapInfo. Never
+      // require that map to exist before requesting its chunks.
+      if(this.winfo!=null&&this.winfo.world!=null&&this.winfo.length>0&&this.winfo.width>0)
+         return new VillageMapInfo.ActivationBounds(this.winfo.chunkStartX,this.winfo.chunkStartZ,this.winfo.length,this.winfo.width);
+      return VillageMapInfo.activationBounds(this.activationLocations(),this.location.pos,this.villageType.radius);
+   }
 
-         return true;
-      }
+   private boolean isVillageChunksLoaded(VillageMapInfo.ActivationBounds bounds) {
+      if(!(this.world instanceof ServerLevel server)||bounds==null)return false;
+      ServerChunkCache chunkProvider=server.getChunkSource();
+      // Terrain scans inspect neighbouring chunks, so require the same
+      // one-chunk border as the ticking tickets.
+      int minX=bounds.startX()-1,maxX=bounds.startX()+bounds.length()/16;
+      int minZ=bounds.startZ()-1,maxZ=bounds.startZ()+bounds.width()/16;
+      for(int x=minX;x<=maxX;x++)for(int z=minZ;z<=maxZ;z++)
+         if(chunkProvider.getChunkNow(x,z)==null)return false;
+      return true;
    }
 
    private void killMobs() {
@@ -3825,16 +3996,10 @@ public class Building {
       }
    }
 
-   private void loadChunks() {
-      if (this.winfo != null && this.winfo.width > 0) {
-         if (this.chunkLoader == null) {
-            this.chunkLoader = new BuildingChunkLoader(this);
-         }
-
-         if (!this.chunkLoader.chunksLoaded) {
-            this.chunkLoader.loadChunks();
-         }
-      }
+   private void loadChunks(VillageMapInfo.ActivationBounds bounds) {
+      if(bounds==null)return;
+      if(this.chunkLoader==null)this.chunkLoader=new BuildingChunkLoader(this);
+      this.chunkLoader.loadChunks(bounds);
    }
 
    public void lockAllBuildingsChests() {
@@ -3873,15 +4038,32 @@ public class Building {
       this.visitorsList.add("panels.startedtrading;" + this.merchantRecord.getName() + ";" + this.merchantRecord.getNativeOccupationName());
    }
 
-   private void moveMerchant(Building destInn) {
-      HashMap<InvItem, Integer> contents = this.resManager.getChestsContent();
-
-      for (InvItem key : contents.keySet()) {
-         int nb = this.takeGoods(key.getItem(), key.meta, 9999999);
-         destInn.storeGoods(key.getItem(), key.meta, nb);
-         destInn.addToImports(key, nb);
-         this.addToExports(key, nb);
+   private boolean transferMerchantStock(Building destInn, boolean exchange) {
+      if (this.merchantRecord == null || destInn == null || destInn == this
+            || this.getTownHall() == null || destInn.getTownHall() == null
+            || destInn.resManager.getSleepingPos() == null
+            || (exchange && this.resManager.getSleepingPos() == null)
+            || exchange != (destInn.merchantRecord != null)) return false;
+      var result = org.millenaire.common.utilities.MerchantStockTransfer.transfer(this, destInn, exchange);
+      if (!result.success()) {
+         if (MillConfigValues.LogMerchant >= 1)
+            MillLog.major(this, "MERCHANT-STOCK-DEFERRED: " + result.reason() + " -> " + destInn.getPos());
+         return false;
       }
+      // Account for actual committed cargo only.
+      for (var entry : result.outward().entrySet()) {
+         this.addToExports(entry.getKey(), entry.getValue());
+         destInn.addToImports(entry.getKey(), entry.getValue());
+      }
+      for (var entry : result.inward().entrySet()) {
+         destInn.addToExports(entry.getKey(), entry.getValue());
+         this.addToImports(entry.getKey(), entry.getValue());
+      }
+      return true;
+   }
+
+   private void moveMerchant(Building destInn) {
+      if (!transferMerchantStock(destInn, false)) return;
 
       this.transferVillagerPermanently(this.merchantRecord, destInn);
       this.visitorsList
@@ -3911,6 +4093,11 @@ public class Building {
       destInn.merchantRecord = this.merchantRecord;
       this.merchantRecord = null;
       this.nbNightsMerchant = 0;
+      destInn.nbNightsMerchant = 0;
+      this.markSaveNeeded();
+      destInn.markSaveNeeded();
+      destInn.saveTownHall("merchant arrived");
+      this.saveTownHall("merchant departed");
    }
 
    public int nbGoodAvailable(BlockState bs, boolean forConstruction, boolean forExport, boolean forShop) {
@@ -3918,6 +4105,11 @@ public class Building {
    }
 
    public int nbGoodAvailable(InvItem ii, boolean forConstruction, boolean forExport, boolean forShop) {
+      return this.nbGoodAvailable(ii, forConstruction, forExport, forShop, true);
+   }
+
+   private int nbGoodAvailable(InvItem ii, boolean forConstruction, boolean forExport, boolean forShop,
+                               boolean reservePendingGoal) {
       if (this.resManager.chests.isEmpty()) {
          return 0;
       } else {
@@ -3956,7 +4148,7 @@ public class Building {
                }
             }
 
-            if (!projectHandled && project != null) {
+            if (reservePendingGoal && !projectHandled && project != null && !this.hasSiteIssue()) {
                for (InvItem keyx : project.resCost.keySet()) {
                   if (keyx.matches(ii)) {
                      nb -= project.resCost.get(keyx);
@@ -4403,6 +4595,7 @@ public class Building {
       }
 
       this.buildingGoalIssue = nbttagcompound.getString("buildingGoalIssue");
+      this.buildingGoalSiteHint = nbttagcompound.getString("buildingGoalSiteHint");
       if (this.buildingGoal != null) {
          BuildingPlanSet planSet = this.culture.getBuildingPlanSet(this.buildingGoal);
          if (planSet != null) {
@@ -5060,6 +5253,7 @@ public class Building {
                StreamReadWrite.writeStringCollection(this.getTags(), data);
                StreamReadWrite.writeNullableString(this.buildingGoal, data);
                StreamReadWrite.writeNullableString(this.buildingGoalIssue, data);
+               StreamReadWrite.writeNullableString(this.buildingGoalSiteHint, data);
                data.writeInt(this.buildingGoalLevel);
                data.writeInt(this.buildingGoalVariation);
                StreamReadWrite.writeNullableBuildingLocation(this.buildingGoalLocation, data);
@@ -5126,6 +5320,8 @@ public class Building {
 
    public void sendMapInfo(Player player) {
       if (this.getTownHall() != null && this.getTownHall().winfo != null) {
+         // The map covers the whole village, not just client-tracked houses.
+         this.getTownHall().sendBuildingPacket(player,false);
          MillMapInfo minfo = new MillMapInfo(this.getTownHall(), this.getTownHall().winfo);
          minfo.sendMapInfoPacket(player);
       }
@@ -5250,6 +5446,32 @@ public class Building {
       return org.millenaire.common.utilities.GoodsTransaction.capture(this, villager);
    }
 
+   /** Read-only capacity estimate for a concrete stock item. Never changes a slot. */
+   public int storageRoom(InvItem item) {
+      if (item == null || item.meta == -1 || item.getItem() == null) return 0;
+      ItemStack expected = LegacyItemStacks.stack(item.getItem(), 1, item.meta);
+      if (expected.isEmpty()) return 0;
+      long room = 0;
+      for (Point p : this.resManager.chests) {
+         if (!this.world.hasChunkAt(p.getBlockPos())) continue;
+         TileEntityLockedChest chest = p.getMillChest(this.world);
+         if (chest == null) continue;
+         for (int i = 0; i < chest.getContainerSize(); i++) {
+            ItemStack stack = chest.getItem(i);
+            if (stack.isEmpty()) room += Math.min(chest.getMaxStackSize(), expected.getMaxStackSize());
+            else if (LegacyItemStacks.matches(stack, item.getItem(), item.meta))
+               room += Math.max(0, Math.min(chest.getMaxStackSize(), stack.getMaxStackSize()) - stack.getCount());
+         }
+      }
+      return (int)Math.min(Integer.MAX_VALUE, room);
+   }
+
+   /** Snapshot concrete stock keys before transfers invalidate the inventory cache. */
+   public java.util.Set<InvItem> stockKeys() {
+      if (this.inventoryCache == null) this.calculateInventoryCache();
+      return new java.util.HashSet<>(this.inventoryCache.keySet());
+   }
+
    public int storeGoods(InvItem item, int toPut) {
       return this.storeGoods(item.getItem(), item.meta, toPut);
    }
@@ -5291,22 +5513,7 @@ public class Building {
    }
 
    private void swapMerchants(Building destInn) {
-      HashMap<InvItem, Integer> contents = this.resManager.getChestsContent();
-      HashMap<InvItem, Integer> destContents = destInn.resManager.getChestsContent();
-
-      for (InvItem key : contents.keySet()) {
-         int nb = this.takeGoods(key.getItem(), key.meta, contents.get(key));
-         destInn.storeGoods(key.getItem(), key.meta, nb);
-         destInn.addToImports(key, nb);
-         this.addToExports(key, nb);
-      }
-
-      for (InvItem key : destContents.keySet()) {
-         int nb = destInn.takeGoods(key.getItem(), key.meta, destContents.get(key));
-         this.storeGoods(key.getItem(), key.meta, nb);
-         destInn.addToExports(key, nb);
-         this.addToImports(key, nb);
-      }
+      if (!transferMerchantStock(destInn, true)) return;
 
       VillagerRecord oldMerchant = this.merchantRecord;
       VillagerRecord newMerchant = destInn.merchantRecord;
@@ -5394,14 +5601,14 @@ public class Building {
       for (int var7 = 0; taken < toTake && var7 < this.resManager.furnaces.size(); var7++) {
          FurnaceBlockEntity furnace = this.resManager.furnaces.get(var7).getFurnace(this.world);
          if (furnace != null) {
-            taken += WorldUtilities.getItemsFromFurnace(furnace, item, toTake - taken);
+            taken += WorldUtilities.getItemsFromFurnace(furnace, item, meta, toTake - taken);
          }
       }
 
       for (int var8 = 0; taken < toTake && var8 < this.resManager.firepits.size(); var8++) {
-         TileEntityFirePit firepit = (TileEntityFirePit)this.world.getBlockEntity(this.resManager.firepits.get(var8).getBlockPos());
+         TileEntityFirePit firepit = this.resManager.firepits.get(var8).getFirePit(this.world);
          if (firepit != null) {
-            taken += WorldUtilities.getItemsFromFirePit(firepit, item, toTake - taken);
+            taken += WorldUtilities.getItemsFromFirePit(firepit, item, meta, toTake - taken);
          }
       }
 
@@ -5750,9 +5957,15 @@ public class Building {
       }
    }
 
+   private void reportSlowBuildingPart(String part,long began){
+      long elapsed=System.nanoTime()-began;
+      if(elapsed>=100_000_000L)MillLog.major(this,"MILL-SLOW stage=building-"+part+" ms="+elapsed/1_000_000L
+            +" pos="+this.getPos()+" tick="+this.world.getGameTime());
+   }
+
    public void updateBuildingServer() {
-      if (!this.world.isClientSide) this.finishPendingSave();
       if (!this.world.isClientSide) {
+         long saveStarted=System.nanoTime();this.finishPendingSave();reportSlowBuildingPart("finish-save",saveStarted);
          if (this.mw.getBuilding(this.pos) != this) {
             MillLog.error(this, "Other building registered in my place: " + this.mw.getBuilding(this.pos));
          }
@@ -5768,13 +5981,37 @@ public class Building {
 
             Player player = this.world.getNearestPlayer(this.pos.getiX(), this.pos.getiY(), this.pos.getiZ(), MillConfigValues.KeepActiveRadius, false);
             if (this.isTownhall) {
-               if (player != null && this.getPos().distanceTo(player) < MillConfigValues.KeepActiveRadius) {
-                  this.loadChunks();
-               } else if (player == null || this.getPos().distanceTo(player) > MillConfigValues.KeepActiveRadius + 32) {
+               long activationStarted=System.nanoTime();
+               boolean near=player!=null&&this.getPos().distanceTo(player)<MillConfigValues.KeepActiveRadius;
+               VillageMapInfo.ActivationBounds bounds=(near||this.isActive||this.winfo.world!=null)?this.getActivationBounds():null;
+               if(near){
+                  this.loadChunks(bounds);
+               }else if(player==null||this.getPos().distanceTo(player)>MillConfigValues.KeepActiveRadius+32){
                   this.unloadChunks();
                }
 
-               this.isAreaLoaded = this.isVillageChunksLoaded();
+               // Availability, not completion of the bookkeeping, is what
+               // gates AI. A village already loaded by the player can start
+               // before every persistent ticket has been registered.
+               this.isAreaLoaded=this.isVillageChunksLoaded(bounds);
+               if(this.isAreaLoaded&&this.winfo.world==null){
+                  try{
+                     this.updateWorldInfo();
+                  }catch(MillLog.MillenaireException error){
+                     this.winfo=new VillageMapInfo();
+                     this.isAreaLoaded=false;
+                     MillLog.printException(error);
+                  }
+               }
+               if(near&&!this.isAreaLoaded){
+                  long now=this.world.getGameTime();
+                  if(this.lastActivationWaitLog==Long.MIN_VALUE||now-this.lastActivationWaitLog>=100){
+                     this.lastActivationWaitLog=now;
+                     MillLog.major(this,"MILL-ACTIVATION waiting pos="+this.getPos()+" tickets="
+                        +(this.chunkLoader==null?"0/0":this.chunkLoader.forcedCount()+"/"+this.chunkLoader.requiredCount())
+                        +" mapReady="+(this.winfo.world!=null)+" tick="+now);
+                  }
+               }
                if (this.isActive && !this.isAreaLoaded) {
                   this.isActive = false;
 
@@ -5789,6 +6026,8 @@ public class Building {
 
                   this.saveTownHall("becoming inactive");
                } else if (!this.isActive && this.isAreaLoaded) {
+                  this.isActive = true;
+                  MillLog.major(this,"MILL-ACTIVATION active pos="+this.getPos()+" tick="+this.world.getGameTime());
                   for (Object o : this.world.players()) {
                      Player p = (Player)o;
                      this.sendBuildingPacket(p, false);
@@ -5798,9 +6037,9 @@ public class Building {
                      MillLog.major(this, "Becoming active");
                   }
 
-                  this.isActive = true;
                }
 
+               reportSlowBuildingPart("activation",activationStarted);
                if (!this.isActive) {
                   return;
                }
@@ -5810,16 +6049,25 @@ public class Building {
 
             if (this.location != null) {
                try {
+                  // Only run in the active, server-side building loop. A
+                  // missing chunk is retried without forcing it to load.
+                  if (!this.productionSourcesChecked && (this.world.getGameTime() + this.hashCode()) % 100L == 0L) {
+                     long began=System.nanoTime();
+                     this.productionSourcesChecked = org.millenaire.common.buildingplan.ProductionSourceRepair.reconcile(this);
+                     reportSlowBuildingPart("source-reconcile",began);
+                  }
                   if (this.isTownhall && this.villageType != null) {
+                     long began=System.nanoTime();
                      this.updateTownHall();
+                     reportSlowBuildingPart("townhall",began);
                   }
 
                   if (this.containsTags("grove")) {
-                     this.updateGrove();
+                     {long began=System.nanoTime(); this.updateGrove(); reportSlowBuildingPart("grove",began);}
                   }
 
                   if (this.resManager.spawns.size() > 0) {
-                     this.updatePens(false);
+                     {long began=System.nanoTime(); this.updatePens(false); reportSlowBuildingPart("pens",began);}
                   }
 
                   if (this.resManager.healingspots.size() > 0) {
@@ -5839,44 +6087,48 @@ public class Building {
                   }
 
                   if (this.isInn) {
-                     this.updateInn();
+                     {long began=System.nanoTime(); this.updateInn(); reportSlowBuildingPart("inn",began);}
                   }
 
                   if (this.hasVisitors) {
-                     this.getVisitorManager().update(false);
+                     {long began=System.nanoTime(); this.getVisitorManager().update(false); reportSlowBuildingPart("visitors",began);}
                   }
 
                   if (this.hasAutoSpawn) {
-                     this.updateAutoSpawn();
+                     {long began=System.nanoTime(); this.updateAutoSpawn(); reportSlowBuildingPart("auto-spawn",began);}
                   }
 
                   if (Math.abs(this.world.getDayTime() + this.hashCode()) % 20L == 4L) {
-                     this.unlockForNearbyPlayers();
+                     {long began=System.nanoTime(); this.unlockForNearbyPlayers(); reportSlowBuildingPart("nearby-unlock",began);}
                   }
 
-                  this.getPanelManager().updateSigns();
+                  {long began=System.nanoTime(); this.getPanelManager().updateSigns(); reportSlowBuildingPart("signs",began);}
                   if (this.isTownhall) {
+                     long began=System.nanoTime();
                      if (this.saveNeeded && this.saveWorker == null) {
                         this.saveTownHall("Save needed");
                      } else if (this.saveWorker == null && this.world.getGameTime() - this.lastSaved > 1000L) {
                         this.saveTownHall("Delay up");
                      }
+                     reportSlowBuildingPart("save-snapshot",began);
                   }
 
                   if (player != null && this.location.getPlan() != null && this.location.getPlan().exploreTag != null) {
-                     this.checkExploreTag(player);
+                     {long began=System.nanoTime(); this.checkExploreTag(player); reportSlowBuildingPart("exploration",began);}
                   }
 
-                  this.sendInitialBuildingPackets();
+                  {long began=System.nanoTime(); this.sendInitialBuildingPackets(); reportSlowBuildingPart("initial-packets",began);}
                   if (MillCommonUtilities.chanceOn(100)) {
+                     long began=System.nanoTime();
                      for (Point p : this.resManager.chests) {
-                        if (p.getMillChest(this.world) != null) {
-                           p.getMillChest(this.world).buildingPos = this.getPos();
-                        }
+                        if(((ServerLevel)this.world).getChunkSource().getChunkNow(p.getChunkX(),p.getChunkZ())==null)continue;
+                        TileEntityLockedChest chest=p.getMillChest(this.world);
+                        if(chest!=null)chest.buildingPos=this.getPos();
                      }
+                     reportSlowBuildingPart("chest-links",began);
                   }
 
-                  this.refreshGoods();
+                  {long began=System.nanoTime(); this.refreshGoods(); reportSlowBuildingPart("refresh-goods",began);}
                } catch (Exception var5) {
                   int nbRepeats = MillLog.printException("Exception in TileEntityBuilding.onUpdate() for building " + this + ": ", var5);
                   if (nbRepeats < 5) {
@@ -5894,7 +6146,7 @@ public class Building {
          ignoreCost = true;
       }
 
-      change = this.findBuildingProject();
+      change = this.findBuildingProject(ignoreCost);
       change |= this.findBuildingConstruction(ignoreCost);
       if (this.getSimultaneousWallConstructionSlots() > 0) {
          change |= this.findBuildingConstructionWall(ignoreCost);
@@ -5916,7 +6168,8 @@ public class Building {
 
    private void updateGrove() {
       for (Point p : this.resManager.woodspawn) {
-         if (MillCommonUtilities.chanceOn(4000) && WorldUtilities.getBlock(this.world, p) instanceof SaplingBlock) {
+         if (MillCommonUtilities.chanceOn(4000) && this.world.hasChunkAt(new BlockPos(p.getiX(),p.getiY(),p.getiZ()))
+               && WorldUtilities.getBlock(this.world, p) instanceof SaplingBlock) {
             this.growTree(this.world, p.getiX(), p.getiY(), p.getiZ(), MillCommonUtilities.random);
          }
       }
@@ -5980,6 +6233,21 @@ public class Building {
    }
 
    private void updatePens(boolean completeRespawn) {
+      // Repair existing stock Indian annexes: their first upgrade already
+      // registers chicken spawn points, but the old plan omitted the work tag.
+      if (!this.world.isClientSide && this.location != null && !this.location.isCustomBuilding
+          && this.location.level >= 1 && this.culture != null && "indian".equals(this.culture.key)
+          && "largepeasanthouse_A_secondary".equalsIgnoreCase(this.location.planKey)
+          && !this.containsTags("chicken")) {
+         for (int i=0; i<this.resManager.spawnTypes.size(); i++) {
+            if (Mill.ENTITY_CHICKEN.equals(this.resManager.spawnTypes.get(i))
+                  && i<this.resManager.spawns.size() && !this.resManager.spawns.get(i).isEmpty()) {
+               this.addTags(java.util.List.of("chicken"), "stock Indian annex chicken pen repair");
+               this.requestSave("stock Indian annex chicken pen repair");
+               break;
+            }
+         }
+      }
       if ((completeRespawn || !this.world.isDay())
          && (this.getVillagerRecords().size() > 0 || this.location.getMaleResidents().isEmpty() && this.location.getFemaleResidents().isEmpty())
          && !this.world.isClientSide) {
@@ -5997,7 +6265,9 @@ public class Building {
             int squid = 0;
             int wolves = 0;
 
-            for (Entity animal : WorldUtilities.getEntitiesWithinAABB(this.world, Mob.class, this.getPos(), 15, 20)) {
+            List<Entity> penAnimals = new ArrayList<>(WorldUtilities.getEntitiesWithinAABB(this.world, Mob.class, this.getPos(), 15, 20));
+            for (Entity animal : penAnimals) {
+               if (!animal.isAlive()) continue;
                if (animal instanceof Sheep) {
                   sheep++;
                } else if (animal instanceof Pig) {
@@ -6035,13 +6305,23 @@ public class Building {
                }
 
                for (int j = 0; j < this.resManager.spawns.get(i).size() * multipliyer - nb; j++) {
+                  if (this.nbAnimalsRespawned >= nbMaxRespawn && !completeRespawn) break;
                   if (completeRespawn || MillCommonUtilities.chanceOn(100)) {
                      EntityType<?> animalType = Registry.ENTITY_TYPE.getOptional(this.resManager.spawnTypes.get(i)).orElse(null);
                      Entity spawned = animalType == null ? null : animalType.create(this.world);
                      if (!(spawned instanceof Mob animalx)) continue;
-                     Point pen = this.resManager.spawns.get(i).get(MillCommonUtilities.randomInt(this.resManager.spawns.get(i).size()));
+                     List<Point> markers=this.resManager.spawns.get(i);
+                     if(markers.isEmpty())continue;
+                     Point pen;
+                     if(animalx instanceof net.minecraft.world.entity.animal.Animal && !(animalx instanceof Wolf))
+                         pen=AnimalPenAccess.choose(this.world,animalx,markers,penAnimals);
+                     else pen=markers.get(MillCommonUtilities.randomInt(markers.size()));
+                     if(pen==null||!this.world.hasChunkAt(pen.getBlockPos()))continue;
                      animalx.setPos(pen.getiX() + 0.5, pen.getiY(), pen.getiZ() + 0.5);
-                     if (this.world.addFreshEntity(animalx)) this.nbAnimalsRespawned++;
+                     if (this.world.addFreshEntity(animalx)) {
+                        this.nbAnimalsRespawned++;
+                        penAnimals.add(animalx);
+                     }
                   }
                }
             }
@@ -6076,7 +6356,7 @@ public class Building {
 
    private void updateTownHall() throws MillLog.MillenaireException {
       if (this.getVillagerRecords().size() > 0) {
-         this.updateWorldInfo();
+         long began=System.nanoTime();this.updateWorldInfo();reportSlowBuildingPart("terrain-refresh",began);
       }
 
       if (MillConfigValues.autoConvertProfiles
@@ -6099,7 +6379,20 @@ public class Building {
       }
 
       if ((this.world.getDayTime() + this.hashCode()) % 20L == 3L) {
-         this.updateConstructionQueue(false);
+         // Map readers already receive these fields in the building packet.
+         // Push only changes to the site marker, not a new map every blink.
+         String oldSite = "ui.site.prepare".equals(this.buildingGoalIssue) ? this.buildingGoalSiteHint : null;
+         String oldSiteGoal = oldSite == null ? null : this.buildingGoal;
+         long began=System.nanoTime();this.updateConstructionQueue(false);reportSlowBuildingPart("construction-queue",began);
+         String newSite = "ui.site.prepare".equals(this.buildingGoalIssue) ? this.buildingGoalSiteHint : null;
+         String newSiteGoal = newSite == null ? null : this.buildingGoal;
+         if(!java.util.Objects.equals(oldSite,newSite)||!java.util.Objects.equals(oldSiteGoal,newSiteGoal)){
+            for(Player player:VillageUtilities.getServerPlayers(this.mw.world)){
+               UserProfile profile=VillageUtilities.getServerProfile(this.mw.world,player);
+               if(profile!=null&&profile.buildingsSent.containsKey(this.pos))
+                  this.sendBuildingPacket(player,false);
+            }
+         }
       }
 
       this.checkSeller();
@@ -6236,17 +6529,7 @@ public class Building {
       if (this.villageType == null) {
          MillLog.error(this, "updateWorldInfo: villageType is null");
       } else {
-         List<BuildingLocation> locations = new ArrayList<>();
-
-         for (BuildingLocation l : this.getLocations()) {
-            locations.add(l);
-         }
-
-         for (ConstructionIP cip : this.getConstructionsInProgress()) {
-            if (cip.getBuildingLocation() != null) {
-               locations.add(cip.getBuildingLocation());
-            }
-         }
+         List<BuildingLocation> locations=this.activationLocations();
 
          if (this.winfo.world == null) {
             boolean areaChanged = this.winfo.update(this.world, locations, this.location.pos, this.villageType.radius);
@@ -6458,6 +6741,7 @@ public class Building {
             nbttagcompound.putInt("buildingGoalVariation", this.buildingGoalVariation);
             if (this.buildingGoalIssue != null) {
                nbttagcompound.putString("buildingGoalIssue", this.buildingGoalIssue);
+               if(this.hasSiteIssue() && this.buildingGoalSiteHint!=null)nbttagcompound.putString("buildingGoalSiteHint",this.buildingGoalSiteHint);
             }
 
             if (this.buildingGoalLocation != null) {

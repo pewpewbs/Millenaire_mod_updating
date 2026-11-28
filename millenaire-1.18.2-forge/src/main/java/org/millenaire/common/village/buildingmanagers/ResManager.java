@@ -57,6 +57,7 @@ import org.millenaire.common.utilities.MillLog;
 import org.millenaire.common.utilities.Point;
 import org.millenaire.common.utilities.WorldUtilities;
 import org.millenaire.common.village.Building;
+import net.minecraft.server.level.ServerLevel;
 
 public class ResManager {
     public CopyOnWriteArrayList<Point> brickspot = new CopyOnWriteArrayList();
@@ -72,6 +73,13 @@ public class ResManager {
     public CopyOnWriteArrayList<Point> cultureBanners = new CopyOnWriteArrayList();
     public CopyOnWriteArrayList<CopyOnWriteArrayList<Point>> sources = new CopyOnWriteArrayList();
     public CopyOnWriteArrayList<BlockState> sourceTypes = new CopyOnWriteArrayList();
+    private static final int MAX_DISPLAY_SOURCE_TYPES = 1024;
+    private List<BlockState> displaySourceTypes = List.of();
+
+    /** Read-only source summary; the client does not receive source coordinates. */
+    public List<BlockState> getDisplaySourceTypes() {
+        return this.building.world.isClientSide ? displaySourceTypes : List.copyOf(sourceTypes);
+    }
     public CopyOnWriteArrayList<CopyOnWriteArrayList<Point>> spawns = new CopyOnWriteArrayList();
     public CopyOnWriteArrayList<ResourceLocation> spawnTypes = new CopyOnWriteArrayList();
     public CopyOnWriteArrayList<CopyOnWriteArrayList<Point>> mobSpawners = new CopyOnWriteArrayList();
@@ -227,27 +235,63 @@ public class ResManager {
         return this.sleepingPos;
     }
 
+    /** Restrict legacy upper-brick recovery to formerly eligible kilns. */
+    private boolean wasTwoTierKiln() {
+        var loc = building.location;
+        if (loc == null || loc.isCustomBuilding || loc.culture == null || loc.level < 1
+                || !building.containsTags("brickkiln")) return false;
+        var set = loc.culture.getBuildingPlanSet(loc.planKey);
+        int variation = loc.getVariation();
+        return set != null && variation >= 0 && variation < set.plans.size()
+                && loc.level == set.plans.get(variation).length - 1;
+    }
+
+    /** Only an already existing upper brick can be recovered; never register empty upper slots. */
+    public boolean isLegacyUpperBrick(Point p) {
+        return p != null && wasTwoTierKiln() && !brickspot.contains(p)
+                && brickspot.contains(p.getBelow()) && !brickspot.contains(p.getBelow().getBelow())
+                && !brickspot.contains(p.getAbove())
+                && p.getiY() < building.world.getMaxBuildHeight() - 1
+                && building.world.hasChunkAt(p.getBlockPos())
+                && isProductionBrick(building.world.getBlockState(p.getBlockPos()));
+    }
+
+    public boolean isBrickWorkSpot(Point p) {
+        return p != null && (brickspot.contains(p) || isLegacyUpperBrick(p));
+    }
+
+    public List<Point> getBrickWorkSpots() {
+        if (!wasTwoTierKiln()) return brickspot;
+        var result = new java.util.ArrayList<Point>(brickspot);
+        for (Point base : brickspot) {
+            if (base != null && isLegacyUpperBrick(base.getAbove()))
+                result.add(base.getAbove());
+        }
+        return result;
+    }
+
+    public static boolean isProductionBrick(BlockState state) {
+        return state.getBlock() == MillBlocks.WET_BRICK || state == MillBlocks.BS_MUD_BRICK;
+    }
+
+    /** Form only on authored base slots; harvest any old upper brick before its base. */
+    public boolean canWorkBrickSpot(Point p, boolean ready) {
+        if (!isBrickWorkSpot(p) || !building.world.hasChunkAt(p.getBlockPos())) return false;
+        var pos = p.getBlockPos();
+        var state = building.world.getBlockState(pos);
+        if (ready ? state != MillBlocks.BS_MUD_BRICK : !state.isAir()) return false;
+        if (isLegacyUpperBrick(p)) return ready;
+        // Don't refill or harvest a base while a legacy upper brick remains.
+        return !isLegacyUpperBrick(p.getAbove());
+    }
+
     public Point getEmptyBrickLocation() {
-        if (this.brickspot.size() == 0) {
-            return null;
-        }
-        for (int i = 0; i < this.brickspot.size(); ++i) {
-            Point p = this.brickspot.get(i);
-            if (WorldUtilities.getBlock(this.building.world, p) != Blocks.AIR) continue;
-            return p;
-        }
+        for (Point p : getBrickWorkSpots()) if (canWorkBrickSpot(p, false)) return p;
         return null;
     }
 
     public Point getFullBrickLocation() {
-        if (this.brickspot.size() == 0) {
-            return null;
-        }
-        for (int i = 0; i < this.brickspot.size(); ++i) {
-            Point p = this.brickspot.get(i);
-            if (WorldUtilities.getBlockState(this.building.world, p) != MillBlocks.BS_MUD_BRICK) continue;
-            return p;
-        }
+        for (Point p : getBrickWorkSpots()) if (canWorkBrickSpot(p, true)) return p;
         return null;
     }
 
@@ -259,28 +303,14 @@ public class ResManager {
     }
 
     public int getNbEmptyBrickLocation() {
-        if (this.brickspot.size() == 0) {
-            return 0;
-        }
         int nb = 0;
-        for (int i = 0; i < this.brickspot.size(); ++i) {
-            Point p = this.brickspot.get(i);
-            if (WorldUtilities.getBlock(this.building.world, p) != Blocks.AIR) continue;
-            ++nb;
-        }
+        for (Point p : getBrickWorkSpots()) if (canWorkBrickSpot(p, false)) ++nb;
         return nb;
     }
 
     public int getNbFullBrickLocation() {
-        if (this.brickspot.size() == 0) {
-            return 0;
-        }
         int nb = 0;
-        for (int i = 0; i < this.brickspot.size(); ++i) {
-            Point p = this.brickspot.get(i);
-            if (WorldUtilities.getBlockState(this.building.world, p) != MillBlocks.BS_MUD_BRICK) continue;
-            ++nb;
-        }
+        for (Point p : getBrickWorkSpots()) if (canWorkBrickSpot(p, true)) ++nb;
         return nb;
     }
 
@@ -409,10 +439,29 @@ public class ResManager {
         return this.getSellingPos();
     }
 
+    /** Validate registered acacia sites both when choosing a goal and placing a sapling. */
+    public boolean canPlantAcaciaAt(Point p) {
+        if(p==null||!this.woodspawn.contains(p)||!"acaciaspawn".equals(this.woodspawnTypes.get(p)))return false;
+        if(!(this.building.world instanceof ServerLevel server)
+                ||server.getChunkSource().getChunkNow(p.getChunkX(),p.getChunkZ())==null)return false;
+        var pos=p.getBlockPos();
+        var sapling=Blocks.ACACIA_SAPLING.defaultBlockState();
+        // Planting is not tree generation. Existing foliage or a temporary
+        // obstruction must not prevent a sapling from being planted on soil.
+        var existing=server.getBlockState(pos);
+        if(!existing.isAir()&&!existing.is(Blocks.SNOW)
+                &&(!BlockItemUtilities.isBlockDecorativePlant(existing.getBlock())
+                    ||existing.getBlock() instanceof SaplingBlock||existing.getBlock() instanceof BlockMillSapling))return false;
+        return server.getWorldBorder().isWithinBounds(pos)&&sapling.canSurvive(server,pos);
+    }
+
     public Point getPlantingLocation() {
         for (Point p : this.woodspawn) {
+            if(this.building.world instanceof ServerLevel server
+                    &&server.getChunkSource().getChunkNow(p.getChunkX(),p.getChunkZ())==null)continue;
             Block block = WorldUtilities.getBlock(this.building.world, p);
             if (block != Blocks.AIR && block != Blocks.SNOW && (!BlockItemUtilities.isBlockDecorativePlant(block) || block instanceof SaplingBlock || block instanceof BlockMillSapling)) continue;
+            if("acaciaspawn".equals(this.woodspawnTypes.get(p))&&!canPlantAcaciaAt(p))continue;
             return p;
         }
         return null;
@@ -540,6 +589,15 @@ public class ResManager {
         this.stalls = StreamReadWrite.readPointList(ds);
         this.banners = StreamReadWrite.readPointList(ds);
         this.cultureBanners = StreamReadWrite.readPointList(ds);
+        int sourceCount = ds.readVarInt();
+        if (sourceCount < 0 || sourceCount > MAX_DISPLAY_SOURCE_TYPES)
+            throw new IOException("Invalid resource source type count: " + sourceCount);
+        java.util.ArrayList<BlockState> receivedSources = new java.util.ArrayList<>(sourceCount);
+        for (int i = 0; i < sourceCount; i++) {
+            BlockState state = Block.stateById(ds.readVarInt());
+            if (!state.isAir()) receivedSources.add(state);
+        }
+        displaySourceTypes = List.copyOf(receivedSources);
         for (Point p : this.chests) {
             TileEntityLockedChest chest = p.getMillChest(this.building.mw.world);
             if (chest == null) continue;
@@ -759,6 +817,10 @@ public class ResManager {
         StreamReadWrite.writePointList(this.stalls, data);
         StreamReadWrite.writePointList(this.banners, data);
         StreamReadWrite.writePointList(this.cultureBanners, data);
+        List<BlockState> types = List.copyOf(this.sourceTypes);
+        int count = Math.min(types.size(), MAX_DISPLAY_SOURCE_TYPES);
+        data.writeVarInt(count);
+        for (int i = 0; i < count; i++) data.writeVarInt(Block.getId(types.get(i)));
     }
 
     public void setCraftingPos(Point p) {

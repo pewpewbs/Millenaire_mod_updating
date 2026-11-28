@@ -66,6 +66,15 @@ goal=cookchicken
 goal=cookfish
 goal=cookpork
 goal=cooksteak
+goal=tendfurnace
 goal=makesouvlaki
+
+// Small household fuel reserve for the registered tavern oven.
+requiredGood=wood,4
+requiredGood=wood_pine,4
+requiredGood=wood_birch,4
+requiredGood=wood_jungle,4
+requiredGood=wood_acacia,4
+requiredGood=wood_darkoak,4
 
 baseAttackStrength=1

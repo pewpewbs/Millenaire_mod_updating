@@ -28,6 +28,24 @@ extends GoalGeneric {
     @ConfigAnnotations.ConfigField(type=AnnotedParameter.ParameterType.INVITEM_NUMBER_ADD)
     @ConfigAnnotations.FieldDocumentation(explanation="Each action will produce all the outputs.")
     public HashMap<InvItem, Integer> output = new HashMap();
+    @ConfigAnnotations.ConfigField(type=AnnotedParameter.ParameterType.INVITEM_NUMBER_ADD, paramName="physicalvillagelimit")
+    @ConfigAnnotations.FieldDocumentation(explanation="Hard maximum of the physical item across registered village chests and resident inventories, including the next craft. Ignores durability; does not load chunks.")
+    public HashMap<InvItem, Integer> physicalVillageLimit = new HashMap<>();
+
+    @Override
+    protected boolean passesStockLimits(MillVillager villager) {
+        if (!super.passesStockLimits(villager)) return false;
+        for (var cap : this.physicalVillageLimit.entrySet()) {
+            var item = cap.getKey().getItem();
+            long produced = 0;
+            for (var entry : this.output.entrySet())
+                if (entry.getKey().getItem() == item) produced += entry.getValue();
+            if (!PhysicalVillageStock.hasRoom(villager, item, cap.getValue(), produced))
+                return org.millenaire.common.goal.GoalDiagnostics.reject(villager, this,
+                        "PHYSICAL_VILLAGE_LIMIT " + cap.getKey() + " max=" + cap.getValue());
+        }
+        return true;
+    }
 
     @Override
     public void applyDefaultSettings() {
@@ -41,6 +59,12 @@ extends GoalGeneric {
             return this.packDest(dest.getResManager().getCraftingPos(), dest);
         }
         return null;
+    }
+
+    /** Presentation helper only; the actual crafting goal remains available. */
+    public boolean isOnlyStrawBedProduction(){
+        return !this.output.isEmpty()&&this.output.keySet().stream().allMatch(item->
+                item.getItem()==org.millenaire.common.block.MillBlocks.BED_STRAW.asItem());
     }
 
     @Override
@@ -87,7 +111,10 @@ extends GoalGeneric {
     public boolean performAction(MillVillager villager) throws Exception {
         Building dest = villager.getGoalBuildingDest();
         if (dest == null || villager.level.isClientSide || !this.validQuantities()) return true;
-        if (!this.isDestPossibleSpecific(villager, dest)) return true;
+        if (!this.getBuildings(villager).contains(dest) || !this.passesStockLimits(villager)
+                || !this.passesResourceBalance(villager) || !this.isDestPossible(villager,dest)) return true;
+        if (villager.getGoalDestPoint() == null || !villager.getGoalDestPoint().equals(dest.getResManager().getCraftingPos())) return true;
+        if (!this.isWithinActionRange(villager,null)) return false;
         try (org.millenaire.common.utilities.GoodsTransaction transaction = dest.beginGoodsTransaction(villager)) {
             for (var entry : this.input.entrySet()) {
                 int required = entry.getValue();
@@ -116,6 +143,10 @@ extends GoalGeneric {
         if (this.output.isEmpty()) return false;
         for (Integer amount : this.input.values()) if (amount == null || amount <= 0) return false;
         for (Integer amount : this.output.values()) if (amount == null || amount <= 0) return false;
+        for (var cap : this.physicalVillageLimit.entrySet()) {
+            if (cap.getValue() == null || cap.getValue() < 0 || cap.getKey().getItem() == null
+                    || this.output.keySet().stream().noneMatch(key -> key.getItem() == cap.getKey().getItem())) return false;
+        }
         return true;
     }
 

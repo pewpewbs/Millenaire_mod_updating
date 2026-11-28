@@ -59,6 +59,13 @@ public class WorldGenVillage {
         return chunkCoordsTried.computeIfAbsent(world, ignored -> new java.util.HashSet<>());
     }
 
+    private void reportGenerationStage(String stage, Point pos, long started) {
+        long elapsed = System.nanoTime() - started;
+        if (elapsed >= 100_000_000L)
+            MillLog.major(this, "MILL-SLOW stage=village-" + stage + " pos=" + pos
+                    + " ms=" + elapsed / 1_000_000L);
+    }
+
     private static net.minecraft.core.BlockPos spawnPosition(Level world) {
         var data = world.getLevelData();
         return new net.minecraft.core.BlockPos(data.getXSpawn(), data.getYSpawn(), data.getZSpawn());
@@ -157,6 +164,7 @@ public class WorldGenVillage {
         if (!world.dimension().equals(Level.OVERWORLD)) {
             return;
         }
+        if (VillagePreparationQueue.suppressNatural(world,chunkX,chunkZ)) return;
         StackTraceElement[] trace = Thread.currentThread().getStackTrace();
         for (int i = 2; i < trace.length; ++i) {
             if (!trace[i].getClassName().equals(this.getClass().getName())) continue;
@@ -169,17 +177,24 @@ public class WorldGenVillage {
             completionRatio = distanceToSpawn > (double)MillConfigValues.villageSpawnCompletionMaxDistance ? (MillConfigValues.villageSpawnCompletionMaxPercentage / 100.0f) : (float)((double)MillConfigValues.villageSpawnCompletionMaxPercentage * ((distanceToSpawn - (double)MillConfigValues.villageSpawnCompletionMinDistance) / (double)MillConfigValues.villageSpawnCompletionMaxDistance) / 100.0);
             completionRatio = (float)(random.nextDouble() * (double)completionRatio);
         }
+        long generationStarted = System.nanoTime();
         try {
             this.generateVillageAtPoint(world, random, chunkX * 16, 0, chunkZ * 16, null, true, false, true, Integer.MAX_VALUE, null, null, null, completionRatio);
         }
         catch (Exception e) {
             MillLog.printException("Exception when attempting to generate village in " + world + " (dimension: " + world.dimension().location() + ")", e);
+        } finally {
+            long elapsed = System.nanoTime() - generationStarted;
+            if (elapsed >= 100_000_000L)
+                MillLog.major(this, "MILL-SLOW stage=village-generation chunk=" + chunkX + "/" + chunkZ
+                        + " ms=" + elapsed / 1_000_000L);
         }
     }
 
     private boolean generateCustomVillage(Point p, Level world, VillageType villageType, Player player, Random random) throws MillLog.MillenaireException {
         long startTime = System.nanoTime();
         MillWorldData mw = Mill.getMillWorld(world);
+        if (overlapsExistingVillageTerritory(mw, p, villageType)) return false;
         BuildingLocation location = new BuildingLocation(villageType.customCentre, p, true);
         Building townHall = new Building(mw, villageType.culture, villageType, location, true, true, p);
         villageType.customCentre.registerResources(townHall, location);
@@ -190,7 +205,7 @@ public class WorldGenVillage {
         }
         townHall.buildingProjects.get((Object)BuildingProject.EnumProjects.CUSTOMBUILDINGS).add(project);
         townHall.initialiseVillage();
-        mw.registerVillageLocation(world, townHall.getPos(), townHall.getVillageQualifiedName(), townHall.villageType, townHall.culture, true, player.getName().getString());
+        mw.registerVillageLocation(world, townHall.getPos(), townHall.getVillageQualifiedName(), townHall.villageType, townHall.culture, true, player == null ? "" : player.getName().getString());
         townHall.initialiseRelations(null);
         townHall.updateWorldInfo();
         townHall.storeItemStack(ItemParchment.createParchmentForVillage(townHall.getTownHall()));
@@ -219,28 +234,40 @@ public class WorldGenVillage {
         }
     }
 
+    private static long layoutArea(BuildingPlan p){
+        return (long)(p.length+p.areaToClearLengthBefore+p.areaToClearLengthAfter)
+            *(p.width+p.areaToClearWidthBefore+p.areaToClearWidthAfter);
+    }
+
     private boolean generateVillage(Point targetPos, Level world, VillageType villageType, Player player, Player closestPlayer, Random random, int minDistance, String name, Point parentVillage, float completionRatio, boolean testBiomeValidity, boolean alwaysSpawn) throws MillLog.MillenaireException {
         List<BuildingLocation> wallLocations;
-        boolean biomeValidity;
-        if (testBiomeValidity && !(biomeValidity = this.isInValidBiomes(world, villageType, targetPos))) {
-            return false;
-        }
+        long stageStarted = System.nanoTime();
+        boolean validBiome = !testBiomeValidity || this.isInValidBiomes(world, villageType, targetPos);
+        reportGenerationStage("biome", targetPos, stageStarted);
+        if (!validBiome) return false;
         VillageMapInfo winfo = new VillageMapInfo();
         ArrayList<BuildingLocation> plannedBuildings = new ArrayList<BuildingLocation>();
         MillWorldData mw = Mill.getMillWorld(world);
         targetPos = new Point(targetPos.x, WorldUtilities.findTopSoilBlock(world, targetPos.getiX(), targetPos.getiZ()), targetPos.z);
+        // Claim radii, not just centre-to-centre limits, must not intersect.
+        if (overlapsExistingVillageTerritory(mw, targetPos, villageType)) return false;
+        stageStarted = System.nanoTime();
         for (int x = targetPos.getChunkX() - villageType.radius / 16 - 1; x <= targetPos.getChunkX() + villageType.radius / 16; ++x) {
             for (int z = targetPos.getChunkZ() - villageType.radius / 16 - 1; z <= targetPos.getChunkZ() + villageType.radius / 16; ++z) {
                 if (world.hasChunk(x, z)) continue;
                 world.getChunk(x, z);
             }
         }
+        reportGenerationStage("chunk-preparation", targetPos, stageStarted);
+        stageStarted = System.nanoTime();
         winfo.update(world, plannedBuildings, targetPos, villageType.radius);
+        reportGenerationStage("terrain-map", targetPos, stageStarted);
         if (!alwaysSpawn && !this.isUsableArea(winfo, targetPos, villageType.radius)) {
             return false;
         }
         long startTime = System.nanoTime();
         BuildingLocation location = villageType.centreBuilding.getRandomStartingPlan().findBuildingLocation(winfo, null, targetPos, villageType.radius, random, 3);
+        reportGenerationStage("centre-site", targetPos, startTime);
         if (location == null) {
             if (MillConfigValues.LogWorldGeneration >= 2) {
                 MillLog.minor(this, "Could not find place for central building: " + villageType.centreBuilding);
@@ -251,6 +278,8 @@ public class WorldGenVillage {
             return false;
         }
         Point thPos = location.pos;
+        // The chosen town hall can move away from the candidate point during layout.
+        if (overlapsExistingVillageTerritory(mw, thPos, villageType)) return false;
         if (WorldGenVillage.isWithinSpawnRadiusProtection(world, villageType, thPos)) {
             if (Mill.proxy.isTrueServer()) {
                 if (player != null) {
@@ -297,6 +326,7 @@ public class WorldGenVillage {
         if (MillConfigValues.LogWorldGeneration >= 2) {
             MillLog.minor(this, "Place found for TownHall (village type: " + villageType.key + "). Checking for the rest.");
         }
+        stageStarted = System.nanoTime();
         plannedBuildings.add(location);
         winfo.update(world, plannedBuildings, thPos, villageType.radius);
         RegionMapper regionMapper = new RegionMapper();
@@ -320,8 +350,13 @@ public class WorldGenVillage {
             }
         }
         boolean couldBuildKeyBuildings = true;
-        for (BuildingPlanSet planSet : villageType.startBuildings) {
-            location = planSet.getRandomStartingPlan().findBuildingLocation(winfo, regionMapper, thPos, villageType.radius, random, -1);
+        List<BuildingPlan> startingPlans=new ArrayList<>();
+        for(BuildingPlanSet set:villageType.startBuildings)startingPlans.add(set.getRandomStartingPlan());
+        // Preserve the authored order when a starting plan has a proximity dependency.
+        if(startingPlans.stream().noneMatch(p->!p.closeToTag.isEmpty()||!p.farFromTag.isEmpty()))
+            startingPlans.sort(java.util.Comparator.comparingLong(WorldGenVillage::layoutArea).reversed());
+        for(BuildingPlan startingPlan:startingPlans){
+            location=startingPlan.findBuildingLocation(winfo,regionMapper,thPos,villageType.radius,random,-1);
             if (location != null) {
                 plannedBuildings.add(location);
                 areaChanged = winfo.update(world, plannedBuildings, thPos, villageType.radius);
@@ -329,13 +364,17 @@ public class WorldGenVillage {
                 regionMapper.createConnectionsTable(winfo, thPos);
                 continue;
             }
+            // One missing mandatory start building already rejects the entire layout.
+            // Do not scan the remaining plans of a village that cannot be generated.
             couldBuildKeyBuildings = false;
-            if (MillConfigValues.LogWorldGeneration < 2) continue;
-            MillLog.minor(this, "Couldn't build " + planSet.key + ".");
+            if (MillConfigValues.LogWorldGeneration >= 2)
+                MillLog.minor(this, "Couldn't build " + startingPlan.buildingKey + ".");
+            break;
         }
         if (MillConfigValues.LogWorldGeneration >= 3) {
             MillLog.debug(this, "Time taken for finding if building possible: " + (System.nanoTime() - startTime));
         }
+        reportGenerationStage("start-layout", thPos, stageStarted);
         if (!couldBuildKeyBuildings) {
             if (player != null) {
                 ServerSender.sendTranslatedSentence(player, '6', "ui.generatenotenoughspacevillage", new String[0]);
@@ -350,10 +389,43 @@ public class WorldGenVillage {
                 MillLog.major(this, "Building " + bl.planKey + ": " + bl.minx + "/" + bl.minz + " to " + bl.maxx + "/" + bl.maxz);
             }
         }
+        // Bounded future core plot reservation, separate from physical initial builds.
+        stageStarted = System.nanoTime();
+        List<BuildingLocation> futureSites=new ArrayList<>();
+        if(!villageType.playerControlled&&villageType.isRegularVillage()){
+            List<BuildingPlan> futurePlans=new ArrayList<>();
+            java.util.Set<String> keys=new java.util.HashSet<>();
+            for(BuildingPlanSet set:villageType.coreBuildings){
+                BuildingPlan p=set.getFirstStartingPlan();
+                if(p==null||!keys.add(p.buildingKey)||p.priority<=0||p.price>0||p.isgift||p.isSubBuilding||p.isWallSegment
+                    ||p.requiredGlobalTag!=null||!p.requiredTags.isEmpty()||!p.requiredVillageTags.isEmpty()
+                    ||!p.requiredParentTags.isEmpty()||!p.forbiddenTagsInVillage.isEmpty()
+                    ||!p.closeToTag.isEmpty()||!p.farFromTag.isEmpty())continue;
+                // Avoid ambiguous duplicate keys on save/load (including start/extra/player).
+                if(java.util.Collections.frequency(villageType.coreBuildings,set)>1
+                    ||villageType.startBuildings.stream().anyMatch(x->x.key.equals(set.key))
+                    ||villageType.centreBuilding.key.equals(set.key))continue;
+                futurePlans.add(p);
+            }
+            futurePlans.sort(java.util.Comparator.comparingInt((BuildingPlan p)->p.maleResident.isEmpty()&&p.femaleResident.isEmpty()?0:1)
+                .thenComparingLong(WorldGenVillage::layoutArea).reversed());
+            int probes=0;
+            for(BuildingPlan p:futurePlans){
+                if(futureSites.size()>=3||probes++>=5)break;
+                BuildingLocation reserved=p.findBuildingLocation(winfo,regionMapper,thPos,villageType.radius,random,-1);
+                if(reserved==null)continue;
+                reserved.level=-1;
+                futureSites.add(reserved);
+                winfo.addBuildingLocationToMap(reserved);
+            }
+        }
+        reportGenerationStage("reserve-sites", thPos, stageStarted);
         startTime = System.nanoTime();
         TreeClearer.cumulatedTimeTreeFinding = 0L;
         TreeClearer.cumulatedTimeLeaveDecay = 0L;
+        long phase=System.nanoTime();
         List<BuildingPlan.LocationBuildingPair> lbps = villageType.centreBuilding.buildLocation(mw, villageType, (BuildingLocation)plannedBuildings.get(0), true, true, null, false, false, player);
+        reportGenerationStage("build-centre",thPos,phase);
         Building townHallEntity = lbps.get((int)0).building;
         if (MillConfigValues.LogWorldGeneration >= 1) {
             MillLog.major(this, "Registering building: " + townHallEntity);
@@ -367,6 +439,7 @@ public class WorldGenVillage {
             townHallEntity.registerBuildingEntity(lbp.building);
             townHallEntity.registerBuildingLocation(lbp.location);
         }
+        phase=System.nanoTime();
         for (int i = 1; i < plannedBuildings.size(); ++i) {
             BuildingLocation bl = (BuildingLocation)plannedBuildings.get(i);
             BuildingPlanSet planSet = villageType.culture.getBuildingPlanSet(bl.planKey);
@@ -396,7 +469,22 @@ public class WorldGenVillage {
                 townHallEntity.registerBuildingLocation(lbp.location);
             }
         }
+        reportGenerationStage("build-start-buildings",thPos,phase);
+        // Native level -1 reservation; bind to original CORE project, never add duplicate EXTRA.
+        var coreProjects=townHallEntity.buildingProjects.get(BuildingProject.EnumProjects.CORE);
+        if(coreProjects!=null)for(BuildingLocation reserved:futureSites){
+            for(BuildingProject project:coreProjects){
+                if(project.location!=null||!project.key.equals(reserved.planKey))continue;
+                project.location=reserved;
+                MillLog.major(townHallEntity,"VILLAGE-SITE-RESERVED project="+project.key+" pos="+reserved.pos);
+                break;
+            }
+        }
+        phase=System.nanoTime();
         townHallEntity.initialiseVillage();
+        reportGenerationStage("initialise-village",thPos,phase);
+        phase=System.nanoTime();
+        if(!futureSites.isEmpty())townHallEntity.markSaveNeeded();
         if (completionRatio > 0.0f && !villageType.playerControlled) {
             int nbBuildingRushed;
             int nbRushed;
@@ -421,10 +509,13 @@ public class WorldGenVillage {
             townHallEntity.resetConstructionsAndGoals();
             MillLog.temp(townHallEntity, "Finished rushing at " + nbBuildingRushed + " on " + nbRushedBuildingsTarget + ".");
         }
+        reportGenerationStage("rush-construction",thPos,phase);
         String playerName = null;
         if (closestPlayer != null) {
             playerName = closestPlayer.getName().getString();
         }
+        MillLog.major(this,"VILLAGE-GEN-REGISTER kind="+(villageType.lonebuilding?"lone":"village")
+                +" type="+villageType.key+" culture="+villageType.culture.key+" pos="+townHallEntity.getPos());
         if (villageType.lonebuilding) {
             mw.registerLoneBuildingsLocation(world, townHallEntity.getPos(), townHallEntity.getVillageQualifiedName(), townHallEntity.villageType, townHallEntity.culture, true, playerName);
         } else {
@@ -437,6 +528,8 @@ public class WorldGenVillage {
         if (MillConfigValues.LogWorldGeneration >= 1) {
             MillLog.major(this, "New village generated at " + thPos + ", took: " + (System.nanoTime() - startTime) / 1000000L + " ms, of which tree finding: " + TreeClearer.cumulatedTimeTreeFinding / 1000000L + "ms and leave & log decay: " + TreeClearer.cumulatedTimeLeaveDecay / 1000000L + "ms.");
         }
+        reportGenerationStage("build-and-register", thPos, startTime);
+        stageStarted = System.nanoTime();
         for (String key : villageType.hamlets) {
             VillageType hamlet = villageType.culture.getVillageType(key);
             if (hamlet == null) continue;
@@ -445,6 +538,7 @@ public class WorldGenVillage {
             }
             this.generateHamlet(world, hamlet, townHallEntity.getPos(), townHallEntity.getVillageNameWithoutQualifier(), random, completionRatio);
         }
+        reportGenerationStage("hamlets", thPos, stageStarted);
         return true;
     }
 
@@ -494,14 +588,33 @@ public class WorldGenVillage {
                     villageRadius = specificVillageType.radius;
                 }
                 if ((p = this.generateVillageAtPoint_checkForUnloaded(world, x, y, z, generatingPlayer, p, villageRadius)) == null) {
+                    if(MillConfigValues.LogWorldGeneration>=2)MillLog.major(this,"VILLAGE-GEN-REJECT reason=area-incomplete x="+x+" z="+z+" radius="+villageRadius);
+                    if(world instanceof net.minecraft.server.level.ServerLevel server && generatingPlayer==null
+                            && specificVillageType==null && parentVillage==null && !alwaysGenerate
+                            && minDistance==Integer.MAX_VALUE)
+                        VillagePreparationQueue.offer(server,mw,this,x>>4,z>>4,random.nextLong(),completionRatio);
                     return false;
                 }
             }
             long startTime = System.nanoTime();
             triedChunks(world).add(this.computeChunkCoordsHash(p.getiX(), p.getiZ()));
-            if ((generateVillages || alwaysGenerate) && (canAttemptVillage = this.generateVillageAtPoint_canAttemptVillage(world, generatingPlayer, minDistance, mw, p, startTime)) && (villageType = specificVillageType == null ? this.generateVillageAtPoint_findVillageType(world, p.getiX(), p.getiZ(), mw, closestPlayer) : specificVillageType) != null && (result = villageType.customCentre == null ? this.generateVillage(p, world, villageType, generatingPlayer, closestPlayer, random, minDistance, name, parentVillage, completionRatio, testBiomeValidity, alwaysGenerate) : this.generateCustomVillage(p, world, villageType, generatingPlayer, random))) {
-                return true;
+            // Preserve the same short-circuit order and selection rules; make
+            // the rejected stage visible only when generation logging is enabled.
+            String rejectReason="villages-disabled";
+            if(generateVillages||alwaysGenerate){
+                rejectReason="distance";
+                if(this.generateVillageAtPoint_canAttemptVillage(world,generatingPlayer,minDistance,mw,p,startTime)){
+                    rejectReason="no-eligible-type";
+                    villageType=specificVillageType==null?this.generateVillageAtPoint_findVillageType(world,p.getiX(),p.getiZ(),mw,closestPlayer):specificVillageType;
+                    if(villageType!=null){
+                        rejectReason="layout:"+villageType.culture.key+"/"+villageType.key;
+                        if(villageType.customCentre==null
+                                ?this.generateVillage(p,world,villageType,generatingPlayer,closestPlayer,random,minDistance,name,parentVillage,completionRatio,testBiomeValidity,alwaysGenerate)
+                                :this.generateCustomVillage(p,world,villageType,generatingPlayer,random))return true;
+                    }
+                }
             }
+            if(MillConfigValues.LogWorldGeneration>=2)MillLog.major(this,"VILLAGE-GEN-REJECT reason="+rejectReason+" pos="+p);
             if (generatingPlayer != null || !MillConfigValues.generateLoneBuildings || specificVillageType != null) {
                 return false;
             }
@@ -572,6 +685,25 @@ public class WorldGenVillage {
         }
     }
 
+    /**
+     * A village claims a circular horizontal area. This also applies to
+     * player-spawned and custom villages, which previously bypassed the
+     * standard centre-distance check. Existing worlds are never modified.
+     */
+    private static boolean overlapsExistingVillageTerritory(MillWorldData mw, Point centre, VillageType requested) {
+        if (mw == null || requested == null || requested.lonebuilding) return false;
+        int newRadius = Math.max(0, requested.radius);
+        for (Point otherCentre : mw.villagesList.pos) {
+            if (otherCentre == null) continue;
+            Building existing = mw.getBuilding(otherCentre);
+            int existingRadius = existing != null && existing.villageType != null
+                ? existing.villageType.radius : MillConfigValues.VillageRadius;
+            double minimum = (double)newRadius + Math.max(0, existingRadius);
+            if (centre.horizontalDistanceTo(otherCentre) < minimum) return true;
+        }
+        return false;
+    }
+
     private boolean generateVillageAtPoint_canAttemptVillage(Level world, Player generatingPlayer, int minDistance, MillWorldData mw, Point p, long startTime) {
         boolean canAttemptVillage = true;
         int minDistanceVillages = Math.min(minDistance, MillConfigValues.minDistanceBetweenVillages);
@@ -599,14 +731,19 @@ public class WorldGenVillage {
     }
 
     private Point generateVillageAtPoint_checkForUnloaded(Level world, int x, int y, int z, Player generatingPlayer, Point p, int villageRadius) {
+        long started = System.nanoTime();
         boolean areaLoaded = false;
         int chunkRadius = villageRadius / 16 + 2;
-        if (!WorldUtilities.checkChunksGenerated(world, x - 16 * chunkRadius, z - 16 * chunkRadius, x + 16 * chunkRadius, z + 16 * chunkRadius)) {
+        // The 17x17 candidate grid contains heavily overlapping rectangles.
+        // Cache both results only for this read-only attempt, not across ticks.
+        VillageGenerationProbe probe = new VillageGenerationProbe(
+                (cx, cz) -> WorldUtilities.isChunkGenerated(world, cx, cz));
+        if (!probe.checkArea(x - 16 * chunkRadius, z - 16 * chunkRadius, x + 16 * chunkRadius, z + 16 * chunkRadius)) {
             for (int i = -8; i <= 8 && !areaLoaded; ++i) {
                 for (int j = -8; j <= 8 && !areaLoaded; ++j) {
                     int tx = x + i * 16;
                     int tz = z + j * 16;
-                    if (triedChunks(world).contains(this.computeChunkCoordsHash(tx, tz)) || !WorldUtilities.checkChunksGenerated(world, tx - 16 * chunkRadius, tz - 16 * chunkRadius, tx + 16 * chunkRadius, tz + 16 * chunkRadius)) continue;
+                    if (triedChunks(world).contains(this.computeChunkCoordsHash(tx, tz)) || !probe.checkArea(tx - 16 * chunkRadius, tz - 16 * chunkRadius, tx + 16 * chunkRadius, tz + 16 * chunkRadius)) continue;
                     areaLoaded = true;
                     p = new Point((tx >> 4) * 16 + 8, 0.0, (tz >> 4) * 16 + 8);
                 }
@@ -614,6 +751,11 @@ public class WorldGenVillage {
         } else {
             areaLoaded = true;
         }
+        long elapsed = System.nanoTime() - started;
+        if (elapsed >= 100_000_000L)
+            MillLog.major(this, "MILL-SLOW stage=village-area-check pos=" + x + "/" + z
+                    + " ms=" + elapsed / 1_000_000L + " probes=" + probe.uniqueChecks()
+                    + " cacheHits=" + probe.cacheHits() + " found=" + areaLoaded);
         if (!areaLoaded) {
             if (generatingPlayer != null) {
                 ServerSender.sendTranslatedSentence(generatingPlayer, '6', "ui.worldnotgenerated", new String[0]);
@@ -621,6 +763,34 @@ public class WorldGenVillage {
             return null;
         }
         return p;
+    }
+
+    boolean preparationDistanceValid(net.minecraft.server.level.ServerLevel world,MillWorldData mw,
+                                     int chunkX,int chunkZ,VillageType type){
+        Point p=new Point(chunkX*16,0,chunkZ*16);
+        return !WorldGenVillage.isWithinSpawnRadiusProtection(world,type,p)
+                && generateVillageAtPoint_canAttemptVillage(world,null,Integer.MAX_VALUE,mw,p,System.nanoTime())
+                && (type==null||!overlapsExistingVillageTerritory(mw,p,type));
+    }
+
+    VillageType selectPreparationType(net.minecraft.server.level.ServerLevel world,MillWorldData mw,
+                                      int chunkX,int chunkZ,long seed) throws IllegalAccessException{
+        Random previous=MillCommonUtilities.random;
+        try{
+            MillCommonUtilities.random=new Random(seed);
+            return generateVillageAtPoint_findVillageType(world,chunkX*16,chunkZ*16,mw,
+                    world.getNearestPlayer(chunkX*16,64,chunkZ*16,200,false));
+        }finally{MillCommonUtilities.random=previous;}
+    }
+
+    boolean preparationTypeValid(net.minecraft.server.level.ServerLevel world,MillWorldData mw,
+                                 int chunkX,int chunkZ,VillageType type) throws IllegalAccessException{
+        if(type.lonebuilding || type.customCentre!=null || type.getChoiceWeight(null)<=0
+                || !preparationDistanceValid(world,mw,chunkX,chunkZ,type))return false;
+        HashMap<String,Integer> counts=new HashMap<>();
+        for(String key:mw.villagesList.types)counts.merge(key,1,Integer::sum);
+        return type.isValidForGeneration(mw,world.getNearestPlayer(chunkX*16,64,chunkZ*16,200,false),
+                counts,new Point(chunkX*16,60,chunkZ*16),getBiomeNameAtPos(world,chunkX*16,chunkZ*16),false);
     }
 
     private VillageType generateVillageAtPoint_findVillageType(Level world, int x, int z, MillWorldData mw, Player closestPlayer) throws IllegalArgumentException, IllegalAccessException {

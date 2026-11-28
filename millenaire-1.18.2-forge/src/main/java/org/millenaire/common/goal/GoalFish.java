@@ -38,7 +38,14 @@ extends Goal {
     }
 
     protected void addFishResults(MillVillager villager) {
-        villager.addToInv(Items.COD, 1);
+        InvItem cod = InvItem.createInvItem(Items.COD, 0);
+        Building home = villager.getHouse(), destination = villager.getGoalBuildingDest();
+        if (home == null || destination == null) return;
+        int limit = this.buildingLimit.getOrDefault(cod, 128);
+        long room = (long)limit - home.countGoods(cod) - villager.countInv(cod);
+        if (destination != home) room = Math.min(room, (long)limit - destination.countGoods(cod));
+        int amount = (int)Math.max(0L, Math.min(room, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1)));
+        if (amount > 0) villager.addToInv(Items.COD, amount);
     }
 
     @Override
@@ -48,13 +55,36 @@ extends Goal {
         Building closest = null;
         for (Building b : vb) {
             if (b.getResManager().fishingspots.isEmpty() || b.getResManager().getSleepingPos() == null) continue;
+            if (!hasStockRoom(villager, b)) continue;
             if (closest != null && !(villager.getPos().horizontalDistanceToSquared(b.getResManager().getSleepingPos()) < villager.getPos().horizontalDistanceToSquared(closest.getResManager().getSleepingPos()))) continue;
             closest = b;
         }
         if (closest == null || closest.getResManager().fishingspots.size() == 0) {
+            GoalDiagnostics.note(villager, this, "NO_ELIGIBLE_FISHING_SPOT");
             return null;
         }
         return this.packDest(closest.getResManager().fishingspots.get(MillCommonUtilities.randomInt(closest.getResManager().fishingspots.size())), closest);
+    }
+
+    private boolean hasStockRoom(MillVillager villager, Building destination) throws Exception {
+        if (!validateDest(villager, destination)) return false;
+        Building home = villager.getHouse();
+        if (home == null || (home != destination && !validateDest(villager, home))) return false;
+        for (var entry : this.buildingLimit.entrySet()) {
+            InvItem item = entry.getKey();
+            // Include unreturned catch so a fishing trip cannot overrun the
+            // configured stock target before goods reach the chest.
+            long stock = (long)home.countGoods(item) + villager.countInv(item);
+            if (stock >= entry.getValue()) {
+                if (GoalDiagnostics.recording(villager, this)) GoalDiagnostics.note(villager, this, "FISH_HOME_STOCK_LIMIT " + item + " " + stock + "/" + entry.getValue());
+                return false;
+            }
+            if (destination != home && destination.countGoods(item) >= entry.getValue()) {
+                if (GoalDiagnostics.recording(villager, this)) GoalDiagnostics.note(villager, this, "FISH_DESTINATION_STOCK_LIMIT " + item + " limit=" + entry.getValue());
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -72,9 +102,32 @@ extends Goal {
         return true;
     }
 
+    private boolean validFishingPoint(MillVillager villager, Building destination) {
+        var point = villager.getGoalDestPoint();
+        return destination != null && point != null
+                && villager.getTownHall() != null
+                && villager.getTownHall().getBuildingsWithTag("fishingspot").contains(destination)
+                && destination.getResManager().fishingspots.contains(point)
+                && villager.level.hasChunkAt(point.getBlockPos());
+    }
+
+    @Override
+    public boolean isWithinActionRange(MillVillager villager, org.millenaire.common.utilities.Point ignored) {
+        return WorkAccess.canAccessResource(villager, villager.getGoalDestPoint(), this.range(villager));
+    }
+
+    @Override
+    protected boolean isStillValidSpecific(MillVillager villager) throws Exception {
+        return validFishingPoint(villager, villager.getGoalBuildingDest())
+                && hasStockRoom(villager, villager.getGoalBuildingDest());
+    }
+
     @Override
     public boolean performAction(MillVillager villager) throws Exception {
         if (villager.level.isClientSide) return true;
+        Building destination = villager.getGoalBuildingDest();
+        if (destination == null || !hasStockRoom(villager, destination) || !validFishingPoint(villager,destination)) return true;
+        if (!this.isWithinActionRange(villager,villager.getGoalDestPoint())) return false;
         this.addFishResults(villager);
         villager.swing(InteractionHand.MAIN_HAND);
         return true;
@@ -82,15 +135,18 @@ extends Goal {
 
     @Override
     public int priority(MillVillager villager) throws Exception {
-        if (villager.getGoalBuildingDest() == null) {
-            return 20;
-        }
-        return 100 - villager.getGoalBuildingDest().countGoods(Items.COD);
+        // Availability already checks the actual fishing destination.
+        // Use home stock, not the previously active goal's destination,
+        // and do not repeat the fishing-spot search just for a priority.
+        Building home = villager.getHouse();
+        if (home == null) return 20;
+        long raw = (long)home.countGoods(Items.COD) + villager.countInv(InvItem.createInvItem(Items.COD, 0));
+        return (int)Math.max(1L, 100L - raw);
     }
 
     @Override
     public boolean stuckAction(MillVillager villager) throws Exception {
-        return this.performAction(villager);
+        return false;
     }
 }
 

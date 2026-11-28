@@ -59,7 +59,8 @@ extends GoalGeneric {
         List<Building> buildings = this.getBuildings(villager);
         for (Building buildingDest : buildings) {
             Point p;
-            if (this.getTargetCount(buildingDest) < this.minimumAvailableBlocks || (p = this.getTargetLocation(buildingDest)) == null) continue;
+            if (buildingDest == null || !this.validateDest(villager,buildingDest)
+                    || this.getTargetCount(buildingDest) < this.minimumAvailableBlocks || (p = this.getTargetLocation(buildingDest)) == null) continue;
             vp.add(p);
             buildingp.add(buildingDest.getPos());
         }
@@ -136,31 +137,43 @@ extends GoalGeneric {
     }
 
     @Override
-    public boolean performAction(MillVillager villager) {
-        if (villager.getGoalDestPoint().getBlockActualState(villager.level) == this.gatherBlockState) {
-            for (AnnotedParameter.BonusItem bonusItem : this.harvestItem) {
-                if (MillCommonUtilities.randomInt(100) > bonusItem.chance) continue;
-                if (this.collectInBuilding) {
-                    villager.getGoalBuildingDest().storeGoods(bonusItem.item, 1);
-                    continue;
-                }
-                villager.addToInv(bonusItem.item, 1);
-            }
-            if (this.resultingBlockState != null) {
-                villager.setBlockstate(villager.getGoalDestPoint(), this.resultingBlockState);
-            }
-            villager.swing(InteractionHand.MAIN_HAND);
+    public boolean performAction(MillVillager villager) throws MillLog.MillenaireException {
+        Building dest = villager.getGoalBuildingDest();
+        Point point = villager.getGoalDestPoint();
+        if (villager.level.isClientSide || dest == null || point == null || dest.location == null
+                || !getBuildings(villager).contains(dest) || !villager.level.hasChunkAt(point.getBlockPos())
+                || !this.passesStockLimits(villager) || !this.validateDest(villager,dest)) return true;
+        if (point.getBlockActualState(villager.level) != this.gatherBlockState) return true;
+        // The target must remain within the selected workplace's search area.
+        if (point.getiX() < dest.location.minx-3 || point.getiX() >= dest.location.maxx+3
+                || point.getiY() < dest.location.miny-1 || point.getiY() >= dest.location.maxy+20
+                || point.getiZ() < dest.location.minz-3 || point.getiZ() >= dest.location.maxz+3) return true;
+        var gathered = new java.util.LinkedHashMap<org.millenaire.common.item.InvItem,Integer>();
+        for (AnnotedParameter.BonusItem bonusItem : this.harvestItem) {
+            if (bonusItem.tag != null && !dest.containsTags(bonusItem.tag)
+                    || MillCommonUtilities.randomInt(100) >= bonusItem.chance) continue;
+            int amount = org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1);
+            if (amount > 0) gathered.merge(bonusItem.item,amount,Integer::sum);
         }
-        if (this.isDestPossibleSpecific(villager, villager.getGoalBuildingDest())) {
-            try {
-                villager.setGoalInformation(this.getDestination(villager));
+        if (this.collectInBuilding) {
+            // A full chest must not consume the crop or silently discard output.
+            try (var transaction = dest.beginGoodsTransaction(villager)) {
+                for (var entry : gathered.entrySet())
+                    if (dest.storeGoods(entry.getKey(),entry.getValue()) != entry.getValue()) return true;
+                if (this.resultingBlockState != null && !villager.setBlockstate(point,this.resultingBlockState)) return true;
+                transaction.commit();
             }
-            catch (MillLog.MillenaireException e) {
-                MillLog.printException(e);
-            }
-            return false;
+        } else {
+            // No chest snapshot is needed for normal inventory-only gathering.
+            if (this.resultingBlockState != null && !villager.setBlockstate(point,this.resultingBlockState)) return true;
+            for (var entry : gathered.entrySet()) villager.addToInv(entry.getKey(),entry.getValue());
         }
-        return true;
+        villager.swing(InteractionHand.MAIN_HAND);
+        if (!this.passesStockLimits(villager)) return true;
+        Goal.GoalInformation next = this.getDestination(villager);
+        if (next == null) return true;
+        villager.setGoalInformation(next);
+        return false;
     }
 
     @Override

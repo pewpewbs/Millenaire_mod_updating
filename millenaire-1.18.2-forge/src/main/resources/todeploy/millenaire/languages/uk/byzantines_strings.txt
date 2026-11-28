@@ -1,17 +1,17 @@
 
-culture.byzantines=Греки (Візантійці)
+culture.byzantines=Візантійці
 culture.fullname=Візантійці
-village.controlled=Кероване поселення
-village.customcontrolled=Власне кероване поселення
+village.controlled=Село під управлінням гравця
+village.customcontrolled=Власноруч сплановане село
 
-village.tradingvillage=Торговельне поселення
-village.militaryvillage=Військове поселення
-village.religiousvillage=Православне поселення
+village.tradingvillage=Торговельне село
+village.militaryvillage=Військове село
+village.religiousvillage=Православне село
 
 villager.architect_byzantine=Архітектор
 villager.baron_byzantine=Барон
 villager.boy_byzantine=Хлопчик
-villager.fisherman_byzantine=Фішер
+villager.fisherman_byzantine=Рибалка
 villager.girl_byzantine=Дівчинка
 villager.lumberman_byzantine=Лісоруб
 villager.merchant_byzantine=Купець
@@ -22,20 +22,20 @@ villager.shepherd_byzantine=Вівчар
 villager.silkfarmer_byzantine=Шовківник
 villager.toolsmith_byzantine=Коваль
 villager.smith_byzantine=Коваль
-villager.teenagerFemale=Юнак
+villager.teenagerFemale=Дівчина
 villager.teenagerMale=Юнак
 
 villager.shepherd_female_byzantine=Вівчарка
 villager.silkfarmer_byzantine=Ткач шовку
-villager.silkfarmerwife_byzantine=Ткач шовку
+villager.silkfarmerwife_byzantine=Ткаля шовку
 villager.smith_byzantine=Коваль
 villager.soldier_byzantine=Воїн
-villager.teenagerfemale=Юнак
+villager.teenagerfemale=Дівчина
 villager.teenagermale=Юнак
 
 villager.wife_byzantine=Дружина
-villager.merchant_art=Художницький торговець
-villager.merchant_food=Торговець їжею
+villager.merchant_art=Торговець мистецькими виробами
+villager.merchant_food=Торговець харчами
 villager.merchant_materials=Торговець каменем
 villager.smuggler_silk=Торговець шовком
 
@@ -43,7 +43,7 @@ villager.artisanwife_byzantine=Ремісниця
 villager.seamster_byzantine=Кравець
 villager.seamstress_byzantine=Кравчиня
 villager.smelter_byzantine=Плавильник
-villager.pastor_byzantine=Пастор
+villager.pastor_byzantine=Священник
 villager.worker_byzantine=Робітник
 villager.guard_byzantine=Вартовий
 villager.host_byzantine=Господар
@@ -54,11 +54,11 @@ villager.mason_byzantine=Муляр
 villager.centurio_byzantine=Центуріон
 villager.soldier_byzantine=Воїн
 villager.special_byzanzine=Боскократор
-villager.oldshepherd_byzantine=Одиний пастир
+villager.oldshepherd_byzantine=Самітний вівчар
 villager.armysmith_byzantine=Військовий коваль
 
 villager.farmiller_byzantine=Фермер
-villager.farmiller_wife_byzantine=Фермер
+villager.farmiller_wife_byzantine=Фермерка
 
 villager.monk_byzantine=Чернець
 villager.metropolit_byzantine=Митрополит
@@ -68,19 +68,19 @@ villager.playersoldier_byzantine=Воїн
 villager.special_byzantine=Боскократор
 
 
-shop.THemporikos=Центральний магазин
-shop.mason=Передові матеріали
+shop.THemporikos=Центральна крамниця
+shop.mason=Оброблені матеріали
 shop.toolsmith=Інструменти
-shop.dressmaker=Текстиль і ікони
+shop.dressmaker=Тканини та ікони
 shop.centralworkshop=Основні матеріали
-shop.taverna=Продукти харчування та напої
+shop.taverna=Їжа та напої
 shop.olivepress=Оливкові продукти
-shop.specialshop=Боскократор викликає
-shop.thstratiotike=Центральний магазин
-shop.thorthodoxo=Центральний магазин
-shop.armyforge=Зброя і броня
+shop.specialshop=Боскократор кличе
+shop.thstratiotike=Центральна крамниця
+shop.thorthodoxo=Центральна крамниця
+shop.armyforge=Зброя
 
-villager.merchant_armour=Торговець зброєю
+villager.merchant_armour=Торговець обладунками
 villager.merchant_textiles=Торговець тканинами
 villager.merchant_relics=Торговець реліквіями
 villager.merchant_dyes=Торговець барвниками
@@ -93,18 +93,18 @@ villager.keeper_byzantine=Доглядач маяка
 villager.loneshepherd_byzantine=Вівчар
 villager.loneshepherdf_byzantine=Вівчарка
 
-villager.loneabbot_byzantine=Абат
-villager.lonemonk_byzantine=Расофор
+villager.loneabbot_byzantine=Ігумен
+villager.lonemonk_byzantine=Рясофорний чернець
 
 shop.bakery=Пекарня
 shop.clothing=Одяг
 shop.fishery=Риба
 shop.forge=Інструменти
-shop.lonesheep=Вунь
+shop.lonesheep=Вовна
 shop.lonetower=Їжа
-shop.sheepfarm=Агнецька, шкіра і фета
+shop.sheepfarm=Баранина, шкіра та фета
 shop.tavernbyz=Вино
-shop.townhall=Центральний магазин
-shop.alchemyworkshop=Алхімічні продукти
-shop.lonemonastery=Монастырські товари
+shop.townhall=Центральна крамниця
+shop.alchemyworkshop=Алхімічні товари
+shop.lonemonastery=Монастирські товари
 

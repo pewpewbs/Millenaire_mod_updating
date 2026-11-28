@@ -25,7 +25,8 @@ itemNeeded=steelSword
 
 requiredGood=cotton,32
 
-requiredGood=wool_white,64
+// Keep a small local reserve for dyeing and carpets; export the surplus.
+requiredGood=wool_white,8
 requiredGood=dye_lightblue,8
 requiredGood=dye_red,8
 

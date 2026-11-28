@@ -24,24 +24,26 @@ extends Goal {
     }
 
     public Goal.GoalInformation getDestination(MillVillager villager, boolean test) throws Exception {
-        List<Building> buildings = null;
-        boolean delayOver = !test ? true : (!villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L);
-        for (MillVillager v : villager.getHouse().getKnownVillagers()) {
-            HashMap<InvItem, Integer> goods = v.requiresGoods();
-            int nb = 0;
-            for (InvItem key : goods.keySet()) {
-                if (villager.getHouse().countGoods(key.getItem(), key.meta) >= goods.get(key) / 2) continue;
-                if (buildings == null) {
-                    buildings = villager.getTownHall().getBuildings();
-                }
-                for (Building building : buildings) {
-                    if (building == villager.getHouse()) continue;
-                    int nbav = building.nbGoodAvailable(key, false, false, false);
-                    if (nbav <= 0 || !delayOver && (nb += nbav) <= 16) continue;
-                    return this.packDest(building.getResManager().getSellingPos(), building);
-                }
+        Building home = villager.getHouse();
+        if (!LocalLogistics.usable(home) || villager.getTownHall() == null) return null;
+        var targets = LocalLogistics.householdTargets(villager);
+        // Retry retained cargo before fetching more. The paired delivery goal
+        // runs next, even when a previous delivery only partially succeeded.
+        for (var entry : targets.entrySet())
+            if (LocalLogistics.householdDelivery(villager,home,entry.getKey(),entry.getValue()) > 0)
+                return this.packDest(home.getResManager().getSellingPos(),home);
+        boolean delayOver = !test || !villager.lastGoalTime.containsKey(this)
+                || villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L;
+        for (Building source : villager.getTownHall().getBuildings()) {
+            long total = 0;
+            for (var entry : targets.entrySet()) {
+                if (!LocalLogistics.low(home,entry.getKey(),entry.getValue())) continue;
+                total += LocalLogistics.householdPickup(villager,source,entry.getKey(),entry.getValue());
             }
+            if (total > 0 && (delayOver || total > 16))
+                return this.packDest(source.getResManager().getSellingPos(),source);
         }
+        GoalDiagnostics.note(villager,this,"NO_HOUSEHOLD_DEFICIT_OR_AVAILABLE_SUPPLY_OR_STORAGE");
         return null;
     }
 
@@ -61,39 +63,41 @@ extends Goal {
     }
 
     @Override
+    public boolean isWithinActionRange(MillVillager villager,
+            org.millenaire.common.utilities.Point destination) {
+        return WorkAccess.canAccessStock(villager, destination, this.range(villager));
+    }
+
+    @Override
     public boolean performAction(MillVillager villager) throws Exception {
-        Building shop = villager.getGoalBuildingDest();
-        if (shop == null || shop == villager.getHouse()) {
-            return true;
-        }
-        for (MillVillager v : villager.getHouse().getKnownVillagers()) {
-            HashMap<InvItem, Integer> goods = v.requiresGoods();
-            for (InvItem key : goods.keySet()) {
-                if (villager.getHouse().countGoods(key.getItem(), key.meta) >= goods.get(key)) continue;
-                int nb = Math.min(shop.nbGoodAvailable(key, false, false, false), goods.get(key));
-                villager.takeFromBuilding(shop, key.getItem(), key.meta, nb);
-            }
+        Building source = villager.getGoalBuildingDest(), home = villager.getHouse();
+        if (source == null || home == null) return true;
+        if (!LocalLogistics.access(this,villager,source)) return false;
+        if (source == home) return true; // nextGoal performs the deposit
+        for (var entry : LocalLogistics.householdTargets(villager).entrySet()) {
+            InvItem item = entry.getKey();
+            LocalLogistics.collectHousehold(villager,source,item,entry.getValue());
         }
         return true;
     }
 
     @Override
     public int priority(MillVillager villager) throws Exception {
-        int nb = 0;
-        List<Building> shops = villager.getTownHall().getShops();
-        for (MillVillager v : villager.getHouse().getKnownVillagers()) {
-            HashMap<InvItem, Integer> goods = v.requiresGoods();
-            for (InvItem key : goods.keySet()) {
-                if (villager.getHouse().countGoods(key.getItem(), key.meta) >= goods.get(key) / 2) continue;
-                for (Building shop : shops) {
-                    if (shop == villager.getHouse()) continue;
-                    int nbav = shop.nbGoodAvailable(key, false, false, false);
-                    if (nbav <= 0) continue;
-                    nb += nbav;
-                }
-            }
+        Building home = villager.getHouse();
+        if (!LocalLogistics.usable(home) || villager.getTownHall() == null) return 0;
+        var targets = LocalLogistics.householdTargets(villager);
+        long carried = 0, total = 0;
+        for (var entry : targets.entrySet())
+            carried += LocalLogistics.householdDelivery(villager,home,entry.getKey(),entry.getValue());
+        if (carried > 0) return (int)Math.min(Integer.MAX_VALUE,100 + carried*20);
+        var sources = villager.getTownHall().getBuildings();
+        for (var entry : targets.entrySet()) {
+            if (!LocalLogistics.low(home,entry.getKey(),entry.getValue())) continue;
+            int best = 0;
+            for (Building source : sources)
+                best = Math.max(best,LocalLogistics.householdPickup(villager,source,entry.getKey(),entry.getValue()));
+            total += best;
         }
-        return nb * 20;
+        return (int)Math.min(Integer.MAX_VALUE,total*20);
     }
 }
-

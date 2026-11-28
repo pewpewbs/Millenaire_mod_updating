@@ -8,7 +8,7 @@ building.areatoclear=4
 
 initial.startlevel=-1
 initial.nativename=Julaahaa Ka Ghar
-initial.priority=900
+initial.priority=5900
 initial.male=indian_weaver
 initial.female=indian_peasantwife
 initial.requiredvillagetag=cottonfield

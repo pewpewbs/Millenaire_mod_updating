@@ -388,7 +388,8 @@ public class MillClientUtilities {
         String gameSpeech = VillageUtilities.getVillagerSentence(v, player.getName().getString(), false);
         String nativeSpeech = VillageUtilities.getVillagerSentence(v, player.getName().getString(), true);
         if (nativeSpeech != null || gameSpeech != null) {
-            String s = v.dialogueTargetFirstName != null ? LanguageUtilities.string("other.chattosomeone", v.func_70005_c_(), v.dialogueTargetFirstName + " " + v.dialogueTargetLastName) + ": " : v.func_70005_c_() + ": ";
+            // Keep recipient metadata for dialogue filtering, but show only the speaker in chat.
+            String s = v.func_70005_c_() + ": ";
             if (nativeSpeech != null) {
                 s = s + "\u00a79" + nativeSpeech;
             }

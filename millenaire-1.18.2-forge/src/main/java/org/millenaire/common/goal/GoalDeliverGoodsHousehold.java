@@ -45,11 +45,20 @@ extends Goal {
     }
 
     @Override
+    public boolean isWithinActionRange(MillVillager villager,
+            org.millenaire.common.utilities.Point destination) {
+        return WorkAccess.canAccessStock(villager, destination, this.range(villager));
+    }
+
+    @Override
     public boolean performAction(MillVillager villager) throws Exception {
-        for (MillVillager v : villager.getHouse().getKnownVillagers()) {
-            for (InvItem key : v.requiresGoods().keySet()) {
-                villager.putInBuilding(villager.getHouse(), key.getItem(), key.meta, 256);
-            }
+        var home = villager.getHouse();
+        if (home == null) return true;
+        if (!LocalLogistics.access(this,villager,home)) return false;
+        for (var entry : LocalLogistics.householdTargets(villager).entrySet()) {
+            InvItem item = entry.getKey();
+            int amount = LocalLogistics.householdDelivery(villager,home,item,entry.getValue());
+            if (amount > 0) villager.putInBuilding(home,item.getItem(),item.meta,Math.min(256,amount));
         }
         return true;
     }

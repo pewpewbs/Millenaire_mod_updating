@@ -59,7 +59,22 @@ public class RenderMillVillager extends HumanoidMobRenderer<MillVillager, ModelM
     @Override
     public void render(MillVillager villager, float yaw, float partialTicks, PoseStack pose,
             MultiBufferSource buffers, int light) {
-        super.render(villager, yaw, partialTicks, pose, buffers, light);
+        int modelLight=light;
+        if(villager.isAlive()&&villager.isVillagerSleeping()){
+            // The default eye-height sample can fall inside the roof even
+            // though the lying model occupies a lit bed. Sample actual nearby
+            // air without forcing full brightness or changing world lighting.
+            var feet=villager.blockPosition();
+            int block=net.minecraft.client.renderer.LightTexture.block(light);
+            int sky=net.minecraft.client.renderer.LightTexture.sky(light);
+            for(var sample:List.of(feet,feet.above())){
+                if(!villager.level.getBlockState(sample).isAir())continue;
+                block=Math.max(block,villager.level.getBrightness(net.minecraft.world.level.LightLayer.BLOCK,sample));
+                sky=Math.max(sky,villager.level.getBrightness(net.minecraft.world.level.LightLayer.SKY,sample));
+            }
+            modelLight=net.minecraft.client.renderer.LightTexture.pack(block,sky);
+        }
+        super.render(villager, yaw, partialTicks, pose, buffers, modelLight);
         if (!villager.isInvisible() && !Minecraft.getInstance().options.hideGui)
             doRenderVillagerName(villager, 0, 0, 0, pose, buffers, light);
     }
@@ -278,7 +293,12 @@ public class RenderMillVillager extends HumanoidMobRenderer<MillVillager, ModelM
                 this.displayText(pose, buffers, light, villager, "Dead on server!", -1593901056, (float)x, (float)y + height, (float)z);
             }
             if (MillConfigValues.displayNames && !villager.vtype.hideName) {
-                this.displayText(pose, buffers, light, villager, villager.func_70005_c_() + ", " + villager.getNativeOccupationName(), -1593835521, (float)x, (float)y + height, (float)z);
+                String occupation=villager.getNativeOccupationName();
+                if(MillConfigValues.effective_language!=null&&MillConfigValues.effective_language.startsWith("uk")){
+                    var record=villager.getRecord();
+                    if(record!=null&&!record.getLocalizedOccupation().isBlank())occupation=record.getLocalizedOccupation();
+                }
+                this.displayText(pose, buffers, light, villager, villager.func_70005_c_() + ", " + occupation, -1593835521, (float)x, (float)y + height, (float)z);
                 height += 0.32f;
             }
             if (!(specialIcons = this.defineSpecialIcons(villager)).isEmpty()) {

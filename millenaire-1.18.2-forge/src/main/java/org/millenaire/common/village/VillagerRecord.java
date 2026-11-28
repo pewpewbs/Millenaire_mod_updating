@@ -341,6 +341,12 @@ implements Cloneable {
         return this.culture;
     }
 
+    public String getLocalizedOccupation() {
+        if(this.getCulture()==null||this.getType()==null)return "";
+        String localized=this.getCulture().getCultureString("villager."+this.getNameKey());
+        return localized==null||localized.isBlank()||localized.startsWith("villager.")?this.getNativeOccupationName():localized;
+    }
+
     public String getGameOccupation() {
         String game;
         if (this.getCulture() == null || this.getCulture().getVillagerType(this.type) == null) {

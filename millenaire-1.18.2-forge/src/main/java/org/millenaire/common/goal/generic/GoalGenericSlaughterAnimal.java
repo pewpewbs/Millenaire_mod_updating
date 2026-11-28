@@ -27,6 +27,8 @@ import org.millenaire.common.annotedparameters.ConfigAnnotations;
 import org.millenaire.common.entity.MillVillager;
 import org.millenaire.common.forge.Mill;
 import org.millenaire.common.goal.Goal;
+import org.millenaire.common.goal.GoalDiagnostics;
+import org.millenaire.common.goal.WorkAccess;
 import org.millenaire.common.goal.generic.GoalGeneric;
 import org.millenaire.common.item.InvItem;
 import org.millenaire.common.pathing.atomicstryker.AStarConfig;
@@ -77,7 +79,7 @@ extends GoalGeneric {
             if (!this.isDestPossible(villager, dest)) continue;
             List<Entity> animals = this.getAnimals(villager, dest.getPos(), 15, 10);
             for (Entity ent : animals) {
-                if (ent.isRemoved() || this.isEntityChild(ent) || closest != null && !(pos.distanceTo(ent) < bestDist)) continue;
+                if (ent.isRemoved() || this.isEntityChild(ent) || villager.isAnimalWorkTargetCoolingDown(ent) || closest != null && !(pos.distanceTo(ent) < bestDist)) continue;
                 closest = ent;
                 destBuilding = dest;
                 bestDist = pos.distanceTo(ent);
@@ -111,7 +113,8 @@ extends GoalGeneric {
     @Override
     public boolean isDestPossibleSpecific(MillVillager villager, Building b) {
         if (b == null) return false;
-        List<Entity> animals = this.getAnimals(villager, b.getPos(), 25, 10);
+        // Count and choose from the same herd radius, not two different herds.
+        List<Entity> animals = this.getAnimals(villager, b.getPos(), 15, 10);
         if (animals == null) {
             return false;
         }
@@ -125,10 +128,10 @@ extends GoalGeneric {
             if (!b.getResManager().spawnTypes.get(i).equals((Object)this.animalKey)) continue;
             targetAnimals = b.getResManager().spawns.get(i).size();
         }
-        if (!this.aggressiveSlaughter) {
-            return nbanimals > targetAnimals;
-        }
-        return nbanimals > targetAnimals / 2;
+        int reserve = this.aggressiveSlaughter ? targetAnimals / 2 : targetAnimals;
+        if (nbanimals > reserve) return true;
+        GoalDiagnostics.note(villager, this, "HERD_AT_RESERVE adults=" + nbanimals + " reserve=" + reserve);
+        return false;
     }
 
     private boolean isEntityChild(Entity ent) {
@@ -150,9 +153,42 @@ extends GoalGeneric {
     }
 
     @Override
+    protected boolean isStillValidSpecific(MillVillager villager) throws Exception {
+        Entity target = villager.getGoalDestEntity();
+        Building dest = villager.getGoalBuildingDest();
+        return target != null && target.isAlive() && !this.isEntityChild(target)
+                && animalKey != null && animalKey.equals(Registry.ENTITY_TYPE.getKey(target.getType()))
+                && dest != null && this.getBuildings(villager).contains(dest);
+    }
+
+    @Override
+    public boolean isWithinActionRange(MillVillager villager, Point destination) {
+        Entity target = villager.getGoalDestEntity();
+        if (target == null || !target.isAlive()) return false;
+        if (Mill.ENTITY_SQUID.equals(this.animalKey) || target.isInWater() || villager.isInWater())
+            return super.isWithinActionRange(villager, destination);
+        double reach = this.range(villager);
+        return villager.distanceToSqr(target) < reach * reach
+                && WorkAccess.visible(villager, target.getBoundingBox().getCenter(), null);
+    }
+
+    @Override
     public boolean performAction(MillVillager villager) throws Exception {
         Building dest = villager.getGoalBuildingDest();
-        if (dest == null || villager.level.isClientSide || !this.isDestPossibleSpecific(villager, dest)) {
+        if (dest == null || villager.level.isClientSide || !this.isDestPossible(villager, dest)) {
+            return true;
+        }
+        Entity tracked = villager.getGoalDestEntity();
+        // Land livestock work must act on the selected animal, not on a
+        // different nearby herd or a path endpoint on the other side of a wall.
+        if (!Mill.ENTITY_SQUID.equals(this.animalKey) && tracked != null
+                && !tracked.isInWater() && !villager.isInWater()) {
+            if (!(tracked instanceof LivingEntity living) || !this.isStillValidSpecific(villager)
+                    || !this.isWithinActionRange(villager, new Point(tracked))
+                    || !this.getAnimals(villager, dest.getPos(), 15, 10).contains(tracked)) return true;
+            villager.startSlaughterCombat(living, this);
+            this.awardBonus(villager, dest);
+            villager.swing(InteractionHand.MAIN_HAND);
             return true;
         }
         List<Entity> animals = this.getAnimals(villager, villager.getPos(), 1, 5);
@@ -162,7 +198,7 @@ extends GoalGeneric {
             villager.setTarget(entLiving);
             for (AnnotedParameter.BonusItem bonusItem : this.bonusItem) {
                 if (bonusItem.tag != null && !dest.containsTags(bonusItem.tag) || MillCommonUtilities.randomInt(100) > bonusItem.chance) continue;
-                villager.addToInv(bonusItem.item, 1);
+                villager.addToInv(bonusItem.item, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             }
             villager.swing(InteractionHand.MAIN_HAND);
             return true;
@@ -174,7 +210,7 @@ extends GoalGeneric {
             villager.setTarget(entLiving);
             for (AnnotedParameter.BonusItem bonusItem : this.bonusItem) {
                 if (bonusItem.tag != null && !dest.containsTags(bonusItem.tag) || MillCommonUtilities.randomInt(100) > bonusItem.chance) continue;
-                villager.addToInv(bonusItem.item, 1);
+                villager.addToInv(bonusItem.item, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
             }
             villager.swing(InteractionHand.MAIN_HAND);
             return true;
@@ -182,9 +218,16 @@ extends GoalGeneric {
         return true;
     }
 
+    private void awardBonus(MillVillager villager, Building dest) {
+        for (AnnotedParameter.BonusItem bonusItem : this.bonusItem) {
+            if (bonusItem.tag != null && !dest.containsTags(bonusItem.tag) || MillCommonUtilities.randomInt(100) > bonusItem.chance) continue;
+            villager.addToInv(bonusItem.item, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, 1));
+        }
+    }
+
     @Override
     public int range(MillVillager villager) {
-        return 1;
+        return Mill.ENTITY_SQUID.equals(this.animalKey) ? 1 : 2;
     }
 
     @Override

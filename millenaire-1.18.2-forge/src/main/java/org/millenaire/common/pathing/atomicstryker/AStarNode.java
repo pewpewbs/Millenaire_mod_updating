@@ -100,7 +100,10 @@ implements Comparable {
     }
 
     private void updateTargetCostEstimate() {
-        this.h = this.target != null ? (double)this.g + AStarStatic.getDistanceBetweenNodes(this, this.target) * 10.0 : 0.0;
+        // A* priority is f=g+h. h must not contain g or it is counted twice.
+        // Euclidean distance is a lower bound for the current movement costs
+        // (and unlike the former 10x heuristic does not bias toward detours).
+        this.h = this.target != null ? AStarStatic.getDistanceBetweenNodes(this, this.target) : 0.0;
     }
 }
 

@@ -24,6 +24,10 @@ import java.util.Arrays;
 import java.util.List;
 import net.minecraft.client.gui.components.Button;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.platform.Lighting;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.util.FormattedCharSequence;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.GameRenderer;
@@ -62,6 +66,29 @@ extends GuiText {
     private CompletableFuture<ChunkMapSnapshot> chunkRequest;
     private long nextChunkRefresh;
     private Building townHall = null;
+    private BuildingLocation tooltipLocation;
+    private int tooltipLevel;
+    private boolean tooltipConstruction;
+    private String tooltipTitle;
+    private String tooltipLanguage;
+    private long tooltipRefreshNanos;
+    private List<BuildingMapTooltip.Line> tooltipDetails = List.of();
+    private boolean showBuildingTooltip;
+    private BuildingLocation hoveredLocation,pinnedLocation;
+    private boolean hoveredConstruction,tooltipPinned;
+    private int hoverX,hoverY,panelLeft,panelTop,panelWidth,panelHeight,pinLeft,pinTop,closeX,closeY,closeSize;
+    private boolean panelVisible;
+    private final java.util.Map<ResourceLocation,Boolean> portraitResources=new java.util.HashMap<>();
+    private boolean portraitAvailable(ResourceLocation texture){
+        return texture!=null&&portraitResources.computeIfAbsent(texture,t->minecraft.getResourceManager().hasResource(t));
+    }
+    private record TooltipText(FormattedCharSequence text, int color, int y,String detail,List<BuildingMapTooltip.RecipeView> materials) {}
+    private record TooltipIcon(ItemStack stack,int x,int y,String detail,List<BuildingMapTooltip.RecipeView> recipes,boolean action,BuildingMapTooltip.Portrait portrait) {
+        TooltipIcon(ItemStack stack,int x,int y,String detail,List<BuildingMapTooltip.RecipeView> recipes,boolean action){
+            this(stack,x,y,detail,recipes,action,null);
+        }
+    }
+    private record TooltipLayout(List<TooltipText> text, List<TooltipIcon> icons, int width, int height) {}
     private final Player player;
     ResourceLocation backgroundParchment = new ResourceLocation("millenaire", "textures/gui/parchment.png");
     ResourceLocation backgroundPanel = new ResourceLocation("millenaire", "textures/gui/panel.png");
@@ -210,6 +237,7 @@ extends GuiText {
 
         this.drawScaledRect(-2, -2, minfo.length + 2, minfo.width + 2, 0x20000000);
         BuildingLocation locHover = null;
+        boolean constructionHover = false;
         MillVillager villagerHover = null;
         Player playerHover = null;
         List<BuildingLocation> locations = this.townHall.getLocations();
@@ -228,6 +256,7 @@ extends GuiText {
             float screenBottom = (float)yStart + this.scaledStartY + (float)bottom * this.scaleFactor;
             if ((float)i >= screenLeft && (float)i <= screenRight && (float)j >= screenTop && (float)j <= screenBottom) {
                 locHover = bl;
+                constructionHover = true;
             }
             this.drawScaledRect(left, top, right, bottom, 0x40FF00FF);
             for (int x = left; x < right; ++x) {
@@ -246,7 +275,7 @@ extends GuiText {
             float screenTop = (float)yStart + this.scaledStartY + (float)top * this.scaleFactor;
             float screenBottom = (float)yStart + this.scaledStartY + (float)bottom * this.scaleFactor;
             if ((float)i >= screenLeft && (float)i <= screenRight && (float)j >= screenTop && (float)j <= screenBottom) {
-                locHover = bl;
+                if(!constructionHover){locHover = bl; constructionHover = false;}
             }
             if (bl.level < 0) {
                 this.drawScaledRect(left, top, right, bottom, 0x40000060);
@@ -278,6 +307,14 @@ extends GuiText {
             if (lastColour == 0) continue;
             this.drawScaledRect(x, lastZ, x + 1, minfo.width, lastColour);
         }
+        // Draw above terrain, below villager/player markers. The off phase
+        // draws nothing at all, preserving the original map and its hover data.
+        if(this.townHall.buildingGoal!=null&&!this.townHall.buildingGoal.isBlank()
+                &&SitePreparationOverlay.visible(net.minecraft.Util.getMillis())) {
+            var site=SitePreparationOverlay.project(this.townHall.buildingGoalIssue,
+                    this.townHall.buildingGoalSiteHint,minfo.mapStartX,minfo.mapStartZ,minfo.length,minfo.width);
+            if(site!=null)this.drawScaledRect(site.left(),site.top(),site.right(),site.bottom(),SitePreparationOverlay.RED);
+        }
         for (MillVillager villager : this.townHall.getKnownVillagers()) {
             int mapPosX = (int)(villager.getX() - (double)minfo.mapStartX);
             int mapPosZ = (int)(villager.getZ() - (double)minfo.mapStartZ);
@@ -306,6 +343,17 @@ extends GuiText {
                 playerHover = this.player;
             }
         }
+        hoveredLocation=locHover;hoveredConstruction=constructionHover;hoverX=i;hoverY=j;
+        if(pinnedLocation!=null){
+            BuildingLocation found=null;
+            boolean constructing=false;
+            for(ConstructionIP cip:constructionsIP)if(cip.getBuildingLocation()!=null&&cip.getBuildingLocation().isSameLocation(pinnedLocation)){
+                found=cip.getBuildingLocation();constructing=true;break;
+            }
+            if(found==null)for(BuildingLocation location:locations)if(location.isSameLocation(pinnedLocation)){found=location;break;}
+            pinnedLocation=found;
+            if(found!=null){locHover=found;constructionHover=constructing;villagerHover=null;playerHover=null;}
+        }
         if (villagerHover != null) {
             boolean gameString;
             org.millenaire.common.goal.Goal activeGoal = org.millenaire.common.goal.Goal.goals.get(villagerHover.goalKey);
@@ -331,41 +379,31 @@ extends GuiText {
             this.drawGradient(i + 10 - 3 - xStart, j + 10 - 3 - yStart, i + 10 + stringlength + 3 - xStart, j + 10 + 11 - yStart, -1073741824, -1073741824);
             this.font.draw(framePose,playerHover.getName().getString(), i + 10 - xStart, j + 10 - yStart, 0x909090);
         } else if (locHover != null) {
-            boolean gameString;
-            String nativeString;
-            int stringlength;
-            boolean unreachable;
-            Building b = locHover.getBuilding(this.townHall.world);
-            boolean bl = unreachable = b != null && this.townHall.regionMapper != null && !b.isReachableFromRegion(this.townHall.regionMapper.thRegion);
-            if (unreachable) {
-                stringlength = this.font.width(locHover.getNativeName() + " - " + LanguageUtilities.string("panels.unreachablebuilding"));
-                nativeString = locHover.getNativeName() + " - " + LanguageUtilities.string("panels.unreachablebuilding");
-            } else {
-                stringlength = this.font.width(locHover.getNativeName());
-                nativeString = locHover.getNativeName();
+            Building building = locHover.getBuilding(this.townHall.world);
+            boolean unreachable = building != null && this.townHall.regionMapper != null
+                    && !building.isReachableFromRegion(this.townHall.regionMapper.thRegion);
+            // A synchronized plan may be temporarily missing while opening the map.
+            String title = locHover.getIBuildingPlan() == null ? locHover.planKey : locHover.getNativeName();
+            if (unreachable) title += " - " + LanguageUtilities.string("panels.unreachablebuilding");
+            long now = System.nanoTime();
+            String language = org.millenaire.common.config.MillConfigValues.effective_language;
+            if (tooltipLocation != locHover || tooltipLevel != locHover.level
+                    || tooltipConstruction != constructionHover || tooltipPinned!=(pinnedLocation!=null)
+                    || !java.util.Objects.equals(tooltipTitle, title)
+                    || !java.util.Objects.equals(tooltipLanguage, language)
+                    || now - tooltipRefreshNanos >= 500_000_000L) {
+                tooltipDetails = BuildingMapTooltip.describe(locHover, this.townHall, title, constructionHover,true);
+                tooltipLocation = locHover;
+                tooltipLevel = locHover.level;
+                tooltipConstruction = constructionHover;
+                tooltipPinned=pinnedLocation!=null;
+                tooltipTitle = title;
+                tooltipLanguage = language;
+                tooltipRefreshNanos = now;
             }
-            int nblines = 1;
-            boolean bl2 = gameString = locHover.getGameName() != null && locHover.getGameName().length() > 0;
-            if (gameString) {
-                stringlength = Math.max(stringlength, this.font.width(locHover.getGameName()));
-                ++nblines;
-            }
-            List<String> effects = locHover.getBuildingEffects(this.townHall.world);
-            nblines += effects.size();
-            for (String s : effects) {
-                stringlength = Math.max(stringlength, this.font.width(s));
-            }
-            this.drawGradient(i - 3 - xStart, j - 3 - yStart, i + stringlength + 3 - xStart, j + 11 * nblines - yStart, -1073741824, -1073741824);
-            this.font.draw(framePose,nativeString, i - xStart, j - yStart, 0x909090);
-            int pos = 1;
-            if (gameString) {
-                this.font.draw(framePose,locHover.getGameName(), i - xStart, j - yStart + 11, 0x909090);
-                ++pos;
-            }
-            for (String s : effects) {
-                this.font.draw(framePose,s, i - xStart, j - yStart + 11 * pos, 0x909090);
-                ++pos;
-            }
+            // ItemRenderer uses screen coordinates, not the translated parchment pose.
+            // Defer the complete tooltip until GuiText has rendered the map and widgets.
+            showBuildingTooltip = true;
         }
 
 
@@ -373,6 +411,263 @@ extends GuiText {
 
 
 
+    }
+
+    @Override
+    public void render(PoseStack pose, int mouseX, int mouseY, float partialTicks) {
+        showBuildingTooltip = false;
+        panelVisible=false;
+        if(pageNum!=0){pinnedLocation=null;hoveredLocation=null;}
+        super.render(pose, mouseX, mouseY, partialTicks);
+        if (showBuildingTooltip && !tooltipDetails.isEmpty()) {
+            drawBuildingTooltip(pose, mouseX, mouseY);
+        }
+    }
+
+    @Override public boolean mouseClicked(double x,double y,int button){
+        if(mapType==VILLAGE_MAP&&pageNum==0&&button==0){
+            if(pinnedLocation!=null){
+                if(x>=closeX&&x<closeX+closeSize&&y>=closeY&&y<closeY+closeSize){
+                    pinnedLocation=null;tooltipRefreshNanos=0;panelVisible=false;
+                }
+                return true;
+            }
+            if(panelVisible&&hoveredLocation!=null&&Math.abs(x-hoverX)<=3&&Math.abs(y-hoverY)<=3){
+                pinnedLocation=hoveredLocation;pinLeft=panelLeft;pinTop=panelTop;
+                tooltipRefreshNanos=0;return true;
+            }
+        }
+        return super.mouseClicked(x,y,button);
+    }
+    @Override public boolean keyPressed(int key,int scan,int modifiers){
+        if(key==org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE&&pinnedLocation!=null){
+            pinnedLocation=null;tooltipRefreshNanos=0;return true;
+        }
+        return super.keyPressed(key,scan,modifiers);
+    }
+
+    private TooltipLayout layoutBuildingTooltip(int maxWidth) {
+        List<TooltipText> texts = new ArrayList<>();
+        List<TooltipIcon> icons = new ArrayList<>();
+        int usedWidth = 0;
+        int y = 0; // keep the title at the top; reserve space beside it, not above it
+        int columns = Math.max(1, maxWidth / 18);
+        for (var line : tooltipDetails) {
+            if (!line.icons().isEmpty()) y += 3;
+            if(!line.text().isEmpty()){
+                // Both hover and pinned layouts reserve the same header space.
+                // A wrapped first title keeps its entire text clear of the button.
+                int headerReserve=y<12?16:0;
+                for (var part : font.split(new net.minecraft.network.chat.TextComponent(line.text()), Math.max(1,maxWidth-headerReserve))) {
+                    texts.add(new TooltipText(part, line.color(), y,line.detail(),line.icons().isEmpty()&&!line.recipes().isEmpty()?line.recipes().get(0):List.of()));
+                    usedWidth = Math.max(usedWidth, font.width(part)+(y<12?16:0));
+                    y += 11;
+                }
+            }
+            if(!line.portraits().isEmpty()){
+                int count=line.portraits().size();
+                for(int n=0;n<count;n++){
+                    var portrait=line.portraits().get(n);
+                    icons.add(new TooltipIcon(ItemStack.EMPTY,(n%columns)*18,y+(n/columns)*18,portrait.detail(),List.of(),true,portrait));
+                }
+                usedWidth=Math.max(usedWidth,Math.min(columns,count)*18);
+                y+=((count+columns-1)/columns)*18;
+            }
+            if (!line.icons().isEmpty()) {
+                int count = line.icons().size();
+                for (int n = 0; n < count; n++) {
+                    int x = (n % columns) * 18;
+                    icons.add(new TooltipIcon(line.icons().get(n),x,y+(n/columns)*18,
+                        n<line.iconDetails().size()?line.iconDetails().get(n):null,
+                        n<line.recipes().size()?line.recipes().get(n):List.of(),line.action()));
+                }
+                usedWidth = Math.max(usedWidth, Math.min(columns, count) * 18);
+                y += ((count + columns - 1) / columns) * 18;
+            }
+        }
+        return new TooltipLayout(texts,icons,Math.max(usedWidth,60),y);
+    }
+
+    private void drawBuildingTooltip(PoseStack pose, int mouseX, int mouseY) {
+        int availableWidth = Math.max(18, this.width - 20);
+        int availableHeight = Math.max(1, this.height - 20);
+        TooltipLayout layout = layoutBuildingTooltip(Math.min(240, availableWidth));
+        if (layout.height() > availableHeight && availableWidth > 240)
+            layout = layoutBuildingTooltip(availableWidth);
+        // In unusually small windows or very large assortments, scale both
+        // the text and the actual item models by the same factor.
+        float fit = Math.min(1.0f, availableHeight / (float)Math.max(1, layout.height()));
+        int w = (int)Math.ceil(layout.width() * fit);
+        int h = (int)Math.ceil(layout.height() * fit);
+        int left = mouseX + 12 + w + 5 <= this.width
+                ? mouseX + 12 : mouseX - w - 12;
+        left = Math.max(5, Math.min(left, this.width - w - 5));
+        int top = Math.max(5, Math.min(mouseY + 8, this.height - h - 5));
+        if(pinnedLocation!=null){left=Math.max(5,Math.min(pinLeft,this.width-w-5));top=Math.max(5,Math.min(pinTop,this.height-h-5));}
+        panelLeft=left;panelTop=top;panelWidth=w;panelHeight=h;panelVisible=true;
+        closeSize=Math.max(1,(int)Math.ceil(12*fit));closeX=left+w-closeSize;closeY=top;
+
+        pose.pushPose();
+        try {
+            pose.translate(left, top, 200);
+            pose.scale(fit, fit, 1);
+            fillGradient(pose, -3, -3, layout.width() + 3, layout.height() + 3,
+                    0xF0101010, 0xF0101010);
+            for(var row:layout.text())font.draw(pose,row.text(),0,row.y(),row.color());
+            if(pinnedLocation!=null){
+                fill(pose,layout.width()-12,0,layout.width(),12,0xff563232);
+                String cross="×";
+                font.draw(pose,cross,layout.width()-12+(12-font.width(cross))/2f,(12-font.lineHeight)/2f,0xffffff);
+            }
+        } finally {
+            pose.popPose();
+        }
+
+        // Vanilla's inventory renderer draws the real item model, including
+        // custom Millenaire assets, resource packs and NBT-dependent variants.
+        if (layout.icons().isEmpty()) {
+            if(pinnedLocation!=null)drawPinnedDetail(layout,mouseX,mouseY,fit);
+            return;
+        }
+        PoseStack modelView = RenderSystem.getModelViewStack();
+        float oldOffset = itemRenderer.blitOffset;
+        modelView.pushPose();
+        try {
+            modelView.translate(left, top, 0);
+            modelView.scale(fit, fit, 1);
+            RenderSystem.applyModelViewMatrix();
+            Lighting.setupFor3DItems();
+            RenderSystem.enableDepthTest();
+            itemRenderer.blitOffset = 300.0f;
+            for (var icon : layout.icons()){
+                if(icon.portrait()!=null){
+                    var texture=icon.portrait().texture();
+                    if(!portraitAvailable(texture))
+                        itemRenderer.renderAndDecorateItem(new ItemStack(net.minecraft.world.item.Items.PLAYER_HEAD),icon.x(),icon.y());
+                }else itemRenderer.renderAndDecorateItem(icon.stack(), icon.x(), icon.y());
+            }
+        } finally {
+            itemRenderer.blitOffset = oldOffset;
+            modelView.popPose();
+            RenderSystem.applyModelViewMatrix();
+            Lighting.setupFor3DItems();
+        }
+        // All Millenaire humanoid models use the 64x32 skin layout. UVs
+        // are normalized, so higher-resolution resource pack skins work too.
+        pose.pushPose();
+        try{
+            pose.translate(left,top,350);pose.scale(fit,fit,1);
+            RenderSystem.enableBlend();
+            for(var icon:layout.icons()){
+                if(icon.portrait()==null)continue;
+                var texture=icon.portrait().texture();
+                if(!portraitAvailable(texture))continue;
+                RenderSystem.setShader(GameRenderer::getPositionTexShader);
+                RenderSystem.setShaderTexture(0,texture);
+                RenderSystem.setShaderColor(1,1,1,1);
+                blit(pose,icon.x(),icon.y(),16,16,8,8,8,8,64,32);
+                blit(pose,icon.x(),icon.y(),16,16,40,8,8,8,64,32);
+            }
+        }finally{RenderSystem.disableBlend();pose.popPose();}
+        if(pinnedLocation!=null)drawPinnedDetail(layout,mouseX,mouseY,fit);
+    }
+
+    private void drawPinnedDetail(TooltipLayout layout,int mouseX,int mouseY,float fit){
+        if(fit<=0)return;
+        float x=(mouseX-panelLeft)/fit,y=(mouseY-panelTop)/fit;
+        if(x<0||x>layout.width()||y<0||y>layout.height())return;
+        for(var icon:layout.icons())if(x>=icon.x()&&x<icon.x()+16&&y>=icon.y()&&y<icon.y()+16){
+            drawMapDetail(icon,mouseX,mouseY);return;
+        }
+        for(var line:layout.text())if(line.detail()!=null&&y>=line.y()&&y<line.y()+11){
+            drawMapDetail(new TooltipIcon(ItemStack.EMPTY,0,0,line.detail(),line.materials(),true),mouseX,mouseY);
+            return;
+        }
+    }
+
+    /** Draw the secondary tooltip after every primary item, at a higher Z.
+     * Real stacks with counts; no fabricated recipe for unknown outputs. */
+    private void drawMapDetail(TooltipIcon icon,int mouseX,int mouseY){
+        // Road items show only their actual localized name, even when rotating.
+        if(BuildingMapTooltip.road(icon.stack()))
+            icon=new TooltipIcon(icon.stack(),icon.x(),icon.y(),null,List.of(),false);
+        List<FormattedCharSequence> text=new ArrayList<>();
+        int maxWidth=Math.max(40,Math.min(170,width-18));
+        if(!icon.action()&&!icon.stack().isEmpty())
+            text.addAll(font.split(icon.stack().getHoverName(),maxWidth));
+        if(icon.detail()!=null&&!icon.detail().isBlank()){
+            String detail=icon.detail();
+            // A rotating product keeps both its category and the current recipe.
+            int partIndex=0;
+            for(String part:detail.split("; ")){
+                if(!part.isBlank()){
+                    var component=new net.minecraft.network.chat.TextComponent(part);
+                    if(icon.action()&&icon.stack().isEmpty()&&icon.portrait()==null){
+                        component.withStyle(partIndex==0?net.minecraft.ChatFormatting.GOLD:net.minecraft.ChatFormatting.AQUA);
+                    }
+                    if(icon.portrait()!=null){
+                        if(partIndex==0)component.withStyle(net.minecraft.ChatFormatting.WHITE);
+                        if(partIndex==1)component.withStyle(net.minecraft.ChatFormatting.AQUA);
+                        if(partIndex==2)component.withStyle(net.minecraft.ChatFormatting.YELLOW);
+                    }
+                    text.addAll(font.split(component,maxWidth));
+                }
+                partIndex++;
+            }
+        }
+        if(icon.portrait()!=null&&!icon.portrait().activities().isEmpty()){
+            text.addAll(font.split(new net.minecraft.network.chat.TextComponent(BuildingMapTooltip.label("Purpose:","Призначення:","Назначение:")).withStyle(net.minecraft.ChatFormatting.AQUA),maxWidth));
+        }
+        List<TooltipIcon> recipeIcons=new ArrayList<>();
+        List<int[]> arrows=new ArrayList<>();
+        int y=text.size()*11,w=40;
+        for(var line:text)w=Math.max(w,font.width(line));
+        int columns=Math.max(2,maxWidth/20);
+        if(icon.portrait()!=null&&!icon.portrait().activities().isEmpty()){
+            int n=0;y+=3;
+            for(var stack:icon.portrait().activities()){
+                recipeIcons.add(new TooltipIcon(stack,(n%columns)*20,y+(n/columns)*20,null,List.of(),true));n++;
+            }
+            w=Math.max(w,Math.min(n,columns)*20);y+=((n+columns-1)/columns)*20;
+        }
+        for(var recipe:icon.recipes()){
+            int n=0;y+=3;
+            for(var stack:recipe.inputs()){
+                recipeIcons.add(new TooltipIcon(stack,(n%columns)*20,y+(n/columns)*20,null,List.of(),false));n++;
+            }
+            if(!recipe.inputs().isEmpty()&&!recipe.outputs().isEmpty()){arrows.add(new int[]{(n%columns)*20,y+(n/columns)*20+5});n++;}
+            for(var stack:recipe.outputs()){
+                recipeIcons.add(new TooltipIcon(stack,(n%columns)*20,y+(n/columns)*20,null,List.of(),false));n++;
+            }
+            w=Math.max(w,Math.min(n,columns)*20);y+=((n+columns-1)/columns)*20;
+        }
+        if(y==0)return;
+        float fit=Math.min(1f,Math.min((width-12)/(float)w,(height-12)/(float)y));
+        int sw=(int)Math.ceil(w*fit),sh=(int)Math.ceil(y*fit);
+        int left=mouseX+12+sw+5<=width?mouseX+12:mouseX-sw-12;
+        left=Math.max(5,Math.min(left,width-sw-5));
+        int top=Math.max(5,Math.min(mouseY+8,height-sh-5));
+        framePose.pushPose();
+        try{
+            framePose.translate(left,top,600);framePose.scale(fit,fit,1);
+            fillGradient(framePose,-4,-4,w+4,y+4,0xff160f20,0xff160f20);
+            fill(framePose,-4,-4,w+4,-3,0xff754c99);
+            for(int i=0;i<text.size();i++)font.draw(framePose,text.get(i),0,i*11,0xffffff);
+            for(int[] arrow:arrows)font.draw(framePose,"→",arrow[0]+3,arrow[1],0xffffff);
+        }finally{framePose.popPose();}
+        if(recipeIcons.isEmpty())return;
+        PoseStack model=RenderSystem.getModelViewStack();float old=itemRenderer.blitOffset;
+        model.pushPose();
+        try{
+            model.translate(left,top,0);model.scale(fit,fit,1);RenderSystem.applyModelViewMatrix();
+            Lighting.setupFor3DItems();RenderSystem.enableDepthTest();itemRenderer.blitOffset=700;
+            for(var item:recipeIcons)itemRenderer.renderAndDecorateItem(item.stack(),item.x(),item.y());
+            // Use the vanilla inventory overlay, with an explicit count even
+            // for one item. Keep the same model-view transform as the icons.
+            // Render every model first so another model cannot cover a count.
+            for(var item:recipeIcons)itemRenderer.renderGuiItemDecorations(font,item.stack(),item.x(),item.y(),
+                    item.stack().getCount()>1?Integer.toString(item.stack().getCount()):null);
+        }finally{itemRenderer.blitOffset=old;model.popPose();RenderSystem.applyModelViewMatrix();Lighting.setupFor3DItems();}
     }
 
     @Override
@@ -385,6 +680,7 @@ extends GuiText {
 
     @Override
     public void initData() {
+        portraitResources.clear();
         this.textBook = this.bookManager.adjustTextBookLineLength(this.textBook);
         if (this.mapType == 1 && this.townHall != null) {
             ClientSender.requestMapInfo(this.townHall);

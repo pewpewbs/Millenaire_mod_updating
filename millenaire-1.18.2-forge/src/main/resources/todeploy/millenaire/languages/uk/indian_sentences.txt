@@ -1,89 +1,89 @@
-female.BecomeAdult=Mainey socha tha kisi rajkumar sey shaadi hogi... / Я мріяла вийти заміж за принца ...
+female.BecomeAdult=Mainey socha tha kisi rajkumar sey shaadi hogi... / Мріяла вийти заміж за принца…
 
-female.gorest=Main ab aaraam karane jaoonga. / Пора б мені і відпочити.
-female.gorest=Main thak gayi hoon. / Я втомився.
-female.gorest=Subah sey kaam kar rahi hoon. / Я працюю з ранку.
+female.gorest=Main ab aaraam karane jaoonga. / Тепер піду відпочину.
+female.gorest=Main thak gayi hoon. / Я втомилася.
+female.gorest=Subah sey kaam kar rahi hoon. / Працюю із самого ранку.
 
-indian_armysmith.MakeWeapons=Hathiyaar bananey mein, upkaran bananey sey zyaada maan hai. / Виготовлення зброї більш престижно, ніж виготовлення інструментів!
+indian_armysmith.MakeWeapons=Hathiyaar bananey mein, upkaran bananey sey zyaada maan hai. / Виготовляти зброю значно почесніше, ніж інструменти!
 
-indian_lumberman.BringBackResourcesHome=Itna saara lakri ghar ley jaaney mein mushkil hooga. / Важко буде перевезти стільки дерева додому.
-indian_lumberman.ChopTrees=Yeh lakri kaat-tey kaat-tey meri zindagi beet jayegi. / Мабуть доля моя така, все життя рубати ці дерева.
-indian_lumberman.GatherGoods=Ab saari lakriyan ikaththa karta hoon. / Тепер я нарубаю всі дерева.
-indian_lumberman.PlantSaplings=Jitna zyaada ped lagaoonga, utna hi aagey jaakey aaram raheyga. / Чим більше дерев я посаджу, тим легше буде жити потім.
+indian_lumberman.BringBackResourcesHome=Itna saara lakri ghar ley jaaney mein mushkil hooga. / Важко буде донести стільки деревини додому.
+indian_lumberman.ChopTrees=Yeh lakri kaat-tey kaat-tey meri zindagi beet jayegi. / Схоже, все життя рубатиму ці дерева.
+indian_lumberman.GatherGoods=Ab saari lakriyan ikaththa karta hoon. / Тепер зберу всю деревину.
+indian_lumberman.PlantSaplings=Jitna zyaada ped lagaoonga, utna hi aagey jaakey aaram raheyga. / Що більше дерев посаджу, то легше житиметься потім.
 
-indian_pandit.gopray.chosen=Main mandir ki dekh bhaal nahin karoonga toh kaun karega? / Якщо я не доглядаю за храмом, то хто?
-indian_pandit.greeting=Jeetey raho. / Дозвольте вам довго жити.
+indian_pandit.gopray.chosen=Main mandir ki dekh bhaal nahin karoonga toh kaun karega? / Якщо не я доглядатиму храм, то хто?
+indian_pandit.greeting=Jeetey raho. / Довгих тобі років життя.
 
-indian_peasant.CookBrick= Dekho, aag mein kaisi badhiyan pakti hai yeh intein. / Подивися як добре ці цеглини обпікаються у вогні.
+indian_peasant.CookBrick= Dekho, aag mein kaisi badhiyan pakti hai yeh intein. / Поглянь, як добре ці цеглини випалюються у вогні.
 
-indian_peasant.DryBrick=Ghar bananey key liye kitney inth chahiyey? / Як багато цеглин тобі потрібно щоб побудувати будинок?
+indian_peasant.DryBrick=Ghar bananey key liye kitney inth chahiyey? / Скільки цеглин потрібно, щоб збудувати будинок?
 
-indian_peasant.GatherBrick=Aaj suraj teez hai, inth jaldi sookh rahaien hain. / Сонце сьогодні спекотне, вони сохнуть швидко.
+indian_peasant.GatherBrick=Aaj suraj teez hai, inth jaldi sookh rahaien hain. / Сьогодні сонце припікає, цеглини швидко сохнуть.
 
-indian_peasant.GetResourcesForBuild=Hmmm, ek tan ka inth  chahiye, dau tan paththar .. / Нумо глянемо, одна тонна цеглин, дві тонни каміння ...
+indian_peasant.GetResourcesForBuild=Hmmm, ek tan ka inth  chahiye, dau tan paththar .. / Так, подивімося: тонна цегли, дві тонни каменю…
 
-indian_peasant.SlaughterChicken=Bahut kha liya ghas-phoos. / Я досить поїв вегетаріанського каррі!
-indian_peasant.SlaughterChicken=Main murgiyon se napharat karata hoon ve zor se aur khae jaane ke alaava any kisee bhee any uddeshy kee seva nahin karate hain. / Я ненавижу кури.  Вони громкі і служать лише для їжі.
+indian_peasant.SlaughterChicken=Bahut kha liya ghas-phoos. / Набридло мені вегетаріанське карі!
+indian_peasant.SlaughterChicken=Main murgiyon se napharat karata hoon ve zor se aur khae jaane ke alaava any kisee bhee any uddeshy kee seva nahin karate hain. / Ненавиджу курей. Вони галасливі й ні на що, крім їжі, не годяться.
 
-indian_peasant.construction=Hindu vastu-kala desh videsh mein mashoor hai. / Архітектура гінді відома світу.
-indian_peasant.construction=Iskey baad, main lal kila banaoonga. / А коли я закінчу з цим, я побудую червоний форт.
+indian_peasant.construction=Hindu vastu-kala desh videsh mein mashoor hai. / Наша архітектура славиться в усьому світі.
+indian_peasant.construction=Iskey baad, main lal kila banaoonga. / Ніщо не зрівняється з нашою величною архітектурою.
 
-indian_peasantwife.DeliverGoodsHousehold=Uffh, itna sara khana akeley kaisey leh jaoongi. / Як я буду тягнути всю цю їжу одна?
-indian_peasantwife.GetGoodsHousehold=Inkey liye chahey jitna bhi khana lao, kam padta hai. / Без різниці скільки ти віддаси цій сім'ї - їй все одно буде недостатньо!
-indian_peasantwife.GetHouseTHResources=Sab kuch toh thakur ko dey dena padta hai. / Вічно все закінчується в будинку землевласника.
-indian_peasantwife.makeRasgulla= Bacchon koh rasgulla bahut pasand hai. / Дітлахи люблять расгулла.
+indian_peasantwife.DeliverGoodsHousehold=Uffh, itna sara khana akeley kaisey leh jaoongi. / Як мені самій донести всю цю їжу?
+indian_peasantwife.GetGoodsHousehold=Inkey liye chahey jitna bhi khana lao, kam padta hai. / Скільки їжі не принеси цій родині, їм завжди мало!
+indian_peasantwife.GetHouseTHResources=Sab kuch toh thakur ko dey dena padta hai. / Усе зрештою опиняється в будинку землевласника.
+indian_peasantwife.makeRasgulla= Bacchon koh rasgulla bahut pasand hai. / Діти обожнюють расгулу.
 
-indian_sculptor.Scult=Murtikala ched aur gaanth ki kala hai. / Скульптура - це мистецтво поглиблень і опуклостей.
-indian_smith.MakeTools=Sabhi merey banaye huye upkaran istamal kartey hain, phir bhi mujhey neecha samachtey hain. / Всі користуються моїми інструментами і при цьому дивляться на мене звисока.
+indian_sculptor.Scult=Murtikala ched aur gaanth ki kala hai. / Скульптура — мистецтво заглиблень і виступів.
+indian_smith.MakeTools=Sabhi merey banaye huye upkaran istamal kartey hain, phir bhi mujhey neecha samachtey hain. / Усі користуються моїми інструментами, та все одно дивляться на мене зверхньо.
 
-male.BecomeAdult=Main badey hokar yodhdha ban-na chahta tha. / Я хотів стати великим воїном, коли був молодшим ...
+male.BecomeAdult=Main badey hokar yodhdha ban-na chahta tha. / У дитинстві я мріяв стати великим воїном…
 
-male.gorest=Main ab aaraam karane jaoonga. / Тепер треба піти відпочити.
+male.gorest=Main ab aaraam karane jaoonga. / Тепер піду відпочину.
 male.gorest=Main thak gaya hoon. / Я втомився.
-male.gorest=Subah sey kaam kar raha hoon. / Я працюю з ранку.
+male.gorest=Subah sey kaam kar raha hoon. / Працюю із самого ранку.
 
-merchant_adivasi.KeepStall= Sab kuch mere parivar dwara kheti ki gayi hai. / Всі вирощено моєю родиною глибоко в джунглях.
-merchant_adivasi.greeting=Main van se a raha hoon / Я нарешті-таки вибрався з лісу
+merchant_adivasi.KeepStall= Sab kuch mere parivar dwara kheti ki gayi hai. / Усе це виростила моя родина в глибині джунглів.
+merchant_adivasi.greeting=Main van se a raha hoon / Я щойно повернувся з лісу.
 
-merchant_oriental.KeepStall=Dekho yeh phaarsa ka gaurav! / Побач славу Персії!
-merchant_oriental.greeting=Salam alaikum, bhai! / Мир тобі, брате!
+merchant_oriental.KeepStall=Dekho yeh phaarsa ka gaurav! / Поглянь на багатства Персії!
+merchant_oriental.greeting=Salam alaikum, bhai! / Салам алейкум, брате! Мир тобі!
 
-merchant_villagewoman.KeepStall=Ghara ka bana khana, bhukhe yaatriyon ke lie! / Домашня їжа для голодних мандрівників!
-merchant_villagewoman.greeting=Ek akeelii mahila ke lie safar karna mushkil hai / Подорожі дуже важкі самотній жінці
+merchant_villagewoman.KeepStall=Ghara ka bana khana, bhukhe yaatriyon ke lie! / Домашні страви для голодних мандрівників!
+merchant_villagewoman.greeting=Ek akeelii mahila ke lie safar karna mushkil hai / Самотній жінці важко подорожувати.
 
-villager.BecomeAdult=Khel kud bahut ho gaya, ab kaam par chalo. / Час для ігор минув, настав час роботи.
+villager.BecomeAdult=Khel kud bahut ho gaya, ab kaam par chalo. / Годі гратися, час працювати.
 
-villager.GoPlay=Mujjhey mitti sey khelna accha lagta hai. / Обожнюю ліпити з бруду.
+villager.GoPlay=Mujjhey mitti sey khelna accha lagta hai. / Люблю бавитися в землі.
 
-villager.childobserveagriculture=Phasalon ko ropan karana har din bahut ubaoo lagata hai. Mujhe saahas ka jeevan chaahie! / Посадка культур весь день здається так нудною.  Я хочу життя в авантюрах!
-villager.childobserveconstruction=Nirmaan mere lie bahut adhik kaam kee tarah dikhata hai. / Створення здається для мене занадто важкою роботою.
-villager.childobservesmithing=Kitne mazbut hathiyaar! / Такі сильні руки!
-villager.childobserveproducefood=Meri Ma sabase achchhe rasagulle banaati hai. / Моя мама робить найкращі гальмушки.
+villager.childobserveagriculture=Phasalon ko ropan karana har din bahut ubaoo lagata hai. Mujhe saahas ka jeevan chaahie! / Щодня саджати рослини — так нудно. Хочу життя, сповненого пригод!
+villager.childobserveconstruction=Nirmaan mere lie bahut adhik kaam kee tarah dikhata hai. / Будівництво, схоже, надто важка праця для мене.
+villager.childobservesmithing=Kitne mazbut hathiyaar! / Які міцні руки!
+villager.childobserveproducefood=Meri Ma sabase achchhe rasagulle banaati hai. / Моя мама готує найсмачнішу расгулу.
 
-villager.childeatsugarcane=Ma kahati hain ki yah daanton ko nukasaan pahunchaata hai, lekin yah bahut achchha hai! / Мама каже, що це пошкоджує зуби, але це так добре!
+villager.childeatsugarcane=Ma kahati hain ki yah daanton ko nukasaan pahunchaata hai, lekin yah bahut achchha hai! / Мама каже, що це шкодить зубам, але ж так смачно!
 
-villager.HarvestRice=Adbhut baarish ke mausam kee vajah se, ab hamaare paas ek majaboot phasal hai.. / Були добрі дощі в сезоні, урожай не менш різниться.
+villager.HarvestRice=Adbhut baarish ke mausam kee vajah se, ab hamaare paas ek majaboot phasal hai.. / Завдяки чудовому сезону дощів маємо щедрий урожай.
 
-villager.HarvestTurmeric=Haldi ki kheti kartey kartey merey haath peeley ho gayein hain. / Від збору куркуми мої руки пожовкли.
+villager.HarvestTurmeric=Haldi ki kheti kartey kartey merey haath peeley ho gayein hain. / Від збирання куркуми в мене вже пожовтіли руки.
 
-villager.PlantRice=Is saal barish achchi hui toh phasal accha hoga. / Якщо будуть великі дощі, то урожай буде хорошим у цьому році.
+villager.PlantRice=Is saal barish achchi hui toh phasal accha hoga. / Якщо дощів буде вдосталь, цього року матимемо добрий урожай.
 
-villager.PlantTurmeric=Haldi toh sabhi ko chahiyein. / Ну звичайно ж, всім потрібна куркума.
+villager.PlantTurmeric=Haldi toh sabhi ko chahiyein. / Зрештою, куркума потрібна всім.
 
-villager.calltoarms=Dushmano ki haar. / Поражение ворогам!
-villager.calltoarms=Jeet hamari hoogi. / Перемога буде наша.
-villager.calltoarms=Sab apney apney hathiyar utha lo! / Всі до зброї!
+villager.calltoarms=Dushmano ki haar. / Смерть ворогам!
+villager.calltoarms=Jeet hamari hoogi. / Перемога буде за нами!
+villager.calltoarms=Sab apney apney hathiyar utha lo! / Усі до зброї!
 
-villager.gopray.chosen=Mandir jaaney ka samay ho gaya. / Пора знову відвідати храм.
-villager.gopray=Bhagwan, bas aap hi ka sahara hai. / Боже, ти єдина наша надія.
-villager.gopray=Hey Bhagwan, is baar phasal achhi ho. / Боже, уповаю на тебе тільки.
+villager.gopray.chosen=Mandir jaaney ka samay ho gaya. / Час знову відвідати храм.
+villager.gopray=Bhagwan, bas aap hi ka sahara hai. / Боже, ти наша єдина надія.
+villager.gopray=Hey Bhagwan, is baar phasal achhi ho. / Милостивий Боже, нехай цього разу буде добрий урожай.
 
-villager.greeting=Aaj bahut garmi hai. / Сьогодні дуже жарко.
-villager.greeting=Ghar par sa theek hain? / Сьогодні дуже жарко.
-villager.greeting=Kya haal hai? / Як справи твої?
-villager.greeting=Kya khabar hai, $name-ji!? / Що нового? $name- Джи!?
-villager.greeting=Kya tum se kale pani se pare ho? / Чи всі добре вдома?
-villager.greeting=Namaste, $name-ji! / Привітання, $name- Джи!
+villager.greeting=Aaj bahut garmi hai. / Сьогодні дуже спекотно.
+villager.greeting=Ghar par sa theek hain? / Усі вдома здорові?
+villager.greeting=Kya haal hai? / Як справи?
+villager.greeting=Kya khabar hai, $name-ji!? / Що нового, $name-джі?!
+villager.greeting=Kya tum se kale pani se pare ho? / Ти прибув із-за океану?
+villager.greeting=Namaste, $name-ji! / Намасте, $name-джі!
 villager.greeting=Yeh barish kyun nahin ho rahiee hai? / Чому тут не йде дощ?
 
-villager.inspectconstruction=Mujhe lagata hai ki hamaare raajamistree aise achchhe kaam karate hain. / Мені приємно бачити, як наші будівельники роблять такі чудові роботи.
+villager.inspectconstruction=Mujhe lagata hai ki hamaare raajamistree aise achchhe kaam karate hain. / Приємно бачити, як наші будівельники створюють такі чудові споруди.

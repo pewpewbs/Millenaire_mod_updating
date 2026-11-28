@@ -25,11 +25,11 @@ import org.millenaire.common.annotedparameters.ConfigAnnotations;
 import org.millenaire.common.config.MillConfigValues;
 import org.millenaire.common.entity.MillVillager;
 import org.millenaire.common.goal.Goal;
+import org.millenaire.common.goal.MiningAccess;
 import org.millenaire.common.goal.generic.GoalGeneric;
 import org.millenaire.common.item.InvItem;
 import org.millenaire.common.item.MillItems;
 import org.millenaire.common.pathing.atomicstryker.AStarConfig;
-import org.millenaire.common.utilities.MillCommonUtilities;
 import org.millenaire.common.utilities.MillLog;
 import org.millenaire.common.utilities.Point;
 import org.millenaire.common.utilities.WorldUtilities;
@@ -48,16 +48,10 @@ extends GoalGeneric {
 
     @Override
     public int actionDuration(MillVillager villager) {
-        Block block = this.sourceBlockState.getBlock();
-        if (block == Blocks.STONE || block == Blocks.SANDSTONE) {
-            int toolEfficiency = (int)villager.getBestPickaxe().getDestroySpeed(new ItemStack((Item)villager.getBestPickaxe(), 1), Blocks.SANDSTONE.defaultBlockState());
-            return 140 - 4 * toolEfficiency;
-        }
-        if (block == Blocks.SAND || block == Blocks.CLAY || block == Blocks.GRAVEL) {
-            int toolEfficiency = (int)villager.getBestShovel().getDestroySpeed(new ItemStack((Item)villager.getBestShovel(), 1), Blocks.SAND.defaultBlockState());
-            return 140 - 4 * toolEfficiency;
-        }
-        return 70;
+        // Generic goal durations are configured in milliseconds. The previous
+        // 70-140 tick tool-speed override silently ignored duration=80000 in
+        // Byzantine quarry goals, allowing much faster loot batches than the culture configuration.
+        return Math.max(1, this.duration);
     }
 
     @Override
@@ -68,25 +62,20 @@ extends GoalGeneric {
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws Exception {
         List<Building> buildings = this.getBuildings(villager);
-        ArrayList validSources = new ArrayList();
-        ArrayList<Building> validDests = new ArrayList<Building>();
+        List<GoalInformation> candidates = new ArrayList<>();
         for (Building possibleDest : buildings) {
-            CopyOnWriteArrayList<CopyOnWriteArrayList<Point>> sources = possibleDest.getResManager().sources;
-            for (int i = 0; i < sources.size(); ++i) {
-                if (this.sourceBlockState != possibleDest.getResManager().sourceTypes.get(i)) continue;
-                for (int j = 0; j < ((CopyOnWriteArrayList)sources.get(i)).size(); ++j) {
-                    BlockState actualBlockState = WorldUtilities.getBlockState(villager.level, (Point)((CopyOnWriteArrayList)sources.get(i)).get(j));
-                    if (actualBlockState != this.sourceBlockState) continue;
-                    validSources.add(((CopyOnWriteArrayList)sources.get(i)).get(j));
-                    validDests.add(possibleDest);
+            if (possibleDest == null || !this.validateDest(villager,possibleDest)) continue;
+            var sources = possibleDest.getResManager().sources;
+            var types = possibleDest.getResManager().sourceTypes;
+            for (int index=0; index<Math.min(sources.size(),types.size()); index++) {
+                if (this.sourceBlockState != types.get(index)) continue;
+                for (Point point:sources.get(index)) {
+                    if (!liveSource(villager,point)) continue;
+                    candidates.add(packDest(point, possibleDest));
                 }
             }
         }
-        if (validSources.isEmpty()) {
-            return null;
-        }
-        int randomTarget = MillCommonUtilities.randomInt(validSources.size());
-        return this.packDest((Point)validSources.get(randomTarget), (Building)validDests.get(randomTarget));
+        return MiningAccess.choose(villager, this, candidates);
     }
 
     @Override
@@ -115,9 +104,9 @@ extends GoalGeneric {
     @Override
     public AStarConfig getPathingConfig(MillVillager villager) {
         if (!villager.canVillagerClearLeaves()) {
-            return JPS_CONFIG_WIDE_NO_LEAVES;
+            return JPS_CONFIG_TIGHT_NO_LEAVES;
         }
-        return JPS_CONFIG_WIDE;
+        return JPS_CONFIG_TIGHT;
     }
 
     @Override
@@ -125,9 +114,26 @@ extends GoalGeneric {
         return GOAL_TYPE;
     }
 
+    private boolean liveSource(MillVillager villager, Point point) {
+        return point != null && villager.level.hasChunkAt(point.getBlockPos())
+                && WorldUtilities.getBlockState(villager.level,point) == this.sourceBlockState;
+    }
+
     @Override
     public boolean isDestPossibleSpecific(MillVillager villager, Building b) {
-        return true;
+        boolean hasLiveSource = false;
+        var sources = b.getResManager().sources;
+        var types = b.getResManager().sourceTypes;
+        for (int index=0; index<Math.min(sources.size(),types.size()); index++) {
+            if (this.sourceBlockState != types.get(index)) continue;
+            for (Point point:sources.get(index)) {
+                if (!liveSource(villager,point)) continue;
+                hasLiveSource = true;
+                if (villager.hasMiningAccess(this, point)) return true;
+            }
+        }
+        return org.millenaire.common.goal.GoalDiagnostics.reject(villager, this,
+                hasLiveSource ? "NO_ACCESSIBLE_MINING_STAND" : "NO_REGISTERED_MATCHING_LIVE_SOURCE");
     }
 
     @Override
@@ -136,9 +142,35 @@ extends GoalGeneric {
     }
 
     @Override
+    public boolean isWithinActionRange(MillVillager villager, Point ignored) {
+        return org.millenaire.common.goal.WorkAccess.canAccessResource(
+                villager, villager.getGoalDestPoint(), this.range(villager));
+    }
+
+    private boolean validTarget(MillVillager villager, Building destination, Point point) {
+        if (destination == null || !liveSource(villager, point) || !getBuildings(villager).contains(destination)) return false;
+        var sources = destination.getResManager().sources;
+        var types = destination.getResManager().sourceTypes;
+        for (int index=0; index<Math.min(sources.size(),types.size()); index++)
+            if (types.get(index)==this.sourceBlockState && sources.get(index).contains(point)) return true;
+        return false;
+    }
+
+    @Override
+    protected boolean isStillValidSpecific(MillVillager villager) throws Exception {
+        Point source = villager.getGoalDestPoint();
+        return validTarget(villager, villager.getGoalBuildingDest(), source) && villager.hasMiningAccess(this, source);
+    }
+
+    @Override
     public boolean performAction(MillVillager villager) throws Exception {
+        Building destination = villager.getGoalBuildingDest();
+        Point point = villager.getGoalDestPoint();
+        if (villager.level.isClientSide || !validTarget(villager,destination,point)
+                || !this.passesStockLimits(villager) || !this.validateDest(villager,destination)) return true;
+        if (!this.isWithinActionRange(villager,point)) return false;
         for (InvItem key : this.loots.keySet()) {
-            villager.addToInv(key, (int)this.loots.get(key));
+            villager.addToInv(key, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, (int)this.loots.get(key)));
             if (MillConfigValues.LogMiner < 3 || !villager.extraLog) continue;
             MillLog.debug(this, "Gathered " + key + " at: " + villager.getGoalDestPoint());
         }
@@ -148,7 +180,8 @@ extends GoalGeneric {
 
     @Override
     public boolean stuckAction(MillVillager villager) throws Exception {
-        return this.performAction(villager);
+        // Navigation failure is never a completed mining action.
+        return false;
     }
 
     @Override
@@ -158,7 +191,8 @@ extends GoalGeneric {
 
     @Override
     public boolean validateGoal() {
-        return true;
+        return this.sourceBlockState != null && !this.loots.isEmpty()
+                && this.loots.values().stream().allMatch(amount -> amount != null && amount > 0);
     }
 }
 

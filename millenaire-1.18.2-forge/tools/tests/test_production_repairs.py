@@ -1,0 +1,214 @@
+"""Regression checks for fixes following the first full production audit."""
+from pathlib import Path
+import unittest
+import sys
+
+PROJECT = Path(__file__).resolve().parents[2]
+DATA = PROJECT / "src/main/resources/todeploy/millenaire"
+sys.path.insert(0, str(PROJECT / "tools"))
+from audit_production import load_goals, read_config, markers, DEFAULT_JAVA
+
+
+class ProductionRepairs(unittest.TestCase):
+    def test_unique_global_goal_ids(self):
+        goals, duplicates = load_goals(DATA, DEFAULT_JAVA)
+        self.assertEqual(duplicates, [])
+        for key in ("makebonemeal", "makesandstone", "makesandstoneseljuk",
+                    "makesugar", "makesugarseljuk"):
+            self.assertIn(key, goals)
+        self.assertEqual(goals["makesandstone"].cfg.last("input"), "sand,40")
+        self.assertEqual(goals["makesandstoneseljuk"].cfg.last("input"), "sand,1")
+        self.assertEqual(goals["makesandstoneseljuk"].cfg.last("buildingtag"), "stonecrafter")
+        self.assertEqual(goals["makesugarseljuk"].cfg.last("buildingtag"), "kitchen")
+        self.assertEqual(goals["makesugar"].cfg.last("buildingtag"), "")
+
+    def test_seljuk_role_references(self):
+        roles = DATA / "cultures/seljuk/villagers/male"
+        for path in ("lone/turk_loneminer.txt", "turk_stonecrafter.txt"):
+            self.assertIn("makesandstoneseljuk", read_config(roles / path).values("goal"))
+        self.assertIn("makesugarseljuk", read_config(roles / "turk_cook.txt").values("goal"))
+
+    def test_smelting_uses_real_input(self):
+        for name, item, output in (("cookclay", "clay", "brick"),
+                                   ("cooksandbyz", "sand", "glass")):
+            config = read_config(DATA / "goals/genericcooking/byzantinerefresh" / (name + ".txt"))
+            self.assertEqual(config.last("itemtocook"), item)
+            self.assertEqual(config.last("itemsbalance"), item + "," + output)
+
+    def test_quarry_sources_at_supported_existing_points(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("Pillow not installed")
+        palette = markers(DATA)
+        plans = [
+            ("indian/buildings/basic/quarry_A0.png", 14, [(1,2,5),(1,6,6)], (200,20,20), (155,155,155)),
+            ("indian/buildings/basic/quarry_B0.png", 14, [(2,3,3),(3,9,8)], (200,20,20), (155,155,155)),
+            ("japanese/buildings/lone/lonemine_A0.png", 20, [(7,4,2),(7,2,4)], (60,60,60), (109,71,35)),
+            ("mayan/buildings/core/mayanmining_A0.png", 12, [(2,4,5),(2,3,9)], (200,20,20), (155,155,155)),
+        ]
+        for path, width, points, color, support in plans:
+            expected_marker = "gravelsource" if path.startswith("japanese/") else "sandsource"
+            self.assertEqual(palette.get(color), expected_marker, path)
+            with Image.open(DATA / "cultures" / path) as raw:
+                image = raw.convert("RGB")
+                for floor, x, y in points:
+                    self.assertEqual(image.getpixel((floor*(width+1)+x,y)), color, path)
+                    self.assertEqual(image.getpixel(((floor-1)*(width+1)+x,y)), support, path)
+                self.assertEqual(palette.get((180,20,20)), "stonesource")
+                self.assertGreater(sum(n for n, p in image.getcolors(image.width * image.height)
+                                       if p == (180,20,20)), 0)
+
+    def test_lone_fisherman_delivery_and_log_variants(self):
+        root = DATA / "cultures"
+        fisher = read_config(root / "inuits/villagers/inuit_lonefisherman.txt")
+        self.assertIn("bringbackresourceshome", fisher.values("goal"))
+        self.assertTrue({"fishraw", "boneblock"}.issubset(fisher.values("bringbackhomegood")))
+        logger = read_config(root / "seljuk/villagers/male/turk_lumberman.txt")
+        self.assertIn("wood_any", logger.values("bringbackhomegood"))
+        for name in ("inuit_lumberman", "inuit_lonelumberman"):
+            profile = read_config(root / "inuits/villagers" / (name + ".txt"))
+            self.assertTrue({"wood_acacia","wood_darkoak"}.issubset(profile.values("bringbackhomegood")))
+
+
+    def test_remaining_inventory_outputs_are_delivered(self):
+        root = DATA / "cultures"
+        cases = [
+            ("indian/villagers/indian_adivasipeasant.txt", "feather"),
+            ("japanese/villagers/japanese_peasant.txt", "feather"),
+            ("inuits/villagers/inuit_sanduithusband.txt", "rottenflesh"),
+            ("seljuk/villagers/male/turk_peasant.txt", "mudbrick"),
+            ("seljuk/villagers/male/turk_stonecrafter.txt", "mudbrick"),
+        ]
+        for path, item in cases:
+            with self.subTest(path=path, item=item):
+                profile = read_config(root / path)
+                self.assertIn("bringbackresourceshome", profile.values("goal"))
+                self.assertIn(item, profile.values("bringbackhomegood"))
+
+
+    def test_missing_production_and_transport_assignments(self):
+        root = DATA / "cultures"
+        delivery = {
+            "mayan/villagers/mayan_cocoafarmer.txt": {"dye_brown"},
+            "seljuk/villagers/male/turk_headfarmer.txt": {"olives"},
+            "seljuk/villagers/female/turk_richwoman.txt": {"dye_yellow", "dye_lightblue", "dye_red"},
+            "seljuk/villagers/female/turk_richpeasantwife.txt": {"wheat", "olives", "cotton", "dye_yellow", "dye_lightblue", "dye_red"},
+        }
+        for path, items in delivery.items():
+            with self.subTest(path=path):
+                profile = read_config(root / path)
+                self.assertIn("bringbackresourceshome", profile.values("goal"))
+                self.assertTrue(items.issubset(profile.values("bringbackhomegood")))
+        for name in ("inuit_carver", "inuit_lonecarver"):
+            profile = read_config(root / "inuits/villagers" / (name + ".txt"))
+            self.assertTrue({"packsnowblock", "makesnowwall"}.issubset(profile.values("goal")))
+        goals, _ = load_goals(DATA, DEFAULT_JAVA)
+        self.assertIn("snowblock", goals["packsnowblock"].outputs)
+        self.assertIn("snowblock", goals["makesnowwall"].inputs)
+
+
+    def test_crafting_stock_limits_match_product_and_silk_recipe(self):
+        goals, _ = load_goals(DATA, DEFAULT_JAVA)
+        for item in ("pathdirt", "pathgravel", "pathgravelslabs", "pathochretiles",
+                     "pathsandstone", "pathslabs"):
+            with self.subTest(item=item):
+                goal = goals["make" + item]
+                self.assertEqual(goal.outputs, {item})
+                self.assertEqual(goal.cfg.last("buildinglimit"), item + ",64")
+                self.assertEqual(goal.cfg.last("townhalllimit"), item + ",128")
+        yellow = goals["dyewool_yellow"]
+        self.assertEqual(yellow.outputs, {"wool_yellow"})
+        self.assertEqual(yellow.cfg.last("buildinglimit"), "wool_yellow,8")
+        silk = goals["makeclothessilk"]
+        self.assertEqual(silk.outputs, {"clothes_byz_silk"})
+        self.assertIn("silk", silk.inputs)
+        self.assertEqual(silk.cfg.last("buildinglimit"), "clothes_byz_silk,2")
+
+
+    def test_inuit_wolf_processing_and_bear_delivery(self):
+        root = DATA / "cultures/inuits/villagers"
+        tanner = read_config(root / "inuit_tanner.txt")
+        self.assertIn("makewolfsteak", tanner.values("goal"))
+        self.assertIn("wolfmeat_raw,4", tanner.values("requiredgood"))
+        goals, _ = load_goals(DATA, DEFAULT_JAVA)
+        self.assertEqual(goals["makewolfsteak"].inputs, {"wolfmeat_raw"})
+        self.assertEqual(goals["makewolfsteak"].outputs, {"wolfmeat_cooked", "tannedhide"})
+        for role in ("inuit_hunter", "inuit_hunterth", "inuit_sanduithusband"):
+            cfg = read_config(root / (role + ".txt"))
+            self.assertIn("bearmeat_raw", cfg.values("collectgood"))
+            self.assertIn("bearmeat_raw", cfg.values("bringbackhomegood"))
+            self.assertIn("bringbackresourceshome", cfg.values("goal"))
+
+
+    def test_missing_arrow_and_banner_materials_can_be_purchased(self):
+        from audit_production import read_trade, csv_items
+        for culture, shops, materials in (
+            ("byzantines", ("toolsmith", "armyforge"), {"feather", "flint"}),
+            ("seljuk", ("weaver",), {"feather"}),
+        ):
+            with self.subTest(culture=culture):
+                root = DATA / "cultures" / culture
+                buy, foreign, _ = read_trade(root / "traded_goods.txt")
+                self.assertTrue(materials.issubset(buy))
+                self.assertTrue(materials.issubset(foreign))
+                for shop in shops:
+                    cfg = read_config(root / "shops" / (shop + ".txt"))
+                    self.assertTrue(materials.issubset(csv_items(cfg, "buys")))
+        wife = read_config(DATA / "cultures/seljuk/villagers/female/turk_weaverwife.txt")
+        self.assertIn("bringbackresourceshome", wife.values("goal"))
+        self.assertTrue({"dye_yellow", "dye_lightblue", "dye_red"}.issubset(
+            wife.values("bringbackhomegood")))
+
+
+    def test_japanese_sand_supply_and_glass_chain(self):
+        from audit_production import csv_items
+        root = DATA / "cultures/japanese"
+        for name in ("japanese_miner", "japanese_loneminer"):
+            cfg = read_config(root / "villagers" / (name + ".txt"))
+            self.assertTrue({"minesand", "minestone", "minegravel", "cooksand",
+                             "tendfurnace", "bringbackresourceshome"}.issubset(cfg.values("goal")))
+            self.assertIn("sand", cfg.values("bringbackhomegood"))
+        self.assertIn("sand,16", read_config(root / "villagers/japanese_miner.txt").values("requiredgood"))
+        self.assertIn("sand", csv_items(read_config(root / "shops/lonemine.txt"), "buys"))
+        goals, _ = load_goals(DATA, DEFAULT_JAVA)
+        self.assertEqual(goals["minesand"].source, "minecraft:sand")
+        self.assertIn("sand", goals["minesand"].outputs)
+        self.assertIn("sand", goals["cooksand"].inputs)
+        self.assertIn("glass", goals["cooksand"].outputs)
+
+    def test_japanese_sand_markers_and_support(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("Pillow not installed")
+        root = DATA / "cultures/japanese/buildings"
+        palette = markers(DATA)
+        self.assertEqual(palette.get((200, 20, 20)), "sandsource")
+        self.assertEqual(palette.get((180, 20, 20)), "stonesource")
+        self.assertEqual(palette.get((60, 60, 60)), "gravelsource")
+        for stem, stride, points, support, shift, min_stone, min_gravel in (
+            ("core/japanesequarry_A", 16, [(25, 11), (27, 16)], (155, 155, 155), 1, 22, 8),
+            ("lone/lonemine_A", 21, [(151, 4)], (109, 71, 35), 2, 4, 2),
+        ):
+            with self.subTest(plan=stem):
+                with Image.open(root / (stem + "0.png")) as raw:
+                    image = raw.convert("RGB")
+                    counts = {p: n for n, p in image.getcolors(image.width * image.height)}
+                    self.assertEqual(counts.get((200, 20, 20)), len(points))
+                    self.assertGreaterEqual(counts.get((180, 20, 20), 0), min_stone)
+                    self.assertGreaterEqual(counts.get((60, 60, 60), 0), min_gravel)
+                    for x, y in points:
+                        self.assertEqual(image.getpixel((x, y)), (200, 20, 20))
+                        self.assertEqual(image.getpixel((x - stride, y)), support)
+                        self.assertEqual(image.getpixel((x + stride, y)), (255, 255, 255))
+                # White pixels are unchanged in the existing upgrade plans.
+                for level in range(1, 4):
+                    with Image.open(root / (stem + str(level) + ".png")) as raw:
+                        image = raw.convert("RGB")
+                        for x, y in points:
+                            self.assertEqual(image.getpixel((x + shift * stride, y)), (255, 255, 255))
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

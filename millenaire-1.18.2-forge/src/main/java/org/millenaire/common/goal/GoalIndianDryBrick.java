@@ -43,35 +43,28 @@ extends Goal {
 
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws MillLog.MillenaireException {
-        boolean minimumBricksNotRequired = villager.goalKey != null && villager.goalKey.equals(this.key) ? true : (!villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L);
-        ArrayList<Point> vp = new ArrayList<Point>();
-        ArrayList<Point> buildingp = new ArrayList<Point>();
-        for (Building kiln : villager.getTownHall().getBuildingsWithTag("brickkiln")) {
-            Point p;
-            if (!this.validateDest(villager, kiln)) continue;
-            int nb = kiln.getResManager().getNbEmptyBrickLocation();
-            boolean validTarget = false;
-            if (nb > 0 && minimumBricksNotRequired) {
-                validTarget = true;
+        var demand=BrickProductionDemand.inspect(villager);
+        var task=BrickWorkCycle.plan(villager,demand);
+        if(task.work()==BrickWorkCycle.Work.REFILL)
+            return this.validateDest(villager,task.kiln())?this.packDest(task.point(),task.kiln()):null;
+        // While carrying a harvest, only its own refill is allowed.
+        if(BrickWorkCycle.raw(villager)>0 || task.work()==BrickWorkCycle.Work.GATHER
+                || villager.getTownHall()==null)return null;
+        if(!demand.shouldForm(BrickProductionDemand.inDryingArea(villager)))return null;
+        boolean minimumBricksNotRequired=demand.urgent() || this.key.equals(villager.goalKey)
+                || !villager.lastGoalTime.containsKey(this)
+                || villager.level.getGameTime()>villager.lastGoalTime.get(this)+2000L;
+        Point best=null;
+        Building bestBuilding=null;
+        for(Building kiln:villager.getTownHall().getBuildingsWithTag("brickkiln")){
+            if(!BrickWorkCycle.available(villager,kiln) || !this.validateDest(villager,kiln))continue;
+            if(!minimumBricksNotRequired && kiln.getResManager().getNbEmptyBrickLocation()<=4)continue;
+            Point p=BrickWorkCycle.nearestSpot(villager,kiln,false);
+            if(p!=null && (best==null || p.horizontalDistanceToSquared(villager)<best.horizontalDistanceToSquared(villager))){
+                best=p;bestBuilding=kiln;
             }
-            if (nb > 4) {
-                validTarget = true;
-            }
-            if (!validTarget || (p = kiln.getResManager().getEmptyBrickLocation()) == null) continue;
-            vp.add(p);
-            buildingp.add(kiln.getPos());
         }
-        if (vp.isEmpty()) {
-            return null;
-        }
-        Point p = (Point)vp.get(0);
-        Point buildingP = (Point)buildingp.get(0);
-        for (int i = 1; i < vp.size(); ++i) {
-            if (!(((Point)vp.get(i)).horizontalDistanceToSquared((Entity)villager) < p.horizontalDistanceToSquared((Entity)villager))) continue;
-            p = (Point)vp.get(i);
-            buildingP = (Point)buildingp.get(i);
-        }
-        return this.packDest(p, buildingP);
+        return best==null?null:this.packDest(best,bestBuilding);
     }
 
     @Override
@@ -91,29 +84,57 @@ extends Goal {
 
     @Override
     public boolean performAction(MillVillager villager) throws MillLog.MillenaireException {
-        if (WorldUtilities.getBlock(villager.level, villager.getGoalDestPoint()) == Blocks.AIR) {
+        if (villager.level.isClientSide || villager.getGoalDestPoint() == null || villager.getGoalBuildingDest() == null
+                || !villager.level.hasChunkAt(villager.getGoalDestPoint().getBlockPos())
+                || !villager.getGoalBuildingDest().getResManager().canWorkBrickSpot(villager.getGoalDestPoint(), false)) return true;
+        Building kiln=villager.getGoalBuildingDest();
+        var demand=BrickProductionDemand.inspect(villager);
+        if(BrickWorkCycle.raw(villager)>0){
+            var task=BrickWorkCycle.plan(villager,demand);
+            if(task.work()!=BrickWorkCycle.Work.REFILL || !kiln.getPos().equals(task.kiln().getPos())){
+                if(task.work()!=BrickWorkCycle.Work.GATHER || !kiln.getPos().equals(task.kiln().getPos()))
+                    BrickWorkCycle.finished(villager,kiln);
+                return true;
+            }
+            BrickWorkCycle.beginRefill(villager,kiln);
+        } else if(!demand.shouldForm(BrickProductionDemand.inDryingArea(villager))) {
+            // Demand controls routine forming, never a started harvest's refill.
+            return true;
+        }
+        if (villager.level.getBlockState(villager.getGoalDestPoint().getBlockPos()).isAir()) {
             villager.setBlockstate(villager.getGoalDestPoint(), MillBlocks.BS_WET_BRICK);
+            if (villager.level.getBlockState(villager.getGoalDestPoint().getBlockPos()).getBlock() != MillBlocks.WET_BRICK) {
+                BrickWorkCycle.failed(villager,kiln);
+                return true;
+            }
             villager.swing(InteractionHand.MAIN_HAND);
         }
-        if (villager.getGoalBuildingDest().getResManager().getNbEmptyBrickLocation() > 0) {
-            villager.setGoalInformation(this.getDestination(villager));
-            return false;
+        Goal.GoalInformation next=this.getDestination(villager);
+        if (next == null || !kiln.getPos().equals(next.getDestBuildingPos())) {
+            BrickWorkCycle.finished(villager,kiln);
+            return true;
         }
-        return true;
+        villager.setGoalInformation(next);
+        return false;
     }
 
     @Override
     public int priority(MillVillager villager) {
-        int p = 120;
+        var demand = BrickProductionDemand.inspect(villager);
+        if (BrickWorkCycle.plan(villager,demand).work()==BrickWorkCycle.Work.REFILL)
+            return BrickProductionPolicy.REFILL_BEFORE_DELIVERY_PRIORITY;
+        if (!demand.shouldForm(BrickProductionDemand.inDryingArea(villager))) return 0;
+        int p = demand.priority(false);
         for (MillVillager v : villager.getTownHall().getKnownVillagers()) {
-            if (!this.key.equals(v.goalKey)) continue;
-            p /= 2;
+            if (v == villager || !this.key.equals(v.goalKey)) continue;
+            p = Math.max(1, p / 2);
         }
         return p;
     }
 
     @Override
     public boolean unreachableDestination(MillVillager villager) {
+        BrickWorkCycle.failed(villager,villager.getGoalBuildingDest());
         return false;
     }
 }

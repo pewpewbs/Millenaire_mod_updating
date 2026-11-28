@@ -1054,6 +1054,41 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
          door.setBlockstate(state.setValue(DoorBlock.HINGE, hinge));
          if (door.special == BuildingBlock.INVERTED_DOOR) door.special = 0;
       }
+      // Normalize only isolated two-leaf groups. A row of three or more
+      // adjacent doors is ambiguous and retains the authored arrangement.
+      java.util.Set<BuildingBlock> paired = new java.util.HashSet<>();
+      for (BuildingBlock door : doors) {
+         if(paired.contains(door))continue;
+         var p=door.p.getBlockPos();
+         var neighbors=doors.stream().filter(other->other!=door && other.block==door.block
+             && other.p.getBlockPos().getY()==p.getY()
+             && Math.abs(other.p.getBlockPos().getX()-p.getX())+Math.abs(other.p.getBlockPos().getZ()-p.getZ())==1).toList();
+         if(neighbors.size()!=1)continue;
+         BuildingBlock other=neighbors.get(0);
+         var q=other.p.getBlockPos();
+         long adjacent=doors.stream().filter(x->x!=other&&x.block==other.block&&x.p.getBlockPos().getY()==q.getY()
+             &&Math.abs(x.p.getBlockPos().getX()-q.getX())+Math.abs(x.p.getBlockPos().getZ()-q.getZ())==1).count();
+         if(adjacent!=1)continue;
+         Direction facing=door.getBlockstate().getValue(DoorBlock.FACING);
+         Direction.Axis pairAxis=p.getX()!=q.getX()?Direction.Axis.X:Direction.Axis.Z;
+         Direction otherFacing=other.getBlockstate().getValue(DoorBlock.FACING);
+         if(facing.getAxis()==pairAxis||otherFacing.getAxis()==pairAxis)continue;
+         // The earlier leaf supplies the common facing, even when the
+         // imported marker encoded the other leaf in the opposite direction.
+         boolean otherOnRight=DoorPairRules.isRight(facing.getStepX(),facing.getStepZ(),q.getX()-p.getX(),q.getZ()-p.getZ());
+         var hinge=net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT;
+         var right=net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT;
+         door.setBlockstate(door.getBlockstate().setValue(DoorBlock.FACING,facing).setValue(DoorBlock.HINGE,otherOnRight?hinge:right));
+         other.setBlockstate(other.getBlockstate().setValue(DoorBlock.FACING,facing).setValue(DoorBlock.HINGE,otherOnRight?right:hinge));
+         for(BuildingBlock leaf:java.util.List.of(door,other)){
+            BuildingBlock upper=map.get(new Point(leaf.p.getBlockPos().above()));
+            if(upper!=null&&upper.block==leaf.block&&upper.getBlockstate().getValue(DoorBlock.HALF)==net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER){
+               upper.setBlockstate(leaf.getBlockstate().setValue(DoorBlock.HALF,net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
+               if(upper.special==BuildingBlock.INVERTED_DOOR)upper.special=0;
+            }
+         }
+         paired.add(door);paired.add(other);
+      }
    }
 
 
@@ -1329,108 +1364,66 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
    }
 
    public BuildingLocation findBuildingLocation(VillageMapInfo winfo, RegionMapper regionMapper, Point centre, int maxRadius, Random random, int porientation) {
-      long startTime = System.nanoTime();
-      int ci = centre.getiX() - winfo.mapStartX;
-      int cj = centre.getiZ() - winfo.mapStartZ;
-      int radius = (int)(maxRadius * this.minDistance);
-      maxRadius = (int)(maxRadius * this.maxDistance);
-      if (MillConfigValues.LogWorldGeneration >= 1) {
-         MillLog.major(
-            this,
-            "testBuildWorldInfo: Called to test for building "
-               + this.planName
-               + " around "
-               + centre
-               + "("
-               + ci
-               + "/"
-               + cj
-               + "), start radius: "
-               + radius
-               + ", max radius: "
-               + maxRadius
-         );
-      }
-
-      if (porientation == -1) {
-         porientation = this.fixedOrientation;
-      }
-
-      for (int i = 0; i < winfo.length; i++) {
-         for (int j = 0; j < winfo.width; j++) {
-            winfo.buildTested[i][j] = false;
+      long start=System.nanoTime();
+      winfo.lastSiteAssessment=null;
+      int ci=centre.getiX()-winfo.mapStartX, cj=centre.getiZ()-winfo.mapStartZ;
+      int min=(int)(maxRadius*this.minDistance), max=Math.min(maxRadius,(int)(maxRadius*this.maxDistance));
+      for(boolean[] row:winfo.buildTested) java.util.Arrays.fill(row,false);
+      int[] errors=new int[9], attempts=new int[2];
+      BuildingLocation result=BuildingSiteSearch.find(ci,cj,min,max,winfo.length,winfo.width,(x,z)->{
+         attempts[0]++;
+         int preferred=computeOrientation(new Point(x+winfo.mapStartX,0.0,z+winfo.mapStartZ),centre);
+         for(int orientation:BuildingSiteSearch.orientations(porientation,this.fixedOrientation,preferred)){
+            attempts[1]++;
+            LocationReturn lr=this.testSpot(winfo,regionMapper,centre,x,z,random,orientation,false);
+            if(lr.location!=null)return lr.location;
+            if(lr.errorCode>0&&lr.errorCode<errors.length)errors[lr.errorCode]++;
+            if(lr.errorCode==LocationReturn.TOO_CLOSE_TO_TAG||lr.errorCode==LocationReturn.TOO_FAR_FROM_TAG)break;
          }
+         return null;
+      });
+      if(result==null) {
+         winfo.lastSiteAssessment=assessFailedSite(winfo,centre,ci,cj,min,max,porientation);
+         MillLog.major(this,"VILLAGE-SITE-ASSESS plan="+this.buildingKey+" result="+winfo.lastSiteAssessment);
       }
+      if(result==null)MillLog.major(this,"VILLAGE-SITE-NONE plan="+this.buildingKey+" centre="+centre
+          +" radius="+min+".."+max+" sites="+attempts[0]+" attempts="+attempts[1]+" "+BuildingSiteSearch.failures(errors)
+          +" ms="+(System.nanoTime()-start)/1000000.0D);
+      else if(MillConfigValues.LogBuildingPlan>=2)MillLog.minor(this,"Time taken for location search: "+(System.nanoTime()-start)/1000000.0D);
+      return result;
+   }
 
-      while (radius < maxRadius) {
-         int mini = Math.max(0, ci - radius);
-         int maxi = Math.min(winfo.length - 1, ci + radius);
-         int minj = Math.max(0, cj - radius);
-         int maxj = Math.min(winfo.width - 1, cj + radius);
-         if (MillConfigValues.LogWorldGeneration >= 3) {
-            MillLog.debug(this, "Testing square: " + mini + "/" + minj + " to " + maxi + "/" + maxj);
+   private BuildingSiteSearch.Assessment assessFailedSite(VillageMapInfo winfo,Point centre,
+         int ci,int cj,int min,int max,int requestedOrientation) {
+      var index=new BuildingSiteSearch.FootprintIndex(winfo.length,winfo.width,(x,z)->{
+         boolean unknown=winfo.surveyed==null||!winfo.surveyed[x][z];
+         return (winfo.buildingLocRef[x][z]!=null?1:0)
+               |(unknown||winfo.buildingForbidden[x][z]||winfo.danger[x][z]||winfo.water[x][z]?2:0)
+               |(!winfo.canBuild[x][z]?4:0);
+      });
+      BuildingSiteSearch.Assessment[] best={null};
+      BuildingSiteSearch.find(ci,cj,min,max,winfo.length,winfo.width,(x,z)->{
+         Point pos=new Point(x+winfo.mapStartX,64.0,z+winfo.mapStartZ);
+         for(String tag:farFromTag.keySet())for(BuildingLocation loc:winfo.getBuildingLocations())
+            if(loc.containsPlanTag(tag)&&loc.pos.horizontalDistanceTo(pos)<farFromTag.get(tag))return null;
+         for(String tag:closeToTag.keySet()){
+            boolean nearby=false;
+            for(BuildingLocation loc:winfo.getBuildingLocations())
+               if(loc.containsPlanTag(tag)&&loc.pos.horizontalDistanceTo(pos)<closeToTag.get(tag)){nearby=true;break;}
+            if(!nearby)return null;
          }
-
-         for (int i = mini; i < maxi; i++) {
-            if (cj - radius == minj) {
-               BuildingPlan.LocationReturn lr = this.testSpot(winfo, regionMapper, centre, i, minj, random, porientation, false);
-               if (lr.location != null) {
-                  if (MillConfigValues.LogBuildingPlan >= 2) {
-                     MillLog.minor(this, "Time taken for location search: " + (System.nanoTime() - startTime) / 1000000.0);
-                  }
-
-                  return lr.location;
-               }
-            }
-
-            if (cj + radius == maxj) {
-               BuildingPlan.LocationReturn lr = this.testSpot(winfo, regionMapper, centre, i, maxj, random, porientation, false);
-               if (lr.location != null) {
-                  if (MillConfigValues.LogBuildingPlan >= 2) {
-                     MillLog.minor(this, "Time taken for location search: " + (System.nanoTime() - startTime) / 1000000.0);
-                  }
-
-                  return lr.location;
-               }
-            }
+         int preferred=computeOrientation(pos,centre);
+         for(int raw:BuildingSiteSearch.orientations(requestedOrientation,this.fixedOrientation,preferred)){
+            int orientation=(raw+this.buildingOrientation)%4;
+            int a=this.length+this.areaToClearLengthBefore+this.areaToClearLengthAfter+2;
+            int b=this.width+this.areaToClearWidthBefore+this.areaToClearWidthAfter+2;
+            int hx=(orientation%2==0?a:b)/2,hz=(orientation%2==0?b:a)/2;
+            best[0]=BuildingSiteSearch.prefer(best[0],index.inspect(x,z,hx,hz,winfo.mapStartX,winfo.mapStartZ));
          }
-
-         for (int j = minj; j < maxj; j++) {
-            if (ci - radius == mini) {
-               BuildingPlan.LocationReturn lr = this.testSpot(winfo, regionMapper, centre, mini, j, random, porientation, false);
-               if (lr.location != null) {
-                  if (MillConfigValues.LogBuildingPlan >= 2) {
-                     MillLog.minor(this, "Time taken for location search: " + (System.nanoTime() - startTime) / 1000000.0);
-                  }
-
-                  return lr.location;
-               }
-            }
-
-            if (ci + radius == maxi) {
-               BuildingPlan.LocationReturn lr = this.testSpot(winfo, regionMapper, centre, maxi, j, random, porientation, false);
-               if (lr.location != null) {
-                  if (MillConfigValues.LogBuildingPlan >= 2) {
-                     MillLog.minor(this, "Time taken for location search: " + (System.nanoTime() - startTime) / 1000000.0);
-                  }
-
-                  return lr.location;
-               }
-            }
-         }
-
-         radius++;
-      }
-
-      if (MillConfigValues.LogWorldGeneration >= 1) {
-         MillLog.major(this, "Could not find acceptable location (radius: " + radius + ")");
-      }
-
-      if (MillConfigValues.LogBuildingPlan >= 2) {
-         MillLog.minor(this, "Time taken for unsuccessful location search: " + (System.nanoTime() - startTime) / 1000000.0);
-      }
-
-      return null;
+         return null;
+      });
+      return best[0]!=null?best[0]:new BuildingSiteSearch.Assessment(
+            BuildingSiteSearch.SiteStatus.NO_LAYOUT_SPACE,0,0,0,0,0);
    }
 
    public BuildingBlock[] getBuildingPoints(
@@ -1465,6 +1458,8 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
          );
       }
 
+      boolean prepareNewGround = !this.isUpdate && !this.isSubBuilding && !location.isSubBuildingLocation
+            && !location.bedrocklevel && location.level == 0;
       if (!this.isUpdate && !this.isSubBuilding && !location.bedrocklevel) {
          this.getBuildingPoints_prepareGround(location, locationX, locationY, locationZ, orientation, bblocksCombined);
       }
@@ -1575,6 +1570,10 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
       }
 
       this.autoGuessLaddersDoorsStairs(bblocksCombined);
+      if (!villageGeneration && !includeSpecialPoints) {
+         if (prepareNewGround) ConstructionSupportOrder.prepare(world,bblocksCombined,true);
+         else ConstructionSupportOrder.prepare(world,bblocksCombined);
+      }
       if (location.sleepingPos == null) {
          location.sleepingPos = location.chestPos;
       }
@@ -1618,7 +1617,15 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
          totalWorldCall += System.nanoTime() - nanoStart;
          nanoStart = System.nanoTime();
          Block block = blockState.getBlock();
-         if ((blockState == bb.getBlockstate() && special == 0 || block == Blocks.GRASS_BLOCK && bb.block == Blocks.DIRT) && bb.special == 0) {
+         // A simulated earlier plan operation has no live neighbourhood yet.
+         // For real blocks compare against the current native connected shape,
+         // not the legacy disconnected plan state.
+         boolean sameState = bbmap.containsKey(ip)
+            ? blockState == bb.getBlockstate()
+            : org.millenaire.common.utilities.ConnectedBlockPlacement.matchesPlan(
+                  world, bb.p.getBlockPos(), blockState, bb.getBlockstate())
+               && ConstructionPairPlacement.matches(world,bb.p.getBlockPos(),bb.getBlockstate());
+         if ((sameState && special == 0 || block == Blocks.GRASS_BLOCK && bb.block == Blocks.DIRT) && bb.special == 0) {
             toDelete[i] = true;
             deleteSameBlock++;
             if (deletionLogs) {
@@ -1673,6 +1680,8 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
             this, "totalLogic: " + totalLogic / 1000000L + ", totalWorldCall: " + totalWorldCall / 1000000L + ", totalIteration: " + totalIteration / 1000000L
          );
       }
+
+      if (!villageGeneration && !includeSpecialPoints) ConstructionSupportOrder.retainFixtureChecks(bblocksCombined,toDelete);
 
       int finalSize = 0;
 
@@ -2209,7 +2218,7 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
 
             if (deltaY >= --offset - 2) {
                Point p = adjustForOrientation(locationX, locationY + deltaY, locationZ, deltaX - this.lengthOffset, deltaZ - this.widthOffset, orientation);
-               if (deltaX >= 0 && deltaZ >= 0 && deltaX <= this.length && deltaZ <= this.width) {
+               if (deltaX >= 0 && deltaZ >= 0 && deltaX < this.length && deltaZ < this.width) {
                   bblocks.add(new BuildingBlock(p, BuildingBlock.CLEARGROUND));
                } else if (deltaY != offset - 2 && deltaY != 0) {
                   if (deltaX != -this.areaToClearLengthBefore
@@ -2232,7 +2241,7 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
 
       for (int xzPos = 0; xzPos < XZCoords.length; xzPos += 2) {
          short deltaX = (short)(XZCoords[xzPos] - this.areaToClearLengthBefore);
-         short deltaZ = (short)(XZCoords[xzPos + 1] - this.areaToClearWidthAfter);
+         short deltaZ = (short)(XZCoords[xzPos + 1] - this.areaToClearWidthBefore);
 
          for (short deltaY = (short)(-this.foundationDepth + this.startLevel); deltaY < 0; deltaY++) {
             int offsetXx = 0;
@@ -2799,73 +2808,52 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
 
             boolean reachable = false;
 
-            for (int i = 0; i <= (int)Math.floor(xwidth / 2); i++) {
-               for (int j = 0; j <= (int)Math.floor(zwidth / 2); j++) {
-                  for (int k = 0; k < 4; k++) {
-                     int ci;
-                     int cj;
-                     if (k == 0) {
-                        ci = x + i;
-                        cj = z + j;
-                     } else if (k == 1) {
-                        ci = x - i;
-                        cj = z + j;
-                     } else if (k == 2) {
-                        ci = x - i;
-                        cj = z - j;
-                     } else {
-                        ci = x + i;
-                        cj = z - j;
-                     }
-
-                     if (ci < 0 || cj < 0 || ci >= winfo.length || cj >= winfo.width) {
-                        Point p = new Point(ci + winfo.mapStartX, 64.0, cj + winfo.mapStartZ);
-                        return new BuildingPlan.LocationReturn(1, p);
-                     }
-
-                     if (winfo.buildingLocRef[ci][cj] != null) {
-                        Point p = new Point(ci + winfo.mapStartX, 64.0, cj + winfo.mapStartZ);
-                        return new BuildingPlan.LocationReturn(2, p);
-                     }
-
-                     if (winfo.buildingForbidden[ci][cj]) {
-                        if (!hugeBuilding || nbError > allowedErrors) {
-                           Point p = new Point(ci + winfo.mapStartX, 64.0, cj + winfo.mapStartZ);
-                           return new BuildingPlan.LocationReturn(3, p);
-                        }
-
-                        nbError++;
-                     } else if (winfo.danger[ci][cj]) {
-                        if (nbError > allowedErrors) {
-                           Point p = new Point(ci + winfo.mapStartX, 64.0, cj + winfo.mapStartZ);
-                           return new BuildingPlan.LocationReturn(5, p);
-                        }
-
-                        nbError++;
-                     } else if (!winfo.canBuild[ci][cj]) {
-                        if (nbError > allowedErrors) {
-                           Point p = new Point(ci + winfo.mapStartX, 64.0, cj + winfo.mapStartZ);
-                           return new BuildingPlan.LocationReturn(4, p);
-                        }
-
-                        nbError++;
-                     }
-
-                     if (regionMapper != null) {
-                        if (ci < regionMapper.regions.length && cj < regionMapper.regions[0].length) {
-                           if (regionMapper.regions[ci][cj] != regionMapper.thRegion) {
-                              reachable = false;
-                           } else {
-                              reachable = true;
-                           }
-                        } else {
-                           MillLog.error(null, "Out of array value for regions");
-                        }
-                     }
-
-                     altitudeTotal += winfo.topGround[ci][cj];
-                     nbPoints++;
+            // Visit each column once; preserve any reachable column.
+            for (int ci=x-xwidth/2;ci<=x+xwidth/2;ci++) {
+               for (int cj=z-zwidth/2;cj<=z+zwidth/2;cj++) {
+                  if (ci < 0 || cj < 0 || ci >= winfo.length || cj >= winfo.width) {
+                     Point p = new Point(ci + winfo.mapStartX, 64.0, cj + winfo.mapStartZ);
+                     return new BuildingPlan.LocationReturn(1, p);
                   }
+
+                  if (winfo.buildingLocRef[ci][cj] != null) {
+                     Point p = new Point(ci + winfo.mapStartX, 64.0, cj + winfo.mapStartZ);
+                     return new BuildingPlan.LocationReturn(2, p);
+                  }
+
+                  if (winfo.buildingForbidden[ci][cj]) {
+                     if (!hugeBuilding || nbError > allowedErrors) {
+                        Point p = new Point(ci + winfo.mapStartX, 64.0, cj + winfo.mapStartZ);
+                        return new BuildingPlan.LocationReturn(3, p);
+                     }
+
+                     nbError++;
+                  } else if (winfo.danger[ci][cj]) {
+                     if (nbError > allowedErrors) {
+                        Point p = new Point(ci + winfo.mapStartX, 64.0, cj + winfo.mapStartZ);
+                        return new BuildingPlan.LocationReturn(5, p);
+                     }
+
+                     nbError++;
+                  } else if (!winfo.canBuild[ci][cj]) {
+                     if (nbError > allowedErrors) {
+                        Point p = new Point(ci + winfo.mapStartX, 64.0, cj + winfo.mapStartZ);
+                        return new BuildingPlan.LocationReturn(4, p);
+                     }
+
+                     nbError++;
+                  }
+
+                  if (regionMapper != null) {
+                     if (ci < regionMapper.regions.length && cj < regionMapper.regions[0].length) {
+                        if (regionMapper.regions[ci][cj] == regionMapper.thRegion) reachable = true;
+                     } else {
+                        MillLog.error(null, "Out of array value for regions");
+                     }
+                  }
+
+                  altitudeTotal += winfo.topGround[ci][cj];
+                  nbPoints++;
                }
             }
 

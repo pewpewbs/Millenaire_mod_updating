@@ -4,6 +4,7 @@
 package org.millenaire.common.pathing.atomicstryker;
 
 public class AStarConfig {
+    public org.millenaire.common.pathing.VillageTransit transit = org.millenaire.common.pathing.VillageTransit.NONE;
     public boolean canUseDoors = false;
     public boolean canTakeDiagonals = false;
     public boolean allowDropping = false;

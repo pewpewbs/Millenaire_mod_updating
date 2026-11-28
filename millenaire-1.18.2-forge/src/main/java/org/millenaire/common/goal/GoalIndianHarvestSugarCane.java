@@ -107,7 +107,7 @@ extends Goal {
             if (rand < (double)(irrigation / 100.0f)) {
                 ++nbcrop;
             }
-            villager.addToInv(Items.SUGAR_CANE, nbcrop);
+            villager.addToInv(Items.SUGAR_CANE, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, nbcrop));
         }
         if (villager.getBlock(cropPoint = villager.getGoalDestPoint().getRelative(0.0, 2.0, 0.0)) == Blocks.SUGAR_CANE) {
             villager.setBlockAndMetadata(cropPoint, Blocks.AIR, 0);
@@ -118,7 +118,7 @@ extends Goal {
                 ++nbcrop;
             }
             villager.swing(InteractionHand.MAIN_HAND);
-            villager.addToInv(Items.SUGAR_CANE, nbcrop);
+            villager.addToInv(Items.SUGAR_CANE, org.millenaire.common.config.TestTuning.resourceAmount(villager.level, nbcrop));
         }
         return true;
     }

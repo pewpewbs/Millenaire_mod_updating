@@ -27,20 +27,24 @@ extends Goal {
         return this.getDestination(villager, false);
     }
 
+    private int pickupTotal(MillVillager villager, Building source, java.util.List<Building> shops) {
+        if (!LocalLogistics.usable(source)) return 0;
+        long total = 0;
+        for (InvItem item : source.stockKeys()) total += LocalLogistics.shopPickup(villager, source, item, shops);
+        return (int)Math.min(Integer.MAX_VALUE,total);
+    }
+
     public Goal.GoalInformation getDestination(MillVillager villager, boolean test) {
-        boolean delayOver = !test ? true : (!villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L);
-        for (Building shop : villager.getTownHall().getShops()) {
-            int nb = 0;
-            if (!villager.getCulture().shopNeeds.containsKey(shop.location.shop)) continue;
-            for (InvItem item : villager.getCulture().shopNeeds.get(shop.location.shop)) {
-                int nbcount;
-                if (shop != villager.getHouse() && (nbcount = villager.getHouse().nbGoodAvailable(item, false, false, true)) > 0 && (delayOver || (nb += nbcount) > 16)) {
-                    return this.packDest(villager.getHouse().getResManager().getSellingPos(), villager.getHouse());
-                }
-                if (villager.getTownHall() == shop || villager.getTownHall().nbGoodAvailable(item, false, false, true) <= 0 || !delayOver && (nb += villager.getTownHall().nbGoodAvailable(item, false, false, true)) <= 16) continue;
-                return this.packDest(villager.getTownHall().getResManager().getSellingPos(), villager.getTownHall());
-            }
+        if (villager.getHouse() == null || villager.getTownHall() == null) return null;
+        boolean delayOver = !test || !villager.lastGoalTime.containsKey(this)
+                || villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L;
+        var shops = villager.getTownHall().getShops();
+        for (Building source : new Building[]{villager.getHouse(), villager.getTownHall()}) {
+            int amount = pickupTotal(villager, source, shops);
+            if (amount > 0 && (delayOver || amount > 16))
+                return this.packDest(source.getResManager().getSellingPos(), source);
         }
+        GoalDiagnostics.note(villager,this,"NO_EXPORTABLE_STOCK_OR_SHOP_CAPACITY");
         return null;
     }
 
@@ -50,33 +54,31 @@ extends Goal {
     }
 
     @Override
+    public boolean isWithinActionRange(MillVillager villager,
+            org.millenaire.common.utilities.Point destination) {
+        return WorkAccess.canAccessStock(villager, destination, this.range(villager));
+    }
+
+    @Override
     public boolean performAction(MillVillager villager) {
-        Building dest = villager.getGoalBuildingDest();
-        if (dest == null) {
-            MillLog.error(villager, "Invalid destination for GoalGetResourcesForShops goal: " + villager.getGoalBuildingDestPoint() + " (house: " + villager.getHouse().getPos() + ", TH: " + villager.getTownHall().getPos() + "), pathDestPoint: " + villager.getGoalDestPoint());
-            return true;
-        }
-        for (Building shop : villager.getTownHall().getShops()) {
-            if (shop.getPos().equals(villager.getGoalDestPoint()) || !villager.getCulture().shopNeeds.containsKey(shop.location.shop)) continue;
-            for (InvItem item : villager.getCulture().shopNeeds.get(shop.location.shop)) {
-                villager.takeFromBuilding(dest, item.getItem(), item.meta, dest.nbGoodAvailable(item, false, false, true));
-            }
+        Building source = villager.getGoalBuildingDest();
+        if (source != villager.getHouse() && source != villager.getTownHall()) return true;
+        if (!LocalLogistics.access(this,villager,source)) return false;
+        var shops = villager.getTownHall().getShops();
+        for (InvItem item : source.stockKeys()) {
+            int amount = LocalLogistics.shopPickup(villager,source,item,shops);
+            if (amount > 0) villager.takeFromBuilding(source,item.getItem(),item.meta,amount);
         }
         return true;
     }
 
     @Override
     public int priority(MillVillager villager) {
-        int priority = 0;
-        for (Building shop : villager.getTownHall().getShops()) {
-            if (!villager.getCulture().shopNeeds.containsKey(shop.location.shop)) continue;
-            for (InvItem item : villager.getCulture().shopNeeds.get(shop.location.shop)) {
-                priority += villager.getHouse().countGoods(item.getItem(), item.meta) * 5;
-                if (villager.getTownHall() == shop) continue;
-                priority += villager.getTownHall().countGoods(item.getItem(), item.meta) * 5;
-            }
-        }
-        return priority;
+        if (villager.getHouse() == null || villager.getTownHall() == null) return 0;
+        var shops = villager.getTownHall().getShops();
+        long total = pickupTotal(villager,villager.getHouse(),shops);
+        if (villager.getHouse() != villager.getTownHall())
+            total += pickupTotal(villager,villager.getTownHall(),shops);
+        return (int)Math.min(Integer.MAX_VALUE,total*5);
     }
 }
-

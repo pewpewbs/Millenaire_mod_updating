@@ -22,6 +22,9 @@ irrigationbonuscrop=wheat
 //Items gained during harvest, with the chance %
 harvestitem=wheat,100
 harvestitem=seeds,100
+
+// Limit secondary seed stock, never the wheat harvest.
+surplusseed=seeds
 harvestitem=seeds,75
 
 helditemsoffhand=wheat

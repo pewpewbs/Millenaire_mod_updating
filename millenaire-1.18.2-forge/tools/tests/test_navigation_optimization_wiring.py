@@ -1,0 +1,534 @@
+"""Source-level wiring smoke checks for NAV-OPT.
+
+Run from millenaire-1.18.2-forge:
+    python3 tools/tests/test_navigation_optimization_wiring.py
+
+This tests architecture invariants, NOT Minecraft physics or Forge compilation.
+"""
+from pathlib import Path
+import unittest
+
+JAVA = Path(__file__).resolve().parents[2] / "src/main/java/org/millenaire/common"
+def read(path):
+    return (JAVA / path).read_text(encoding="utf-8")
+
+PLANNER = read("pathing/atomicstryker/AStarPathPlannerJPS.java")
+WORKER = read("pathing/atomicstryker/AStarWorker.java")
+VILLAGER = read("entity/MillVillager.java")
+SNAPSHOT = read("pathing/PathWorldSnapshot.java")
+COLUMN_MEMO = read("pathing/SnapshotColumnMemo.java")
+ASTAR_STATIC = read("pathing/atomicstryker/AStarStatic.java")
+SECTION_POOL = read("pathing/SnapshotSectionPool.java")
+CAPTURE_INDEX = read("pathing/SnapshotCaptureIndex.java")
+EVENTS = read("forge/MillEventController.java")
+METRICS = read("pathing/NavigationMetrics.java")
+MEMORY = read("pathing/RouteMemory.java")
+REQUEST = read("pathing/NavigationRequestKey.java")
+FAILED_BACKOFF = read("pathing/FailedRouteBackoff.java")
+DRIFT_WINDOW = read("pathing/NavigationGoalDriftWindow.java")
+TRACE_INTERFACE = read("pathing/atomicstryker/IAStarPathedEntity.java")
+WINDOW = read("pathing/NavigationRateWindow.java")
+UTILITIES = read("utilities/ThreadSafeUtilities.java")
+EXECUTOR = read("pathing/atomicstryker/PathSearchExecutor.java")
+
+class OptimizationWiring(unittest.TestCase):
+    def test_route_cache_always_checks_current_world(self):
+        cache = PLANNER.split("private ArrayList<AStarNode> reusePath(", 1)[1]
+        cache = cache.split("private void rememberPath(", 1)[0]
+        self.assertIn("AStarStatic.isViable(this.world, to", cache)
+        self.assertIn("AStarStatic.isTransitionViable(this.world, from, to", cache)
+        self.assertIn("findSafeOrthogonalCorner", cache)
+        self.assertIn("memory.forget(", cache)
+        self.assertIn("cacheStale()", cache)
+
+    def test_route_cache_admission_matches_replay_edge_contract(self):
+        replay = PLANNER.split("private ArrayList<AStarNode> reusePath(", 1)[1]
+        replay = replay.split("private static boolean isCacheEdgeAdjacent(", 1)[0]
+        self.assertIn("if (!isCacheEdgeAdjacent(from, to))", replay)
+        self.assertIn('rejection = "NON_ADJACENT_EDGE"', replay)
+        predicate = PLANNER.split("private static boolean isCacheEdgeAdjacent(", 1)[1]
+        predicate = predicate.split("private void rememberPath(", 1)[0]
+        for axis in ("x", "y", "z"):
+            self.assertIn(f"Math.abs(to.{axis} - from.{axis}) <= 1", predicate)
+        admission = PLANNER.split("private void rememberPath(", 1)[1]
+        admission = admission.split("private static double pathCost(", 1)[0]
+        guard = "if (!isCacheEdgeAdjacent(path.get(i), path.get(i - 1))) return;"
+        self.assertIn("for (int i = 1; i < path.size(); i++)", admission)
+        self.assertLess(admission.index(guard), admission.index(".remember("))
+        self.assertLess(admission.index(guard), admission.index("routeStored()"))
+
+    def test_navopt19_negative_route_cache_is_exact_and_revision_guarded(self):
+        self.assertIn("record CandidatesSnapshot(List<Lookup> matches, long revision)", MEMORY)
+        self.assertIn("public synchronized CandidatesSnapshot candidatesWithRevision(", MEMORY)
+        self.assertIn("new CandidatesSnapshot(candidates(tick, options, start, goal), revision)", MEMORY)
+        self.assertIn("public synchronized long revision() { return revision; }", MEMORY)
+        self.assertIn("++revision;", MEMORY)
+        self.assertIn("memory.candidatesWithRevision(", PLANNER)
+        self.assertIn("this.emptyCacheRequest = requestKey(start, end, this.config);", PLANNER)
+        self.assertIn("this.emptyCacheRevision = snapshot.revision();", PLANNER)
+        self.assertIn("this.emptyCacheRequest = null;", PLANNER)
+        self.assertIn("requested.equals(this.emptyCacheRequest)", PLANNER)
+        self.assertIn("routes(this.world).revision() == this.emptyCacheRevision", PLANNER)
+        self.assertIn("NavigationMetrics.cacheEmptyLookupSkipped()", PLANNER)
+        self.assertIn("NavigationMetrics.cacheMiss()", PLANNER)
+        self.assertIn("cache_empty_lookup_skipped=", METRICS)
+        self.assertIn("CACHE_EMPTY_LOOKUP_SKIPPED.reset();", METRICS)
+        # Existing candidate rejected for a time budget is never memoized as empty.
+        batch = PLANNER.split("var snapshot = memory.candidatesWithRevision(", 1)[1]
+        before_validation = batch.split("ArrayList<AStarNode> best = null;", 1)[0]
+        self.assertIn("if (alternatives.isEmpty())", before_validation)
+        self.assertIn("this.emptyCacheRequest = null;", before_validation)
+
+    def test_cache_world_isolated_and_bounded(self):
+        self.assertIn("new java.util.WeakHashMap<>()", PLANNER)
+        self.assertIn("new org.millenaire.common.pathing.RouteMemory(96, 96, 200L)", PLANNER)
+        self.assertIn("lifetimeTicks", MEMORY)
+        self.assertIn("removeEldestEntry", MEMORY)
+
+    def test_deferred_is_not_mistaken_for_missing_path(self):
+        start = VILLAGER.index('this.pathPlannerJPS.getPath(this.doubleToInt(')
+        section = VILLAGER[start:start+1800]
+        self.assertIn("hadImmediatePath()", section)
+        self.assertIn("wasDeferred()", section)
+        self.assertIn('logRouteDecision("ASTAR-NO-WORKER"', section)
+        self.assertNotIn("onNoPathAvailable();", section.split("wasDeferred()", 1)[1].split("} else {", 1)[0])
+
+    def test_reverse_search_is_bounded_and_validated_directionally(self):
+        reverse = WORKER.split("private ArrayList<AStarNode> tryReverseClassic(", 1)[1]
+        reverse = reverse.split("private static double routeCost(", 1)[0]
+        self.assertIn("opposite.runSync()", reverse)
+        self.assertIn("reverseDeadline", reverse)
+        self.assertIn("AStarStatic.isTransitionViable(this.world, from, to", reverse)
+        self.assertIn("NavigationMetrics.reverseFound()", reverse)
+        self.assertIn('"NAV-OPT-REVERSE from="', reverse)
+
+    def test_failed_search_cooldown_preserves_new_goals(self):
+        self.assertIn("new org.millenaire.common.pathing.FailedRouteBackoff(", PLANNER)
+        self.assertIn("this.failedRouteBackoff.onRequest(requested)", PLANNER)
+        self.assertIn("this.failedRouteBackoff.shouldDefer(", PLANNER)
+        self.assertIn("requested, tick, knownWorldMutationEpoch()", PLANNER)
+        self.assertIn("this.deferred = true;", PLANNER)
+        self.assertIn("NavigationMetrics.noPathCooldown()", PLANNER)
+        self.assertIn("this.failedRouteBackoff.onFailed(failed,", PLANNER)
+        self.assertIn("this.failedRouteBackoff.onSuccess();", PLANNER)
+        self.assertIn("record NavigationRequestKey(", REQUEST)
+
+    def test_adaptive_no_path_backoff_is_capped_and_policy_sensitive(self):
+        self.assertIn("private static final long BASE_DELAY_TICKS = 20L;", FAILED_BACKOFF)
+        self.assertIn("private static final long MAX_DELAY_TICKS = 80L;", FAILED_BACKOFF)
+        self.assertIn("private static final int MAX_LEVEL = 3;", FAILED_BACKOFF)
+        self.assertIn("lastFailure.equals(requested)", FAILED_BACKOFF)
+        self.assertIn("currentEpoch != mutationEpoch", FAILED_BACKOFF)
+        self.assertIn("tick < failureTick", FAILED_BACKOFF)
+        self.assertIn("Math.min(MAX_LEVEL, level + 1)", FAILED_BACKOFF)
+        self.assertIn("resetForChangedRequest(requested);", FAILED_BACKOFF)
+        self.assertIn("NavigationMetrics.noPathFailure(level)", PLANNER)
+        self.assertIn("no_path_failures=", METRICS)
+        self.assertIn("no_path_backoff_level2=", METRICS)
+        self.assertIn("no_path_backoff_level3=", METRICS)
+        self.assertIn("no_path_failures_s=", WINDOW)
+        self.assertIn("NO_PATH_FAILURES.sum(),", METRICS)
+
+    def test_no_path_wakeup_uses_known_world_mutation_epochs(self):
+        self.assertIn("knownMutationEpoch(ServerLevel level)", SNAPSHOT)
+        self.assertIn("KNOWN_MUTATION_EPOCHS", SNAPSHOT)
+        self.assertIn("advanceKnownMutation(level);", SNAPSHOT)
+        self.assertIn("KNOWN_MUTATION_EPOCHS.remove(level);", SNAPSHOT)
+        self.assertIn("PathWorldSnapshot.knownMutationEpoch(server)", PLANNER)
+        mutation = SNAPSHOT.split("public static void onKnownBlockMutation(", 1)[1]
+        mutation = mutation.split("public static void onKnownWorldMutation(", 1)[0]
+        self.assertIn("advanceKnownMutation(level)", mutation)
+        world = SNAPSHOT.split("public static void onKnownWorldMutation(", 1)[1]
+        world = world.split("public static void onWorldUnload(", 1)[0]
+        self.assertIn("advanceKnownMutation(level)", world)
+        self.assertIn("reset(Event.RESET_WORLD_MUTATED);", FAILED_BACKOFF)
+        self.assertIn("reset(Event.RESET_TICK_REWIND);", FAILED_BACKOFF)
+
+    def test_navopt17_reset_causes_are_distinct_and_diagnostic_only(self):
+        for event in ("RESET_START_CHANGED", "RESET_GOAL_CHANGED",
+                      "RESET_MOVEMENT_CHANGED", "RESET_WORLD_MUTATED",
+                      "RESET_TICK_REWIND", "RESET_SUCCESS", "RETRY_EXPIRED"):
+            self.assertIn(event, FAILED_BACKOFF)
+        self.assertIn("lastFailure.start().equals(requested.start())", FAILED_BACKOFF)
+        self.assertIn("lastFailure.goal().equals(requested.goal())", FAILED_BACKOFF)
+        self.assertIn("Consumer<Event> observer", FAILED_BACKOFF)
+        self.assertIn("this(event -> {});", FAILED_BACKOFF)
+        self.assertIn("private void reset(Event event)", FAILED_BACKOFF)
+        self.assertIn("if (lastFailure != null) observer.accept(event);", FAILED_BACKOFF)
+        self.assertIn("public void onSuccess()", FAILED_BACKOFF)
+        self.assertIn("reset(Event.RESET_SUCCESS);", FAILED_BACKOFF)
+
+    def test_navopt17_backoff_expiry_reports_only_once_and_preserves_streak(self):
+        self.assertIn("private boolean expiryReported;", FAILED_BACKOFF)
+        self.assertIn("if (!expiryReported)", FAILED_BACKOFF)
+        self.assertIn("observer.accept(Event.RETRY_EXPIRED);", FAILED_BACKOFF)
+        self.assertIn("expiryReported = true;", FAILED_BACKOFF)
+        self.assertIn("expiryReported = false;", FAILED_BACKOFF)
+        self.assertIn("if (tick >= retryTick)", FAILED_BACKOFF)
+        self.assertIn("return false;", FAILED_BACKOFF)
+        self.assertIn("Math.min(MAX_LEVEL, level + 1)", FAILED_BACKOFF)
+
+    def test_navopt17_reset_telemetry_is_not_path_decision_input(self):
+        self.assertIn("NavigationMetrics::noPathBackoffEvent", PLANNER)
+        self.assertIn("void noPathBackoffEvent(FailedRouteBackoff.Event event)", METRICS)
+        self.assertIn("NO_PATH_BACKOFF_EVENTS[event.ordinal()].increment()", METRICS)
+        self.assertIn("for (LongAdder transition : NO_PATH_BACKOFF_EVENTS) transition.reset();", METRICS)
+        for field in ("no_path_reset_start=", "no_path_reset_goal=",
+                      "no_path_reset_movement=", "no_path_reset_world=",
+                      "no_path_reset_rewind=", "no_path_reset_success=",
+                      "no_path_retry_expired="):
+            self.assertIn(field, METRICS)
+        self.assertIn("this.failedRouteBackoff.onSuccess()", PLANNER)
+
+    def test_actor_task_metadata_is_captured_before_async_search(self):
+        for method in ("navigationActorId()", "navigationActorName()", "navigationBehaviorKey()"):
+            self.assertIn(method, TRACE_INTERFACE)
+            self.assertIn(method, VILLAGER)
+        self.assertIn("this.func_70005_c_()", VILLAGER)
+        self.assertIn("this.goalKey == null ? \"unknown\" : this.goalKey", VILLAGER)
+        self.assertIn("private record SearchTrace(long actorId, String name, String goal)", PLANNER)
+        self.assertIn("SearchTrace.capture(this.pathedEntity)", PLANNER)
+        self.assertIn("this.currentTrace = SearchTrace.capture(this.pathedEntity);", PLANNER)
+        self.assertIn("actorId=", PLANNER)
+        self.assertIn("actorName=", PLANNER)
+        self.assertIn('" goal="', PLANNER)
+        self.assertIn("this.currentTrace=null;", PLANNER)
+
+    def test_moving_target_bursts_only_sample_real_searches(self):
+        search = PLANNER.split("public synchronized void getPath(AStarNode start,AStarNode end,AStarConfig settings)", 1)[1]
+        search = search.split("private void submit(boolean classic)", 1)[0]
+        self.assertIn("submit(false);", search)
+        self.assertIn("if (this.future != null && this.busy)", search)
+        self.assertLess(search.index("submit(false);"), search.index("goalDrift.onSearch("))
+        self.assertIn("NavigationMetrics.movingGoalRequest()", search)
+        self.assertIn("NavigationMetrics.movingGoalBurst()", search)
+        self.assertIn('"NAV-OPT-MOVING-GOAL actorId="', search)
+        self.assertIn("MillConfigValues.LogPathing >= 2", search)
+        self.assertNotIn("this.deferred = true;", search.split("submit(false);", 1)[1])
+        self.assertIn("WINDOW_TICKS = 20L", DRIFT_WINDOW)
+        self.assertIn("BURST_THRESHOLD = 5", DRIFT_WINDOW)
+        self.assertIn("!start.equals(request.start())", DRIFT_WINDOW)
+        self.assertIn("!movement.equals(request.movement())", DRIFT_WINDOW)
+        self.assertIn("!semanticGoal.equals(normalizedGoal)", DRIFT_WINDOW)
+
+    def test_changed_inflight_requests_are_accounted_before_cancellation(self):
+        search = PLANNER.split("public synchronized void getPath(AStarNode start,AStarNode end,AStarConfig settings)", 1)[1]
+        search = search.split("private void submit(boolean classic)", 1)[0]
+        self.assertIn("this.busy && requested.equals(this.activeRequest)", search)
+        self.assertIn("this.busy && this.activeRequest != null", search)
+        self.assertIn("NavigationMetrics.searchPreempted(", search)
+        self.assertLess(search.index("NavigationMetrics.searchPreempted("),
+                        search.index("stopPathSearch(true);"))
+        for counter in ("search_preempted=", "search_preempted_start=",
+                        "search_preempted_goal=", "search_preempted_movement=",
+                        "moving_goal_requests=", "moving_goal_bursts="):
+            self.assertIn(counter, METRICS)
+        self.assertIn("SEARCH_PREEMPTED.reset();", METRICS)
+        self.assertIn("MOVING_GOAL_BURSTS.reset();", METRICS)
+        for counter in ("search_preempted_s=", "moving_goal_requests_s=",
+                        "moving_goal_bursts_s="):
+            self.assertIn(counter, WINDOW)
+        self.assertIn("MOVING_GOAL_BURSTS.sum()));", METRICS)
+
+    def test_identical_cached_routes_are_throttled_without_blocking_new_goals(self):
+        self.assertIn("this.lastStart.equals(this.recentCacheStart)", PLANNER)
+        self.assertIn("this.lastEnd.equals(this.recentCacheEnd)", PLANNER)
+        self.assertIn("routeOptions(this.config) == this.recentCacheOptions", PLANNER)
+        self.assertIn("tick - this.recentCacheTick < 10L", PLANNER)
+        self.assertIn("this.deferred = true;", PLANNER)
+        self.assertIn("NavigationMetrics.cacheReplanDeferred()", PLANNER)
+        self.assertIn("this.recentCacheTick = tick;", PLANNER)
+        self.assertIn("cache_replan_deferred=", METRICS)
+
+    def test_reverse_diagnostics_distinguish_no_route_from_reversed(self):
+        self.assertIn('chosen == null ? "NONE"', WORKER)
+        self.assertIn('"ENDPOINT_MISMATCH actualStart="', WORKER)
+        self.assertIn('" actualGoal="', WORKER)
+
+    def test_cache_invalidation_and_failure_cooldown_have_actionable_logs(self):
+        cache = PLANNER.split("private ArrayList<AStarNode> reusePath(", 1)[1]
+        cache = cache.split("private void rememberPath(", 1)[0]
+        self.assertIn('"NAV-OPT-CACHE action=INVALIDATE reason="', cache)
+        self.assertIn('rejection = "BLOCKED_NODE"', cache)
+        self.assertIn('rejection = "BLOCKED_TRANSITION"', cache)
+        self.assertIn('rejection = "NO_ORTHOGONAL_CORNER"', cache)
+        self.assertIn('rejection = "CHUNK_UNAVAILABLE"', cache)
+        self.assertIn("rejectedFrom = from;", cache)
+        self.assertIn("if (!timedOut)", cache)
+        self.assertIn('"NAV-OPT-COOLDOWN action=NO_PATH"', PLANNER)
+
+    def test_inflight_identical_work_is_not_canceled(self):
+        method = PLANNER.split("public synchronized void getPath(AStarNode start,AStarNode end,AStarConfig settings)", 1)[1]
+        method = method.split("private void submit(boolean classic)", 1)[0]
+        same = method.index("requested.equals(this.activeRequest)")
+        cancel = method.index("stopPathSearch(true);")
+        self.assertLess(same, cancel)
+        self.assertIn("this.busy && requested.equals(this.activeRequest)", method)
+        self.assertIn("NavigationMetrics.inflightJoined()", method)
+        self.assertIn("this.joinedSearch = true", method)
+        self.assertIn("this.activeRequest = requested", method)
+        self.assertIn("this.activeRequest=null", PLANNER)
+        self.assertIn("this.activeRequest = null;", PLANNER)
+        self.assertIn("inflight_joined=", METRICS)
+
+    def test_villager_does_not_preempt_coalescing_but_cancels_no_goal(self):
+        start = VILLAGER.index("private List<Node> computeNewPath(Point dest)")
+        body = VILLAGER[start:VILLAGER.index("public int countInv(Block block", start)]
+        self.assertIn('this.pathPlannerJPS.hadJoinedSearch()', body)
+        self.assertIn('"ASTAR-JOIN"', body)
+        # No unconditional cancellation before the planner compares requests.
+        prelude = body.split("block9: {",1)[0]
+        self.assertNotIn("stopPathSearch(true)", prelude)
+        # A destination already reached, goal action range, or no-access
+        # still cancels a pending, now-obsolete worker.
+        self.assertGreaterEqual(body.count("stopPathSearch(true)"), 4)
+
+    def test_background_queue_metrics_and_bounded_fifo_unchanged(self):
+        self.assertIn("new ArrayBlockingQueue<>(64)", EXECUTOR)
+        self.assertIn("new ThreadPoolExecutor(", EXECUTOR)
+        self.assertIn("2, 2, 30, TimeUnit.SECONDS", EXECUTOR)
+        self.assertIn("queueWaitNanos", EXECUTOR)
+        self.assertIn("maxQueueWaitNanos", EXECUTOR)
+        self.assertIn("POOL.remove(future)", EXECUTOR)
+        self.assertIn("queue_wait_avg_ms=", METRICS)
+        self.assertIn("queue_wait_max_ms=", METRICS)
+        self.assertIn("record NavigationRequestKey(", REQUEST)
+        self.assertIn("record Movement(", REQUEST)
+
+    def test_hot_snapshot_reads_are_allocation_free(self):
+        self.assertIn("public BlockState getBlockState(int x, int y, int z)", SNAPSHOT)
+        self.assertIn("return getBlockState(pos.getX(), pos.getY(), pos.getZ());", SNAPSHOT)
+        self.assertIn("!chunks.contains(ChunkPos.asLong(x >> 4, z >> 4))", SNAPSHOT)
+        self.assertIn("palette.get(x & 15, y & 15, z & 15)", SNAPSHOT)
+        self.assertIn("world instanceof org.millenaire.common.pathing.PathWorldSnapshot snapshot", UTILITIES)
+        self.assertIn("return snapshot.getBlockState(x, y, z)", UTILITIES)
+        # Non-snapshot live worlds still validate unloaded chunk access.
+        self.assertIn("ThreadSafeUtilities.validateCoords(world, x, z);", UTILITIES)
+
+    def test_ladder_scan_reuses_mutable_position_and_preserves_geometry(self):
+        part = PLANNER.split("private boolean nearbyLadderOnVerticalRoute()", 1)[1]
+        part = part.split("protected net.minecraft.world.level.BlockGetter captureWorld(", 1)[0]
+        self.assertIn("int[] sampledHeights = new int[ySamples];", part)
+        self.assertIn("net.minecraft.core.BlockPos.MutableBlockPos probe =", part)
+        self.assertIn("probe.set(x, y, z);", part)
+        self.assertIn("for (int y : sampledHeights)", part)
+        self.assertIn("NavigationMetrics.ladderScan(", part)
+        self.assertNotIn("new net.minecraft.core.BlockPos(x, y, z)", part)
+
+    def test_window_metrics_use_monotonic_elapsed_time_and_reset(self):
+        self.assertIn("public synchronized String sample(long nowNanos, Counts totals)", WINDOW)
+        self.assertIn("nowNanos - lastNanos", WINDOW)
+        self.assertIn("window_scope=process", WINDOW)
+        self.assertIn("cache_hit_pct=", WINDOW)
+        self.assertIn("queue_wait_window_avg_ms=", WINDOW)
+        self.assertIn("private static final NavigationRateWindow RATE_WINDOW", METRICS)
+        self.assertIn("RATE_WINDOW.sample(System.nanoTime()", METRICS)
+        self.assertIn("RATE_WINDOW.reset()", METRICS)
+        for name in ("ladder_scans=", "ladder_probes=", "ladder_hits=",
+                     "ladder_scan_avg_ms=", "ladderScan(int probes"):
+            self.assertIn(name, METRICS)
+
+    def test_oversized_snapshot_does_not_consume_per_tick_capture_budget(self):
+        capture = SNAPSHOT.split("public static PathWorldSnapshot capture(", 1)[1]
+        area = capture.index("if ((long) (maxX - minX + 1)")
+        reserve = capture.index("synchronized(SNAPSHOT_LOCK)")
+        self.assertLess(area, reserve)
+        self.assertIn("NavigationMetrics.snapshotAreaRejected()", capture)
+        self.assertIn("NavigationMetrics.snapshotBudgetDeferred()", capture)
+        self.assertIn("NavigationMetrics.snapshotSectionRejected()", capture)
+        self.assertIn("snapshot_area_rejected=", METRICS)
+        self.assertIn("snapshot_tick_budget_deferred=", METRICS)
+        self.assertIn("snapshot_section_rejected=", METRICS)
+
+    def test_same_tick_section_pool_has_strict_work_and_memory_budgets(self):
+        self.assertIn("class SnapshotSectionPool<T>", SECTION_POOL)
+        self.assertIn("if (tick != nowTick)", SECTION_POOL)
+        self.assertIn("sections.clear();", SECTION_POOL)
+        self.assertIn("snapshots >= maxSnapshots", SECTION_POOL)
+        self.assertIn("chunkVisits + (long) requestedChunkVisits > maxChunkVisits", SECTION_POOL)
+        self.assertIn("copies >= maxCopies", SECTION_POOL)
+        self.assertIn("entry.source() != currentSource", SECTION_POOL)
+        self.assertIn("new SnapshotSectionPool<>(", SNAPSHOT)
+        self.assertIn("MAX_SNAPSHOTS_PER_TICK = 4", SNAPSHOT)
+        self.assertIn("MAX_CHUNK_VISITS_PER_TICK = 256", SNAPSHOT)
+        self.assertIn("MAX_SECTION_COPIES_PER_TICK = 1024", SNAPSHOT)
+
+    def test_shared_section_palette_copied_only_once_and_snapshot_stays_detached(self):
+        capture = SNAPSHOT.split("public static PathWorldSnapshot capture(", 1)[1]
+        self.assertLess(capture.index("pool.begin(tick,chunkVisits)"),
+                        capture.index("getChunkNow(x,z)"))
+        self.assertIn("PalettedContainer<BlockState> copy = pool.get(tick,key,source)", capture)
+        self.assertIn("copy = source.copy();", capture)
+        self.assertIn("pool.remember(tick,key,source,copy);", capture)
+        self.assertIn("detached.put(key,copy)", capture)
+        self.assertIn("NavigationMetrics.snapshotSectionsReused(reusedSections)", capture)
+        self.assertIn("NavigationMetrics.snapshotAdditionalCaptured()", capture)
+        ctor = SNAPSHOT.split("PathWorldSnapshot(Map<Long, PalettedContainer<BlockState>> detached,",1)[1]
+        ctor = ctor.split("public static PathWorldSnapshot capture(",1)[0]
+        self.assertIn("this.sections = Map.copyOf(detached)", ctor)
+        self.assertNotIn("palette.copy()", ctor)
+        self.assertIn("snapshot_shared_sections=", METRICS)
+        self.assertIn("snapshot_additional_captures=", METRICS)
+
+    def test_known_world_changes_invalidate_same_tick_sections_without_refunding_quota(self):
+        self.assertIn("public synchronized boolean invalidateSection(long nowTick, long sectionKey)", SECTION_POOL)
+        self.assertIn("public synchronized int invalidateAll(long nowTick)", SECTION_POOL)
+        self.assertIn("sections.remove(sectionKey)", SECTION_POOL)
+        self.assertIn("sections.clear();", SECTION_POOL)
+        invalid = SECTION_POOL.split("public synchronized int invalidateAll(", 1)[1]
+        invalid = invalid.split("public synchronized int usedCopies()", 1)[0]
+        self.assertNotIn("copies = 0;", invalid)
+        self.assertNotIn("snapshots = 0;", invalid)
+        self.assertIn("public static void onKnownBlockMutation(ServerLevel level, BlockPos pos)", SNAPSHOT)
+        self.assertIn("public static void onKnownWorldMutation(ServerLevel level)", SNAPSHOT)
+        self.assertIn("pool.invalidateSection(tick, key)", SNAPSHOT)
+        self.assertIn("pool.invalidateAll(tick)", SNAPSHOT)
+        self.assertIn("index.invalidate(tick)", SNAPSHOT)
+
+    def test_forge_mutation_hooks_are_registered_and_diagnostic(self):
+        for kind in ("BlockEvent.EntityPlaceEvent", "BlockEvent.BreakEvent",
+                     "BlockEvent.FluidPlaceBlockEvent", "BlockEvent.CropGrowEvent.Post",
+                     "PistonEvent.Post", "ChunkEvent.Load", "ChunkEvent.Unload",
+                     "WorldEvent.Unload"):
+            self.assertIn(kind, EVENTS)
+        self.assertIn("PathWorldSnapshot.onKnownBlockMutation", EVENTS)
+        self.assertIn("PathWorldSnapshot.onKnownWorldMutation", EVENTS)
+        self.assertIn("PathWorldSnapshot.onWorldUnload", EVENTS)
+        self.assertIn("snapshot_known_sections_invalidated=", METRICS)
+        self.assertIn("snapshot_known_captures_invalidated=", METRICS)
+        self.assertIn("onWorldUnload(ServerLevel level)", SNAPSHOT)
+        # A finite set of Forge hooks must never enable cross-tick reuse.
+        self.assertIn("if (tick != nowTick)", SECTION_POOL)
+
+    def test_prechange_events_poison_sections_before_first_capture(self):
+        self.assertIn("private final Set<Long> poisonedSections", SECTION_POOL)
+        self.assertIn("private boolean poisonedWorld;", SECTION_POOL)
+        self.assertIn("poisonedSections.add(sectionKey)", SECTION_POOL)
+        self.assertIn("poisonedWorld = true;", SECTION_POOL)
+        self.assertIn("if (poisonedWorld || poisonedSections.contains(sectionKey)) return null;", SECTION_POOL)
+        self.assertIn("if (!poisonedWorld && !poisonedSections.contains(sectionKey))", SECTION_POOL)
+        self.assertIn("poisonedSections.clear();", SECTION_POOL)
+        self.assertIn("poisonedWorld = false;", SECTION_POOL)
+        self.assertIn("public synchronized boolean mayReuseSnapshots(long nowTick)", SECTION_POOL)
+        # Even if no snapshot was previously created, pre-change hints must
+        # initialize a poison ledger for this server world.
+        mutation = SNAPSHOT.split("public static void onKnownBlockMutation(", 1)[1]
+        mutation = mutation.split("public static void onKnownWorldMutation(", 1)[0]
+        self.assertIn("SECTION_POOLS.computeIfAbsent(", mutation)
+        capture = SNAPSHOT.split("public static PathWorldSnapshot capture(", 1)[1]
+        capture = capture.split("public static void onKnownBlockMutation(", 1)[0]
+        self.assertLess(capture.index("pool.mayReuseSnapshots(tick)"),
+                        capture.index("pool.begin(tick,chunkVisits)"))
+        self.assertIn("pool.isPoisoned(tick,key)", capture)
+        self.assertIn("snapshot_poisoned_bypasses=", METRICS)
+
+    def test_snapshot_publication_rejects_observed_mutation_races(self):
+        self.assertIn("public synchronized long revision(long nowTick)", SECTION_POOL)
+        self.assertIn("revision++;", SECTION_POOL)
+        capture = SNAPSHOT.split("public static PathWorldSnapshot capture(", 1)[1]
+        capture = capture.split("public static void onKnownBlockMutation(", 1)[0]
+        self.assertIn("captureRevision = pool.revision(tick);", capture)
+        self.assertIn("if(pool.revision(tick)!=captureRevision)", capture)
+        self.assertIn("NavigationMetrics.snapshotMutationRaceRejected()", capture)
+        self.assertIn("snapshot_mutation_race_rejected=", METRICS)
+        self.assertLess(capture.index("if(pool.revision(tick)!=captureRevision)"),
+                        capture.index("index.remember(tick, minX, maxX, minZ, maxZ, result)"))
+        # A conservative epoch check must not create a new no-limits cache.
+        self.assertIn("MAX_SECTION_COPIES_PER_TICK = 1024", SNAPSHOT)
+
+    def test_bounded_snapshot_index_can_reuse_nonlatest_same_tick_supersets(self):
+        self.assertIn("class SnapshotCaptureIndex<T>", CAPTURE_INDEX)
+        self.assertIn("private final int capacity;", CAPTURE_INDEX)
+        self.assertIn("if (entries.size() >= capacity) entries.remove(0)", CAPTURE_INDEX)
+        self.assertIn("new WeakReference<>(snapshot)", CAPTURE_INDEX)
+        self.assertIn("if (tick != nowTick)", CAPTURE_INDEX)
+        self.assertIn("entries.clear();", CAPTURE_INDEX)
+        self.assertIn("minX < entry.minX() || maxX > entry.maxX()", CAPTURE_INDEX)
+        self.assertIn("minZ < entry.minZ() || maxZ > entry.maxZ()", CAPTURE_INDEX)
+        self.assertIn("long bestArea = Long.MAX_VALUE;", CAPTURE_INDEX)
+        self.assertIn("nonLatest = i < newest;", CAPTURE_INDEX)
+        self.assertIn("public synchronized int invalidate(long nowTick)", CAPTURE_INDEX)
+
+    def test_snapshot_index_honors_poison_and_capture_budgets(self):
+        self.assertIn("new SnapshotCaptureIndex<>(MAX_SNAPSHOTS_PER_TICK)", SNAPSHOT)
+        self.assertIn("CAPTURE_INDICES", SNAPSHOT)
+        self.assertIn("if (pool.mayReuseSnapshots(tick))", SNAPSHOT)
+        self.assertIn("index.find(tick, minX, maxX, minZ, maxZ)", SNAPSHOT)
+        self.assertIn("NavigationMetrics.snapshotNonLatestReused()", SNAPSHOT)
+        self.assertIn("index.remember(tick, minX, maxX, minZ, maxZ, result)", SNAPSHOT)
+        self.assertIn("index.invalidate(tick)", SNAPSHOT)
+        self.assertIn("pool.usedSnapshots() > 1", SNAPSHOT)
+        self.assertIn("snapshot_non_latest_reused=", METRICS)
+        self.assertIn("CAPTURE_INDICES.remove(level)", SNAPSHOT)
+        capture = SNAPSHOT.split("public static PathWorldSnapshot capture(", 1)[1]
+        capture = capture.split("public static void onKnownBlockMutation(", 1)[0]
+        self.assertLess(capture.index("index.find(tick, minX, maxX, minZ, maxZ)"),
+                        capture.index("pool.begin(tick,chunkVisits)"))
+        self.assertLess(capture.index("if(pool.revision(tick)!=captureRevision)"),
+                        capture.index("index.remember(tick, minX, maxX, minZ, maxZ, result)"))
+
+    def test_snapshot_reuse_only_same_tick(self):
+        self.assertIn("index.find(tick, minX, maxX, minZ, maxZ)", SNAPSHOT)
+        self.assertIn("index.remember(tick, minX, maxX, minZ, maxZ, result)", SNAPSHOT)
+        self.assertIn("if (tick != nowTick)", CAPTURE_INDEX)
+        self.assertIn("entries.clear();", CAPTURE_INDEX)
+        self.assertIn("new WeakReference<>(snapshot)", CAPTURE_INDEX)
+
+    def test_collision_column_cache_is_snapshot_local_and_bounded(self):
+        self.assertIn("new SnapshotColumnMemo(2048)", SNAPSHOT)
+        self.assertIn("getSimpleFlatColumn(int x, int y, int z)", SNAPSHOT)
+        self.assertIn("rememberSimpleFlatColumn(int x, int y, int z, boolean simple)", SNAPSHOT)
+        self.assertIn("BlockPos.asLong(x, y, z)", SNAPSHOT)
+        self.assertIn("AtomicReferenceArray<Entry>", COLUMN_MEMO)
+        self.assertIn("hit.position() != key", COLUMN_MEMO)
+        self.assertIn("Boolean get(long key)", COLUMN_MEMO)
+        self.assertIn("void remember(long key, boolean simple)", COLUMN_MEMO)
+        self.assertIn("new Entry(key, simple)", COLUMN_MEMO)
+        self.assertIn("snapshot.getSimpleFlatColumn(node.x, node.y, node.z)", ASTAR_STATIC)
+        self.assertIn("if (memoized != null)", ASTAR_STATIC)
+        self.assertIn("snapshot.rememberSimpleFlatColumn(node.x, node.y, node.z, simple)", ASTAR_STATIC)
+
+    def test_collision_shape_sampling_reuses_mutable_position_without_geometry_changes(self):
+        simple = ASTAR_STATIC.split("private static boolean isSimpleFlatColumn(", 1)[1]
+        simple = simple.split("private static boolean isBodyCollisionFree(", 1)[0]
+        self.assertIn("world.getBlockState(pos).isAir()", simple)
+        self.assertIn("pos.set(node.x, node.y + 1, node.z)", simple)
+        self.assertIn("pos.set(node.x, node.y - 1, node.z)", simple)
+        self.assertIn("Block.isShapeFullBlock(", simple)
+        self.assertIn(".getCollisionShape(world, pos)", simple)
+        body = ASTAR_STATIC.split("private static boolean isBodyCollisionFree(", 1)[1]
+        body = body.split("public static AStarNode findSafeOrthogonalCorner(", 1)[0]
+        self.assertIn("BlockPos.MutableBlockPos pos =", body)
+        self.assertIn("pos.set(bx, by, bz);", body)
+        self.assertIn("level.hasChunkAt(pos)", body)
+        self.assertIn("state.getCollisionShape(world, pos)", body)
+        self.assertIn("body.intersects(part.move(bx, by, bz))", body)
+        self.assertNotIn("new BlockPos(bx, by, bz)", body)
+
+    def test_passability_avoids_repeated_below_reads_and_reports_sweep_cost(self):
+        part = ASTAR_STATIC.split("public static boolean isPassableBlock(", 1)[1]
+        part = part.split("public static boolean isViable(", 1)[0]
+        self.assertIn("BlockState belowState =", part)
+        self.assertEqual(part.count("ThreadSafeUtilities.getBlockState(world, ix, iy - 1, iz)"), 1)
+        self.assertNotIn("ThreadSafeUtilities.getBlock(world, ix, iy - 1, iz)", part)
+        self.assertIn("BarrierPathRules.blocksStepAbove(belowState)", part)
+        self.assertIn("ChestPathRules.isChest(belowBlock)", part)
+        self.assertIn("BlockItemUtilities.isFence(belowBlock)", part)
+        access = ASTAR_STATIC.split("public static AStarNode[] getAccessNodesSorted(", 1)[1]
+        access = access.split("public static double getDistanceBetweenCoords(", 1)[0]
+        self.assertIn("Collections.sort(resultList);", access)
+        self.assertIn("resultList.toArray(new AStarNode[0])", access)
+        self.assertNotIn("resultList.remove(0)", access)
+        self.assertIn("NavigationMetrics.sweptTransition(", ASTAR_STATIC)
+        for name in ("flat_column_memo_hit=", "flat_column_memo_miss=",
+                     "swept_checks=", "swept_blocked=", "swept_avg_ms="):
+            self.assertIn(name, METRICS)
+
+    def test_diagnostic_counter_names(self):
+        self.assertIn('"NAV-OPT-STATS world="', PLANNER)
+        for name in ("cache_reverse=", "reverse_tried=", "reverse_found=",
+                     "snapshot_reused=", "jps", "astar"):
+            self.assertIn(name, METRICS)
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

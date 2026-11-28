@@ -62,7 +62,19 @@ public class ClientReceiver {
                 MillLog.debug(this, "Received client packet type: " + packettype);
             }
             UserProfile profile = Mill.proxy.getClientProfile();
-            if (packettype == 2) {
+            if (packettype == org.millenaire.common.network.ServerReceiver.PACKET_GOAL_DIAGNOSTICS_STATE) {
+                int entityId = data.readInt(), count = data.readVarInt();
+                if (count < 0 || count > 512) return;
+                List<String> rows = new ArrayList<>();
+                for (int i=0;i<count;i++) rows.add(data.readUtf(240));
+                if (Minecraft.getInstance().screen instanceof org.millenaire.client.gui.text.GuiGoalDiagnostics screen)
+                    screen.receiveState(entityId, rows);
+            } else if (packettype == org.millenaire.common.network.ServerReceiver.PACKET_TEST_TUNING_STATE) {
+                boolean allowed = data.readBoolean();
+                var settings = new org.millenaire.common.config.TestTuning.Settings(data.readInt(), data.readInt(), data.readInt(), data.readInt());
+                if (Minecraft.getInstance().screen instanceof org.millenaire.client.gui.text.GuiTestTuning screen)
+                    screen.receiveState(allowed, settings);
+            } else if (packettype == 2) {
                 Building.readBuildingPacket(Mill.clientWorld, data);
             } else if (packettype == 11) {
                 Building.readShopPacket(Mill.clientWorld, data);

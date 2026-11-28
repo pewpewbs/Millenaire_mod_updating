@@ -1,3 +1,5 @@
+sentencekey=makesugar
+labelkey=makesugar
 buildingTag=kitchen
 priority=50
 

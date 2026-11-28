@@ -44,10 +44,11 @@ extends Goal {
 
     @Override
     public boolean isPossibleSpecific(MillVillager villager) throws Exception {
+        if (!LocalLogistics.usable(villager.getHouse()) || villager.getTownHall() == null) return false;
         boolean delayOver = !villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L;
         int nb = 0;
         for (InvItem invItem : villager.getInventoryKeys()) {
-            int nbcount = villager.countInv(invItem.getItem(), invItem.meta);
+            int nbcount = Math.min(villager.countInv(invItem),villager.getHouse().storageRoom(invItem));
             if (nbcount <= 0 || villager.getTownHall().nbGoodNeeded(invItem.getItem(), invItem.meta) != 0) continue;
             nb += nbcount;
             if (delayOver) {
@@ -68,6 +69,7 @@ extends Goal {
 
     @Override
     public boolean performAction(MillVillager villager) throws Exception {
+        if (!LocalLogistics.access(this,villager,villager.getHouse())) return false;
         String s = "";
         for (InvItem invItem : villager.getInventoryKeys()) {
             if (villager.countInv(invItem.getItem(), invItem.meta) <= 0 || villager.getTownHall().nbGoodNeeded(invItem.getItem(), invItem.meta) != 0) continue;
@@ -90,6 +92,11 @@ extends Goal {
             villager.getHouse().visitorsList.add("broughtimport;" + villager.func_70005_c_() + s);
         }
         return true;
+    }
+
+    @Override
+    public boolean isWithinActionRange(MillVillager villager,org.millenaire.common.utilities.Point destination) {
+        return WorkAccess.canAccessStock(villager,destination,this.range(villager));
     }
 
     @Override

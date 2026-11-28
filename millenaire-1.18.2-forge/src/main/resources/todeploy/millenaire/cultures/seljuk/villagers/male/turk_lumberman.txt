@@ -65,13 +65,13 @@ goal=gatherolives
 startinginv=sapling,10
 startingInv=sapling_olivetree,5
 
-collectGood=wood
+collectGood=wood_any
 collectGood=apple
 collectGood=sapling
 collectGood=pistachios
 collectGood=olives
 
-bringBackHomeGood=wood
+bringBackHomeGood=wood_any
 bringBackHomeGood=pistachios
 bringBackHomeGood=apple
 bringBackHomeGood=olives

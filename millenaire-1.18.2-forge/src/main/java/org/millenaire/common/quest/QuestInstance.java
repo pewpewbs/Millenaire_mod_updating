@@ -324,7 +324,7 @@ public class QuestInstance {
     }
 
     public String getLabel(UserProfile profile) {
-        return this.handleString(profile, this.getCurrentStep().getLabel());
+        return this.handleString(profile,this.getCurrentStep().getLabel(),true);
     }
 
     public String getListing(UserProfile profile) {
@@ -345,7 +345,11 @@ public class QuestInstance {
         return null;
     }
 
-    private String handleString(UserProfile profile, String s) {
+    private String handleString(UserProfile profile,String s){
+        return this.handleString(profile,s,false);
+    }
+
+    private String handleString(UserProfile profile, String s,boolean shortLabel) {
         if (s == null) {
             return null;
         }
@@ -366,7 +370,18 @@ public class QuestInstance {
             VillagerRecord villager = qiv.getVillagerRecord(this.world);
             if (villager != null) {
                 s = s.replaceAll("\\$" + key + "_villagername\\$", villager.getName());
-                s = s.replaceAll("\\$" + key + "_villagerrole\\$", villager.getGameOccupation());
+                String roleToken="$"+key+"_villagerrole$";
+                if(shortLabel&&MillConfigValues.effective_language!=null&&MillConfigValues.effective_language.startsWith("uk")){
+                    String role=villager.getLocalizedOccupation();
+                    // Ukrainian quest labels have context-dependent case. Use a
+                    // known correct genitive for abbot, a neutral named person
+                    // construction for other "до" labels without guessing inflections.
+                    if(s.contains("до "+roleToken)){
+                        String genitive="Абат".equalsIgnoreCase(role)?"абата":"персонажа «"+villager.getName()+"» ("+role+")";
+                        s=s.replace("до "+roleToken,"до "+genitive);
+                    }
+                    s=s.replace(roleToken,role);
+                }else s=s.replace(roleToken,villager.getGameOccupation());
             }
             for (String key2 : this.villagers.keySet()) {
                 QuestInstanceVillager qiv2 = this.villagers.get(key2);

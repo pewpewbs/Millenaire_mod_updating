@@ -35,6 +35,7 @@ requiredGood=ice,8
 // Snow
 goal=makesnowbricksfromnothing
 goal=makesnowwall
+goal=packsnowblock
 requiredGood=snowblock,8
 
 // Stone

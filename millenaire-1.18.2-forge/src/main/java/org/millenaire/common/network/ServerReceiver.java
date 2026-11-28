@@ -62,6 +62,10 @@ public class ServerReceiver {
     public static final int PACKET_VILLAGERINTERACT_REQUEST = 204;
     public static final int PACKET_AVAILABLECONTENT = 205;
     public static final int PACKET_DEVCOMMAND = 206;
+    public static final int PACKET_TEST_TUNING_REQUEST = 207;
+    public static final int PACKET_TEST_TUNING_STATE = 112;
+    public static final int PACKET_GOAL_DIAGNOSTICS_REQUEST = 208;
+    public static final int PACKET_GOAL_DIAGNOSTICS_STATE = 113;
     public static final int GUIACTION_CHIEF_BUILDING = 1;
     public static final int GUIACTION_CHIEF_CROP = 2;
     public static final int GUIACTION_CHIEF_CONTROL = 3;
@@ -126,6 +130,35 @@ public class ServerReceiver {
             this.readAvailableContentPacket((Player)sender, packetBuffer);
         } else if (packettype == 206) {
             this.readDevCommandPacket((Player)sender, packetBuffer);
+        } else if (packettype == PACKET_GOAL_DIAGNOSTICS_REQUEST) {
+            if (packetBuffer.readableBytes() != 4 || !org.millenaire.common.goal.GoalDiagnostics.allowRequest(sender)) return;
+            int entityId = packetBuffer.readInt();
+            var entity = sender.level.getEntity(entityId);
+            var rows = org.millenaire.common.goal.GoalDiagnostics.watchAndReport(sender,
+                    entity instanceof MillVillager villager ? villager : null);
+            var response = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+            try {
+                response.writeInt(PACKET_GOAL_DIAGNOSTICS_STATE);
+                response.writeInt(entityId);
+                response.writeVarInt(Math.min(rows.size(), 512));
+                for (int i=0; i<Math.min(rows.size(), 512); i++) {
+                    String row = rows.get(i);
+                    response.writeUtf(row.length()>240 ? row.substring(0,240) : row, 240);
+                }
+                MillNetwork.sendToPlayer(response, sender);
+            } finally { response.release(); }
+        } else if (packettype == PACKET_TEST_TUNING_REQUEST) {
+            if (packetBuffer.readableBytes() != 8) return;
+            int field = packetBuffer.readInt(), value = packetBuffer.readInt();
+            var settings = org.millenaire.common.config.TestTuning.change(sender, field, value);
+            var response = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+            try {
+                response.writeInt(PACKET_TEST_TUNING_STATE);
+                response.writeBoolean(org.millenaire.common.config.TestTuning.allowed(sender));
+                response.writeInt(settings.move()); response.writeInt(settings.work());
+                response.writeInt(settings.yield()); response.writeInt(settings.build());
+                MillNetwork.sendToPlayer(response, sender);
+            } finally { response.release(); }
         }
     }
 

@@ -162,7 +162,7 @@ public class PanelContentGenerator {
             if (cip.getBuildingLocation().level == 0) {
                status = LanguageUtilities.string("ui.inconstruction");
             } else {
-               status = LanguageUtilities.string("ui.upgrading", "" + cip.getBuildingLocation().level);
+               status = LanguageUtilities.string("ui.upgrading", "" + (cip.getBuildingLocation().level + 1));
             }
 
             String loc;
@@ -191,8 +191,8 @@ public class PanelContentGenerator {
                      level = LanguageUtilities.string("ui.notyetbuilt");
                   }
 
-                  if (project.location.level > 0) {
-                     level = LanguageUtilities.string("panels.upgrade") + " " + project.location.level;
+                  if (project.location.level >= 0) {
+                     level = LanguageUtilities.string("ui.level") + " " + (project.location.level + 1);
                   }
 
                   List<String> effects = project.location.getBuildingEffects(townHall.world);
@@ -294,7 +294,12 @@ public class PanelContentGenerator {
                } else if (vr.raidingVillage) {
                   error = " (" + LanguageUtilities.string("panels.raider").toLowerCase() + ")";
                } else {
-                  error = " (" + LanguageUtilities.string("panels.missing").toLowerCase() + ")";
+                  // A client roster entry without a tracked entity does not
+                  // establish that the resident disappeared on the server.
+                  String lang=MillConfigValues.effective_language;
+                  error = " (" + (townHall.world.isClientSide
+                        ? (lang!=null&&lang.startsWith("uk")?"поза спостереженням":lang!=null&&lang.startsWith("ru")?"вне наблюдения":"not tracked")
+                        : LanguageUtilities.string("panels.missing").toLowerCase()) + ")";
                }
 
                if (MillConfigValues.LogVillagerSpawn >= 1 && Mill.serverWorlds.size() > 0) {
@@ -851,6 +856,9 @@ public class PanelContentGenerator {
                has = goalPlan.resCost.get(key);
             }
 
+            if (house.getConstructionsInProgress().stream().noneMatch(cip ->
+                  cip.getBuildingLocation()!=null && cip.getBuildingLocation().planKey.equals(house.buildingGoal)))
+               has=Math.min(goalPlan.resCost.get(key),house.availableForCurrentProject(key));
             resHas.put(key, has);
          }
 
@@ -883,13 +891,17 @@ public class PanelContentGenerator {
             if (projectCIP.getBuildingLocation().level == 0) {
                status = LanguageUtilities.string("ui.inconstruction");
             } else {
-               status = LanguageUtilities.string("ui.upgrading") + " (" + projectCIP.getBuildingLocation().level + ")";
+               status = LanguageUtilities.string("ui.upgrading", "" + (projectCIP.getBuildingLocation().level + 1));
             }
          } else {
-            status = LanguageUtilities.string(house.buildingGoalIssue);
+            status = "ui.lackingresources".equals(house.buildingGoalIssue)
+                  && res.stream().allMatch(key->resHas.get(key)>=resCost.get(key))
+                  ? "" : LanguageUtilities.string(house.buildingGoalIssue);
          }
 
-         page.addLine(name + " - " + status);
+         page.addLine(name + (status.isBlank() ? "" : " - " + status));
+         if(projectCIP==null&&house.hasSiteIssue()&&house.buildingGoalSiteHint!=null&&!house.buildingGoalSiteHint.isBlank())
+            page.addLine(house.buildingGoalSiteHint);
          page.addLine("");
          Collections.sort(res, new MillVillager.InvItemAlphabeticalComparator());
 
@@ -930,6 +942,7 @@ public class PanelContentGenerator {
             }
          }
 
+         appendAvailabilityDetails(page,house,res,goalPlan);
          book.addPage(page);
          page = new TextPage();
       }
@@ -1002,10 +1015,15 @@ public class PanelContentGenerator {
       page.addLine(LanguageUtilities.string("ui.teens", "" + (nbGrownBoy + nbGrownGirl), "" + nbGrownBoy, "" + nbGrownGirl));
       page.addLine(LanguageUtilities.string("ui.children", "" + (nbBoy + nbGirl), "" + nbBoy, "" + nbGirl));
       page.addLine("");
-      if (townHall.buildingGoal == null) {
+      if (townHall.buildingGoal == null || townHall.buildingGoal.isBlank()) {
          page.addLine(LanguageUtilities.string("ui.goalscompleted1") + " " + LanguageUtilities.string("ui.goalscompleted2"));
       } else {
          BuildingPlan goal = townHall.getCurrentGoalBuildingPlan();
+         // A goal and its plan may arrive in separate synchronization steps.
+         // Keep the book usable until the actual plan is available.
+         if (goal == null) {
+            page.addLine(LanguageUtilities.string("panels.buildingproject") + " " + townHall.buildingGoal);
+         } else {
          ConstructionIP goalCIP = null;
 
          for (ConstructionIP cip : townHall.getConstructionsInProgress()) {
@@ -1019,13 +1037,12 @@ public class PanelContentGenerator {
             if (goalCIP.getBuildingLocation().level == 0) {
                status = LanguageUtilities.string("ui.inconstruction");
             } else {
-               status = LanguageUtilities.string("ui.upgrading", "" + goalCIP.getBuildingLocation().level);
+               status = LanguageUtilities.string("ui.upgrading", "" + (goalCIP.getBuildingLocation().level + 1));
             }
          } else {
             status = LanguageUtilities.string(townHall.buildingGoalIssue);
          }
 
-         page.addLine(LanguageUtilities.string("panels.buildingproject") + " " + goal.nativeName + " " + goal.getNameTranslated() + ": " + status);
          List<InvItem> res = new ArrayList<>();
          HashMap<InvItem, Integer> resCost = new HashMap<>();
          HashMap<InvItem, Integer> resHas = new HashMap<>();
@@ -1045,9 +1062,16 @@ public class PanelContentGenerator {
                has = goal.resCost.get(key);
             }
 
+            if (townHall.getConstructionsInProgress().stream().noneMatch(cip ->
+                  cip.getBuildingLocation()!=null && cip.getBuildingLocation().planKey.equals(townHall.buildingGoal)))
+               has=Math.min(goal.resCost.get(key),townHall.availableForCurrentProject(key));
             resHas.put(key, has);
          }
-
+         if(goalCIP==null && "ui.lackingresources".equals(townHall.buildingGoalIssue)
+               && res.stream().allMatch(key->resHas.get(key)>=resCost.get(key)))status="";
+         page.addLine(LanguageUtilities.string("panels.buildingproject") + " " + goal.nativeName + " " + goal.getNameTranslated() + (status.isBlank() ? "" : ": " + status));
+         if(goalCIP==null&&townHall.hasSiteIssue()&&townHall.buildingGoalSiteHint!=null&&!townHall.buildingGoalSiteHint.isBlank())
+            page.addLine(townHall.buildingGoalSiteHint);
          page.addLine("");
          page.addLine(LanguageUtilities.string("panels.resourcesneeded") + ":");
          page.addLine("");
@@ -1077,6 +1101,8 @@ public class PanelContentGenerator {
          for (TextLine l : BookManager.splitInColumns(infoColumns, 2)) {
             page.addLine(l);
          }
+         appendAvailabilityDetails(page,townHall,res,goal);
+         }
       }
 
       page.addLine("");
@@ -1085,12 +1111,14 @@ public class PanelContentGenerator {
 
       for (ConstructionIP cipxx : townHall.getConstructionsInProgress()) {
          if (cipxx.getBuildingLocation() != null) {
-            String planName = townHall.culture.getBuildingPlanSet(cipxx.getBuildingLocation().planKey).getNameNative();
+            String planKey = cipxx.getBuildingLocation().planKey;
+            var planSet = townHall.culture.getBuildingPlanSet(planKey);
+            String planName = planSet == null ? planKey : planSet.getNameNative();
             String status;
             if (cipxx.getBuildingLocation().level == 0) {
                status = LanguageUtilities.string("ui.inconstruction");
             } else {
-               status = LanguageUtilities.string("ui.upgrading", "" + cipxx.getBuildingLocation().level);
+               status = LanguageUtilities.string("ui.upgrading", "" + (cipxx.getBuildingLocation().level + 1));
             }
 
             int distance = Mth.floor(townHall.getPos().distanceTo(cipxx.getBuildingLocation().pos));
@@ -1271,4 +1299,23 @@ public class PanelContentGenerator {
          return book;
       }
    }
+   /** Show why an apparently sufficient physical stock can be unavailable.
+    * The difference can also include other allocation rules, not just reservations. */
+   private static void appendAvailabilityDetails(TextPage page,Building house,List<InvItem> items,BuildingPlan plan){
+      if(house.getConstructionsInProgress().stream().anyMatch(cip->cip.getBuildingLocation()!=null
+            &&cip.getBuildingLocation().planKey.equals(house.buildingGoal)))return;
+      String lang=MillConfigValues.effective_language;
+      boolean uk=lang!=null&&lang.startsWith("uk"),ru=lang!=null&&lang.startsWith("ru");
+      for(InvItem item:items){
+         int stock=house.countGoods(item.getItem(),item.meta);
+         int available=house.availableForCurrentProject(item);
+         int need=plan.resCost.getOrDefault(item,0);
+         if(stock<=available||available>=need)continue;
+         page.addLine(item.getName()+": "+(uk?"на складі ":ru?"на складе ":"stock ")+stock
+             +(uk?", недоступно ":ru?", недоступно ":", unavailable ")+Math.max(0,stock-available)
+             +(uk?", доступно ":ru?", доступно ":", available ")+available
+             +(uk?", потрібно ":ru?", нужно ":", needed ")+need);
+      }
+   }
+
 }

@@ -14,6 +14,7 @@ goal=gosocialise
 goal=chat
 goal=minestone
 goal=minegravel
+goal=minesand
 goal=cookstone
 goal=cooksand
 goal=tendfurnace
@@ -29,7 +30,9 @@ toolneededclass=pickaxes
 toolneededclass=shovels
 toolneededclass=toolssword
 
+requiredGood=cobblestone,16
 requiredGood=wood,64
+requiredGood=sand,16
 requiredGood=wood_pine,64
 requiredGood=wood_birch,64
 requiredGood=wood_jungle,64

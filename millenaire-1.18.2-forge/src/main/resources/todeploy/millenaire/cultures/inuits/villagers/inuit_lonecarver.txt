@@ -27,6 +27,7 @@ goal=makespade
 goal=makesnowbricksfromnothing
 goal=makeicebrick
 goal=makesnowwall
+goal=packsnowblock
 goal=makestonecauldron
 goal=makearrowinuit
 

@@ -140,14 +140,14 @@ implements ParametersManager.DefaultValueOverloaded {
     public List<Building> getBuildings(MillVillager villager) {
         ArrayList<Building> buildings = new ArrayList<Building>();
         if (this.townHallGoal) {
-            if (this.requiredTag == null || villager.getTownHall().containsTags(this.requiredTag)) {
+            if (villager.getTownHall() != null && (this.requiredTag == null || villager.getTownHall().containsTags(this.requiredTag))) {
                 buildings.add(villager.getTownHall());
             }
         } else if (this.buildingTag == null) {
-            if (this.requiredTag == null || villager.getHouse().containsTags(this.requiredTag)) {
+            if (villager.getHouse() != null && (this.requiredTag == null || villager.getHouse().containsTags(this.requiredTag))) {
                 buildings.add(villager.getHouse());
             }
-        } else {
+        } else if (villager.getTownHall() != null) {
             for (Building b : villager.getTownHall().getBuildingsWithTag(this.buildingTag)) {
                 if (this.requiredTag != null && !b.containsTags(this.requiredTag)) continue;
                 buildings.add(b);
@@ -201,10 +201,10 @@ implements ParametersManager.DefaultValueOverloaded {
     @Override
     public final boolean isPossibleSpecific(MillVillager villager) throws Exception {
         if (this.reoccurDelay > 0 && villager.lastGoalTime.containsKey(this) && villager.lastGoalTime.get(this) + (long)this.reoccurDelay > villager.level.getGameTime()) {
-            return false;
+            return org.millenaire.common.goal.GoalDiagnostics.reject(villager, this, "REOCCUR_DELAY");
         }
         if (!this.isPossibleGenericGoal(villager)) {
-            return false;
+            return org.millenaire.common.goal.GoalDiagnostics.reject(villager, this, "GENERIC_CONDITION_FALSE");
         }
         List<Building> buildings = this.getBuildings(villager);
         boolean destFound = false;
@@ -213,9 +213,10 @@ implements ParametersManager.DefaultValueOverloaded {
                 if (destFound) continue;
                 destFound = this.isDestPossible(villager, dest);
             }
+            if (!destFound) org.millenaire.common.goal.GoalDiagnostics.note(villager, this, "NO_ELIGIBLE_WORKPLACE");
             return destFound;
         }
-        return false;
+        return org.millenaire.common.goal.GoalDiagnostics.reject(villager, this, "NO_WORKPLACE");
     }
 
     @Override

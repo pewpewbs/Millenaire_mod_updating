@@ -13,6 +13,9 @@ irrigationbonuscrop=wheat
 harvestitem=wheat,100
 harvestitem=seeds,100
 
+// Limit secondary seed stock, never the wheat harvest.
+surplusseed=seeds
+
 villagelimit=wheat,512
 
 maxsimultaneousinbuilding=2
