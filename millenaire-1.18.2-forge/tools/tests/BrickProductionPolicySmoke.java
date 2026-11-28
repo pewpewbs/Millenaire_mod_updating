@@ -21,6 +21,9 @@ public final class BrickProductionPolicySmoke {
         var covered = BrickProductionPolicy.demand(100, 164, 0, 80, 20, 60);
         check(!covered.shouldGather(), "already fired stock");
         check(BrickProductionPolicy.demand(100000, 0, 0, 0, 0, 0).priority(true) < 1000, "bounded boost");
-        System.out.println("BrickProductionPolicySmoke: 10 checks passed");
+        var cultureReserve = BrickProductionPolicy.demand(0, 64, 0, 0, 0, 0, 2048);
+        check(cultureReserve.shortage() == 1984 && cultureReserve.shouldForm(0), "culture stock target");
+        check(!BrickProductionPolicy.demand(0, 2048, 0, 0, 0, 0, 2048).shouldGather(), "stop at culture target");
+        System.out.println("BrickProductionPolicySmoke: 12 checks passed");
     }
 }

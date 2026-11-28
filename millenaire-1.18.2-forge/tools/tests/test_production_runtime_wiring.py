@@ -76,6 +76,8 @@ class ProductionRuntimeWiring(unittest.TestCase):
         self.assertIn("building.countGoods(raw)", demand)
         self.assertIn("hasChunkAt(point.getBlockPos())", demand)
         self.assertIn("RESERVE = 64", policy)
+        self.assertIn("tradeGood.targetQuantity", demand)
+        self.assertIn("Math.max(0, reserve)", policy)
         self.assertIn("gathering ? 220 : 120", policy)
         for file, gate, gathering in (
             ("GoalIndianDryBrick.java", "shouldForm", "false"),

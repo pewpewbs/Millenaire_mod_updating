@@ -44,7 +44,11 @@ extends Goal {
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws MillLog.MillenaireException {
         var demand = BrickProductionDemand.inspect(villager);
-        if (!demand.shouldForm(BrickProductionDemand.inDryingArea(villager))) return null;
+        long drying = BrickProductionDemand.inDryingArea(villager);
+        if (!demand.shouldForm(drying)) {
+            GoalDiagnostics.note(villager,this,"BRICK_TARGET_COVERED shortage="+demand.shortage()+" drying="+drying);
+            return null;
+        }
         boolean minimumBricksNotRequired = demand.urgent() || (villager.goalKey != null && villager.goalKey.equals(this.key) ? true : (!villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L));
         ArrayList<Point> vp = new ArrayList<Point>();
         ArrayList<Point> buildingp = new ArrayList<Point>();

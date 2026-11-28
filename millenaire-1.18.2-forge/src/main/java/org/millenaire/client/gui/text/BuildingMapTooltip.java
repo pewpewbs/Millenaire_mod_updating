@@ -258,6 +258,10 @@ final class BuildingMapTooltip {
         String name=loc.getIBuildingPlan()==null?"":loc.getGameName();
         Building building = loc.getBuilding(townHall.world);
         BuildingPlan plan = loc.getPlan();
+        // During an upgrade, equipment from its target plan is not operational yet.
+        BuildingPlan completedPlan = construction && plan != null ? (loc.level > 0 ? plan.getPreviousBuildingPlan() : null) : loc.level < 0 ? null : plan;
+        boolean completed = construction ? loc.level > 0 : loc.level >= 0;
+        boolean hasCooking = completed && org.millenaire.common.village.ProductionCapability.hasCooking(completedPlan, building);
 
         // Level zero is the completed initial building. Keep the name and
         // level together; no meaningless 0/0, and no level for unbuilt plans.
@@ -360,11 +364,7 @@ final class BuildingMapTooltip {
                         addStack(gathered, new ItemStack(Items.SUGAR_CANE));
                     } else if (goal instanceof GoalIndianGatherBrick && hasTag(loc, building, plan, "brickkiln")) {
                         activity(actions,goal,source,null);
-                        ItemStack wet=InvItem.createInvItem(MillBlocks.BS_WET_BRICK).getItemStack();
-                        ItemStack dry=InvItem.createInvItem(MillBlocks.BS_MUD_BRICK).getItemStack();
-                        if(wet!=null&&dry!=null&&!wet.isEmpty()&&!dry.isEmpty())
-                            produced.recipe=new RecipeView(List.of(wet.copy()),List.of(dry.copy()));
-                        produced.source=label("Drying wet bricks in daylight","Висушування вологої цегли при денному освітленні","Сушка сырого кирпича при дневном свете");
+                        // Natural drying is not a crafting recipe or an input cost.
                         addItem(produced, InvItem.createInvItem(org.millenaire.common.block.MillBlocks.BS_MUD_BRICK));
                     } else if (goal instanceof GoalMinerMineResource miner
                             && (miner.buildingTag == null ? home : hasTag(loc, building, plan, miner.buildingTag))) {
@@ -416,10 +416,11 @@ final class BuildingMapTooltip {
                 if (generic.townHallGoal ? !central
                         : generic.buildingTag == null ? !home : !hasTag(loc, building, plan, generic.buildingTag)) continue;
                 if (generic.requiredTag != null && !hasTag(loc, building, plan, generic.requiredTag)) continue;
+                if ((generic instanceof GoalGenericCooking || generic instanceof GoalGenericTendFurnace) && !hasCooking) continue;
                 if(generic instanceof GoalGenericPlantCrop plant
-                        && !org.millenaire.common.village.ProductionCapability.hasCrop(plan,building,plant.cropType))continue;
+                        && !org.millenaire.common.village.ProductionCapability.hasCrop(completedPlan,completed?building:null,plant.cropType))continue;
                 if(generic instanceof GoalGenericHarvestCrop harvest
-                        && !org.millenaire.common.village.ProductionCapability.hasCrop(plan,building,harvest.cropType))continue;
+                        && !org.millenaire.common.village.ProductionCapability.hasCrop(completedPlan,completed?building:null,harvest.cropType))continue;
                 // Supply pickup is not an output or the purpose of a building.
                 if(generic instanceof GoalGenericTakeFromBuilding)continue;
                 if(generic instanceof GoalGenericCrafting crafting&&crafting.isOnlyStrawBedProduction())continue;

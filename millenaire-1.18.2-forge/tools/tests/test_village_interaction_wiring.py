@@ -152,7 +152,8 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertIn("s->s.getItem().isEdible()",ui)
         self.assertIn("crafting.isOnlyStrawBedProduction()",ui)
         self.assertIn("displaySortKey",ui)
-        self.assertIn("MillBlocks.BS_WET_BRICK",ui)
+        self.assertNotIn("MillBlocks.BS_WET_BRICK",ui)
+        self.assertNotIn("Drying wet bricks in daylight",ui)
         self.assertIn("craftingGoal.isOnlyStrawBedProduction()",read("client/book/BookManagerTravelBook.java"))
         self.assertIn("r.getType().isChild).thenComparing",ui)
         self.assertIn("residentActivities(record.getType())",ui)
@@ -197,6 +198,16 @@ class VillageInteractionWiring(unittest.TestCase):
         grouping=ui.split("private static void groupProduction(",1)[1].split("private static void cycleGroup(",1)[0]
         for suffix in ("(rotating)","(змінюється)","(змінюються)","(сменяется)","(сменяются)"):
             self.assertNotIn(suffix,grouping)
+
+    def test_map_cooking_requires_equipment_at_completed_level(self):
+        ui=read("client/gui/text/BuildingMapTooltip.java")
+        cap=read("common/village/ProductionCapability.java")
+        self.assertIn("plan.getPreviousBuildingPlan() : null",ui)
+        self.assertIn("ProductionCapability.hasCooking(completedPlan, building)",ui)
+        self.assertIn("GoalGenericTendFurnace) && !hasCooking) continue;",ui)
+        self.assertIn('point.isType("furnaceGuess")',cap)
+        self.assertIn("occupied.add(new PlanCell(",cap)
+        self.assertIn('point.isType("empty")',cap)
 
     def test_map_road_icons_show_only_localized_item_name(self):
         ui=read("client/gui/text/BuildingMapTooltip.java")

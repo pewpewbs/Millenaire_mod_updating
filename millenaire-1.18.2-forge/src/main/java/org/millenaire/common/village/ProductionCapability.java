@@ -61,6 +61,39 @@ public final class ProductionCapability {
         return plan!=null&&planCrops(plan).contains(crop);
     }
 
+    // Client building packets may omit registered equipment. Reconstruct the
+    // completed stock plan, respecting later explicit replacements.
+    private static final Map<BuildingPlan,Boolean> COOKING=new WeakHashMap<>();
+    private record PlanCell(int y,int x,int z) {}
+    private static synchronized boolean planCooking(BuildingPlan plan) {
+        return COOKING.computeIfAbsent(plan,key->{
+            Set<PlanCell> occupied=new HashSet<>();
+            for(BuildingPlan p=key;p!=null;){
+                if(p.plan!=null)for(int y=0;y<p.plan.length;y++)
+                    for(int x=0;x<p.plan[y].length;x++)
+                        for(int z=0;z<p.plan[y][x].length;z++){
+                            var point=p.plan[y][x][z];
+                            if(point==null||point.isType("empty"))continue;
+                            if(!occupied.add(new PlanCell(y+p.startLevel,x-p.lengthOffset,z-p.widthOffset)))continue;
+                            if(point.isType("furnaceGuess")||point.getBlock()==net.minecraft.world.level.block.Blocks.FURNACE
+                                    ||point.getBlock()==org.millenaire.common.block.MillBlocks.FIRE_PIT)return true;
+                        }
+                if(p.level<=0)break;
+                var previous=p.getPreviousBuildingPlan();
+                if(previous==null||previous.level>=p.level)break;
+                p=previous;
+            }
+            return false;
+        });
+    }
+
+    public static boolean hasCooking(BuildingPlan completedPlan,Building existing){
+        if(completedPlan!=null)return planCooking(completedPlan);
+        // Custom buildings have no stock PNG plan. Only report registered equipment.
+        return existing!=null&&existing.location!=null&&existing.location.isCustomBuilding
+                &&(!existing.getResManager().furnaces.isEmpty()||!existing.getResManager().firepits.isEmpty());
+    }
+
     /** Ordinary potential vanilla drops a configured worker actually collects.
      * Not a loot-table simulation: custom loot, fire, random and pickup vary. */
     public static List<InvItem> animalGoods(ResourceLocation animal,VillagerType worker){

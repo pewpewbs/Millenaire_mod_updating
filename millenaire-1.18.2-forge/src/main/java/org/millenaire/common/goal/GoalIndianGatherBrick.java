@@ -45,7 +45,10 @@ extends Goal {
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws MillLog.MillenaireException {
         var demand = BrickProductionDemand.inspect(villager);
-        if (!demand.shouldGather()) return null;
+        if (!demand.shouldGather()) {
+            GoalDiagnostics.note(villager,this,"BRICK_STOCK_TARGET_REACHED");
+            return null;
+        }
         boolean minimumBricksNotRequired = demand.urgent() || (villager.goalKey != null && villager.goalKey.equals(this.key) ? true : (!villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L));
         ArrayList<Point> vp = new ArrayList<Point>();
         ArrayList<Point> buildingp = new ArrayList<Point>();

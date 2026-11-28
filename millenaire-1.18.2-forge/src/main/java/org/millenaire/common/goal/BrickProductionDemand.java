@@ -67,8 +67,11 @@ final class BrickProductionDemand {
             if (carriesForStorage(villager, raw)) otherRaw += villager.countInv(raw);
             if (makesFired && carriesForStorage(villager, fired)) otherFired += villager.countInv(fired);
         }
+        var tradeGood = townHall.culture.getTradeGood(raw);
+        long reserve = tradeGood == null ? BrickProductionPolicy.RESERVE
+                : Math.max(BrickProductionPolicy.RESERVE, tradeGood.targetQuantity);
         return BrickProductionPolicy.demand(rawRequired, townHall.availableForCurrentProject(raw), otherRaw,
-                firedRequired, makesFired ? townHall.availableForCurrentProject(fired) : 0, otherFired);
+                firedRequired, makesFired ? townHall.availableForCurrentProject(fired) : 0, otherFired, reserve);
     }
 
     /** Count only existing wet or dried blocks on registered, loaded drying spots. */
