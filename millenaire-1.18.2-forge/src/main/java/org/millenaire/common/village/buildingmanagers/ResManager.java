@@ -235,27 +235,69 @@ public class ResManager {
         return this.sleepingPos;
     }
 
+    /** The second tier is derived from completed plan markers, not persisted as new markers.
+     * This also enables it in already-built maximum-level kilns.
+     */
+    public boolean hasSecondBrickTier() {
+        var loc = building.location;
+        if (loc == null || loc.isCustomBuilding || loc.culture == null || loc.level < 1
+                || !building.containsTags("brickkiln")) return false;
+        var set = loc.culture.getBuildingPlanSet(loc.planKey);
+        int variation = loc.getVariation();
+        return set != null && variation >= 0 && variation < set.plans.size()
+                && loc.level == set.plans.get(variation).length - 1;
+    }
+
+    /** Do not add a third tier or overlap another authored drying marker. */
+    public boolean isUpperBrickSpot(Point p) {
+        return p != null && hasSecondBrickTier() && !brickspot.contains(p)
+                && brickspot.contains(p.getBelow()) && !brickspot.contains(p.getBelow().getBelow())
+                && !brickspot.contains(p.getAbove())
+                && p.getiY() < building.world.getMaxBuildHeight() - 1;
+    }
+
+    public boolean isBrickWorkSpot(Point p) {
+        return p != null && (brickspot.contains(p) || isUpperBrickSpot(p));
+    }
+
+    public List<Point> getBrickWorkSpots() {
+        if (!hasSecondBrickTier()) return brickspot;
+        var result = new java.util.ArrayList<Point>(brickspot);
+        for (Point base : brickspot) {
+            if (base != null && isUpperBrickSpot(base.getAbove()))
+                result.add(base.getAbove());
+        }
+        return result;
+    }
+
+    public static boolean isProductionBrick(BlockState state) {
+        return state.getBlock() == MillBlocks.WET_BRICK || state == MillBlocks.BS_MUD_BRICK;
+    }
+
+    /** Fill bottom-up, harvest top-down. Never overwrite an occupied upper position. */
+    public boolean canWorkBrickSpot(Point p, boolean ready) {
+        if (!isBrickWorkSpot(p) || !building.world.hasChunkAt(p.getBlockPos())) return false;
+        var pos = p.getBlockPos();
+        var state = building.world.getBlockState(pos);
+        if (ready ? state != MillBlocks.BS_MUD_BRICK : !state.isAir()) return false;
+        if (isUpperBrickSpot(p)) {
+            var below = building.world.getBlockState(pos.below());
+            if (ready) return isProductionBrick(below) || below.isAir();
+            return isProductionBrick(below) && building.world.getBlockState(pos.above()).isAir()
+                    && building.world.canSeeSky(pos.above());
+        }
+        // A lower dry brick supports its upper neighbour until that neighbour is harvested.
+        return !ready || !isUpperBrickSpot(p.getAbove())
+                || !isProductionBrick(building.world.getBlockState(pos.above()));
+    }
+
     public Point getEmptyBrickLocation() {
-        if (this.brickspot.size() == 0) {
-            return null;
-        }
-        for (int i = 0; i < this.brickspot.size(); ++i) {
-            Point p = this.brickspot.get(i);
-            if (WorldUtilities.getBlock(this.building.world, p) != Blocks.AIR) continue;
-            return p;
-        }
+        for (Point p : getBrickWorkSpots()) if (canWorkBrickSpot(p, false)) return p;
         return null;
     }
 
     public Point getFullBrickLocation() {
-        if (this.brickspot.size() == 0) {
-            return null;
-        }
-        for (int i = 0; i < this.brickspot.size(); ++i) {
-            Point p = this.brickspot.get(i);
-            if (WorldUtilities.getBlockState(this.building.world, p) != MillBlocks.BS_MUD_BRICK) continue;
-            return p;
-        }
+        for (Point p : getBrickWorkSpots()) if (canWorkBrickSpot(p, true)) return p;
         return null;
     }
 
@@ -267,28 +309,14 @@ public class ResManager {
     }
 
     public int getNbEmptyBrickLocation() {
-        if (this.brickspot.size() == 0) {
-            return 0;
-        }
         int nb = 0;
-        for (int i = 0; i < this.brickspot.size(); ++i) {
-            Point p = this.brickspot.get(i);
-            if (WorldUtilities.getBlock(this.building.world, p) != Blocks.AIR) continue;
-            ++nb;
-        }
+        for (Point p : getBrickWorkSpots()) if (canWorkBrickSpot(p, false)) ++nb;
         return nb;
     }
 
     public int getNbFullBrickLocation() {
-        if (this.brickspot.size() == 0) {
-            return 0;
-        }
         int nb = 0;
-        for (int i = 0; i < this.brickspot.size(); ++i) {
-            Point p = this.brickspot.get(i);
-            if (WorldUtilities.getBlockState(this.building.world, p) != MillBlocks.BS_MUD_BRICK) continue;
-            ++nb;
-        }
+        for (Point p : getBrickWorkSpots()) if (canWorkBrickSpot(p, true)) ++nb;
         return nb;
     }
 

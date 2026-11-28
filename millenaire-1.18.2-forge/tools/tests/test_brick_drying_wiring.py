@@ -19,7 +19,7 @@ class BrickDryingWiring(unittest.TestCase):
         self.assertIn("dryingTime(current.level)",ui)
         self.assertIn("dryingTime(next.level)",ui)
     def test_second_tier_is_final_only_and_shared_by_work_and_drying(self):
-        manager=(ROOT/"common/village/BuildingResManager.java").read_text(encoding="utf-8")
+        manager=(ROOT/"common/village/buildingmanagers/ResManager.java").read_text(encoding="utf-8")
         cycle=(ROOT/"common/goal/BrickWorkCycle.java").read_text(encoding="utf-8")
         demand=(ROOT/"common/goal/BrickProductionDemand.java").read_text(encoding="utf-8")
         block=(ROOT/"common/block/BlockWetBrick.java").read_text(encoding="utf-8")
@@ -32,3 +32,14 @@ class BrickDryingWiring(unittest.TestCase):
         self.assertIn("getBrickWorkSpots()",demand)
         self.assertIn("data.isStackedBrickBase(pos)",block)
         self.assertIn("getMaxLocalRawBrightness(pos.above().above())",block)
+    def test_runtime_manager_is_the_one_checked(self):
+        building=(ROOT/"common/village/Building.java").read_text(encoding="utf-8")
+        manager=(ROOT/"common/village/buildingmanagers/ResManager.java").read_text(encoding="utf-8")
+        block=(ROOT/"common/block/BlockWetBrick.java").read_text(encoding="utf-8")
+        self.assertIn("public ResManager getResManager()",building)
+        self.assertIn("class ResManager",manager)
+        for signature in ("boolean hasSecondBrickTier()", "boolean isUpperBrickSpot(Point p)",
+                          "boolean isBrickWorkSpot(Point p)", "List<Point> getBrickWorkSpots()",
+                          "boolean canWorkBrickSpot(Point p, boolean ready)"):
+            self.assertIn(signature,manager)
+        self.assertIn("buildingmanagers.ResManager.isProductionBrick",block)

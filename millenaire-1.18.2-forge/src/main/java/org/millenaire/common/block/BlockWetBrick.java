@@ -44,7 +44,7 @@ public class BlockWetBrick extends Block implements IMetaBlockName, LegacyVarian
         boolean exposed = level.getMaxLocalRawBrightness(pos.above()) > 14;
         // Only a registered lower tier may borrow light from immediately above
         // its upper production brick. Ordinary covered bricks still cannot dry.
-        if (!exposed && !org.millenaire.common.village.BuildingResManager.isProductionBrick(
+        if (!exposed && !org.millenaire.common.village.buildingmanagers.ResManager.isProductionBrick(
                 level.getBlockState(pos.above()))) return;
         var data = org.millenaire.common.forge.Mill.getMillWorld(level);
         int kilnLevel = data != null && data.world == level

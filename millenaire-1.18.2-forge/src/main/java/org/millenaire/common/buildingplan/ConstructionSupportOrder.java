@@ -20,7 +20,7 @@ public final class ConstructionSupportOrder {
                 || b instanceof BasePressurePlateBlock || b instanceof BaseRailBlock
                 || b instanceof BushBlock || b instanceof CarpetBlock || b instanceof LanternBlock
                 || b instanceof TripWireHookBlock || b instanceof VineBlock
-                || b instanceof RedstoneWireBlock || b instanceof SnowLayerBlock
+                || b instanceof RedStoneWireBlock || b instanceof SnowLayerBlock
                 || b instanceof FlowerPotBlock;
     }
 
