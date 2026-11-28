@@ -3111,6 +3111,20 @@ IAStarPathedEntity {
         // list of nodes exists. At the second watchdog stage, attempt an
         // independent Vanilla route before falling back to the primary search.
         if (action == org.millenaire.common.pathing.MovementWatchdog.Action.DETOUR) {
+            if (this.isInWater() && isStockTransferGoal(goal)) {
+                AS_PathEntity shore = org.millenaire.common.pathing.ShoreRecovery.findPath(
+                        this.level, this.blockPosition(), dest.getBlockPos());
+                if (shore != null && this.navigation.moveTo(shore, 0.5D)) {
+                    if (this.pathPlannerJPS != null) this.pathPlannerJPS.stopPathSearch(true);
+                    this.pathCalculatedSinceLastTick = null;
+                    this.pathFailedSincelastTick = false;
+                    this.pathEntity = shore;
+                    this.pathFailureRecovery.reset();
+                    MillLog.major(this, "NAV-SHORE from=" + this.blockPosition() + " inland=" + shore.getTarget()
+                            + " target=" + dest + " goal=" + this.goalKey);
+                    return;
+                }
+            }
             this.nextVanillaPathAttempt = 0L;
             if (this.navigation instanceof PathNavigateSimple groundNavigation) {
                 groundNavigation.requestRecoveryDetour();
@@ -4207,7 +4221,9 @@ IAStarPathedEntity {
             if(this.pathPlannerJPS!=null && this.pathPlannerJPS.isBusy())this.pathPlannerJPS.stopPathSearch(true);
             return;
         }
-        if (this.getNavigation().isStuck()) {
+        // Vanilla stops the failed path. Its stale flag may still be set when
+        // a new, independently planned path has already been accepted.
+        if (this.getNavigation().isStuck() && this.getNavigation().isDone()) {
             this.pathEntity = null;
         }
         if (this.tracksLandEntity() && this.isAnimalWorkGoal(this.routingGoal())

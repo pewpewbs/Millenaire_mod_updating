@@ -13,6 +13,7 @@ import net.minecraft.world.level.pathfinder.*;
 import net.minecraft.world.phys.*;
 import org.millenaire.common.entity.PathNavigateSimple;
 import org.millenaire.common.pathing.DoorCrossing;
+import org.millenaire.common.pathing.ShoreRecovery;
 import org.millenaire.common.pathing.atomicstryker.*;
 
 /** Real 1.18.2 block shapes and PathNavigateSimple, no running game/world mutation. */
@@ -68,6 +69,55 @@ public class NavigationGeometryCheck {
         for (int i=0;i<nodes.length;i++) nodes[i]=new Node(xyz[3*i],xyz[3*i+1],xyz[3*i+2]);
         return new AS_PathEntity(nodes);
     }
+    static void checkStockShore(Mob mob) throws Exception {
+        // Surface transect from the four stock recoveries in the Indian settlement.
+        // Everywhere outside the measured transect is open water, with no invented exit.
+        Grid pond = new Grid() {
+            @Override public BlockState getBlockState(BlockPos pos) {
+                BlockState override = blocks.get(pos);
+                if (override != null) return override;
+                return (pos.getY() < 60 ? Blocks.STONE : pos.getY() <= 62 ? Blocks.WATER : Blocks.AIR).defaultBlockState();
+            }
+        };
+        BlockPos start = new BlockPos(-385, 62, -567);
+        BlockPos bank = start.west(9);
+        BlockPos inland = bank.west();
+        BlockPos house = new BlockPos(-408, 67, -572);
+        for (int y = 60; y <= 64; y++) pond.blocks.put(new BlockPos(-385, y, -566), Blocks.SAND.defaultBlockState());
+        pond.blocks.put(bank, Blocks.RED_SAND.defaultBlockState());
+        pond.blocks.put(inland, Blocks.RED_SAND.defaultBlockState());
+        pond.blocks.put(inland.above(), Blocks.DEAD_BUSH.defaultBlockState());
+        check(!AStarStatic.isViable(pond, start.getX(), start.getY(), start.getZ(), 0,
+                new AStarConfig(true, false, true, false, false)), "ordinary stock routes cannot start in this deep water");
+        for (int dy = -1; dy <= 1; dy++) {
+            AS_PathEntity path = ShoreRecovery.findPath(pond, start.above(dy), house);
+            check(path != null && path.getNodeCount() == 11 && path.getTarget().equals(inland.above()),
+                    "submerged and bobbing carriers can reach the dry shore behind the sand bank");
+        }
+        AS_PathEntity path = ShoreRecovery.findPath(pond, start, house);
+        Navigator nav = new Navigator(mob, pond);
+        nav.route(path);
+        for (int step = 0; step < 11; step++) {
+            BlockPos target = start.west(step).above(step < 9 ? 0 : 1);
+            check(path.getNextNode().asBlockPos().equals(target), "each swim/landing step is adjacent");
+            field(mob, Entity.class, "wasTouchingWater", step < 9);
+            position(mob, target.getX() + .5, target.getY(), target.getZ() + .5);
+            nav.follow();
+        }
+        check(path.isDone(), "movement consumes the shore leg through the first inland cell");
+        check(ShoreRecovery.findPath(pond, inland.above(), house) == null, "dry actor does not seek a swimming route");
+        pond.blocks.put(start.west(4).above(), Blocks.OAK_FENCE.defaultBlockState());
+        check(ShoreRecovery.findPath(pond, start, house) == null, "a fence or the high southern bank cannot be crossed");
+        pond.blocks.remove(start.west(4).above());
+        pond.blocks.put(bank, Blocks.MAGMA_BLOCK.defaultBlockState());
+        check(ShoreRecovery.findPath(pond, start, house) == null, "a hazardous landing cannot be selected");
+        pond.blocks.put(bank, Blocks.RED_SAND.defaultBlockState());
+        pond.blocks.put(bank.above(), Blocks.RED_SAND.defaultBlockState());
+        pond.blocks.put(inland.above(), Blocks.RED_SAND.defaultBlockState());
+        check(ShoreRecovery.findPath(pond, start, house).getTarget().equals(inland.above(2)), "one-block bank allows a physical climb");
+        pond.blocks.put(start.west(8).above(3), Blocks.STONE.defaultBlockState());
+        check(ShoreRecovery.findPath(pond, start, house) == null, "the climb also needs headroom above the last water cell");
+    }
     public static void main(String[] args) throws Exception {
         net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
         Field uf=sun.misc.Unsafe.class.getDeclaredField("theUnsafe"); uf.setAccessible(true);
@@ -78,6 +128,7 @@ public class NavigationGeometryCheck {
         field(mob, LivingEntity.class, "attributes", new AttributeMap(AttributeSupplier.builder()
                 .add(Attributes.FOLLOW_RANGE,16).add(Attributes.MOVEMENT_SPEED,.5).build()));
         field(mob, Mob.class, "pathfindingMalus", new EnumMap<BlockPathTypes,Float>(BlockPathTypes.class));
+        checkStockShore(mob);
         Grid grid=new Grid(); Navigator nav=new Navigator(mob,grid);
         position(mob,.5,64,.5);
         var p=route(0,64,0, 1,64,0); nav.route(p); nav.follow();
