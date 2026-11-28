@@ -106,6 +106,38 @@ class ProductionRuntimeWiring(unittest.TestCase):
         self.assertIn("!this.productionSourcesChecked",building)
         self.assertIn("ProductionSourceRepair.reconcile(this)",building)
 
+    def test_indian_quarry_furnace_progression(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("Pillow not installed")
+        white = (255, 255, 255)
+        mud = (166, 156, 136)
+        for variant, row, front, facing in (
+            ("A", 12, 11, (25, 25, 26)),
+            ("B", 1, 2, (25, 25, 27)),
+        ):
+            with self.subTest(variant=variant):
+                levels = []
+                for level in range(4):
+                    with Image.open(DATA / f"cultures/indian/buildings/basic/quarry_{variant}{level}.png") as raw:
+                        levels.append(raw.convert("RGB"))
+                counts = [sum(1 for c in im.getdata()
+                              if c[:2] == (25, 25) and 25 <= c[2] <= 29) for im in levels]
+                self.assertEqual(counts, [0, 1, 1, 0])
+                def pixel(level, floor, k, j):
+                    return levels[level].getpixel((floor * 15 + k, j))
+                self.assertEqual(pixel(1, 6, 11, row), facing)
+                self.assertEqual(pixel(2, 6, 11, row), white)
+                self.assertEqual(pixel(2, 6, 12, row), facing)
+                for j in (row, front):
+                    self.assertEqual(pixel(1, 5, 11, j), mud)
+                    self.assertEqual(pixel(2, 5, 11, j), white)
+                for level in (0, 1, 2, 3):
+                    for k in (11, 12):
+                        for floor in (6, 7):
+                            self.assertEqual(pixel(level, floor, k, front), white)
+
     def test_migrated_positions_match_bundled_markers(self):
         try:
             from PIL import Image
