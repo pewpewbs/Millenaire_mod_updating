@@ -17,9 +17,18 @@ public final class BrickProductionPolicy {
         return carried > 0 && (carried >= DELIVERY_BATCH || fired);
     }
 
+    /** 32 bricks per completed kiln; zero kilns means no new visit. */
+    public static long rawDeliveryTarget(int completedKilns) {
+        return (long) DELIVERY_BATCH * Math.max(0, completedKilns);
+    }
+
     /** The threshold gates another kiln visit, never the active harvest. */
     public static boolean mayStartAnotherKiln(int raw, boolean demandRemaining) {
-        return raw < DELIVERY_BATCH && demandRemaining;
+        return mayStartAnotherKiln(raw, demandRemaining, 1);
+    }
+
+    public static boolean mayStartAnotherKiln(int raw, boolean demandRemaining, int completedKilns) {
+        return raw < rawDeliveryTarget(completedKilns) && demandRemaining;
     }
 
     public static boolean shouldDeliverRaw(int raw, boolean workRemaining) {

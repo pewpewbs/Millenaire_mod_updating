@@ -72,7 +72,8 @@ final class BrickWorkCycle {
     }
 
     static boolean available(MillVillager v,Building kiln){
-        if(kiln==null || kiln.getPos()==null || !v.level.hasChunkAt(kiln.getPos().getBlockPos()))return false;
+        if(kiln==null || kiln.location==null || kiln.location.level<0
+                || kiln.getPos()==null || !v.level.hasChunkAt(kiln.getPos().getBlockPos()))return false;
         long now=v.level.getGameTime();
         Map<Point,Long> blocked=FAILURES.get(v);
         if(blocked!=null && now<blocked.getOrDefault(kiln.getPos(),0L))return false;
@@ -114,7 +115,7 @@ final class BrickWorkCycle {
         InvItem item=InvItem.createInvItem(MillBlocks.BS_MUD_BRICK);
         if(th.storageRoom(item)<=0)return completed(cargo);
         boolean stockAllowed=th.nbGoodAvailable(MillBlocks.BS_MUD_BRICK,false,false,false)<=4096;
-        // A started local harvest is completed, even when it crosses 32.
+        // A started local harvest is completed, even when it crosses the delivery target.
         // Demand still gates starting any additional visit and all new forming.
         if(visit!=null && visit.current!=null){
             for(Building kiln:kilns){
@@ -127,7 +128,12 @@ final class BrickWorkCycle {
                 break;
             }
         }
-        if(!stockAllowed || !BrickProductionPolicy.mayStartAnotherKiln(cargo,demand.shouldGather()))
+        // Count distinct completed kilns in this settlement, not just ones currently
+        // loaded or ready. If no further ready kiln is reachable, deliver the remainder.
+        int completedKilns=(int)kilns.stream()
+                .filter(kiln->kiln.location!=null && kiln.location.level>=0 && kiln.getPos()!=null)
+                .map(Building::getPos).distinct().count();
+        if(!stockAllowed || !BrickProductionPolicy.mayStartAnotherKiln(cargo,demand.shouldGather(),completedKilns))
             return completed(cargo);
         Task best=NONE;
         for(Building kiln:kilns){

@@ -47,6 +47,19 @@ public final class BrickProductionPolicySmoke {
         check(!BrickProductionPolicy.mayStartAnotherKiln(48,true),"28+20 ready to deliver");
         check(!BrickProductionPolicy.mayStartAnotherKiln(45,true),"whole large kiln delivered");
         check(!BrickProductionPolicy.mayStartAnotherKiln(18,false),"demand covered");
+        for (int kilns=0; kilns<=5; kilns++) {
+            long target=BrickProductionPolicy.rawDeliveryTarget(kilns);
+            check(target==32L*kilns,"target scales with kiln count");
+            check(!BrickProductionPolicy.mayStartAnotherKiln((int)target,true,kilns),"deliver at target");
+            if(kilns>0)
+                check(BrickProductionPolicy.mayStartAnotherKiln((int)target-1,true,kilns),"continue below target");
+        }
+        check(BrickProductionPolicy.mayStartAnotherKiln(40,true,2),"two kilns continue at 40");
+        check(!BrickProductionPolicy.mayStartAnotherKiln(64,true,2),"two kilns deliver at 64");
+        check(BrickProductionPolicy.mayStartAnotherKiln(64,true,3),"three kilns continue at 64");
+        check(!BrickProductionPolicy.mayStartAnotherKiln(40,false,2),"demand covered before target");
+        check(BrickProductionPolicy.shouldDeliverRaw(40,false),"partial batch when no work remains");
+        check(!BrickProductionPolicy.shouldDeliverRaw(100,true),"no cap on active harvest");
         check(BrickProductionPolicy.shouldDeliverRaw(18,false),"partial trip with no ready kiln");
         check(!BrickProductionPolicy.shouldDeliverRaw(60,true),"finish active kiln refill before delivery");
         check(!BrickProductionPolicy.shouldDeliverRaw(0,false),"no empty delivery");
