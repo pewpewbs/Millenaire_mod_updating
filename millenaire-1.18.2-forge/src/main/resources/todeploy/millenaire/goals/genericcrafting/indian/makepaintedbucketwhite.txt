@@ -1,4 +1,4 @@
-priority=200
+priority=20
 
 //en/in millisecondes
 duration=5000
@@ -13,7 +13,10 @@ output=paintbucketwhite,1
 
 //s'il y a plus d'objets dans le batiment que ça, arrêter le but
 //if more than that number of item is present in building, stop goal
-townhalllimit=paintbucketwhite,16
+townhalllimit=paintbucketwhite,4
+
+// Hard physical limit including every registered village chest and resident inventory.
+physicalvillagelimit=paintbucketwhite,4
 
 
 maxsimultaneoustotal=1

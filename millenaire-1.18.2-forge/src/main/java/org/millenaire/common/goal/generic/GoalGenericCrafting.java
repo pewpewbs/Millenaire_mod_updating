@@ -28,6 +28,24 @@ extends GoalGeneric {
     @ConfigAnnotations.ConfigField(type=AnnotedParameter.ParameterType.INVITEM_NUMBER_ADD)
     @ConfigAnnotations.FieldDocumentation(explanation="Each action will produce all the outputs.")
     public HashMap<InvItem, Integer> output = new HashMap();
+    @ConfigAnnotations.ConfigField(type=AnnotedParameter.ParameterType.INVITEM_NUMBER_ADD, paramName="physicalvillagelimit")
+    @ConfigAnnotations.FieldDocumentation(explanation="Hard maximum of the physical item across registered village chests and resident inventories, including the next craft. Ignores durability; does not load chunks.")
+    public HashMap<InvItem, Integer> physicalVillageLimit = new HashMap<>();
+
+    @Override
+    protected boolean passesStockLimits(MillVillager villager) {
+        if (!super.passesStockLimits(villager)) return false;
+        for (var cap : this.physicalVillageLimit.entrySet()) {
+            var item = cap.getKey().getItem();
+            long produced = 0;
+            for (var entry : this.output.entrySet())
+                if (entry.getKey().getItem() == item) produced += entry.getValue();
+            if (!PhysicalVillageStock.hasRoom(villager, item, cap.getValue(), produced))
+                return org.millenaire.common.goal.GoalDiagnostics.reject(villager, this,
+                        "PHYSICAL_VILLAGE_LIMIT " + cap.getKey() + " max=" + cap.getValue());
+        }
+        return true;
+    }
 
     @Override
     public void applyDefaultSettings() {
@@ -125,6 +143,10 @@ extends GoalGeneric {
         if (this.output.isEmpty()) return false;
         for (Integer amount : this.input.values()) if (amount == null || amount <= 0) return false;
         for (Integer amount : this.output.values()) if (amount == null || amount <= 0) return false;
+        for (var cap : this.physicalVillageLimit.entrySet()) {
+            if (cap.getValue() == null || cap.getValue() < 0 || cap.getKey().getItem() == null
+                    || this.output.keySet().stream().noneMatch(key -> key.getItem() == cap.getKey().getItem())) return false;
+        }
         return true;
     }
 
