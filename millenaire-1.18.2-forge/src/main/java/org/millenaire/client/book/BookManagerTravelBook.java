@@ -1051,89 +1051,57 @@ extends BookManager {
         }
     }
 
+    private void appendTradeBuildings(TextPage page, String title, List<BuildingPlanSet> buildings) {
+        if (buildings.isEmpty()) return;
+        page.addBlankLine();
+        page.addLine(new TextLine(LanguageUtilities.string(title), TextLine.ITALIC, false));
+        page.getLastLine().canCutAfter = false;
+        ArrayList<TextLine> entries = new ArrayList<>();
+        for (BuildingPlanSet plan : buildings)
+            entries.add(new TextLine(plan.getNameNative(), new GuiText.GuiButtonReference(plan)));
+        for (TextLine line : BookManager.splitInColumns(entries, 2)) page.addLine(line);
+    }
+
     private void getBookTradeGoodDetail_shops(Culture culture, TextPage page, TradeGood tradeGood) {
-        ArrayList<String> buyingShops = new ArrayList<String>();
-        for (String string : culture.shopBuys.keySet()) {
-            if (!culture.shopBuys.get(string).contains(tradeGood)) continue;
-            buyingShops.add(string);
+        java.util.Set<String> buyingShops = new java.util.HashSet<>();
+        for (String shop : culture.shopBuys.keySet())
+            if (culture.shopBuys.get(shop).contains(tradeGood)) buyingShops.add(shop);
+        for (String shop : culture.shopBuysOptional.keySet())
+            if (culture.shopBuysOptional.get(shop).contains(tradeGood)) buyingShops.add(shop);
+        java.util.Set<String> sellingShops = new java.util.HashSet<>();
+        for (String shop : culture.shopSells.keySet())
+            if (culture.shopSells.get(shop).contains(tradeGood)) sellingShops.add(shop);
+
+        // Plans with the same displayed name and shop describe the same trade
+        // capability. Prefer the ordinary plan to a player-controlled variant.
+        // Keep different shop types distinct even when their names coincide.
+        java.util.Map<java.util.List<String>, BuildingPlanSet> unique = new java.util.LinkedHashMap<>();
+        java.util.Comparator<BuildingPlanSet> order = java.util.Comparator
+                .comparing((BuildingPlanSet plan) -> plan.key.startsWith("player"))
+                .thenComparing(plan -> plan.key);
+        for (BuildingPlanSet plan : culture.ListPlanSets) {
+            BuildingPlan initial = plan.getFirstStartingPlan();
+            if (initial == null || initial.shop == null
+                    || (!buyingShops.contains(initial.shop) && !sellingShops.contains(initial.shop))) continue;
+            unique.merge(java.util.List.of(plan.getNameNative(), initial.shop), plan,
+                    (a, b) -> order.compare(a, b) <= 0 ? a : b);
         }
-        for (String string : culture.shopBuysOptional.keySet()) {
-            if (!culture.shopBuysOptional.get(string).contains(tradeGood)) continue;
-            buyingShops.add(string);
+        List<BuildingPlanSet> both = new ArrayList<>(), buyingOnly = new ArrayList<>(), sellingOnly = new ArrayList<>();
+        for (BuildingPlanSet plan : unique.values()) {
+            String shop = plan.getFirstStartingPlan().shop;
+            boolean buys = buyingShops.contains(shop), sells = sellingShops.contains(shop);
+            if (buys && sells) both.add(plan);
+            else if (buys) buyingOnly.add(plan);
+            else if (sells) sellingOnly.add(plan);
         }
-        List<BuildingPlanSet> buyingBuildings = new ArrayList<>();
-        for (BuildingPlanSet buildingPlanSet : culture.ListPlanSets) {
-            if (!buyingShops.contains(buildingPlanSet.getFirstStartingPlan().shop)) continue;
-            buyingBuildings.add(buildingPlanSet);
-        }
-        buyingBuildings = buyingBuildings.stream().sorted((p1, p2) -> p1.getNameNative().compareTo(p2.getNameNative())).collect(Collectors.toList());
-        ArrayList<String> arrayList = new ArrayList<String>();
-        for (String string : culture.shopSells.keySet()) {
-            if (!culture.shopSells.get(string).contains(tradeGood)) continue;
-            arrayList.add(string);
-        }
-        ArrayList<BuildingPlanSet> arrayList2 = new ArrayList<BuildingPlanSet>();
-        for (BuildingPlanSet buildingPlanSet : culture.ListPlanSets) {
-            if (!arrayList.contains(buildingPlanSet.getFirstStartingPlan().shop)) continue;
-            arrayList2.add(buildingPlanSet);
-        }
-        List<BuildingPlanSet> list = arrayList2.stream().sorted((p1, p2) -> p1.getNameNative().compareTo(p2.getNameNative())).collect(Collectors.toList());
-        if (list.equals(buyingBuildings)) {
-            page.addBlankLine();
-            page.addLine(new TextLine(LanguageUtilities.string("travelbook.trade_good_tradingbuildings"), TextLine.ITALIC, false));
-            page.getLastLine().canCutAfter = false;
-            ArrayList<TextLine> arrayList3 = new ArrayList<TextLine>();
-            for (BuildingPlanSet buildingPlanSet : buyingBuildings) {
-                arrayList3.add(new TextLine(buildingPlanSet.getNameNative(), new GuiText.GuiButtonReference(buildingPlanSet)));
-            }
-            List<TextLine> list2 = BookManager.splitInColumns(arrayList3, 2);
-            for (TextLine l : list2) {
-                page.addLine(l);
-            }
-        } else if (buyingBuildings.size() > 0 && list.size() > 0) {
-            ArrayList<TextLine> arrayList4 = new ArrayList<TextLine>();
-            page.addBlankLine();
-            arrayList4.add(new TextLine(LanguageUtilities.string("travelbook.trade_good_buyingbuildings"), TextLine.ITALIC, false));
-            page.getLastLine().canCutAfter = false;
-            for (BuildingPlanSet buildingPlanSet : buyingBuildings) {
-                arrayList4.add(new TextLine(buildingPlanSet.getNameNative(), new GuiText.GuiButtonReference(buildingPlanSet)));
-            }
-            ArrayList<TextLine> arrayList5 = new ArrayList<TextLine>();
-            page.addBlankLine();
-            arrayList5.add(new TextLine(LanguageUtilities.string("travelbook.trade_good_sellingbuildings"), TextLine.ITALIC, false));
-            page.getLastLine().canCutAfter = false;
-            for (Object planSet : list) {
-                arrayList5.add(new TextLine(((BuildingPlanSet)planSet).getNameNative(), new GuiText.GuiButtonReference((BuildingPlanSet)planSet)));
-            }
-            List<TextLine> list3 = BookManagerTravelBook.mergeColumns(arrayList4, arrayList5);
-            for (TextLine line : list3) {
-                page.addLine(line);
-            }
-        } else if (buyingBuildings.size() > 0) {
-            page.addBlankLine();
-            page.addLine(new TextLine(LanguageUtilities.string("travelbook.trade_good_buyingbuildings"), TextLine.ITALIC, false));
-            page.getLastLine().canCutAfter = false;
-            ArrayList<TextLine> arrayList6 = new ArrayList<TextLine>();
-            for (BuildingPlanSet buildingPlanSet : buyingBuildings) {
-                arrayList6.add(new TextLine(buildingPlanSet.getNameNative(), new GuiText.GuiButtonReference(buildingPlanSet)));
-            }
-            List<TextLine> list4 = BookManager.splitInColumns(arrayList6, 2);
-            for (TextLine l : list4) {
-                page.addLine(l);
-            }
-        } else if (list.size() > 0) {
-            page.addBlankLine();
-            page.addLine(new TextLine(LanguageUtilities.string("travelbook.trade_good_sellingbuildings"), TextLine.ITALIC, false));
-            page.getLastLine().canCutAfter = false;
-            ArrayList<TextLine> arrayList7 = new ArrayList<TextLine>();
-            for (BuildingPlanSet buildingPlanSet : list) {
-                arrayList7.add(new TextLine(buildingPlanSet.getNameNative(), new GuiText.GuiButtonReference(buildingPlanSet)));
-            }
-            List<TextLine> list5 = BookManager.splitInColumns(arrayList7, 2);
-            for (TextLine l : list5) {
-                page.addLine(l);
-            }
-        }
+        java.util.Comparator<BuildingPlanSet> byName = java.util.Comparator
+                .comparing(BuildingPlanSet::getNameNative).thenComparing(plan -> plan.key);
+        both.sort(byName);
+        buyingOnly.sort(byName);
+        sellingOnly.sort(byName);
+        appendTradeBuildings(page, "travelbook.trade_good_tradingbuildings", both);
+        appendTradeBuildings(page, "travelbook.trade_good_buyingbuildings", buyingOnly);
+        appendTradeBuildings(page, "travelbook.trade_good_sellingbuildings", sellingOnly);
         ArrayList<VillagerType> arrayList8 = new ArrayList<VillagerType>();
         for (VillagerType villagerType : culture.listVillagerTypes) {
             if (!villagerType.isForeignMerchant || !villagerType.foreignMerchantStock.containsKey(tradeGood.item)) continue;

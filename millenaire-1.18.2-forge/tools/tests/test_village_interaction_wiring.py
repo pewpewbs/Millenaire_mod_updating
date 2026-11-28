@@ -193,6 +193,23 @@ class VillageInteractionWiring(unittest.TestCase):
         self.assertIn("if(group.size()<2)return;",ui)
         self.assertIn("goods.recipes.getOrDefault(s,List.of())",ui)
 
+    def test_trade_book_deduplicates_equivalent_plans_and_separates_trade_directions(self):
+        book = read("client/book/BookManagerTravelBook.java")
+        shops = book.split("private void getBookTradeGoodDetail_shops(", 1)[1].split("private void getBookTradeGoodDetail_villageUse", 1)[0]
+        self.assertIn("unique.merge(java.util.List.of(plan.getNameNative(), initial.shop)", shops)
+        self.assertIn('plan.key.startsWith("player")', shops)
+        self.assertIn("if (buys && sells) both.add(plan);", shops)
+        self.assertIn("else if (buys) buyingOnly.add(plan);", shops)
+        self.assertIn("else if (sells) sellingOnly.add(plan);", shops)
+        self.assertIn('appendTradeBuildings(page, "travelbook.trade_good_tradingbuildings", both)', shops)
+        self.assertIn('appendTradeBuildings(page, "travelbook.trade_good_buyingbuildings", buyingOnly)', shops)
+        self.assertIn('appendTradeBuildings(page, "travelbook.trade_good_sellingbuildings", sellingOnly)', shops)
+
+    def test_sales_icons_use_existing_food_and_road_rotation(self):
+        ui = read("client/gui/text/BuildingMapTooltip.java")
+        self.assertLess(ui.index("groupProduction(sells);"), ui.index('section(lines, label("Sells:"'))
+        self.assertIn("loc.culture.shopSells.get(loc.shop)", ui)
+
     def test_food_rotation_keeps_item_recipe_without_category(self):
         ui=read("client/gui/text/BuildingMapTooltip.java")
         self.assertIn("cycleGroup(goods,s->s.getItem().isEdible(),null);",ui)

@@ -561,6 +561,7 @@ final class BuildingMapTooltip {
         planned.icons.removeIf(BuildingMapTooltip::strawBed);
         groupProduction(produced);
         groupProduction(planned);
+        groupProduction(sells);
         section(lines,label("Purpose:","Призначення:","Назначение:"),actions,true);
         section(lines, label("Potential production:", "Може виробляти:", "Может производить:"), produced);
         section(lines,label("Can extract:","Може добувати:","Может добывать:"),extracted);
