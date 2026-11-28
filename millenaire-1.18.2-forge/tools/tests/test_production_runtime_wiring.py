@@ -94,7 +94,10 @@ class ProductionRuntimeWiring(unittest.TestCase):
             self.assertIn(gate, action)
             self.assertIn("brickspot.contains", action)
             self.assertIn("demand.priority(" + gathering + ")", code)
-            self.assertIn("if (next == null) return true;", action)
+            if gathering == "true":
+                self.assertRegex(action, r"if\s*\(next\s*==\s*null\)\s*return\s+true\s*;")
+            else:
+                self.assertRegex(action, r"if\s*\(next\s*==\s*null\)\s*\{\s*BrickProductionDemand\.clearGatherKiln\(villager\);\s*return\s+true\s*;\s*\}")
         self.assertNotIn("takeFromInv", read("goal/GoalIndianDryBrick.java"))
 
     def test_brick_delivery_and_nearest_workplace(self):
