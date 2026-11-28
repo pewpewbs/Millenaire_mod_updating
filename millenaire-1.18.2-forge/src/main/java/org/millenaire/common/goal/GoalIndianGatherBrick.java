@@ -44,7 +44,9 @@ extends Goal {
 
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws MillLog.MillenaireException {
-        boolean minimumBricksNotRequired = villager.goalKey != null && villager.goalKey.equals(this.key) ? true : (!villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L);
+        var demand = BrickProductionDemand.inspect(villager);
+        if (!demand.shouldGather()) return null;
+        boolean minimumBricksNotRequired = demand.urgent() || (villager.goalKey != null && villager.goalKey.equals(this.key) ? true : (!villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L));
         ArrayList<Point> vp = new ArrayList<Point>();
         ArrayList<Point> buildingp = new ArrayList<Point>();
         for (Building kiln : villager.getTownHall().getBuildingsWithTag("brickkiln")) {
@@ -98,7 +100,9 @@ extends Goal {
     @Override
     public boolean performAction(MillVillager villager) throws MillLog.MillenaireException {
         if (villager.level.isClientSide || villager.getGoalDestPoint() == null || villager.getGoalBuildingDest() == null
-                || !villager.level.hasChunkAt(villager.getGoalDestPoint().getBlockPos())) return true;
+                || !villager.level.hasChunkAt(villager.getGoalDestPoint().getBlockPos())
+                || !villager.getGoalBuildingDest().getResManager().brickspot.contains(villager.getGoalDestPoint())) return true;
+        if (!BrickProductionDemand.inspect(villager).shouldGather()) return true;
         if (WorldUtilities.getBlockState(villager.level, villager.getGoalDestPoint()) == MillBlocks.BS_MUD_BRICK) {
             if (!villager.setBlockAndMetadata(villager.getGoalDestPoint(), Blocks.AIR, 0)) return true;
             villager.addToInv(MillBlocks.BS_MUD_BRICK, 1);
@@ -115,10 +119,12 @@ extends Goal {
 
     @Override
     public int priority(MillVillager villager) {
-        int p = 100 - villager.getTownHall().nbGoodAvailable(MillBlocks.BS_MUD_BRICK, false, false, false) * 2;
+        var demand = BrickProductionDemand.inspect(villager);
+        if (!demand.shouldGather()) return 0;
+        int p = demand.priority(true);
         for (MillVillager v : villager.getTownHall().getKnownVillagers()) {
-            if (!this.key.equals(v.goalKey)) continue;
-            p /= 2;
+            if (v == villager || !this.key.equals(v.goalKey)) continue;
+            p = Math.max(1, p / 2);
         }
         return p;
     }

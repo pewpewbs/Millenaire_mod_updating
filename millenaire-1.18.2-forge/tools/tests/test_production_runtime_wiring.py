@@ -66,6 +66,32 @@ class ProductionRuntimeWiring(unittest.TestCase):
         brick = read("goal/GoalIndianGatherBrick.java").split("public boolean performAction(",1)[1]
         self.assertLess(brick.index("if (!villager.setBlockAndMetadata"),brick.index("villager.addToInv"))
 
+    def test_brick_goals_share_construction_demand_and_recheck_before_action(self):
+        demand = read("goal/BrickProductionDemand.java")
+        policy = read("goal/BrickProductionPolicy.java")
+        self.assertIn("getCurrentGoalBuildingPlan()", demand)
+        self.assertIn("location.isSameLocation(townHall.buildingGoalLocation)", demand)
+        self.assertIn("availableForCurrentProject(raw)", demand)
+        self.assertIn("worker.countInv(raw)", demand)
+        self.assertIn("building.countGoods(raw)", demand)
+        self.assertIn("hasChunkAt(point.getBlockPos())", demand)
+        self.assertIn("RESERVE = 64", policy)
+        self.assertIn("gathering ? 220 : 120", policy)
+        for file, gate, gathering in (
+            ("GoalIndianDryBrick.java", "shouldForm", "false"),
+            ("GoalIndianGatherBrick.java", "shouldGather", "true"),
+        ):
+            code = read("goal/" + file)
+            destination = code.split("getDestination(MillVillager", 1)[1].split("@Override", 1)[0]
+            action = code.split("public boolean performAction(", 1)[1].split("@Override", 1)[0]
+            self.assertIn(gate, destination)
+            self.assertIn("demand.urgent() ||", destination)
+            self.assertIn(gate, action)
+            self.assertIn("brickspot.contains", action)
+            self.assertIn("demand.priority(" + gathering + ")", code)
+            self.assertIn("if (next == null) return true;", action)
+        self.assertNotIn("takeFromInv", read("goal/GoalIndianDryBrick.java"))
+
     def test_source_migration_is_scoped_and_persisted(self):
         source = read("buildingplan/ProductionSourceRepair.java")
         for key in ("indian/quarry/0","indian/quarry/1","mayan/mayanmining/0",

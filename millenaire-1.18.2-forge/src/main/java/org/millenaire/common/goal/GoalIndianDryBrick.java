@@ -43,7 +43,9 @@ extends Goal {
 
     @Override
     public Goal.GoalInformation getDestination(MillVillager villager) throws MillLog.MillenaireException {
-        boolean minimumBricksNotRequired = villager.goalKey != null && villager.goalKey.equals(this.key) ? true : (!villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L);
+        var demand = BrickProductionDemand.inspect(villager);
+        if (!demand.shouldForm(BrickProductionDemand.inDryingArea(villager))) return null;
+        boolean minimumBricksNotRequired = demand.urgent() || (villager.goalKey != null && villager.goalKey.equals(this.key) ? true : (!villager.lastGoalTime.containsKey(this) ? true : villager.level.getGameTime() > villager.lastGoalTime.get(this) + 2000L));
         ArrayList<Point> vp = new ArrayList<Point>();
         ArrayList<Point> buildingp = new ArrayList<Point>();
         for (Building kiln : villager.getTownHall().getBuildingsWithTag("brickkiln")) {
@@ -91,12 +93,18 @@ extends Goal {
 
     @Override
     public boolean performAction(MillVillager villager) throws MillLog.MillenaireException {
+        if (villager.level.isClientSide || villager.getGoalDestPoint() == null || villager.getGoalBuildingDest() == null
+                || !villager.level.hasChunkAt(villager.getGoalDestPoint().getBlockPos())
+                || !villager.getGoalBuildingDest().getResManager().brickspot.contains(villager.getGoalDestPoint())) return true;
+        if (!BrickProductionDemand.inspect(villager).shouldForm(BrickProductionDemand.inDryingArea(villager))) return true;
         if (WorldUtilities.getBlock(villager.level, villager.getGoalDestPoint()) == Blocks.AIR) {
             villager.setBlockstate(villager.getGoalDestPoint(), MillBlocks.BS_WET_BRICK);
             villager.swing(InteractionHand.MAIN_HAND);
         }
         if (villager.getGoalBuildingDest().getResManager().getNbEmptyBrickLocation() > 0) {
-            villager.setGoalInformation(this.getDestination(villager));
+            Goal.GoalInformation next = this.getDestination(villager);
+            if (next == null) return true;
+            villager.setGoalInformation(next);
             return false;
         }
         return true;
@@ -104,10 +112,12 @@ extends Goal {
 
     @Override
     public int priority(MillVillager villager) {
-        int p = 120;
+        var demand = BrickProductionDemand.inspect(villager);
+        if (!demand.shouldForm(BrickProductionDemand.inDryingArea(villager))) return 0;
+        int p = demand.priority(false);
         for (MillVillager v : villager.getTownHall().getKnownVillagers()) {
-            if (!this.key.equals(v.goalKey)) continue;
-            p /= 2;
+            if (v == villager || !this.key.equals(v.goalKey)) continue;
+            p = Math.max(1, p / 2);
         }
         return p;
     }

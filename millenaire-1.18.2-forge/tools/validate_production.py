@@ -26,6 +26,10 @@ def main():
             ROOT / "tools/tests/ProductionSourceMigrationSmoke.java")
         run("java","-cp",classes,"ProductionSourceMigrationSmoke")
         run("javac","--release","17","-d",classes,
+            JAVA / "goal/BrickProductionPolicy.java",
+            ROOT / "tools/tests/BrickProductionPolicySmoke.java")
+        run("java","-cp",classes,"BrickProductionPolicySmoke")
+        run("javac","--release","17","-d",classes,
             JAVA / "buildingplan/DoorPairRules.java",
             JAVA / "village/PenAllocationRules.java",
             ROOT / "tools/tests/VillageInteractionRulesSmoke.java")
