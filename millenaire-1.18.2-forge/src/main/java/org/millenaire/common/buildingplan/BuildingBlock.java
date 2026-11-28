@@ -193,18 +193,24 @@ public class BuildingBlock {
             return false;
         }
         return org.millenaire.common.utilities.ConnectedBlockPlacement.matchesPlan(
-                world, this.p.getBlockPos(), world.getBlockState(this.p.getBlockPos()), this.blockState);
+                world, this.p.getBlockPos(), world.getBlockState(this.p.getBlockPos()), this.blockState)
+                && ConstructionPairPlacement.matches(world,this.p.getBlockPos(),this.blockState);
     }
 
     public boolean build(Level world, Building townHall, boolean worldGeneration, boolean wandimport) {
         boolean blockSet = false;
         try {
+            if (!worldGeneration && !wandimport && this.alreadyDone(world)) return false;
             boolean playSound;
             boolean notifyBlocks = true;
             boolean bl = playSound = !worldGeneration && !wandimport;
             if (this.block instanceof DoorBlock && (this.special == 0 || this.special == INVERTED_DOOR)) {
                 blockSet = DoorPlacement.place(world, this.p.getBlockPos(), this.blockState, this.special == INVERTED_DOOR);
+            } else if (this.special == 0 && (this.block instanceof BedBlock || this.block instanceof DoublePlantBlock)) {
+                blockSet = ConstructionPairPlacement.place(world,this.p.getBlockPos(),this.blockState);
             } else if (this.special == 0) {
+                if (!worldGeneration && !wandimport && !this.blockState.isAir() && ConstructionSupportOrder.fixture(this.blockState)
+                        && !this.blockState.canSurvive(world,this.p.getBlockPos())) return false;
                 blockSet = this.buildNormalBlock(world, townHall, wandimport, true, playSound);
             } else if (this.special == PRESERVEGROUNDDEPTH || this.special == PRESERVEGROUNDSURFACE) {
                 blockSet = this.buildPreserveGround(world, worldGeneration, true, playSound);
@@ -354,26 +360,11 @@ public class BuildingBlock {
             BlockState bs;
             Direction facing;
             blockSet = false;
-            if (this.block instanceof DoorBlock) {
-                if (this.blockState.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER) {
-                    WorldUtilities.setBlockAndMetadata(world, this.p.getAbove(), Blocks.AIR, 0, notifyBlocks, playSound);
-                }
-            } else if (this.block instanceof BedBlock) {
-                facing = (Direction)this.blockState.getValue(HorizontalDirectionalBlock.FACING);
-                if (facing == Direction.EAST) {
-                    WorldUtilities.setBlockAndMetadata(world, this.p.getWest(), Blocks.AIR, 0, notifyBlocks, playSound);
-                } else if (facing == Direction.SOUTH) {
-                    WorldUtilities.setBlockAndMetadata(world, this.p.getNorth(), Blocks.AIR, 0, notifyBlocks, playSound);
-                } else if (facing == Direction.WEST) {
-                    WorldUtilities.setBlockAndMetadata(world, this.p.getEast(), Blocks.AIR, 0, notifyBlocks, playSound);
-                } else if (facing == Direction.NORTH) {
-                    WorldUtilities.setBlockAndMetadata(world, this.p.getSouth(), Blocks.AIR, 0, notifyBlocks, playSound);
-                }
-            }
             if (!wandimport || this.block != Blocks.AIR || WorldUtilities.getBlock(world, this.p) != Blocks.OAK_SIGN) {
                 Block existingBlock = WorldUtilities.getBlock(world, this.p);
                 if (this.block == Blocks.AIR) {
                     if (!BlockItemUtilities.isBlockDecorativePlant(existingBlock)) {
+                        ConstructionPairPlacement.removeIfReplaced(world,this.p.getBlockPos(),this.blockState);
                         WorldUtilities.setBlockstate(world, this.p, this.blockState, notifyBlocks, playSound);
                         blockSet = true;
                     }
@@ -381,54 +372,18 @@ public class BuildingBlock {
                     WorldUtilities.setBlockstate(world, this.p, this.blockState, notifyBlocks, playSound);
                     blockSet = true;
                 } else {
-                    if (existingBlock instanceof BedBlock) {
-                        world.removeBlock(this.p.getBlockPos(), false);
-                    }
-                    if (this.block instanceof BedBlock) {
-                        WorldUtilities.setBlockAndMetadata(world, this.p, Blocks.AIR, 0, notifyBlocks, playSound);
-                        Direction facing2 = (Direction)this.blockState.getValue(HorizontalDirectionalBlock.FACING);
-                        if (facing2 == Direction.EAST) {
-                            WorldUtilities.setBlockAndMetadata(world, this.p.getWest(), Blocks.AIR, 0, notifyBlocks, playSound);
-                        } else if (facing2 == Direction.SOUTH) {
-                            WorldUtilities.setBlockAndMetadata(world, this.p.getNorth(), Blocks.AIR, 0, notifyBlocks, playSound);
-                        } else if (facing2 == Direction.WEST) {
-                            WorldUtilities.setBlockAndMetadata(world, this.p.getEast(), Blocks.AIR, 0, notifyBlocks, playSound);
-                        } else if (facing2 == Direction.NORTH) {
-                            WorldUtilities.setBlockAndMetadata(world, this.p.getSouth(), Blocks.AIR, 0, notifyBlocks, playSound);
-                        }
-                    }
+                    ConstructionPairPlacement.removeIfReplaced(world,this.p.getBlockPos(),this.blockState);
                     if (this.blockState != Blocks.DIRT.defaultBlockState() || existingBlock != Blocks.GRASS_BLOCK) {
                         WorldUtilities.setBlockstate(world, this.p, this.blockState, notifyBlocks, playSound);
                         blockSet = true;
                     }
                 }
             }
-            if (this.block instanceof DoorBlock) {
-                if (this.blockState.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER) {
-                    bs = this.blockState.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER);
-                    if (this.special == INVERTED_DOOR) {
-                        bs = bs.setValue(DoorBlock.HINGE, DoorHingeSide.RIGHT);
-                    }
-                    WorldUtilities.setBlockstate(world, this.p.getAbove(), bs, notifyBlocks, playSound);
-                }
-            } else if (this.block instanceof BedBlock) {
-                facing = (Direction)this.blockState.getValue(HorizontalDirectionalBlock.FACING);
-                if (facing == Direction.EAST) {
-                    WorldUtilities.setBlockstate(world, this.p.getWest(), this.blockState.setValue(BedBlock.PART, net.minecraft.world.level.block.state.properties.BedPart.FOOT), notifyBlocks, playSound);
-                } else if (facing == Direction.SOUTH) {
-                    WorldUtilities.setBlockstate(world, this.p.getNorth(), this.blockState.setValue(BedBlock.PART, net.minecraft.world.level.block.state.properties.BedPart.FOOT), notifyBlocks, playSound);
-                } else if (facing == Direction.WEST) {
-                    WorldUtilities.setBlockstate(world, this.p.getEast(), this.blockState.setValue(BedBlock.PART, net.minecraft.world.level.block.state.properties.BedPart.FOOT), notifyBlocks, playSound);
-                } else if (facing == Direction.NORTH) {
-                    WorldUtilities.setBlockstate(world, this.p.getSouth(), this.blockState.setValue(BedBlock.PART, net.minecraft.world.level.block.state.properties.BedPart.FOOT), notifyBlocks, playSound);
-                }
-            } else if (this.block == Blocks.WATER) {
+            if (this.block == Blocks.WATER) {
                 world.setBlock(this.p.getBlockPos(), Blocks.WATER.defaultBlockState(), 11);
             } else if (this.block == Blocks.NETHER_PORTAL) {
                 PortalShape.findPortalShape(world, this.p.getBlockPos(), shape -> shape.isValid() && !shape.isComplete(), Direction.Axis.X).ifPresent(PortalShape::createPortalBlocks);
-            } else if (this.block instanceof DoublePlantBlock) {
-                bs = this.blockState.setValue(DoublePlantBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER);
-                WorldUtilities.setBlockstate(world, this.p.getAbove(), bs, notifyBlocks, playSound);            } else if (this.block instanceof MockBlockBannerHanging || this.block instanceof MockBlockBannerStanding) {
+            } else if (this.block instanceof MockBlockBannerHanging || this.block instanceof MockBlockBannerStanding) {
                 int bannerType = this.block instanceof MockBlockBannerHanging hanging ? hanging.bannerType : ((MockBlockBannerStanding)this.block).bannerType;
                 BlockEntity entity = world.getBlockEntity(this.p.getBlockPos());
                 if (entity instanceof TileEntityMockBanner banner) {

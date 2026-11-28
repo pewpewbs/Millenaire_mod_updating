@@ -1530,6 +1530,7 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
       }
 
       this.autoGuessLaddersDoorsStairs(bblocksCombined);
+      if (!villageGeneration && !includeSpecialPoints) ConstructionSupportOrder.prepare(world,bblocksCombined);
       if (location.sleepingPos == null) {
          location.sleepingPos = location.chestPos;
       }
@@ -1579,7 +1580,8 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
          boolean sameState = bbmap.containsKey(ip)
             ? blockState == bb.getBlockstate()
             : org.millenaire.common.utilities.ConnectedBlockPlacement.matchesPlan(
-                  world, bb.p.getBlockPos(), blockState, bb.getBlockstate());
+                  world, bb.p.getBlockPos(), blockState, bb.getBlockstate())
+               && ConstructionPairPlacement.matches(world,bb.p.getBlockPos(),bb.getBlockstate());
          if ((sameState && special == 0 || block == Blocks.GRASS_BLOCK && bb.block == Blocks.DIRT) && bb.special == 0) {
             toDelete[i] = true;
             deleteSameBlock++;
@@ -1635,6 +1637,8 @@ public class BuildingPlan implements IBuildingPlan, MillCommonUtilities.Weighted
             this, "totalLogic: " + totalLogic / 1000000L + ", totalWorldCall: " + totalWorldCall / 1000000L + ", totalIteration: " + totalIteration / 1000000L
          );
       }
+
+      if (!villageGeneration && !includeSpecialPoints) ConstructionSupportOrder.retainFixtureChecks(bblocksCombined,toDelete);
 
       int finalSize = 0;
 
