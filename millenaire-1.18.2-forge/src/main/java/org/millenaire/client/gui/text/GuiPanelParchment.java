@@ -307,6 +307,14 @@ extends GuiText {
             if (lastColour == 0) continue;
             this.drawScaledRect(x, lastZ, x + 1, minfo.width, lastColour);
         }
+        // Draw above terrain, below villager/player markers. The off phase
+        // draws nothing at all, preserving the original map and its hover data.
+        if(this.townHall.buildingGoal!=null&&!this.townHall.buildingGoal.isBlank()
+                &&SitePreparationOverlay.visible(net.minecraft.Util.getMillis())) {
+            var site=SitePreparationOverlay.project(this.townHall.buildingGoalIssue,
+                    this.townHall.buildingGoalSiteHint,minfo.mapStartX,minfo.mapStartZ,minfo.length,minfo.width);
+            if(site!=null)this.drawScaledRect(site.left(),site.top(),site.right(),site.bottom(),SitePreparationOverlay.RED);
+        }
         for (MillVillager villager : this.townHall.getKnownVillagers()) {
             int mapPosX = (int)(villager.getX() - (double)minfo.mapStartX);
             int mapPosZ = (int)(villager.getZ() - (double)minfo.mapStartZ);

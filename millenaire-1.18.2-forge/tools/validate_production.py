@@ -34,6 +34,10 @@ def main():
             ROOT / "tools/tests/SiteAssessmentSmoke.java")
         run("java","-cp",classes,"org.millenaire.common.buildingplan.SiteAssessmentSmoke")
         run("javac","--release","17","-d",classes,
+            ROOT / "src/main/java/org/millenaire/client/gui/text/SitePreparationOverlay.java",
+            ROOT / "tools/tests/SitePreparationOverlaySmoke.java")
+        run("java","-cp",classes,"org.millenaire.client.gui.text.SitePreparationOverlaySmoke")
+        run("javac","--release","17","-d",classes,
             JAVA / "goal/BrickProductionPolicy.java",
             ROOT / "tools/tests/BrickProductionPolicySmoke.java")
         run("java","-cp",classes,"BrickProductionPolicySmoke")

@@ -6372,7 +6372,20 @@ public class Building {
       }
 
       if ((this.world.getDayTime() + this.hashCode()) % 20L == 3L) {
+         // Map readers already receive these fields in the building packet.
+         // Push only changes to the site marker, not a new map every blink.
+         String oldSite = "ui.site.prepare".equals(this.buildingGoalIssue) ? this.buildingGoalSiteHint : null;
+         String oldSiteGoal = oldSite == null ? null : this.buildingGoal;
          long began=System.nanoTime();this.updateConstructionQueue(false);reportSlowBuildingPart("construction-queue",began);
+         String newSite = "ui.site.prepare".equals(this.buildingGoalIssue) ? this.buildingGoalSiteHint : null;
+         String newSiteGoal = newSite == null ? null : this.buildingGoal;
+         if(!java.util.Objects.equals(oldSite,newSite)||!java.util.Objects.equals(oldSiteGoal,newSiteGoal)){
+            for(Player player:VillageUtilities.getServerPlayers(this.mw.world)){
+               UserProfile profile=VillageUtilities.getServerProfile(this.mw.world,player);
+               if(profile!=null&&profile.buildingsSent.containsKey(this.pos))
+                  this.sendBuildingPacket(player,false);
+            }
+         }
       }
 
       this.checkSeller();
