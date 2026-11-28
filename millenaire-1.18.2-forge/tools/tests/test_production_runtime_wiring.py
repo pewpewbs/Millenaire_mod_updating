@@ -120,6 +120,22 @@ class ProductionRuntimeWiring(unittest.TestCase):
         self.assertIn("p.level>centre.location.level",planner)
         self.assertIn("ProductionCapability.hasCooking(plan,null)",planner)
 
+    def test_delivery_display_matches_actual_cargo_destination(self):
+        delivery=read("goal/GoalBringBackResourcesHome.java")
+        scope=delivery.split("private static boolean deliverableAt(",1)[1].split("private static int countDeliverableGoods",1)[0]
+        self.assertIn("isDeliverable(villager, key)",scope)
+        self.assertIn("dest == villager.getHouse() || BrickProductionDemand.isBrick(key)",scope)
+        display=delivery.split("public ItemStack[] getHeldItemsTravelling(",1)[1].split("@Override",1)[0]
+        self.assertIn("villager.getGoalBuildingDest()",display)
+        self.assertIn("deliverableAt(villager, key, dest)",display)
+        self.assertIn("dest.storageRoom(key) > 0",display)
+        action=delivery.split("public boolean performAction(",1)[1]
+        self.assertIn("deliverableAt(villager, key, dest)",action)
+        villager=read("entity/MillVillager.java")
+        held=villager.split("private void checkGoalHeldItems(",1)[1].split("public void checkGoals()",1)[0]
+        self.assertIn("this.heldItem = ItemStack.EMPTY;",held)
+        self.assertIn("this.heldItemOffHand = ItemStack.EMPTY;",held)
+
     def test_refill_local_kiln_before_raw_delivery(self):
         cycle=read("goal/BrickWorkCycle.java")
         dry=read("goal/GoalIndianDryBrick.java")

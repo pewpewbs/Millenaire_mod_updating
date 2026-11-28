@@ -774,12 +774,18 @@ IAStarPathedEntity {
             if (heldItems != null && heldItems.length > 0) {
                 this.heldItemId = (this.heldItemId + 1) % heldItems.length;
                 this.heldItem = heldItems[this.heldItemId];
+            } else {
+                this.heldItem = ItemStack.EMPTY;
+                this.heldItemId = -1;
             }
             heldItems = null;
             heldItems = target != null && target.horizontalDistanceTo((Entity)this) < (double)goal.range(this) ? goal.getHeldItemsOffHandDestination(this) : goal.getHeldItemsOffHandTravelling(this);
             if (heldItems != null && heldItems.length > 0) {
                 this.heldItemOffHandId = (this.heldItemOffHandId + 1) % heldItems.length;
                 this.heldItemOffHand = heldItems[this.heldItemOffHandId];
+            } else {
+                this.heldItemOffHand = ItemStack.EMPTY;
+                this.heldItemOffHandId = -1;
             }
             this.heldItemCount = 0;
         }

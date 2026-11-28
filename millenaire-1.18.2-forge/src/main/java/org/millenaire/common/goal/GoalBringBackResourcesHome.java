@@ -39,12 +39,19 @@ extends Goal {
         return villager.getHouse();
     }
 
+    /** Use the same cargo scope for display, capacity checks and the actual transfer. */
+    private static boolean deliverableAt(MillVillager villager, InvItem key,
+            org.millenaire.common.village.Building dest) {
+        return dest != null && isDeliverable(villager, key)
+                && (dest == villager.getHouse() || BrickProductionDemand.isBrick(key));
+    }
+
     private static int countDeliverableGoods(MillVillager villager) {
         int total = 0;
         var dest = deliveryBuilding(villager);
         if (dest == null) return 0;
         for (InvItem key : villager.getInventoryKeys()) {
-            if (isDeliverable(villager, key) && (dest == villager.getHouse() || BrickProductionDemand.isBrick(key)))
+            if (deliverableAt(villager, key, dest))
                 total += Math.min(villager.countInv(key), dest.storageRoom(key));
         }
         return total;
@@ -69,8 +76,11 @@ extends Goal {
     @Override
     public ItemStack[] getHeldItemsTravelling(MillVillager villager) {
         ArrayList<ItemStack> items = new ArrayList<ItemStack>();
+        var dest = villager.getGoalBuildingDest();
+        if (dest == null) return new ItemStack[0];
         for (InvItem key : villager.getInventoryKeys()) {
-            if (villager.countInv(key) > 0 && isDeliverable(villager, key)) {
+            if (villager.countInv(key) > 0 && deliverableAt(villager, key, dest)
+                    && dest.storageRoom(key) > 0) {
                 items.add(org.millenaire.common.item.LegacyItemStacks.stack(key.getItem(), 1, key.meta));
             }
         }
@@ -113,8 +123,7 @@ extends Goal {
         if (dest == null || (dest != villager.getHouse() && dest != villager.getTownHall())) return true;
         if (!LocalLogistics.access(this,villager,dest)) return false;
         for (InvItem key : new ArrayList<>(villager.getInventoryKeys())) {
-            if (isDeliverable(villager, key) && villager.countInv(key) > 0
-                    && (dest == villager.getHouse() || BrickProductionDemand.isBrick(key))) {
+            if (deliverableAt(villager, key, dest) && villager.countInv(key) > 0) {
                 int amount = BrickProductionDemand.brickWorker(villager) && BrickProductionDemand.isRawBrick(key)
                         ? Math.min(villager.countInv(key),dest.storageRoom(key))
                         : Math.min(256, dest.storageRoom(key));
